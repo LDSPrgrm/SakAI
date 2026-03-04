@@ -1,0 +1,87 @@
+package dto
+
+import (
+	"time"
+
+	"github.com/sakai/backend/internal/domain"
+)
+
+// RegisterRequest is the body for POST /auth/register.
+type RegisterRequest struct {
+	Name     string          `json:"name" binding:"required,min=2,max=100"`
+	Email    string          `json:"email" binding:"required,email"`
+	Password string          `json:"password" binding:"required,min=8"`
+	Role     domain.UserRole `json:"role" binding:"required,oneof=passenger driver"`
+	Vehicle  *VehicleInput   `json:"vehicle"`
+}
+
+// VehicleInput is the nested vehicle block in RegisterRequest.
+type VehicleInput struct {
+	Make  string `json:"make" binding:"required"`
+	Model string `json:"model" binding:"required"`
+	Color string `json:"color" binding:"required"`
+	Plate string `json:"plate" binding:"required"`
+}
+
+// ToDomainVehicle converts the input DTO to a domain value.
+func (v *VehicleInput) ToDomainVehicle() *domain.Vehicle {
+	if v == nil {
+		return nil
+	}
+	return &domain.Vehicle{Make: v.Make, Model: v.Model, Color: v.Color, Plate: v.Plate}
+}
+
+// LoginRequest is the body for POST /auth/login.
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+// RefreshRequest is the body for POST /auth/refresh and POST /auth/logout.
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// AuthResponse is the JSON shape returned after any successful auth operation.
+type AuthResponse struct {
+	AccessToken           string      `json:"access_token"`
+	RefreshToken          string      `json:"refresh_token"`
+	AccessTokenExpiresAt  time.Time   `json:"access_token_expires_at"`
+	User                  *UserResponse `json:"user"`
+}
+
+// UserResponse is the public-facing user shape (never includes the password hash).
+type UserResponse struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Email     string          `json:"email"`
+	Role      domain.UserRole `json:"role"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
+// NewAuthResponse maps a domain.AuthOutput into the API response shape.
+func NewAuthResponse(out *domain.AuthOutput) AuthResponse {
+	return AuthResponse{
+		AccessToken:          out.AccessToken,
+		RefreshToken:         out.RefreshToken,
+		AccessTokenExpiresAt: out.AccessTokenExpiresAt,
+		User: &UserResponse{
+			ID:        out.User.ID.String(),
+			Name:      out.User.Name,
+			Email:     out.User.Email,
+			Role:      out.User.Role,
+			CreatedAt: out.User.CreatedAt,
+		},
+	}
+}
+
+// NewUserResponse maps a domain.User into the public user shape.
+func NewUserResponse(u *domain.User) UserResponse {
+	return UserResponse{
+		ID:        u.ID.String(),
+		Name:      u.Name,
+		Email:     u.Email,
+		Role:      u.Role,
+		CreatedAt: u.CreatedAt,
+	}
+}

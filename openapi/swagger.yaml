@@ -1,0 +1,1310 @@
+openapi: "3.0.3"
+
+info:
+  title: SakAI API
+  description: |
+    REST + WebSocket API for the SakAI ride-hailing MVP.
+
+    ## Authentication
+    All protected endpoints require a Bearer JWT **access token** in the `Authorization` header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    Access tokens are short-lived (60 min). Use `POST /auth/refresh` with your **refresh token**
+    to silently obtain a new access token. Refresh tokens are long-lived (30 days).
+
+    ## Idempotency
+    `POST /rides` requires an `Idempotency-Key` header (client-generated UUID).
+    The server caches the response for 24h — retries with the same key return the
+    cached response rather than creating a duplicate ride.
+
+    ## Error Codes
+    All `4xx`/`5xx` responses include a machine-readable `code` field from the `ErrorCode` enum.
+    Flutter clients should branch on `code`, not on `message`.
+
+    ## WebSocket
+    Real-time events are delivered over a persistent WebSocket connection.
+
+    **Endpoint:** `ws://{host}/ws?token={access_token}`
+
+    After connecting, call `GET /rides/active` to re-hydrate local state, then listen for events.
+    The server filters events by identity — drivers only receive events for their assigned ride,
+    passengers only for their own ride.
+
+    All messages use the envelope format:
+    ```json
+    { "event": "ride.accepted", "payload": { ... } }
+    ```
+
+    See **WebSocket Event Schemas** in `components/schemas` for all payload definitions.
+
+  version: "1.1.0"
+  contact:
+    name: SakAI Engineering
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: System
+    description: Health and operational endpoints
+  - name: Auth
+    description: Registration, login, and session management
+  - name: Users
+    description: Authenticated user profile
+  - name: Driver
+    description: Driver availability and location management
+  - name: Rides
+    description: Ride lifecycle — request, match, and state transitions
+
+# ---------------------------------------------------------------------------
+# PATHS
+# ---------------------------------------------------------------------------
+paths:
+  # ── System ────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: |
+        Returns server health. Used by Docker health checks, load balancers, and CI smoke tests.
+        Does not require authentication.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Server is unhealthy (DB or critical dependency unreachable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: |
+        Creates a passenger or driver account. Role is fixed at registration.
+        Returns an access token and refresh token immediately — no separate login needed.
+      operationId: authRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: EMAIL_ALREADY_REGISTERED
+                message: "An account with this email already exists"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive tokens
+      description: Returns a short-lived access token and a long-lived refresh token.
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: INVALID_CREDENTIALS
+                message: "Email or password is incorrect"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh the access token
+      description: |
+        Exchanges a valid refresh token for a new access token (and rotated refresh token).
+        Call this silently before the access token expires — typically at 80% of its TTL.
+        Refresh token rotation means the old refresh token is invalidated on use.
+      operationId: authRefresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Refresh token is expired or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: REFRESH_TOKEN_INVALID
+                message: "Refresh token is expired or has already been used"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and invalidate tokens
+      description: |
+        Invalidates the refresh token server-side. The access token will remain
+        technically valid until its expiry — clients should discard it immediately.
+        Call this on explicit user logout.
+      operationId: authLogout
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "204":
+          description: Logged out successfully, no content returned
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Users ─────────────────────────────────────────────────────────────────
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the authenticated user's profile
+      description: |
+        Returns the current user's profile based on the bearer token.
+        Call this on app cold-start after restoring a stored token to re-hydrate session state.
+        For drivers, includes vehicle information.
+      operationId: usersGetMe
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Driver ────────────────────────────────────────────────────────────────
+
+  /driver/status:
+    put:
+      tags: [Driver]
+      summary: Set driver online/offline status
+      description: |
+        Toggles the driver's availability. Only users with `role=driver` may call this.
+        Setting to `online` enters the driver into the matching pool.
+        Setting to `offline` removes the driver immediately — they will not receive new rides.
+        Cannot go offline while a ride is `in_progress`.
+      operationId: driverSetStatus
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverStatusResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Cannot go offline while ride is in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: DRIVER_HAS_ACTIVE_RIDE
+                message: "Cannot go offline while a ride is in progress"
+
+  /driver/location:
+    put:
+      tags: [Driver]
+      summary: Update driver's current location
+      description: |
+        Called periodically by the driver app (recommended every 3–5 seconds) while the driver
+        is online. Location is stored in PostGIS and used for geospatial proximity matching.
+
+        **Rate limit:** 30 requests/min per driver. Exceeding this returns `429`.
+
+        During an active ride, each update also pushes a `driver.location_updated`
+        WebSocket event to the passenger.
+      operationId: driverUpdateLocation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationUpdateRequest"
+      responses:
+        "204":
+          description: Location updated, no content returned
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /driver/rides/incoming:
+    get:
+      tags: [Driver]
+      summary: Get the current pending ride offer for this driver
+      description: |
+        Returns the ride offer currently assigned to the driver, if any.
+        Use this as a **polling fallback** when the WebSocket event may have been missed
+        (e.g., app just reconnected). Returns `404` if no offer is pending.
+      operationId: driverGetIncomingRide
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Pending ride offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: No pending ride offer at this time
+
+  # ── Rides ─────────────────────────────────────────────────────────────────
+
+  /rides/active:
+    get:
+      tags: [Rides]
+      summary: Get the caller's current active ride
+      description: |
+        Returns the active ride for the authenticated user — whether they are the passenger or driver.
+        A ride is "active" if its status is `requested`, `accepted`, `arrived`, or `in_progress`.
+
+        **Call this on app launch / WebSocket reconnect** to re-hydrate local state before
+        subscribing to WebSocket events. Returns `404` if no active ride exists.
+      operationId: rideGetActive
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current active ride
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No active ride found for this user
+
+  /rides:
+    post:
+      tags: [Rides]
+      summary: Request a new ride
+      description: |
+        Creates a ride in `requested` status and triggers the matching engine to find
+        the nearest available driver. Only `role=passenger` may call this.
+
+        **Idempotency:** Include a client-generated UUID in the `Idempotency-Key` header.
+        Retries with the same key return the cached response for 24h without creating
+        a duplicate ride. Omitting this header returns `400`.
+
+        Returns `503` if no drivers are available within the matching radius.
+      operationId: rideRequest
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RideRequestBody"
+      responses:
+        "201":
+          description: Ride created and matching initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Passenger already has an active ride
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PASSENGER_HAS_ACTIVE_RIDE
+                message: "You already have an active ride in progress"
+        "503":
+          description: No drivers available in the area
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: NO_DRIVERS_AVAILABLE
+                message: "No drivers are available in your area right now"
+
+  /rides/{rideId}:
+    get:
+      tags: [Rides]
+      summary: Get ride details by ID
+      description: Returns current state and full details for the given ride. Both the passenger and the assigned driver may access.
+      operationId: rideGet
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Ride details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /rides/{rideId}/accept:
+    post:
+      tags: [Rides]
+      summary: Driver accepts the ride offer
+      description: |
+        Transitions: `requested` → `accepted`.
+        Only the driver currently assigned to this ride may call this.
+        Must be called before `expires_at` from the `ride.requested` WS event — otherwise
+        the offer has already been reassigned and this returns `409`.
+        Triggers: `ride.accepted` WebSocket event → passenger.
+      operationId: rideAccept
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Ride accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in `requested` state or offer has expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Ride is not in a state that allows acceptance"
+
+  /rides/{rideId}/decline:
+    post:
+      tags: [Rides]
+      summary: Driver declines the ride offer
+      description: |
+        Transitions: ride returns to `requested` and the matching engine finds another driver.
+        Triggers: `ride.declined` WebSocket event → passenger (informs re-matching is in progress).
+      operationId: rideDecline
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Ride declined, re-matching initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /rides/{rideId}/arrive:
+    post:
+      tags: [Rides]
+      summary: Driver signals arrival at pickup
+      description: |
+        Transitions: `accepted` → `arrived`.
+        Triggers: `ride.status_changed` WebSocket event → both parties.
+      operationId: rideArrive
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Driver arrived at pickup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in `accepted` state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Ride must be in 'accepted' state to mark arrival"
+
+  /rides/{rideId}/start:
+    post:
+      tags: [Rides]
+      summary: Driver starts the ride after passenger boards
+      description: |
+        Transitions: `arrived` → `in_progress`.
+        Triggers: `ride.status_changed` WebSocket event → both parties.
+      operationId: rideStart
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Ride started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in `arrived` state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Ride must be in 'arrived' state to start"
+
+  /rides/{rideId}/complete:
+    post:
+      tags: [Rides]
+      summary: Driver completes the ride at dropoff
+      description: |
+        Transitions: `in_progress` → `completed`.
+        Driver status automatically returns to `online` after completion.
+        Triggers: `ride.status_changed` WebSocket event → both parties.
+      operationId: rideComplete
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Ride completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in `in_progress` state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Ride must be in 'in_progress' state to complete"
+
+  /rides/{rideId}/cancel:
+    post:
+      tags: [Rides]
+      summary: Cancel an active ride
+      description: |
+        Permitted cancellation states: `requested`, `accepted`, `arrived`.
+        Cancellation is **not permitted** once the ride is `in_progress`.
+        Either the passenger or the assigned driver may cancel.
+        Triggers: `ride.cancelled` WebSocket event → both parties.
+      operationId: rideCancel
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelRequest"
+      responses:
+        "200":
+          description: Ride cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride cannot be cancelled in its current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Rides cannot be cancelled once they are in progress"
+
+# ---------------------------------------------------------------------------
+# COMPONENTS
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived JWT access token obtained from `/auth/login` or `/auth/refresh`.
+
+  parameters:
+    RideId:
+      name: rideId
+      in: path
+      required: true
+      description: UUID of the ride
+      schema:
+        type: string
+        format: uuid
+        example: "d4e5f6a7-b8c9-0123-def4-567890abcdef"
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Client-generated UUID to prevent duplicate ride creation on retries.
+        Generate once per request attempt and store until a definitive response is received.
+      schema:
+        type: string
+        format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+
+  # ── Reusable Responses ────────────────────────────────────────────────────
+  responses:
+    BadRequest:
+      description: Invalid request payload or missing required fields
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: VALIDATION_ERROR
+            message: "Field 'origin.lat' is required"
+
+    Unauthorized:
+      description: Missing, expired, or invalid access token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: TOKEN_INVALID
+            message: "Access token is missing or invalid"
+
+    Forbidden:
+      description: Authenticated user lacks permission for this action
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: FORBIDDEN
+            message: "You do not have permission to perform this action"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: RIDE_NOT_FOUND
+            message: "Ride with the given ID does not exist"
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying
+          schema:
+            type: integer
+            example: 10
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+            example: 30
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+            example: 0
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: RATE_LIMIT_EXCEEDED
+            message: "Too many requests. Please slow down."
+
+  # ── Schemas ───────────────────────────────────────────────────────────────
+  schemas:
+    # -- Error ----------------------------------------------------------------
+
+    ErrorCode:
+      type: string
+      description: |
+        Machine-readable error code. Flutter clients should branch on this, not on `message`.
+      enum:
+        # Auth
+        - EMAIL_ALREADY_REGISTERED
+        - INVALID_CREDENTIALS
+        - TOKEN_INVALID
+        - TOKEN_EXPIRED
+        - REFRESH_TOKEN_INVALID
+        # Validation
+        - VALIDATION_ERROR
+        # Authorization
+        - FORBIDDEN
+        # Resources
+        - RIDE_NOT_FOUND
+        - USER_NOT_FOUND
+        # Ride state
+        - RIDE_INVALID_STATE_TRANSITION
+        - PASSENGER_HAS_ACTIVE_RIDE
+        - DRIVER_HAS_ACTIVE_RIDE
+        # Matching
+        - NO_DRIVERS_AVAILABLE
+        # Operational
+        - RATE_LIMIT_EXCEEDED
+        - INTERNAL_SERVER_ERROR
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          description: Human-readable error description (for logging/display fallback)
+          example: "An account with this email already exists"
+        details:
+          type: object
+          description: Optional field-level validation details
+          additionalProperties: true
+          example:
+            field: "origin.lat"
+            reason: "must be between -90 and 90"
+
+    # -- Common ---------------------------------------------------------------
+
+    LatLng:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 14.5995
+        lng:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: 120.9842
+
+    # -- System ---------------------------------------------------------------
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+          example: "ok"
+        version:
+          type: string
+          description: Deployed API version
+          example: "1.1.0"
+        dependencies:
+          type: object
+          description: Health of critical dependencies
+          properties:
+            database:
+              type: string
+              enum: [ok, down]
+              example: "ok"
+            redis:
+              type: string
+              enum: [ok, down]
+              example: "ok"
+
+    # -- Auth -----------------------------------------------------------------
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "Maria Santos"
+        email:
+          type: string
+          format: email
+          example: "maria@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "S3curePass!"
+        role:
+          type: string
+          enum: [passenger, driver]
+          example: "passenger"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "maria@example.com"
+        password:
+          type: string
+          format: password
+          example: "S3curePass!"
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          description: Long-lived refresh token received from login/register/previous refresh.
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+
+    LogoutRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          description: The refresh token to invalidate server-side.
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+
+    AuthResponse:
+      type: object
+      required: [access_token, refresh_token, access_token_expires_at, user]
+      properties:
+        access_token:
+          type: string
+          description: |
+            Short-lived JWT (60 min). Include as `Authorization: Bearer <access_token>`.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: |
+            Long-lived opaque token (30 days). Store securely (e.g., flutter_secure_storage).
+            Use with `POST /auth/refresh` to silently obtain new access tokens.
+            Rotated on every use — old token is invalidated.
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+        access_token_expires_at:
+          type: string
+          format: date-time
+          description: UTC expiry of the access token. Refresh before this time.
+          example: "2026-02-19T15:30:42Z"
+        user:
+          $ref: "#/components/schemas/UserProfile"
+
+    # -- Users ----------------------------------------------------------------
+
+    UserProfile:
+      type: object
+      required: [id, name, email, role, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          example: "Maria Santos"
+        email:
+          type: string
+          format: email
+          example: "maria@example.com"
+        role:
+          type: string
+          enum: [passenger, driver]
+          example: "passenger"
+        vehicle:
+          description: Present only when `role=driver`. Null for passengers.
+          allOf:
+            - $ref: "#/components/schemas/VehicleInfo"
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-19T06:21:53Z"
+
+    VehicleInfo:
+      type: object
+      required: [make, model, color, plate]
+      description: Vehicle details for a driver. Displayed to passengers after match.
+      properties:
+        make:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios"
+        color:
+          type: string
+          example: "Pearl White"
+        plate:
+          type: string
+          example: "ABC 1234"
+
+    # -- Driver ---------------------------------------------------------------
+
+    DriverStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [online, offline]
+          example: "online"
+
+    DriverStatusResponse:
+      type: object
+      required: [driver_id, status, updated_at]
+      properties:
+        driver_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [online, offline]
+        updated_at:
+          type: string
+          format: date-time
+
+    LocationUpdateRequest:
+      type: object
+      required: [location]
+      properties:
+        location:
+          $ref: "#/components/schemas/LatLng"
+        heading:
+          type: number
+          format: float
+          description: Compass heading in degrees (0–360), optional. Used to rotate driver icon on map.
+          example: 270.0
+
+    # -- Rides ----------------------------------------------------------------
+
+    RideStatus:
+      type: string
+      description: |
+        Ride state machine:
+        ```
+        requested → accepted → arrived → in_progress → completed
+             ↘          ↙       ↙
+               cancelled  (not from in_progress)
+        ```
+        Terminal states: `completed`, `cancelled`
+      enum:
+        - requested
+        - accepted
+        - arrived
+        - in_progress
+        - completed
+        - cancelled
+
+    RideRequestBody:
+      type: object
+      required: [origin, destination]
+      properties:
+        origin:
+          $ref: "#/components/schemas/LatLng"
+        destination:
+          $ref: "#/components/schemas/LatLng"
+        origin_address:
+          type: string
+          description: Human-readable pickup address (for display only)
+          example: "123 Rizal Ave, Manila"
+        destination_address:
+          type: string
+          description: Human-readable dropoff address (for display only)
+          example: "BGC, Taguig City"
+        notes:
+          type: string
+          maxLength: 500
+          description: Optional instructions for the driver
+          example: "I'll be waiting at the lobby entrance."
+
+    RideResponse:
+      type: object
+      required:
+        [id, status, passenger, origin, destination, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-def4-567890abcdef"
+        status:
+          $ref: "#/components/schemas/RideStatus"
+        passenger:
+          $ref: "#/components/schemas/UserProfile"
+        driver:
+          description: Null until a driver is matched and accepts.
+          allOf:
+            - $ref: "#/components/schemas/DriverSummary"
+          nullable: true
+        origin:
+          $ref: "#/components/schemas/LatLng"
+        destination:
+          $ref: "#/components/schemas/LatLng"
+        origin_address:
+          type: string
+          nullable: true
+          example: "123 Rizal Ave, Manila"
+        destination_address:
+          type: string
+          nullable: true
+          example: "BGC, Taguig City"
+        notes:
+          type: string
+          nullable: true
+        cancelled_by:
+          type: string
+          enum: [passenger, driver]
+          nullable: true
+          description: Set only when status is `cancelled`
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DriverSummary:
+      type: object
+      description: Minimal driver info embedded in ride responses and WebSocket events.
+      required: [id, name, vehicle]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Juan dela Cruz"
+        vehicle:
+          $ref: "#/components/schemas/VehicleInfo"
+        current_location:
+          $ref: "#/components/schemas/LatLng"
+
+    CancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 255
+          description: Optional cancellation reason
+          example: "Change of plans"
+
+    # =========================================================================
+    # WebSocket Event Schemas
+    # =========================================================================
+    # Connection: ws://{host}/ws?token={access_token}
+    #
+    # Envelope format (all messages):
+    #   { "event": "<event_name>", "payload": { ... } }
+    #
+    # On connect / reconnect:
+    #   1. Call GET /rides/active to re-hydrate local state
+    #   2. Resume listening for events below
+    #
+    # Events are filtered server-side:
+    #   - Drivers only receive events for their assigned ride
+    #   - Passengers only receive events for their own ride
+    # =========================================================================
+
+    WsEnvelope:
+      type: object
+      description: Wrapper for all WebSocket messages
+      required: [event, payload]
+      properties:
+        event:
+          type: string
+          description: Event name
+          example: "ride.status_changed"
+        payload:
+          type: object
+          description: Event-specific payload — see schemas below
+
+    WsEventRideRequested:
+      type: object
+      description: |
+        **Event:** `ride.requested`
+        **Direction:** server → driver
+        Sent when the matching engine assigns a ride offer to the driver.
+        The driver must accept or decline before `expires_at`.
+        If no response is received by `expires_at`, the offer is withdrawn and
+        `ride.offer_expired` is sent to the driver, and re-matching begins.
+      required: [ride_id, passenger, origin, destination, expires_at]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        passenger:
+          $ref: "#/components/schemas/UserProfile"
+        origin:
+          $ref: "#/components/schemas/LatLng"
+        destination:
+          $ref: "#/components/schemas/LatLng"
+        origin_address:
+          type: string
+          nullable: true
+        destination_address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          description: Deadline to accept/decline. Driver UI should display a countdown.
+
+    WsEventRideOfferExpired:
+      type: object
+      description: |
+        **Event:** `ride.offer_expired`
+        **Direction:** server → driver
+        Sent when the driver's acceptance window closes without a response.
+        The driver UI should dismiss the incoming request card.
+        Re-matching will begin automatically.
+      required: [ride_id]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+
+    WsEventRideAccepted:
+      type: object
+      description: |
+        **Event:** `ride.accepted`
+        **Direction:** server → passenger
+        Sent when the matched driver accepts the ride.
+        Passenger app should display driver details and begin showing live location.
+      required: [ride_id, driver]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        driver:
+          $ref: "#/components/schemas/DriverSummary"
+
+    WsEventRideDeclined:
+      type: object
+      description: |
+        **Event:** `ride.declined`
+        **Direction:** server → passenger
+        Sent when the assigned driver explicitly declines.
+        Passenger app should show a "finding another driver" state.
+      required: [ride_id]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          example: "Driver declined. Finding another driver for you..."
+
+    WsEventDriverLocationUpdated:
+      type: object
+      description: |
+        **Event:** `driver.location_updated`
+        **Direction:** server → passenger
+        Pushed on every `PUT /driver/location` call during an active ride.
+        Use to animate the driver pin on the passenger's map in real time.
+      required: [ride_id, location]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        location:
+          $ref: "#/components/schemas/LatLng"
+        heading:
+          type: number
+          format: float
+          description: Compass heading in degrees (0–360). Use to rotate driver icon.
+          nullable: true
+          example: 270.0
+
+    WsEventRideStatusChanged:
+      type: object
+      description: |
+        **Event:** `ride.status_changed`
+        **Direction:** server → both passenger and driver
+        Fired on transitions: `arrived`, `in_progress`, `completed`.
+        Both apps should update their local ride state from this event.
+      required: [ride_id, status, updated_at]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/RideStatus"
+        updated_at:
+          type: string
+          format: date-time
+
+    WsEventRideCancelled:
+      type: object
+      description: |
+        **Event:** `ride.cancelled`
+        **Direction:** server → both passenger and driver
+        Fired when either party cancels. Both apps should exit the ride flow
+        and display an appropriate message based on `cancelled_by`.
+      required: [ride_id, cancelled_by]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        cancelled_by:
+          type: string
+          enum: [passenger, driver]
+        reason:
+          type: string
+          nullable: true
+
+    WsEventNoDriversAvailable:
+      type: object
+      description: |
+        **Event:** `ride.no_drivers`
+        **Direction:** server → passenger
+        Fired when the matching engine exhausts all available drivers.
+        The ride is automatically set to `cancelled`. Passenger app should
+        exit the ride flow and prompt the user to try again later.
+      required: [ride_id]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          example: "No drivers are available in your area right now. Please try again shortly."

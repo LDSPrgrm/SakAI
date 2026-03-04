@@ -1,0 +1,154 @@
+// Package postgres provides PostgreSQL implementations of the repository interfaces.
+// SQL schema must be applied via migrations before these can be used.
+package postgres
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/infrastructure/database"
+)
+
+// userRepo implements repository.UserRepository using PostgreSQL.
+type userRepo struct{ db *pgxpool.Pool }
+
+// NewUserRepo creates a new Postgres-backed UserRepository.
+func NewUserRepo(db *pgxpool.Pool) domain.UserRepository {
+	return &userRepo{db: db}
+}
+
+func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
+	const q = `
+		INSERT INTO users (id, name, email, password_hash, role, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := r.db.Exec(ctx, q, u.ID, u.Name, u.Email, u.Password, u.Role, u.CreatedAt)
+	return err
+}
+
+func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+	const q = `SELECT id, name, email, password_hash, role, created_at FROM users WHERE id = $1`
+	u := &domain.User{}
+	err := r.db.QueryRow(ctx, q, id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if u.Role == domain.RoleDriver {
+		u.Vehicle, _ = r.getVehicle(ctx, u.ID)
+	}
+	return u, nil
+}
+
+func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	const q = `SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = $1`
+	u := &domain.User{}
+	err := r.db.QueryRow(ctx, q, email).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if u.Role == domain.RoleDriver {
+		u.Vehicle, _ = r.getVehicle(ctx, u.ID)
+	}
+	return u, nil
+}
+
+// --- Vehicle helper ---
+
+func (r *userRepo) getVehicle(ctx context.Context, userID uuid.UUID) (*domain.Vehicle, error) {
+	const q = `SELECT make, model, color, plate FROM vehicles WHERE user_id = $1`
+	v := &domain.Vehicle{}
+	err := r.db.QueryRow(ctx, q, userID).Scan(&v.Make, &v.Model, &v.Color, &v.Plate)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	return v, err
+}
+
+// CreateWithTokens atomically inserts the user row and their first refresh
+// token inside a single DB transaction. If either step fails the whole
+// operation is rolled back, preventing orphaned user records.
+func (r *userRepo) CreateWithTokens(
+	ctx context.Context,
+	u *domain.User,
+	refreshToken string,
+	expiresAt time.Time,
+) error {
+	return database.Transact(ctx, r.db, func(tx pgx.Tx) error {
+		const insertUser = `
+			INSERT INTO users (id, name, email, password_hash, role, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6)`
+		if _, err := tx.Exec(ctx, insertUser,
+			u.ID, u.Name, u.Email, u.Password, u.Role, u.CreatedAt,
+		); err != nil {
+			return err
+		}
+
+		// If the user is a driver, persist their vehicle in the same transaction.
+		if u.Vehicle != nil {
+			const insertVehicle = `
+				INSERT INTO vehicles (user_id, make, model, color, plate)
+				VALUES ($1, $2, $3, $4, $5)`
+			if _, err := tx.Exec(ctx, insertVehicle,
+				u.ID, u.Vehicle.Make, u.Vehicle.Model, u.Vehicle.Color, u.Vehicle.Plate,
+			); err != nil {
+				return err
+			}
+		}
+
+		const insertToken = `
+			INSERT INTO refresh_tokens (token, user_id, expires_at)
+			VALUES ($1, $2, $3)`
+		_, err := tx.Exec(ctx, insertToken, refreshToken, u.ID, expiresAt)
+		return err
+	})
+}
+
+// --- Token repository ---
+
+type tokenRepo struct{ db *pgxpool.Pool }
+
+// NewTokenRepo creates a new Postgres-backed TokenRepository.
+func NewTokenRepo(db *pgxpool.Pool) domain.TokenRepository {
+	return &tokenRepo{db: db}
+}
+
+func (r *tokenRepo) Store(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+	const q = `
+		INSERT INTO refresh_tokens (token, user_id, expires_at)
+		VALUES ($1, $2, $3)`
+	_, err := r.db.Exec(ctx, q, token, userID, expiresAt)
+	return err
+}
+
+func (r *tokenRepo) GetUserID(ctx context.Context, token string) (uuid.UUID, error) {
+	const q = `SELECT user_id, expires_at FROM refresh_tokens WHERE token = $1`
+	var userID uuid.UUID
+	var expiresAt time.Time
+	err := r.db.QueryRow(ctx, q, token).Scan(&userID, &expiresAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, domain.ErrRefreshTokenInvalid
+	}
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if time.Now().After(expiresAt) {
+		_ = r.Delete(ctx, token) // best-effort cleanup
+		return uuid.Nil, domain.ErrRefreshTokenInvalid
+	}
+	return userID, nil
+}
+
+func (r *tokenRepo) Delete(ctx context.Context, token string) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM refresh_tokens WHERE token = $1`, token)
+	return err
+}
