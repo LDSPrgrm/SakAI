@@ -63,7 +63,11 @@ func main() {
 		log.Fatalf("redis: %v", err)
 	}
 	rdb := redis.NewClient(opts)
-	defer rdb.Close()
+	defer func() {
+		if err := rdb.Close(); err != nil {
+			log.Printf("redis close: %v", err)
+		}
+	}()
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Fatalf("redis ping: %v", err)
 	}
