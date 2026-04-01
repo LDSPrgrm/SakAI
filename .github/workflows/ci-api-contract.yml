@@ -10,18 +10,15 @@ on:
       - "openapi/**"
       - ".github/workflows/ci-api-contract.yml"
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
 jobs:
   validate:
     name: Validate OpenAPI spec (Spectral)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@main
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@main
         with:
           node-version: "22"
 
