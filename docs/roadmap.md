@@ -47,24 +47,26 @@ This roadmap is structured around two key milestones:
 - [x] JWT weak-secret panic guard for production
 - [x] Logging for critical async failures
 
-### 🚧 To Do — Critical (Blocks MVP)
+### 🚧 To Do — Critical (Blocks Phase 3 / MVP)
 
-- [ ] **C1:** Notify passenger via WebSocket when offer expires (inject Hub into worker)
-- [ ] **C2:** Exclude drivers with active rides from `FindNearbyOnline` (SQL subquery fix)
-- [ ] **L3:** `GetByID` — verify caller is ride participant (security)
-- [ ] **H4:** Request body size limit middleware (`MaxBytesReader`)
-- [ ] **SC1:** Add GIST index on driver location column
+> These must be completed before Flutter mobile development begins.
+
+- [ ] **C1:** Notify passenger via WebSocket when offer expires — inject Hub into expiry worker, emit `ride.offer_expired` ([REQ-2.1](requirements.md#req-21-expired-offer-passenger-notification))
+- [ ] **C2:** Exclude drivers with active rides from `FindNearbyOnline` — add `NOT EXISTS` subquery ([REQ-2.2](requirements.md#req-22-exclude-busy-drivers-from-matching))
+- [ ] **L3:** `GetByID` — verify caller is ride participant, return `403` otherwise ([REQ-2.3](requirements.md#req-23-ride-participant-authorization))
+- [ ] **H4:** Request body size limit middleware (`MaxBytesReader`, 1 MiB) ([REQ-2.4](requirements.md#req-24-request-body-size-limit))
+- [ ] **SC1:** Add GIST index on `drivers.location` column (new migration `007_...`) ([REQ-2.5](requirements.md#req-25-geospatial-index))
 
 ### 🚧 To Do — High (Important but not blocking MVP)
 
-- [ ] **H1:** Delete dead `SendToDriver` alias
-- [ ] **H2:** WebSocket read deadlines & read limits
-- [ ] **H3:** Embed migrations into binary (`go:embed`)
-- [ ] **H5:** Wrap refresh token rotation in a DB transaction
+- [ ] **H1:** Delete dead `SendToDriver` alias from `hub.go` ([REQ-2.6](requirements.md#req-26-remove-dead-code))
+- [ ] **H2:** WebSocket read deadlines & read limit (`SetReadDeadline`, `SetReadLimit`) ([REQ-2.7](requirements.md#req-27-websocket-connection-hardening))
+- [ ] **H3:** Embed migrations into binary (`go:embed`) ([REQ-2.8](requirements.md#req-28-embedded-migrations))
+- [ ] **H5:** Wrap refresh token rotation in a DB transaction ([REQ-2.9](requirements.md#req-29-transactional-token-rotation))
 - [ ] **L1:** Server-side re-dispatch after driver decline
-- [ ] **L2:** Cancel — enforce per-role state validation
-- [ ] **S1:** Config-driven WebSocket allowed origins
-- [ ] **S3:** Security headers middleware (X-Frame-Options, CSP, etc.)
+- [ ] **L2:** Cancel — enforce per-role state validation ([REQ-2.10](requirements.md#req-210-cancel-role-enforcement))
+- [ ] **S1:** Config-driven WebSocket allowed origins ([REQ-2.11](requirements.md#req-211-config-driven-websocket-origins))
+- [ ] **S3:** Security headers middleware (X-Frame-Options, CSP, etc.) ([REQ-2.12](requirements.md#req-212-security-headers-middleware))
 - [ ] **D2:** Verify FK cascade on `refresh_tokens.user_id`
 
 ---

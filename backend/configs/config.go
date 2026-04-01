@@ -36,7 +36,7 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		Port:                    getEnv("PORT", "8080"),
-		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5433/sakai?sslmode=disable"),
+		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=disable"),
 		MigrationsDir:           getEnv("MIGRATIONS_DIR", "../migrations"),
 		RedisURL:                getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		JWTSecret:               getEnv("JWT_SECRET", "change-me-in-production"),

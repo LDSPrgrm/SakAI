@@ -125,7 +125,7 @@ Bring up the required database and caching services:
 docker-compose up -d
 ```
 
-_Note: This starts PostgreSQL (PostGIS) on port 5433 and Redis on port 6379._
+_Note: This starts PostgreSQL (PostGIS) on port 5432 and Redis on port 6379._
 
 ### 2. Backend Setup
 
@@ -155,8 +155,11 @@ flutter run
 
 The API is fully documented via OpenAPI. Once the backend is running, you can explore the endpoints and contracts:
 
-- Raw Spec: `openapi/swagger.yaml`
-- Documentation: Viewable via Swagger UI (refer to `overview.md` for specific access details).
+- **Raw Spec:** [`openapi/swagger.yaml`](openapi/swagger.yaml)
+- **Swagger UI:** `http://localhost:8080/swagger/index.html`
+- **Health Check:** `http://localhost:8080/health`
+
+See [`overview.md`](overview.md) for a full platform summary, environment variable reference, and Phase 2 blocker status.
 
 ---
 

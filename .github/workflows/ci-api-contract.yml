@@ -1,0 +1,46 @@
+name: API Contract CI
+
+on:
+  push:
+    paths:
+      - "openapi/**"
+      - ".github/workflows/ci-api-contract.yml"
+  pull_request:
+    paths:
+      - "openapi/**"
+      - ".github/workflows/ci-api-contract.yml"
+
+jobs:
+  validate:
+    name: Validate OpenAPI spec (Spectral)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Spectral CLI
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Lint openapi/swagger.yaml
+        # Errors (severity 0) fail the job; warnings (severity 1) do not.
+        run: |
+          spectral lint openapi/swagger.yaml \
+            --ruleset https://unpkg.com/@stoplight/spectral-oas/dist/ruleset.mjs \
+            --fail-severity error
+
+      - name: Check file is valid YAML
+        run: |
+          python3 -c "
+          import yaml, sys
+          with open('openapi/swagger.yaml') as f:
+              try:
+                  yaml.safe_load(f)
+                  print('✅ swagger.yaml is valid YAML')
+              except yaml.YAMLError as e:
+                  print(f'❌ swagger.yaml parse error: {e}')
+                  sys.exit(1)
+          "
