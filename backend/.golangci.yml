@@ -2,6 +2,8 @@
 # https://golangci-lint.run/usage/configuration/
 # Run: golangci-lint run ./...  (from backend/)
 
+version: "2"
+
 run:
   timeout: 5m
 
@@ -9,45 +11,45 @@ linters:
   enable:
     - errcheck # Check for unhandled errors
     - govet # go vet equivalent
-    - staticcheck # Advanced static analysis (SA* rules)
+    - staticcheck # Advanced static analysis (SA* rules, includes stylecheck and gosimple in v2)
     - unused # Detect unused code
-    - gosimple # Simplification suggestions
     - ineffassign # Detect ineffectual assignments
-    - typecheck # Type checking (always-on baseline)
-    - gofmt # Enforce gofmt formatting
-    - goimports # Enforce import grouping order
-
   disable:
     - exhaustruct # Too verbose for this project stage
     - wrapcheck # Overly strict for internal error paths
 
-linters-settings:
-  errcheck:
-    # Allow ignoring errors in deferred Close() calls
-    exclude-functions:
-      - (io.Closer).Close
-      - (*net/http.Response).Body.Close
+  settings:
+    errcheck:
+      # Allow ignoring errors in deferred Close() calls
+      exclude-functions:
+        - (io.Closer).Close
+        - (*net/http.Response).Body.Close
 
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
 
-  staticcheck:
-    # SA1: incorrect API usage  SA4: dead code  ST: style
-    checks: ["SA*", "ST1*"]
+    staticcheck:
+      # SA1: incorrect API usage  SA4: dead code  ST: style
+      checks: ["SA*", "ST1*"]
 
-issues:
-  # Never flag generated mock files
-  exclude-rules:
-    - path: internal/domain/mocks/
-      linters:
-        - errcheck
-        - unused
-        - govet
-        - staticcheck
+  exclusions:
+    rules:
+      # Never flag generated mock files
+      - path: internal/domain/mocks/
+        linters:
+          - errcheck
+          - unused
+          - govet
+          - staticcheck
 
-    # Allow TODO/FIXME comments in test files
-    - path: _test\.go
-      linters:
-        - errcheck
+      # Allow TODO/FIXME comments in test files
+      - path: _test\.go
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt # Enforce gofmt formatting
+    - goimports # Enforce import grouping order
