@@ -1,3 +1,4 @@
+// Package configs provides centralized configuration management for the SakAI backend.
 package configs
 
 import (

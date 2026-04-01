@@ -24,6 +24,10 @@ linters:
       exclude-functions:
         - (io.Closer).Close
         - (*net/http.Response).Body.Close
+        - (*github.com/redis/go-redis/v9.Client).Close
+        - (*github.com/redis/go-redis/v9.PubSub).Close
+        - (*github.com/golang-migrate/migrate/v4.Migrate).Close
+        - (*github.com/gorilla/websocket.Conn).Close
 
     govet:
       enable-all: true
@@ -32,7 +36,8 @@ linters:
 
     staticcheck:
       # SA1: incorrect API usage  SA4: dead code  ST: style
-      checks: ["SA*", "ST1*"]
+      # ST1000: at least one file in a package should have a package comment (disabled)
+      checks: ["SA*", "ST1*", "-ST1000"]
 
   exclusions:
     rules:

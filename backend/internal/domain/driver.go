@@ -1,3 +1,4 @@
+// Package domain defines the core business entities and logic for the SakAI platform.
 package domain
 
 import (
