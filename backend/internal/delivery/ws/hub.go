@@ -24,13 +24,13 @@ type Dispatcher interface {
 type EventType string
 
 const (
-	EventRideRequested          EventType = "ride.requested"
-	EventRideAccepted           EventType = "ride.accepted"
-	EventRideDeclined           EventType = "ride.declined"
-	EventRideStatusChanged      EventType = "ride.status_changed"
-	EventRideCancelled          EventType = "ride.cancelled"
-	EventRideOfferExpired       EventType = "ride.offer_expired"
-	EventDriverLocationUpdated  EventType = "driver.location_updated"
+	EventRideRequested         EventType = "ride.requested"
+	EventRideAccepted          EventType = "ride.accepted"
+	EventRideDeclined          EventType = "ride.declined"
+	EventRideStatusChanged     EventType = "ride.status_changed"
+	EventRideCancelled         EventType = "ride.cancelled"
+	EventRideOfferExpired      EventType = "ride.offer_expired"
+	EventDriverLocationUpdated EventType = "driver.location_updated"
 )
 
 // envelope is the JSON shape sent over every WebSocket connection.

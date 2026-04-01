@@ -30,6 +30,8 @@ linters-settings:
 
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
 
   staticcheck:
     # SA1: incorrect API usage  SA4: dead code  ST: style

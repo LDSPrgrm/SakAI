@@ -108,7 +108,8 @@ func (uc *authUseCase) Refresh(ctx context.Context, refreshToken string) (*domai
 		return nil, domain.ErrRefreshTokenInvalid
 	}
 	// Rotate: invalidate old token before issuing new one.
-	if err := uc.tokenRepo.Delete(ctx, refreshToken); err != nil {
+	err = uc.tokenRepo.Delete(ctx, refreshToken)
+	if err != nil {
 		return nil, err
 	}
 	user, err := uc.userRepo.GetByID(ctx, userID)

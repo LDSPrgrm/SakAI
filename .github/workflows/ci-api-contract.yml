@@ -10,6 +10,9 @@ on:
       - "openapi/**"
       - ".github/workflows/ci-api-contract.yml"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   validate:
     name: Validate OpenAPI spec (Spectral)
@@ -20,17 +23,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install Spectral CLI
         run: npm install -g @stoplight/spectral-cli
 
       - name: Lint openapi/swagger.yaml
-        # Errors (severity 0) fail the job; warnings (severity 1) do not.
+        # Generates config on-the-fly so it doesn't clutter the repo.
         run: |
-          spectral lint openapi/swagger.yaml \
-            --ruleset https://unpkg.com/@stoplight/spectral-oas/dist/ruleset.mjs \
-            --fail-severity error
+          echo 'extends: "spectral:oas"' > .spectral.yaml
+          spectral lint openapi/swagger.yaml --fail-severity error
 
       - name: Check file is valid YAML
         run: |

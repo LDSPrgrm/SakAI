@@ -119,7 +119,7 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 		       updated_at   = NOW()
 		WHERE  status     = 'requested'
 		  AND  updated_at < NOW() - $2::interval`
-	
+
 	intervalStr := fmt.Sprintf("%d seconds", int(timeout.Seconds()))
 	tag, err := r.db.Exec(ctx, q, domain.CancelledBySystem, intervalStr)
 	if err != nil {
@@ -127,7 +127,6 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 	}
 	return tag.RowsAffected(), nil
 }
-
 
 // scanRide is a shared row scanner for ride queries.
 func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {

@@ -43,7 +43,7 @@ func (h *RideHandler) RequestRide(c *gin.Context) {
 		return
 	}
 	if ride.DriverID != nil {
-		h.upsert.PublishToUser(c.Request.Context(), *ride.DriverID, ws.EventRideRequested, gin.H{"ride_id": ride.ID, "passenger_id": ride.PassengerID})
+		_ = h.upsert.PublishToUser(c.Request.Context(), *ride.DriverID, ws.EventRideRequested, gin.H{"ride_id": ride.ID, "passenger_id": ride.PassengerID})
 	}
 	respondCreated(c, dto.NewRideResponse(ride))
 }
@@ -117,7 +117,7 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideCancelled, gin.H{"ride_id": ride.ID, "cancelled_by": ride.CancelledBy})
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideCancelled, gin.H{"ride_id": ride.ID, "cancelled_by": ride.CancelledBy})
 	respondOK(c, dto.NewRideResponse(ride))
 }
 
@@ -134,6 +134,6 @@ func (h *RideHandler) driverTransition(c *gin.Context, fn func(driverID, rideID 
 		respondError(c, err)
 		return
 	}
-	h.upsert.PublishToRide(c.Request.Context(), ride, event, gin.H{"ride_id": ride.ID, "status": ride.Status})
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, event, gin.H{"ride_id": ride.ID, "status": ride.Status})
 	respondOK(c, dto.NewRideResponse(ride))
 }

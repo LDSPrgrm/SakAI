@@ -50,7 +50,7 @@ func (h *DriverHandler) UpdateLocation(c *gin.Context) {
 	// Forward real-time location to the passenger waiting for this driver.
 	// Best-effort: if no active ride exists we still return 204.
 	if ride, err := h.uc.GetActiveRide(c.Request.Context(), driverID); err == nil {
-		h.upsert.PublishToUser(c.Request.Context(), ride.PassengerID, ws.EventDriverLocationUpdated, gin.H{
+		_ = h.upsert.PublishToUser(c.Request.Context(), ride.PassengerID, ws.EventDriverLocationUpdated, gin.H{
 			"driver_id": driverID,
 			"location":  loc.LatLng,
 			"heading":   req.Heading,

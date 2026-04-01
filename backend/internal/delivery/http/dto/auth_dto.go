@@ -44,10 +44,10 @@ type RefreshRequest struct {
 
 // AuthResponse is the JSON shape returned after any successful auth operation.
 type AuthResponse struct {
-	AccessToken           string      `json:"access_token"`
-	RefreshToken          string      `json:"refresh_token"`
-	AccessTokenExpiresAt  time.Time   `json:"access_token_expires_at"`
-	User                  *UserResponse `json:"user"`
+	AccessToken          string        `json:"access_token"`
+	RefreshToken         string        `json:"refresh_token"`
+	AccessTokenExpiresAt time.Time     `json:"access_token_expires_at"`
+	User                 *UserResponse `json:"user"`
 }
 
 // UserResponse is the public-facing user shape (never includes the password hash).

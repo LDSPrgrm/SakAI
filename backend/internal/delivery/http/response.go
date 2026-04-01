@@ -49,9 +49,6 @@ func respondCreated(c *gin.Context, data any) {
 	c.JSON(http.StatusCreated, data)
 }
 
-// contextUserID extracts the authenticated user ID set by the auth middleware.
-func contextUserID(c *gin.Context) any { return c.MustGet("userID") }
-
 // contextUserRole extracts the authenticated user role set by the auth middleware.
 func contextUserRole(c *gin.Context) domain.UserRole {
 	return domain.UserRole(c.MustGet("role").(string))
