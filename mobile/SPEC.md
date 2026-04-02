@@ -253,6 +253,7 @@ Already implemented. Use from `package:sakai_shared/sakai_shared.dart`:
 | `/waiting` | `WaitingScreen` | `WaitingViewModel` |
 | `/ride/active` | `ActiveRideScreen` | `ActiveRideViewModel` |
 | `/ride/complete` | `CompletionScreen` | — |
+| `/profile` | `ProfileScreen` | `ProfileViewModel` |
 
 ### 6.2 Feature Specs
 
@@ -329,6 +330,12 @@ On cold start (in `main.dart` or app initializer):
 - Success → navigate to `/` with "Ride cancelled" snackbar
 - Error `409` (can't cancel `in_progress`) → show error message
 
+#### Profile Screen (REQ-3.2.9)
+
+- Accessed via user menu / avatar from the home screen
+- Displays the authenticated user's profile: `name`, `email`
+- Provides access to **Logout** action → calls `POST /auth/logout` and navigates to `/login`
+
 ### 6.3 `pubspec.yaml` Dependencies
 
 ```yaml
@@ -361,6 +368,7 @@ dependencies:
 | `/` (home) | `DriverHomeScreen` (online/offline toggle) | `DriverHomeViewModel` |
 | `/offer` | `OfferScreen` (accept / decline + 30s timer) | `OfferViewModel` |
 | `/ride/active` | `ActiveRideScreen` | `ActiveRideViewModel` |
+| `/profile` | `ProfileScreen` | `ProfileViewModel` |
 
 ### 7.2 Feature Specs
 
@@ -451,6 +459,13 @@ On cold start:
    - `404` → stay on `/` (home)
 3. Call `GET /driver/rides/incoming` to catch any missed offers
 4. Re-establish WebSocket connection with exponential backoff
+
+#### Profile Screen (REQ-3.3.10)
+
+- Accessed via user menu / avatar from the home screen
+- Displays the driver's profile: `name`, `email`
+- Displays registered `vehicle` info: make, model, color, plate number
+- Provides access to **Logout** action → calls `POST /auth/logout` and navigates to `/login`
 
 ### 7.3 `pubspec.yaml` Dependencies
 
