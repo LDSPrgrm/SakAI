@@ -10,8 +10,10 @@ import (
 type UserRole string
 
 const (
-	RolePassenger UserRole = "passenger"
-	RoleDriver    UserRole = "driver"
+	RolePassenger  UserRole = "passenger"
+	RoleDriver     UserRole = "driver"
+	RoleAdmin      UserRole = "admin"
+	RoleSuperadmin UserRole = "superadmin"
 )
 
 // User is the core identity entity for both passengers and drivers.

@@ -79,6 +79,11 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		       updated_at
 		FROM drivers
 		WHERE status = 'online'
+		  AND NOT EXISTS (
+		        SELECT 1 FROM rides 
+		        WHERE driver_id = drivers.user_id 
+		          AND status NOT IN ('completed', 'cancelled')
+		      )
 		  AND ST_DWithin(
 		        location,
 		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,

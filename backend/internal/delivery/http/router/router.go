@@ -26,13 +26,19 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
+	// Apply Global Security Middlewares
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
+	r.Use(middleware.SecurityHeaders())
+
+	api := r.Group("/api")
+
 	// ── Health check ──────────────────────────────────────────────────────────
-	r.GET("/health", func(c *gin.Context) {
+	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	// ── Public auth routes ────────────────────────────────────────────────────
-	auth := r.Group("/auth")
+	auth := api.Group("/auth")
 	{
 		// Rate-limited: brute-force and credential-stuffing protection (10 rpm / IP).
 		auth.POST("/register", middleware.RateLimit, d.Auth.Register)
@@ -42,7 +48,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	}
 
 	// ── Authenticated routes ──────────────────────────────────────────────────
-	authed := r.Group("/")
+	authed := api.Group("/")
 	authed.Use(middleware.Auth(jwtSecret))
 	{
 		// Session recovery
@@ -57,6 +63,14 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			driverOnly.PUT("/location", d.Driver.UpdateLocation)
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
 		}
+
+		// Superadmin-only routes
+		superadminOnly := authed.Group("/admin")
+		superadminOnly.Use(middleware.RequireRole(domain.RoleSuperadmin))
+		{
+			superadminOnly.POST("/users", d.Auth.CreateAdmin)
+		}
+
 
 		// Ride routes — mixed roles (enforced per handler/use-case)
 		rides := authed.Group("/rides")

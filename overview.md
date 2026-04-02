@@ -56,9 +56,14 @@ The backend exposes **Swagger UI** at runtime:
 | 1     | Backend Foundation   | ✅ Complete    |
 | 2     | Security & Bug Fixes | 🚧 In Progress |
 | 3     | Flutter Mobile Apps  | ⬜ Not Started |
-| 4     | Admin Dashboard      | ⬜ Not Started |
+| 4     | Admin Dashboard      | 🚧 In Progress (Roles & APIs added) |
 
 See [`docs/roadmap.md`](docs/roadmap.md) for full detail and [`docs/system_audit.md`](docs/system_audit.md) for outstanding bugs.
+
+### Admin Capabilities Built
+We have added `admin` and `superadmin` roles. To seed the first superadmin, run:
+`go run ./cmd/seed-admin -role superadmin -email superadmin@sakai.com -name SuperAdmin`
+Subsequent admins can be programmatically created via `POST /admin/users` by an existing superadmin.
 
 ### Phase 2 — Remaining Critical Blockers
 

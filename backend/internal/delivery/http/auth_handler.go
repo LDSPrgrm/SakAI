@@ -29,6 +29,20 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	respondCreated(c, dto.NewAuthResponse(out))
 }
 
+func (h *AuthHandler) CreateAdmin(c *gin.Context) {
+	var req dto.CreateAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	out, err := h.uc.Register(c.Request.Context(), req.Name, req.Email, req.Password, req.Role, nil)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondCreated(c, dto.NewAuthResponse(out))
+}
+
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
