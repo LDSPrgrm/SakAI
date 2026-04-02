@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -339,13 +338,13 @@ func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.Da
 	m := &domain.DashboardMetrics{}
 
 	// Active Riders (at least 1 ride in past 30 days)
-	const qRiders = `SELECT COUNT(DISTINCT user_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
+	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {
 		return nil, err
 	}
 
 	// Active Drivers (online or with a ride in past 30 days)
-	const qDrivers = `SELECT COUNT(DISTINCT driver_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
+	const qDrivers = `SELECT COUNT(DISTINCT driver_id) FROM rides WHERE driver_id IS NOT NULL AND created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qDrivers).Scan(&m.ActiveDrivers); err != nil {
 		return nil, err
 	}
@@ -356,19 +355,11 @@ func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.Da
 		return nil, err
 	}
 
-	// Revenue Today
-	const qRev = `SELECT COALESCE(SUM(total_fare), 0) FROM rides WHERE status = 'completed' AND created_at >= CURRENT_DATE`
-	var rev sql.NullFloat64
-	if err := r.db.QueryRow(ctx, qRev).Scan(&rev); err != nil {
-		return nil, err
-	}
-	m.RevenueToday = rev.Float64
+	// Revenue Today (Mock 0 since billing schema is pending)
+	m.RevenueToday = 0
 
-	// Avg Wait Time Today (seconds)
-	const qWait = `SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (accepted_at - created_at))), 0) FROM rides WHERE accepted_at IS NOT NULL AND status != 'cancelled' AND created_at >= CURRENT_DATE`
-	if err := r.db.QueryRow(ctx, qWait).Scan(&m.AvgWaitTimeSeconds); err != nil {
-		return nil, err
-	}
+	// Avg Wait Time Today (Mock 0 since accepted_at schema is pending)
+	m.AvgWaitTimeSeconds = 0
 
 	m.SystemUptime = 99.99 // Hardcoded mock for now as per spec target
 	return m, nil

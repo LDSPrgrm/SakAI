@@ -91,6 +91,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 			// Audit Log: Super Admin only
 			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
+
+			// Reports: Super Admin, Finance, Operations, Support
+			admin.GET("/reports/chart/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Admin.GetReportChart)
 		}
 
 

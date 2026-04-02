@@ -113,6 +113,21 @@ func (h *AdminHandler) ResolveIncident(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *AdminHandler) GetReportChart(c *gin.Context) {
+	// chartType := c.Param("type")
+	// For now, return stub data to satisfy frontend charting
+	data := []gin.H{
+		{"label": "Mon", "value": 10},
+		{"label": "Tue", "value": 20},
+		{"label": "Wed", "value": 15},
+		{"label": "Thu", "value": 25},
+		{"label": "Fri", "value": 30},
+		{"label": "Sat", "value": 40},
+		{"label": "Sun", "value": 35},
+	}
+	respondOK(c, data)
+}
+
 type FareHandler struct {
 	uc domain.FareUseCase
 }
