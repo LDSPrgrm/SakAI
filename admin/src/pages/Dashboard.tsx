@@ -60,7 +60,7 @@ export function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <MetricCard title="Active Riders" value="24,592" icon={<Users className="w-5 h-5 text-primary" />} trend="+12%" />
         <MetricCard title="Active Drivers" value="3,842" icon={<Car className="w-5 h-5 text-primary" />} trend="+5%" />
         <MetricCard title="Rides Today" value="12,403" icon={<Activity className="w-5 h-5 text-primary" />} trend="+18%" />
@@ -170,27 +170,29 @@ export function Dashboard() {
   );
 }
 
-function MetricCard({ title, value, icon, trend, trendDownIsGood = false, valueClassName = "text-2xl" }: { title: string, value: string, icon: React.ReactNode, trend: string, trendDownIsGood?: boolean, valueClassName?: string }) {
+function MetricCard({ title, value, icon, trend, trendDownIsGood = false, valueClassName = "" }: { title: string, value: string, icon: React.ReactNode, trend: string, trendDownIsGood?: boolean, valueClassName?: string }) {
   const isPositive = trend.startsWith('+');
   const isGood = trendDownIsGood ? !isPositive : isPositive;
 
   return (
     <Card>
-      <CardContent className="p-5">
-        <div className="flex justify-between items-start">
-          <div className="min-w-0 pr-2">
-            <p className="text-sm font-medium text-text-muted mb-1 truncate">{title}</p>
-            <h4 className={`font-bold text-text-main truncate ${valueClassName}`}>{value}</h4>
-          </div>
-          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center">
+      <CardContent className="p-5 flex flex-col justify-between h-full">
+        <div className="flex justify-between items-start mb-4">
+          <p className="text-sm font-medium text-text-muted">{title}</p>
+          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center flex-shrink-0">
             {icon}
           </div>
         </div>
-        <div className="mt-4 flex items-center text-sm">
-          <span className={`font-medium ${isGood ? 'text-success' : 'text-danger'}`}>
-            {trend}
-          </span>
-          <span className="text-text-muted ml-2">vs last week</span>
+        <div>
+          <h4 className={`text-2xl sm:text-3xl font-bold text-text-main tracking-tight leading-none break-words ${valueClassName}`}>
+            {value}
+          </h4>
+          <div className="mt-4 flex items-center text-sm">
+            <span className={`font-medium ${isGood ? 'text-success' : 'text-danger'}`}>
+              {trend}
+            </span>
+            <span className="text-text-muted ml-2">vs last period</span>
+          </div>
         </div>
       </CardContent>
     </Card>

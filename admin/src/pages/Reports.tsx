@@ -108,7 +108,7 @@ export function Reports() {
             <CardTitle>Available Reports</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ReportCard title="Weekly Financial Summary" description="Revenue, payouts, and commissions breakdown." />
               <ReportCard title="Driver Performance" description="Ratings, completion rates, and earnings by driver." />
               <ReportCard title="Rider Retention" description="New vs returning riders, churn rate analysis." />
