@@ -5,7 +5,7 @@ abstract final class SakaiApiEndpoints {
   SakaiApiEndpoints._();
 
   /// Default local API (see OpenAPI `servers[0]`).
-  static const String defaultRestBaseUrl = 'http://localhost:8080/api/v1';
+  static const String defaultRestBaseUrl = 'http://192.168.7.130:8080/api';
 
   /// `ws://{host}/ws` or `wss://…` using the same host as [restBaseUrl].
   static Uri webSocketUri(String restBaseUrl, String accessToken) {
