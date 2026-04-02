@@ -15,7 +15,7 @@ Use this file as the **first stop** when an AI assistant or bot works in this re
 
 - **Contract-first:** change [`openapi/swagger.yaml`](openapi/swagger.yaml) before implementing new or altered REST behavior; then Go, then regenerate the Dart client ([`scripts/generate-client.sh`](scripts/generate-client.sh)).
 - **Backend dependency direction:** `internal/delivery` → `internal/usecase` → `internal/domain` ← `internal/repository`. Never import `delivery` from `usecase` or `domain`.
-- **Mobile:** keep API calls and mapping in `data/`; UI only in `presentation/`. Prefer `package:sakai_shared/sakai_shared.dart` for theme, `SakaiApiSupport`, and generated `SakaiApiClient`.
+- **Mobile:** use feature-first MVVM layout: `features/<feature>/{models,repositories,view_models,views}`. Keep API calls/mapping in `repositories/`, UI only in `views/`. Prefer `package:sakai_shared/sakai_shared.dart` for theme, `SakaiApiSupport`, and generated `SakaiApiClient`.
 - **Regulated domain:** do not invent legal or compliance claims; flag assumptions in PRs or docs.
 - **Edits to generated code:** do not hand-edit [`mobile/shared/lib/api_client/`](mobile/shared/lib/api_client/) except via codegen + [`scripts/patch-generated-api-client.sh`](scripts/patch-generated-api-client.sh) pipeline (see playbook).
 

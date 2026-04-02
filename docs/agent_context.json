@@ -30,7 +30,7 @@
       "Edit openapi/swagger.yaml (paths, schemas, operationId, security, errors).",
       "Implement backend: dto, handler, usecase, repository as needed.",
       "Run ./scripts/generate-client.sh; cd mobile/shared && flutter pub get.",
-      "Implement mobile data layer + UI; handle ErrorResponse.code (ErrorCode enum).",
+      "Implement mobile feature repositories/view_models/views; handle ErrorResponse.code (ErrorCode enum).",
       "go test -race ./... ; flutter analyze for touched mobile packages."
     ],
     "auth_header": {

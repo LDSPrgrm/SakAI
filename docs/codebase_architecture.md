@@ -9,7 +9,7 @@ The **SakAI** codebase follows a **Monorepo** structure. It cleanly separates th
 The core technology stack consists of:
 
 - **Backend:** Go (Golang) powered by the Gin framework (Clean Architecture).
-- **Mobile Apps:** Flutter (Cross-platform) using Clean Architecture (Domain, Data, Presentation) and MVVM.
+- **Mobile Apps:** Flutter (Cross-platform) using feature-first MVVM (Hungrimind pattern).
 - **Database:** PostgreSQL with PostGIS for high-performance geospatial queries.
 - **Caching & Fast Data:** Redis (for driver status, live locations, and Pub/Sub event distribution).
 - **Real-time Features:** WebSockets for live driver/rider location tracking and ride status updates.
@@ -70,11 +70,26 @@ Intended to store the cross-platform Dart code using Flutter. It is split into:
 - **`driver/`**: The app used by drivers to navigate, accept ride assignments, and manage availability.
 - **`shared/`**: Contains the generated API client, shared mobility models (Ride, User), and utilities common across both applications to avoid rewriting similar logic.
 
-Both `passenger/` and `driver/` apps strictly adhere to **Clean Architecture** combined with MVVM for the presentation layer. Inside each app's `lib/` folder, you will find:
+Both `passenger/` and `driver/` apps follow a **feature-first MVVM (Hungrimind)** structure. Inside each app's `lib/` folder:
 
-- **`domain/`**: Enterprise logic, including core Entities and abstract Repository/UseCase interfaces (no dependency on Flutter/UI).
-- **`data/`**: Implementations of the repositories, API clients (data sources), and DTO mapping.
-- **`presentation/`**: UI components (Widgets, Pages) and state management (ViewModels/Cubits/Providers).
+- **`features/<feature>/models/`**: Feature entities/value objects/exceptions; keep UI concerns out.
+- **`features/<feature>/repositories/`**: Repository contracts and implementations side-by-side; API client calls and mapping live here (including service classes like `GeocodingService`).
+- **`features/<feature>/view_models/`**: `ChangeNotifier` state/action orchestrators for views.
+- **`features/<feature>/views/`**: Widgets/screens only.
+- **`app/`**: Root widget only (theme + routing entry, no business logic).
+
+#### MVVM Layer Rules (Hungrimind)
+
+| Rule | Detail |
+|---|---|
+| **1 View : 1 ViewModel** | Every screen has exactly one `*_view_model.dart` |
+| **ViewModel = `ChangeNotifier`** | Exposes state via getters; calls `notifyListeners()` on changes |
+| **View = `ListenableBuilder`** | All reactive rebuilds via `ListenableBuilder(listenable: vm, ...)` |
+| **Constructor injection** | Repositories/services injected into VM constructor; never instantiated inside VM |
+| **No UI in ViewModel** | No `BuildContext`, no `Navigator`, no widget types |
+| **No business logic in View** | Views call VM methods; they do NOT call repositories directly |
+| **No raw network in widgets** | All HTTP stays in `features/*/repositories/`; views read from VM |
+| **Navigation stays in View** | Routing decisions happen in `_onVmChanged()` listener or in action handlers, not in VM |
 
 ### 5. `admin/` (Operations Web App)
 

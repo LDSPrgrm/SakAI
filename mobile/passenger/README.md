@@ -1,25 +1,28 @@
 # passenger
 
-Rider-facing Flutter app. Follows the mobile module-split convention → see [`mobile/README.md`](../README.md).
+Rider-facing Flutter app. Follows feature-first MVVM → see [`mobile/README.md`](../README.md).
 
 ## Module layout
 
 ```
 lib/
-├── main.dart                          # Creates AuthRepositoryImpl, calls runApp(PassengerApp)
+├── main.dart                          # Creates repositories, calls runApp(PassengerApp)
 ├── app/passenger_app.dart             # MaterialApp, routes
-├── domain/
-│   ├── auth_repository.dart           # Abstract AuthRepository port (interface)
-│   ├── auth_session.dart              # AuthSession entity
-│   └── auth_exception.dart            # Typed domain auth errors
-├── data/
-│   └── auth_repository_impl.dart      # Calls sakai_api_client, maps → AuthSession
-└── presentation/
+└── features/
     ├── auth/
-    │   ├── login_screen.dart          # Rider login UI
-    │   └── login_view_model.dart      # LoginViewModel (ChangeNotifier)
-    └── home/
-        └── rider_home_screen.dart     # Home placeholder (post-login)
+    │   ├── models/                    # AuthSession, AuthException
+    │   ├── repositories/              # AuthRepository + AuthRepositoryImpl
+    │   ├── view_models/               # Login/Register view models
+    │   └── views/                     # Login/Register screens
+    ├── home/
+    │   ├── repositories/              # Geocoding service
+    │   ├── view_models/               # Home and destination sheet VMs
+    │   └── views/                     # Rider home, activity, profile, sheet
+    └── ride/
+        ├── models/                    # RideException
+        ├── repositories/              # RideRepository + RideRepositoryImpl
+        ├── view_models/               # WaitingViewModel
+        └── views/                     # WaitingScreen
 ```
 
 ## Running

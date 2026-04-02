@@ -96,8 +96,8 @@ SakAI/
 ├── openapi/          # swagger.yaml — single source of truth for API contracts
 ├── mobile/
 │   ├── shared/       # Generated Dart client, shared models, token storage
-│   ├── passenger/    # Flutter passenger app (Clean Arch + MVVM)
-│   └── driver/       # Flutter driver app (Clean Arch + MVVM)
+│   ├── passenger/    # Flutter passenger app (feature-first MVVM)
+│   └── driver/       # Flutter driver app (feature-first MVVM)
 ├── admin/            # [In Progress] Web admin dashboard (React/Vue)
 ├── scripts/          # Utility scripts (client codegen, etc.)
 └── docs/             # Project documentation

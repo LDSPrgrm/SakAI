@@ -48,8 +48,23 @@ The server starts on `http://localhost:8080`. Migrations run automatically on st
 
 ### 4. Run the Mobile Apps
 
-Ensure you have a simulator/emulator running:
+Ensure you have a simulator/emulator running. We provide convenient root-level helper scripts to fetch dependencies and run the desired app:
 
+**On macOS / Linux:**
+```bash
+./run-mobile.sh passenger
+# or
+./run-mobile.sh driver
+```
+
+**On Windows:**
+```bat
+run-mobile.bat passenger
+:: or
+run-mobile.bat driver
+```
+
+Alternatively, you can run manually:
 ```bash
 cd mobile/passenger   # or mobile/driver
 flutter pub get
