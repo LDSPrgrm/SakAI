@@ -929,6 +929,464 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/admin/payments/transactions:
+    get:
+      tags: [Admin]
+      summary: Get recent transactions
+      description: Returns a list of recently completed ride and tip transactions. Requires Superadmin, Finance, or Operations role.
+      operationId: adminGetTransactions
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/payments/payouts:
+    get:
+      tags: [Admin]
+      summary: Get pending driver payouts
+      description: Returns a list of batch driver payouts pending review. Requires Superadmin or Finance role.
+      operationId: adminGetPayouts
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of pending driver payouts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DriverPayout"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/payments/payouts/{id}/approve:
+    put:
+      tags: [Admin]
+      summary: Approve a driver payout
+      description: Authorizes a specific batch payout for processing. Requires Superadmin or Finance role.
+      operationId: adminApprovePayout
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Payout approved
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/payments/summary:
+    get:
+      tags: [Admin]
+      summary: Get financial summary
+      description: Returns a high-level overview of revenue, payouts, and commissions. Requires Superadmin or Finance role.
+      operationId: adminGetPaymentSummary
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Financial summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/payments/commission-config:
+    get:
+      tags: [Admin]
+      summary: Get commission configuration
+      description: Returns the current global commission rates. Requires Superadmin or Finance role.
+      operationId: adminGetCommissionConfig
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current commission config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommissionConfig"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Admin]
+      summary: Update commission configuration
+      description: Modifies platform commission settings. Requires Superadmin role.
+      operationId: adminUpdateCommissionConfig
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommissionConfig"
+      responses:
+        "204":
+          description: Target commission rate updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/services:
+    get:
+      tags: [Admin]
+      summary: Get system services health
+      description: Evaluates status of 3rd-party internal services running the core infrastructure. Requires Superadmin or Operations role.
+      operationId: adminGetServices
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of backend system services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SystemService"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/feature-flags:
+    get:
+      tags: [Admin]
+      summary: Get all feature flags
+      description: Returns active toggles controlling logic behaviors. Requires Superadmin or Operations role.
+      operationId: adminGetFeatureFlags
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Active system feature flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeatureFlag"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/feature-flags/{key}:
+    put:
+      tags: [Admin]
+      summary: Update a feature flag
+      description: Enable or disable a feature flag. Requires Superadmin role.
+      operationId: adminUpdateFeatureFlag
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "204":
+          description: Feature flag updated successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/integrations:
+    get:
+      tags: [Admin]
+      summary: Get 3rd party integrations
+      description: Fetch connected external webhook systems. Requires Superadmin or Operations role.
+      operationId: adminGetIntegrations
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of active integrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/integrations/{service}:
+    put:
+      tags: [Admin]
+      summary: Update integration settings
+      description: Modifies secure settings like generic API keys per service. Requires Superadmin role.
+      operationId: adminUpdateIntegration
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        "204":
+          description: Settings successfully updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/notification-templates:
+    get:
+      tags: [Admin]
+      summary: Get notification templates
+      description: Retrieves Email and SMS message configurations. Requires Superadmin or Operations role.
+      operationId: adminGetNotificationTemplates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of notification schemas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationTemplate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/system/notification-templates/{event}:
+    put:
+      tags: [Admin]
+      summary: Update a notification template
+      description: Upgrades the literal content of a notification template event. Requires Superadmin role.
+      operationId: adminUpdateNotificationTemplate
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+      responses:
+        "204":
+          description: Template successfully updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/safety/kyc:
+    get:
+      tags: [Admin]
+      summary: Get KYC queue
+      description: Returns the driver compliance approval queue. Requires Superadmin, Support or Operations role.
+      operationId: adminGetKycQueue
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Complete KYC approval queue list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KycEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/safety/kyc/{id}:
+    put:
+      tags: [Admin]
+      summary: Update KYC status
+      description: Resolves driver compliance document submission (e.g. accepts or rejects). Requires Superadmin or Support role.
+      operationId: adminUpdateKycStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        "204":
+          description: File submission status updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/reports/list:
+    get:
+      tags: [Admin]
+      summary: Get available reports
+      description: Retrieves available reporting configurations describing structural tables. Requires Superadmin, Finance, Operations, or Support role.
+      operationId: adminGetReportList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Available report types enumerations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/reports/chart/{type}:
+    get:
+      tags: [Admin]
+      summary: Get data for a specific report chart
+      description: Returns structural graph and chart representation data mapping string to number values for display purposes.
+      operationId: adminGetReportChart
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JSON object representing array values
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/reports/export/{type}:
+    post:
+      tags: [Admin]
+      summary: Generate a report export
+      description: Commands the background queue to format a formal, complete CSV reporting log format based on parameter type.
+      operationId: adminExportReport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Base64 string or download URL for the CSV
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, data]
+                properties:
+                  url:
+                    type: string
+                  data:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 # ---------------------------------------------------------------------------
 # COMPONENTS
 # ---------------------------------------------------------------------------
@@ -1793,7 +2251,166 @@ components:
           type: string
         resource_type:
           type: string
-        resource_id:
           type: string
         reason:
+          type: string
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        ride_id:
+          type: string
+        rider_name:
+          type: string
+        driver_name:
+          type: string
+        amount:
+          type: number
+        payment_method:
+          type: string
+          enum: [cash, gcash, paymaya, card]
+        status:
+          type: string
+          enum: [settled, pending, failed, refunded]
+        commission:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    DriverPayout:
+      type: object
+      properties:
+        id:
+          type: string
+        batch:
+          type: string
+        driver_count:
+          type: integer
+        total_amount:
+          type: number
+        period:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, processing, done]
+
+    PaymentSummary:
+      type: object
+      properties:
+        total_revenue:
+          type: number
+        payouts:
+          type: number
+        commission:
+          type: number
+        pending_settlements:
+          type: number
+
+    CommissionConfig:
+      type: object
+      properties:
+        rates:
+          type: object
+          properties:
+            motorcycle:
+              type: number
+            tricycle:
+              type: number
+            car:
+              type: number
+            other:
+              type: number
+        minimum_commission:
+          type: number
+        promotional_override:
+          type: number
+
+    SystemService:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        latency_ms:
+          type: integer
+        uptime_pct:
+          type: number
+        last_checked:
+          type: string
+          format: date-time
+
+    FeatureFlag:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+
+    Integration:
+      type: object
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          enum: [active, degraded, offline]
+        last_sync:
+          type: string
+          format: date-time
+        config:
+          type: object
+          additionalProperties:
+            type: string
+
+    NotificationTemplate:
+      type: object
+      properties:
+        event:
+          type: string
+        channel:
+          type: string
+          enum: [email, sms, push]
+        subject:
+          type: string
+        body:
+          type: string
+
+    KycEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        driver_id:
+          type: string
+        driver_name:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+        docs:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+
+    ReportDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
           type: string

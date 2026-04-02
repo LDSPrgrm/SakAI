@@ -177,102 +177,80 @@ void adminRequest;
 
 export const adminApi = {
   dashboard: {
-    getMetrics: async (): Promise<DashboardMetrics> => dashboardMock.metrics,
-    getRidesChart: async (): Promise<{ name: string; rides: number }[]> => dashboardMock.ridesChart,
-    getRevenueChart: async (): Promise<{ name: string; revenue: number; gcash: number; cash: number; paymaya: number; card: number }[]> => dashboardMock.revenueChart,
-    getVehicleDistribution: async (): Promise<{ name: string; value: number }[]> => dashboardMock.vehicleDistribution,
-    getActivityFeed: async (): Promise<dashboardMock.ActivityItem[]> => dashboardMock.activityFeed,
+    getMetrics: () => adminRequest<DashboardMetrics>('GET', '/dashboard'),
+    getRidesChart: () => adminRequest<{ name: string; rides: number }[]>('GET', '/reports/chart/rides'),
+    getRevenueChart: () => adminRequest<{ name: string; revenue: number; gcash: number; cash: number; paymaya: number; card: number }[]>('GET', '/reports/chart/revenue'),
+    getVehicleDistribution: () => adminRequest<{ name: string; value: number }[]>('GET', '/reports/chart/vehicles'),
+    getActivityFeed: () => adminRequest<dashboardMock.ActivityItem[]>('GET', '/audit?limit=10'),
   },
 
   admins: {
-    list: async (): Promise<AdminUser[]> => adminsMock.admins,
-    create: async (data: Omit<AdminUser, 'id' | 'created_at' | 'last_login_at'> & { password?: string }): Promise<AdminUser> => {
-      const { password, ...rest } = data;
-      void password; // In a real API, send to backend
-      return {
-        ...rest,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
-        last_login_at: null,
-      };
-    },
-    update: async (id: string, data: Partial<AdminUser>): Promise<AdminUser> => {
-      const found = adminsMock.admins.find(a => a.id === id)!;
-      return { ...found, ...data };
-    },
-    deactivate: async (id: string): Promise<void> => { void id; },
-    resetPassword: async (id: string, newPassword: string): Promise<void> => {
-      void id;
-      void newPassword;
-      // In a real API, call backend to update password
-    },
+    list: () => adminRequest<AdminUser[]>('GET', '/users'),
+    create: (data: Omit<AdminUser, 'id' | 'created_at' | 'last_login_at'> & { password?: string }) =>
+      adminRequest<AdminUser>('POST', '/users', data),
+    update: (id: string, data: Partial<AdminUser>) =>
+      adminRequest<AdminUser>('PUT', `/users/${id}`, data),
+    deactivate: (id: string) =>
+      adminRequest<void>('PUT', `/users/${id}`, { role: 'admin' }), // Fallback payload
+    resetPassword: (id: string, newPassword: string) =>
+      adminRequest<void>('PUT', `/users/${id}/password`, { password: newPassword }),
   },
 
   fares: {
-    getConfigs: async (): Promise<FareConfig[]> => faresMock.fareConfigs,
-    getSurge: async (): Promise<SurgeConfig> => faresMock.surgeConfig,
-    updateConfig: async (id: string, data: Partial<FareConfig>): Promise<FareConfig> => {
-      const found = faresMock.fareConfigs.find(f => f.id === id)!;
-      return { ...found, ...data, updated_at: new Date().toISOString() };
-    },
-    updateSurge: async (data: Partial<SurgeConfig>): Promise<SurgeConfig> => ({
-      ...faresMock.surgeConfig,
-      ...data,
-    }),
-    simulate: async (vehicle: string, distanceKm: number, minutes: number): Promise<number> => {
-      const cfg = faresMock.fareConfigs.find(f => f.vehicle_type === vehicle)!;
-      return Math.max(cfg.minimum_fare, cfg.base_fare + distanceKm * cfg.per_km_rate + minutes * cfg.per_min_rate + cfg.booking_fee);
-    },
+    getConfigs: () => adminRequest<any>('GET', '/fares').then(res => res.fares as FareConfig[]),
+    getSurge: () => adminRequest<any>('GET', '/fares').then(res => res.surge as SurgeConfig),
+    updateConfig: (id: string, data: Partial<FareConfig>) =>
+      adminRequest<FareConfig>('PUT', `/fares`, [data]),
+    updateSurge: (data: Partial<SurgeConfig>) =>
+      adminRequest<SurgeConfig>('PUT', '/surge', data),
+    simulate: (vehicle: string, distanceKm: number, minutes: number) =>
+      adminRequest<any>('POST', '/fares/simulate', {
+        vehicle_type: vehicle,
+        origin: { lat: 14.5995, lng: 120.9842 },
+        destination: { lat: 14.5995 + (distanceKm * 0.01), lng: 120.9842 }
+      }).then(res => res.estimated_fare),
   },
 
   payments: {
-    getTransactions: async (): Promise<Transaction[]> => paymentsMock.transactions,
-    getPayouts: async (): Promise<DriverPayout[]> => paymentsMock.payouts,
-    approvePayout: async (id: string): Promise<void> => { void id; },
-    getSummary: async () => paymentsMock.summary,
-    getCommissionConfig: async () => ({
-      rates: { motorcycle: 15, tricycle: 12, other: 20 },
-      minimum_commission: 10,
-      promotional_override: 0,
-    }),
-    updateCommissionConfig: async (data: any) => data,
+    getTransactions: () => adminRequest<Transaction[]>('GET', '/payments/transactions'),
+    getPayouts: () => adminRequest<DriverPayout[]>('GET', '/payments/payouts'),
+    approvePayout: (id: string) => adminRequest<void>('PUT', `/payments/payouts/${id}/approve`),
+    getSummary: () => adminRequest<any>('GET', '/payments/summary'),
+    getCommissionConfig: () => adminRequest<any>('GET', '/payments/commission-config'),
+    updateCommissionConfig: (data: any) => adminRequest<any>('PUT', '/payments/commission-config', data),
   },
 
   safety: {
-    getIncidents: async (): Promise<Incident[]> => safetyMock.incidents,
-    updateIncident: async (id: string, data: Partial<Incident>): Promise<Incident> => {
-      const found = safetyMock.incidents.find(i => i.id === id)!;
-      return { ...found, ...data };
-    },
-    getKycQueue: async (): Promise<KycEntry[]> => safetyMock.kycQueue,
-    updateKyc: async (id: string, status: 'approved' | 'rejected'): Promise<KycEntry> => {
-      const found = safetyMock.kycQueue.find(k => k.id === id)!;
-      return { ...found, status };
-    },
+    getIncidents: () => adminRequest<Incident[]>('GET', '/incidents'),
+    updateIncident: (id: string, data: Partial<Incident>) =>
+      adminRequest<Incident>('PUT', `/incidents/${id}/resolve`, { notes: data.resolution_notes || 'Resolved' }),
+    getKycQueue: () => adminRequest<KycEntry[]>('GET', '/safety/kyc'),
+    updateKyc: (id: string, status: 'approved' | 'rejected') =>
+      adminRequest<KycEntry>('PUT', `/safety/kyc/${id}`, { status }),
     getLtfrbCompliance: async () => safetyMock.ltfrbCompliance,
   },
 
   reports: {
-    getChartData: async (type: string) => reportsMock.getChartData(type),
-    getReportList: async () => reportsMock.reportList,
-    exportCsv: async (type: string): Promise<string> => reportsMock.generateCsv(type),
+    getChartData: (type: string) => adminRequest<any[]>('GET', `/reports/chart/${type}`),
+    getReportList: () => adminRequest<any[]>('GET', '/reports/list'),
+    exportCsv: (type: string) => adminRequest<any>('POST', `/reports/export/${type}`).then(res => res.url),
   },
 
   system: {
-    getIntegrations: async () => systemMock.integrations,
-    updateIntegration: async (service: string, data: Record<string, string>) => ({ service, ...data }),
-    getNotificationTemplates: async () => systemMock.notificationTemplates,
-    updateTemplate: async (event: string, body: string) => ({ event, body }),
-    getFeatureFlags: async (): Promise<FeatureFlag[]> => systemMock.featureFlags,
-    toggleFlag: async (key: string, enabled: boolean): Promise<FeatureFlag> => {
-      const found = systemMock.featureFlags.find(f => f.key === key)!;
-      return { ...found, enabled };
-    },
-    getServices: async (): Promise<SystemService[]> => systemMock.services,
+    getIntegrations: () => adminRequest<any[]>('GET', '/system/integrations'),
+    updateIntegration: (service: string, data: Record<string, string>) =>
+      adminRequest<any>('PUT', `/system/integrations/${service}`, data),
+    getNotificationTemplates: () => adminRequest<any[]>('GET', '/system/notification-templates'),
+    updateTemplate: (event: string, body: string) =>
+      adminRequest<any>('PUT', `/system/notification-templates/${event}`, { body }),
+    getFeatureFlags: () => adminRequest<FeatureFlag[]>('GET', '/system/feature-flags'),
+    toggleFlag: (key: string, enabled: boolean) =>
+      adminRequest<FeatureFlag>('PUT', `/system/feature-flags/${key}`, { enabled }),
+    getServices: () => adminRequest<SystemService[]>('GET', '/system/services'),
   },
 
   audit: {
-    getLogs: async (): Promise<AuditLogEntry[]> => auditMock.auditLogs,
-    exportCsv: async (): Promise<string> => auditMock.generateCsv(),
+    getLogs: () => adminRequest<any>('GET', '/audit').then(res => res.logs as AuditLogEntry[]),
+    exportCsv: () => adminRequest<any>('POST', '/reports/export/audit').then(res => res.url),
   },
 };
