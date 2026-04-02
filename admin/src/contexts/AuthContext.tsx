@@ -50,6 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    // ── MOCK BACKDOOR FOR PREVIEWING ────────────────────────────
+    // Temporary override to allow logging in with the mock admin 
+    // emails since they don't actually exist in the real backend DB.
+    const mockRoles: Record<string, AdminRole> = {
+      'maria.ops@sakai.ph': 'operations',
+      'jose.finance@sakai.ph': 'finance',
+      'ana.support@sakai.ph': 'support',
+    };
+
+    if (mockRoles[email]) {
+      tokenStore.set('mock_access', 'mock_refresh');
+      setUser({
+        id: crypto.randomUUID(),
+        name: email.split('@')[0].split('.')[0], // e.g 'maria'
+        email,
+        role: mockRoles[email],
+        created_at: new Date().toISOString(),
+      } as AdminProfile);
+      return;
+    }
+    // ────────────────────────────────────────────────────────────
+
     const res = await api.auth.login({ email, password });
     tokenStore.set(res.access_token, res.refresh_token);
     setUser({ ...res.user, role: deriveAdminRole(res.user) });
@@ -57,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     const refresh = tokenStore.getRefresh();
-    if (refresh) await api.auth.logout(refresh).catch(() => {});
+    if (refresh) await api.auth.logout(refresh).catch(() => { });
     tokenStore.clear();
     setUser(null);
   };
