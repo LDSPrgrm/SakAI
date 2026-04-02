@@ -109,7 +109,7 @@ func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.Can
 	return err
 }
 
-func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duration) (int64, error) {
+func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duration) ([]domain.ExpiredOffer, error) {
 	// A single atomic UPDATE is far cheaper than SELECT + per-row UPDATE.
 	// cutoff is the oldest updated_at timestamp we still consider "live".
 	const q = `
@@ -118,14 +118,25 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 		       cancelled_by = $1,
 		       updated_at   = NOW()
 		WHERE  status     = 'requested'
-		  AND  updated_at < NOW() - $2::interval`
+		  AND  updated_at < NOW() - $2::interval
+		RETURNING id, passenger_id`
 
 	intervalStr := fmt.Sprintf("%d seconds", int(timeout.Seconds()))
-	tag, err := r.db.Exec(ctx, q, domain.CancelledBySystem, intervalStr)
+	rows, err := r.db.Query(ctx, q, domain.CancelledBySystem, intervalStr)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return tag.RowsAffected(), nil
+	defer rows.Close()
+
+	var expired []domain.ExpiredOffer
+	for rows.Next() {
+		var offer domain.ExpiredOffer
+		if err := rows.Scan(&offer.RideID, &offer.PassengerID); err != nil {
+			return nil, err
+		}
+		expired = append(expired, offer)
+	}
+	return expired, rows.Err()
 }
 
 // scanRide is a shared row scanner for ride queries.

@@ -149,6 +149,16 @@ flutter pub get
 flutter run
 ```
 
+### 4. Admin Initialization
+
+The system uses role-based access control. Public registration (`/auth/register`) only permits `passenger` and `driver` accounts. To bootstrap higher-privileged identities:
+
+Run the administrative seed CLI tool from `backend/`:
+```bash
+go run ./cmd/seed-admin -role superadmin -name "SuperAdmin" -email "superadmin@sakai.com" -password "yourpassword"
+```
+Once seeded, you can create additional admins using the built-in REST endpoint `POST /admin/users` by passing a valid `superadmin` JWT in the Authorization header.
+
 ---
 
 ## 📖 API Documentation

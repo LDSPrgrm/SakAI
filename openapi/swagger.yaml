@@ -43,7 +43,7 @@ info:
     name: SakAI Engineering
 
 servers:
-  - url: http://localhost:8080/api/v1
+  - url: http://localhost:8080
     description: Local development
 
 tags:
@@ -64,7 +64,7 @@ tags:
 paths:
   # ── System ────────────────────────────────────────────────────────────────
 
-  /health:
+  /api/health:
     get:
       tags: [System]
       summary: Health check
@@ -88,7 +88,7 @@ paths:
 
   # ── Auth ──────────────────────────────────────────────────────────────────
 
-  /auth/register:
+  /api/auth/register:
     post:
       tags: [Auth]
       summary: Register a new user
@@ -121,7 +121,7 @@ paths:
                 code: EMAIL_ALREADY_REGISTERED
                 message: "An account with this email already exists"
 
-  /auth/login:
+  /api/auth/login:
     post:
       tags: [Auth]
       summary: Login and receive tokens
@@ -152,7 +152,7 @@ paths:
                 code: INVALID_CREDENTIALS
                 message: "Email or password is incorrect"
 
-  /auth/refresh:
+  /api/auth/refresh:
     post:
       tags: [Auth]
       summary: Refresh the access token
@@ -184,7 +184,7 @@ paths:
                 code: REFRESH_TOKEN_INVALID
                 message: "Refresh token is expired or has already been used"
 
-  /auth/logout:
+  /api/auth/logout:
     post:
       tags: [Auth]
       summary: Logout and invalidate tokens
@@ -209,7 +209,7 @@ paths:
 
   # ── Users ─────────────────────────────────────────────────────────────────
 
-  /users/me:
+  /api/users/me:
     get:
       tags: [Users]
       summary: Get the authenticated user's profile
@@ -232,7 +232,7 @@ paths:
 
   # ── Driver ────────────────────────────────────────────────────────────────
 
-  /driver/status:
+  /api/driver/status:
     put:
       tags: [Driver]
       summary: Set driver online/offline status
@@ -273,7 +273,7 @@ paths:
                 code: DRIVER_HAS_ACTIVE_RIDE
                 message: "Cannot go offline while a ride is in progress"
 
-  /driver/location:
+  /api/driver/location:
     put:
       tags: [Driver]
       summary: Update driver's current location
@@ -306,7 +306,7 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
-  /driver/rides/incoming:
+  /api/driver/rides/incoming:
     get:
       tags: [Driver]
       summary: Get the current pending ride offer for this driver
@@ -333,7 +333,7 @@ paths:
 
   # ── Rides ─────────────────────────────────────────────────────────────────
 
-  /rides/active:
+  /api/rides/active:
     get:
       tags: [Rides]
       summary: Get the caller's current active ride
@@ -358,7 +358,7 @@ paths:
         "404":
           description: No active ride found for this user
 
-  /rides:
+  /api/rides:
     post:
       tags: [Rides]
       summary: Request a new ride
@@ -414,7 +414,7 @@ paths:
                 code: NO_DRIVERS_AVAILABLE
                 message: "No drivers are available in your area right now"
 
-  /rides/{rideId}:
+  /api/rides/{rideId}:
     get:
       tags: [Rides]
       summary: Get ride details by ID
@@ -438,7 +438,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /rides/{rideId}/accept:
+  /api/rides/{rideId}/accept:
     post:
       tags: [Rides]
       summary: Driver accepts the ride offer
@@ -476,7 +476,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride is not in a state that allows acceptance"
 
-  /rides/{rideId}/decline:
+  /api/rides/{rideId}/decline:
     post:
       tags: [Rides]
       summary: Driver declines the ride offer
@@ -502,7 +502,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /rides/{rideId}/arrive:
+  /api/rides/{rideId}/arrive:
     post:
       tags: [Rides]
       summary: Driver signals arrival at pickup
@@ -537,7 +537,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'accepted' state to mark arrival"
 
-  /rides/{rideId}/start:
+  /api/rides/{rideId}/start:
     post:
       tags: [Rides]
       summary: Driver starts the ride after passenger boards
@@ -572,7 +572,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'arrived' state to start"
 
-  /rides/{rideId}/complete:
+  /api/rides/{rideId}/complete:
     post:
       tags: [Rides]
       summary: Driver completes the ride at dropoff
@@ -608,7 +608,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'in_progress' state to complete"
 
-  /rides/{rideId}/cancel:
+  /api/rides/{rideId}/cancel:
     post:
       tags: [Rides]
       summary: Cancel an active ride

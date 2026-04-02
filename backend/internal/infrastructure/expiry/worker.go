@@ -11,6 +11,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/domain"
 )
 
@@ -27,12 +28,16 @@ const (
 // Worker scans for rides that have been in "requested" status for longer than
 // OfferTimeout and cancels them, freeing the passenger to re-request.
 type Worker struct {
-	rideRepo domain.RideRepository
+	rideRepo   domain.RideRepository
+	dispatcher ws.Dispatcher
 }
 
 // New creates a new expiry Worker.
-func New(rideRepo domain.RideRepository) *Worker {
-	return &Worker{rideRepo: rideRepo}
+func New(rideRepo domain.RideRepository, dispatcher ws.Dispatcher) *Worker {
+	return &Worker{
+		rideRepo:   rideRepo,
+		dispatcher: dispatcher,
+	}
 }
 
 // Run starts the expiry loop. It blocks until ctx is cancelled (e.g. on
@@ -61,12 +66,19 @@ func (w *Worker) Run(ctx context.Context) {
 // expire cancels all rides that have been in "requested" status for longer
 // than OfferTimeout.
 func (w *Worker) expire(ctx context.Context) error {
-	n, err := w.rideRepo.CancelExpiredOffers(ctx, OfferTimeout)
+	expired, err := w.rideRepo.CancelExpiredOffers(ctx, OfferTimeout)
 	if err != nil {
 		return err
 	}
-	if n > 0 {
-		log.Printf("offer-expiry: cancelled %d expired offer(s)", n)
+	if len(expired) > 0 {
+		log.Printf("offer-expiry: cancelled %d expired offer(s)", len(expired))
+		
+		for _, offer := range expired {
+			payload := map[string]string{"ride_id": offer.RideID.String()}
+			if err := w.dispatcher.PublishToUser(ctx, offer.PassengerID, ws.EventRideOfferExpired, payload); err != nil {
+				log.Printf("offer-expiry: failed to notify passenger of expired ride %s: %v", offer.RideID, err)
+			}
+		}
 	}
 	return nil
 }

@@ -15,6 +15,14 @@ type RegisterRequest struct {
 	Vehicle  *VehicleInput   `json:"vehicle"`
 }
 
+// CreateAdminRequest is the body for POST /admin/users.
+type CreateAdminRequest struct {
+	Name     string          `json:"name" binding:"required,min=2,max=100"`
+	Email    string          `json:"email" binding:"required,email"`
+	Password string          `json:"password" binding:"required,min=8"`
+	Role     domain.UserRole `json:"role" binding:"required,oneof=admin superadmin"`
+}
+
 // VehicleInput is the nested vehicle block in RegisterRequest.
 type VehicleInput struct {
 	Make  string `json:"make" binding:"required"`

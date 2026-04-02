@@ -80,9 +80,15 @@ type RideRepository interface {
 	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy) error
 
 	// CancelExpiredOffers cancels all rides that have been in "requested" status
-	// for longer than timeout. Returns the number of rides cancelled.
+	// for longer than timeout. Returns the identity of the cancelled rides.
 	// Called periodically by the offer-expiry background worker.
-	CancelExpiredOffers(ctx context.Context, timeout time.Duration) (int64, error)
+	CancelExpiredOffers(ctx context.Context, timeout time.Duration) ([]ExpiredOffer, error)
+}
+
+// ExpiredOffer contains the identity of a ride canceled due to dispatch timeout.
+type ExpiredOffer struct {
+	RideID      uuid.UUID
+	PassengerID uuid.UUID
 }
 
 // DriverRepository manages driver operational state and location.

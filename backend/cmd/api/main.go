@@ -111,7 +111,7 @@ func main() {
 	// ── Background workers ───────────────────────────────────────────────────
 	// workerCtx is cancelled when the process receives SIGINT/SIGTERM. Workers
 	// must honour this context and exit cleanly within the shutdown window.
-	go expiry.New(rideRepo).Run(workerCtx)
+	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{
