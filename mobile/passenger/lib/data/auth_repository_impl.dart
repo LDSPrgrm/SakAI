@@ -35,6 +35,33 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  @override
+  Future<AuthSession> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final request = RegisterRequest((b) => b
+        ..name = name
+        ..email = email
+        ..password = password
+        ..role = RegisterRequestRoleEnum.passenger);
+      final response = await _client.getAuthApi().authRegister(registerRequest: request);
+      final data = response.data;
+      if (data == null) {
+        throw AuthException(userMessage: 'Empty response from server');
+      }
+      return AuthSession(
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        accessTokenExpiresAt: data.accessTokenExpiresAt,
+      );
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
+  }
+
   AuthException _fromDio(DioException e) {
     final data = e.response?.data;
     if (data != null) {
@@ -69,8 +96,6 @@ class AuthRepositoryImpl implements AuthRepository {
     switch (code) {
       case ErrorCode.INVALID_CREDENTIALS:
         return 'Invalid email or password.';
-      case ErrorCode.VALIDATION_ERROR:
-        return 'Please check your email and password.';
       case ErrorCode.RATE_LIMIT_EXCEEDED:
         return 'Too many attempts. Wait a moment and try again.';
       default:

@@ -17,6 +17,19 @@ class _FakeAuthRepository implements AuthRepository {
       accessTokenExpiresAt: DateTime.now().add(const Duration(hours: 1)),
     );
   }
+
+  @override
+  Future<AuthSession> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    return AuthSession(
+      accessToken: 'test-access-reg',
+      refreshToken: 'test-refresh-reg',
+      accessTokenExpiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
+  }
 }
 
 void main() {
