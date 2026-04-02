@@ -82,7 +82,7 @@ Reserved for the web-based administrative dashboard (React/Vue). This module wil
 
 ### 6. `docs/` & Project Files
 
-- **`docs/`**: Includes historical session logs, the `roadmap.md`, and system audit reports.
+- **`docs/`**: Includes historical session logs, the `roadmap.md`, system audit reports, and **agent-oriented** references: [`agent_playbook.md`](agent_playbook.md), [`agent_context.json`](agent_context.json) (machine-readable). Repo root [`AGENTS.md`](../AGENTS.md) indexes these for tools.
 - **`overview.md`**: The main README essentially, containing the architectural reasoning above and instructions for scaling the microservices as they grow.
 
 ---

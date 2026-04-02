@@ -31,6 +31,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  built_value: ^8.12.0
+  dio: ^5.7.0
+  sakai_api_client:
+    path: ../shared/lib/api_client
+  sakai_shared:
+    path: ../shared
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -133,7 +133,7 @@ brew install openapi-generator
 ### Generate the Client
 
 ```bash
-# From repo root
+# From repo root — runs OpenAPI Generator, a small Dart 3 enum patch, then build_runner (*.g.dart)
 ./scripts/generate-client.sh
 ```
 
@@ -145,9 +145,12 @@ openapi-generator-cli generate \
   -g dart-dio \
   -o mobile/shared/lib/api_client \
   --additional-properties=pubName=sakai_api_client,nullableFields=true
+
+cd mobile/shared/lib/api_client && dart pub get \
+  && dart run build_runner build --delete-conflicting-outputs
 ```
 
-> **When to regenerate:** Any time `openapi/swagger.yaml` is modified. The client lives in `mobile/shared/lib/api_client/` and is imported by both the passenger and driver apps.
+> **When to regenerate:** Any time `openapi/swagger.yaml` is modified. The client lives in `mobile/shared/lib/api_client/` and is depended on by `sakai_shared` (both apps get it transitively). Use `SakaiApiSupport.createClient` / `SakaiApiEndpoints` from `package:sakai_shared/sakai_shared.dart` for defaults and JWT wiring.
 
 ---
 
