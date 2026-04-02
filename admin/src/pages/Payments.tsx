@@ -8,10 +8,10 @@ import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } f
 import { formatPHP } from '@/lib/utils';
 
 const transactions = [
-  { id: 'TXN-001', rideId: 'RD-99281', amount: 150,   type: 'Ride Fare',     method: 'GCash',         status: 'Settled', date: '2026-04-01 14:35' },
-  { id: 'TXN-002', rideId: 'RD-99282', amount: 50,    type: 'Ride Fare',     method: 'Cash',          status: 'Settled', date: '2026-04-01 15:20' },
-  { id: 'TXN-003', rideId: '-',        amount: -2500,  type: 'Driver Payout', method: 'Bank Transfer', status: 'Pending', date: '2026-04-01 10:00' },
-  { id: 'TXN-004', rideId: 'RD-99284', amount: 180,   type: 'Ride Fare',     method: 'Card',          status: 'Failed',  date: '2026-04-01 16:50' },
+  { id: 'TXN-001', rideId: 'RD-99281', amount: 150, type: 'Ride Fare', method: 'GCash', status: 'Settled', date: '2026-04-01 14:35' },
+  { id: 'TXN-002', rideId: 'RD-99282', amount: 50, type: 'Ride Fare', method: 'Cash', status: 'Settled', date: '2026-04-01 15:20' },
+  { id: 'TXN-003', rideId: '-', amount: -2500, type: 'Driver Payout', method: 'Bank Transfer', status: 'Pending', date: '2026-04-01 10:00' },
+  { id: 'TXN-004', rideId: 'RD-99284', amount: 180, type: 'Ride Fare', method: 'Card', status: 'Failed', date: '2026-04-01 16:50' },
 ];
 
 export function Payments() {
@@ -36,11 +36,11 @@ export function Payments() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard title="Total Revenue (30d)"    amount={formatPHP(4520000)} icon={<Wallet className="w-5 h-5 text-primary" />} />
-        <SummaryCard title="Driver Payouts (30d)"   amount={formatPHP(3616000)} icon={<ArrowUpRight className="w-5 h-5 text-danger" />} />
-        <SummaryCard title="Platform Commission"    amount={formatPHP(904000)}  icon={<ArrowDownRight className="w-5 h-5 text-success" />} />
-        <SummaryCard title="Pending Settlements"    amount={formatPHP(125000)}  icon={<CheckCircle className="w-5 h-5 text-warning" />} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+        <SummaryCard title="Total Revenue (30d)" amount={formatPHP(4520000)} icon={<Wallet className="w-5 h-5 text-primary" />} />
+        <SummaryCard title="Driver Payouts (30d)" amount={formatPHP(3616000)} icon={<ArrowUpRight className="w-5 h-5 text-danger" />} />
+        <SummaryCard title="Platform Commission" amount={formatPHP(904000)} icon={<ArrowDownRight className="w-5 h-5 text-success" />} />
+        <SummaryCard title="Pending Settlements" amount={formatPHP(125000)} icon={<CheckCircle className="w-5 h-5 text-warning" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -89,7 +89,7 @@ export function Payments() {
                     <TableCell>
                       <Badge variant={
                         txn.status === 'Settled' ? 'success' :
-                        txn.status === 'Pending' ? 'warning' : 'danger'
+                          txn.status === 'Pending' ? 'warning' : 'danger'
                       }>
                         {txn.status}
                       </Badge>
@@ -136,13 +136,17 @@ export function Payments() {
 function SummaryCard({ title, amount, icon }: { title: string; amount: string; icon: React.ReactNode }) {
   return (
     <Card>
-      <CardContent className="p-5">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-text-muted mb-1">{title}</p>
-            <h4 className="text-2xl font-bold text-text-main">{amount}</h4>
+      <CardContent className="p-5 flex flex-col justify-between h-full">
+        <div className="flex justify-between items-start mb-4">
+          <p className="text-sm font-medium text-text-muted">{title}</p>
+          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center flex-shrink-0">
+            {icon}
           </div>
-          <div className="p-2 bg-surface-hover rounded-lg">{icon}</div>
+        </div>
+        <div>
+          <h4 className="text-2xl sm:text-3xl font-bold text-text-main tracking-tight leading-none break-words">
+            {amount}
+          </h4>
         </div>
       </CardContent>
     </Card>
