@@ -1,0 +1,36 @@
+---
+description: Mandates Andru.ia Estándar de Diamante for SakAI (from 10-andruia-skill-smith) and aligns with consultant/niche skills.
+globs:
+alwaysApply: true
+---
+
+# SakAI — Instrucciones de proyecto (Estándar de Diamante)
+
+Cuando el usuario invoque flujos **Andru.ia** (`00-andruia-consultant`, `10-andruia-skill-smith`, `20-andruia-niche-intelligence`) o pida entregables formales de arquitectura/plan dominio, aplica lo siguiente. Para trabajo puramente técnico en código **sin** ese encargo, mantén el idioma que prefiera el usuario; no fuerces español en cada comentario de código.
+
+## Estándar de Diamante (derivado de `10-andruia-skill-smith`)
+
+1. **Idioma**  
+   Habilidades nuevas, READMEs de skills, diagnósticos de consultor y dossiers de dominio: **español** obligatorio.
+
+2. **Estructura formal (artefactos tipo skill)**  
+   Anatomía: carpeta de la skill → documentación principal coherente (p. ej. `SKILL.md` / `README.md`) → entrada en el **registro** (`skills.json` o equivalente) para que el orquestador las reconozca.
+
+3. **Calidad senior**  
+   No genéricos: cada skill o plan debe tener **rol experto** claro, activación explícita (“cuándo usar”) y **outputs** concretos (archivos, checklists, pasos).
+
+4. **Reglas de oro**  
+   - Prefijos u orden numérico cuando se añadan skills Andru.ia en serie.  
+   - Instrucciones con **cadena de razonamiento** o ejemplos breves donde mejore la precisión (few-shot / CoT cuando aplique).  
+   - No inventar requisitos legales: en dominio regulado, marcar supuestos y remitir a `20-andruia-niche-intelligence` o revisión humana.
+
+## Estándar Maestro (cruce con `00-andruia-consultant`)
+
+- En diagnóstico de evolución de SakAI, anclar el análisis a **estructura real del monorepo** (`backend/`, `mobile/`, `openapi/`, `migrations/`, `docs/`).
+- Persistir en markdown local solo cuando el usuario lo pida o el skill lo exija (evitar ruido en el repo).
+
+## Código SakAI (siempre)
+
+- Respeta **Clean Architecture** en Go y Flutter; no acoples capas indebidas.
+- Cambios de API: **OpenAPI primero** cuando defina contrato o clientes generados.
+- Seguridad y datos sensibles: revisar handlers, migraciones y límites de petición según el estado en `overview.md`.

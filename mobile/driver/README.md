@@ -1,16 +1,35 @@
 # driver
 
-A new Flutter project.
+Driver-facing Flutter app. Follows the mobile module-split convention → see [`mobile/README.md`](../README.md).
 
-## Getting Started
+## Module layout
 
-This project is a starting point for a Flutter application.
+```
+lib/
+├── main.dart                              # runApp(DriverApp())
+├── app/driver_app.dart                    # MaterialApp, routes
+├── domain/
+│   └── driver_session.dart               # DriverSession entity (placeholder)
+├── data/
+│   └── driver_repository_impl.dart        # Stub — ready for auth/WS/location work
+└── presentation/
+    └── home/
+        └── driver_home_screen.dart        # Home placeholder
+```
 
-A few resources to get you started if this is your first Flutter project:
+**Status:** Domain and data boundaries are in place. UI is scaffolded.  
+**Planned:** driver auth, WebSocket trip-state, GPS location reporting.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Running
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+cd mobile/driver
+flutter pub get
+flutter run
+```
+
+## Dependencies
+
+| Package        | Purpose                                    |
+|----------------|--------------------------------------------|
+| `sakai_shared` | Shared theme, widgets, generated API client |

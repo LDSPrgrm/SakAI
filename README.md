@@ -184,6 +184,12 @@ See [`overview.md`](overview.md) for a full platform summary, environment variab
 
 ---
 
+## AI assistants and automation
+
+For coding agents and scripted tooling, start with [`AGENTS.md`](AGENTS.md), then the structured [`docs/agent_playbook.md`](docs/agent_playbook.md) and [`docs/agent_context.json`](docs/agent_context.json) (compact JSON for ingestion).
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions! Please follow our code standards:

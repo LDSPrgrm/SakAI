@@ -1,0 +1,65 @@
+{
+  "title": "SakAI agent context",
+  "description": "Compact facts for coding agents and automation. Paths are relative to repository root unless noted.",
+  "version": "1.0.0",
+  "stack": {
+    "backend": "Go 1.21+, Gin, Clean Architecture",
+    "database": "PostgreSQL + PostGIS, migrations in migrations/",
+    "cache": "Redis",
+    "realtime": "WebSockets (not covered by generated REST client)",
+    "mobile": "Flutter 3.x, Dart ^3.10; packages passenger, driver, shared",
+    "contract": "OpenAPI 3.0.3, openapi/swagger.yaml"
+  },
+  "critical_paths": {
+    "openapi_spec": "openapi/swagger.yaml",
+    "dart_client_output": "mobile/shared/lib/api_client/",
+    "dart_client_package": "sakai_api_client",
+    "flutter_shared_package": "mobile/shared",
+    "shared_public_export": "mobile/shared/lib/sakai_shared.dart",
+    "generate_client_script": "scripts/generate-client.sh",
+    "post_codegen_patch": "scripts/patch-generated-api-client.sh",
+    "backend_entry": "backend/cmd/api/main.go",
+    "backend_domain": "backend/internal/domain/",
+    "backend_usecase": "backend/internal/usecase/",
+    "backend_repository": "backend/internal/repository/",
+    "backend_delivery_http": "backend/internal/delivery/http/",
+    "backend_delivery_ws": "backend/internal/delivery/ws/"
+  },
+  "workflows": {
+    "add_or_change_rest_api": [
+      "Edit openapi/swagger.yaml (paths, schemas, operationId, security, errors).",
+      "Implement backend: dto, handler, usecase, repository as needed.",
+      "Run ./scripts/generate-client.sh; cd mobile/shared && flutter pub get.",
+      "Implement mobile data layer + UI; handle ErrorResponse.code (ErrorCode enum).",
+      "go test -race ./... ; flutter analyze for touched mobile packages."
+    ],
+    "auth_header": {
+      "scheme": "Bearer",
+      "header": "Authorization",
+      "openApi_security_scheme_name": "BearerAuth",
+      "dart_client": "SakaiApiClient.setBearerAuth('BearerAuth', accessToken)"
+    },
+    "websocket": {
+      "handshake_pattern": "ws://{host}/ws?token={access_token}",
+      "note": "Use SakaiApiEndpoints.webSocketUri in mobile/shared; envelope { event, payload } per openapi description."
+    },
+    "idempotency": {
+      "header": "Idempotency-Key",
+      "required_on": ["POST /rides per openapi description"]
+    }
+  },
+  "commands": {
+    "generate_dart_client": "./scripts/generate-client.sh",
+    "backend_test": "cd backend && go test -race ./...",
+    "flutter_shared": "cd mobile/shared && flutter pub get && flutter analyze && flutter test",
+    "infra_up": "docker-compose up -d"
+  },
+  "human_docs_index": {
+    "contributing": "CONTRIBUTING.md",
+    "overview": "overview.md",
+    "architecture_narrative": "docs/codebase_architecture.md",
+    "roadmap": "docs/roadmap.md",
+    "audit": "docs/system_audit.md",
+    "requirements": "docs/requirements.md"
+  }
+}

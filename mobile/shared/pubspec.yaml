@@ -1,6 +1,7 @@
 name: sakai_shared
-description: "A new Flutter package project."
+description: "Shared UI, theming, and OpenAPI client for SakAI mobile apps."
 version: 0.0.1
+publish_to: "none"
 homepage:
 
 environment:
@@ -10,6 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  sakai_api_client:
+    path: lib/api_client
 
 dev_dependencies:
   flutter_test:

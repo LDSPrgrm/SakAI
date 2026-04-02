@@ -138,3 +138,6 @@ Copy `backend/.env.example` to `backend/.env` and adjust:
 | [`docs/system_audit.md`](docs/system_audit.md) | Audit findings and fixes                |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md)           | Dev setup, testing, code generation     |
 | [`openapi/swagger.yaml`](openapi/swagger.yaml) | API contract (source of truth)          |
+| [`AGENTS.md`](AGENTS.md)                       | Index for AI assistants / automation    |
+| [`docs/agent_playbook.md`](docs/agent_playbook.md) | Workflows, paths, verification checklist |
+| [`docs/agent_context.json`](docs/agent_context.json) | Machine-readable repo facts (JSON)   |
