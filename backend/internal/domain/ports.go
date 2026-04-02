@@ -46,8 +46,11 @@ type TokenRepository interface {
 	// Returns ErrRefreshTokenInvalid if the token is expired or not found.
 	GetUserID(ctx context.Context, token string) (uuid.UUID, error)
 
-	// Delete invalidates a token (used on logout and rotation).
+	// Delete invalidates a token (used on logout).
 	Delete(ctx context.Context, token string) error
+
+	// Rotate atomically invalidates the old token and stores the new one.
+	Rotate(ctx context.Context, oldToken string, newToken string, userID uuid.UUID, expiresAt time.Time) error
 }
 
 // RideRepository manages the ride lifecycle persistence.

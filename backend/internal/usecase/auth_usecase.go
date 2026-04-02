@@ -99,7 +99,7 @@ func (uc *authUseCase) Login(ctx context.Context, email, password string) (*doma
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, domain.ErrInvalidCredentials
 	}
-	return uc.issueTokens(ctx, user)
+	return uc.issueTokens(ctx, user, "")
 }
 
 func (uc *authUseCase) Refresh(ctx context.Context, refreshToken string) (*domain.AuthOutput, error) {
@@ -107,16 +107,11 @@ func (uc *authUseCase) Refresh(ctx context.Context, refreshToken string) (*domai
 	if err != nil {
 		return nil, domain.ErrRefreshTokenInvalid
 	}
-	// Rotate: invalidate old token before issuing new one.
-	err = uc.tokenRepo.Delete(ctx, refreshToken)
-	if err != nil {
-		return nil, err
-	}
 	user, err := uc.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	return uc.issueTokens(ctx, user)
+	return uc.issueTokens(ctx, user, refreshToken)
 }
 
 func (uc *authUseCase) Logout(ctx context.Context, refreshToken string) error {
@@ -128,7 +123,7 @@ func (uc *authUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.U
 }
 
 // issueTokens generates a new access + refresh token pair and persists the refresh token.
-func (uc *authUseCase) issueTokens(ctx context.Context, user *domain.User) (*domain.AuthOutput, error) {
+func (uc *authUseCase) issueTokens(ctx context.Context, user *domain.User, oldRefreshToken string) (*domain.AuthOutput, error) {
 	accessToken, expiresAt, err := jwt.GenerateAccessToken(user.ID, user.Role, uc.jwtSecret, uc.accessExpiry)
 	if err != nil {
 		return nil, err
@@ -137,8 +132,14 @@ func (uc *authUseCase) issueTokens(ctx context.Context, user *domain.User) (*dom
 	if err != nil {
 		return nil, err
 	}
-	if err := uc.tokenRepo.Store(ctx, user.ID, refreshToken, time.Now().Add(uc.refreshExpiry)); err != nil {
-		return nil, err
+	if oldRefreshToken != "" {
+		if err := uc.tokenRepo.Rotate(ctx, oldRefreshToken, refreshToken, user.ID, time.Now().Add(uc.refreshExpiry)); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := uc.tokenRepo.Store(ctx, user.ID, refreshToken, time.Now().Add(uc.refreshExpiry)); err != nil {
+			return nil, err
+		}
 	}
 	return &domain.AuthOutput{
 		AccessToken:          accessToken,

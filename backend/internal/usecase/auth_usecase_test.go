@@ -114,9 +114,8 @@ func TestAuthUseCase_Refresh_Success(t *testing.T) {
 	token := "old-refresh-token"
 
 	tokenRepo.EXPECT().GetUserID(gomock.Any(), token).Return(user.ID, nil)
-	tokenRepo.EXPECT().Delete(gomock.Any(), token).Return(nil)
 	userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(user, nil)
-	tokenRepo.EXPECT().Store(gomock.Any(), user.ID, gomock.Any(), gomock.Any()).Return(nil)
+	tokenRepo.EXPECT().Rotate(gomock.Any(), token, gomock.Any(), user.ID, gomock.Any()).Return(nil)
 
 	out, err := uc.Refresh(context.Background(), token)
 	if err != nil {
