@@ -1,0 +1,187 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { adminApi, SystemService } from '@/lib/admin-api';
+import { cn } from '@/lib/utils';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function secondsAgo(date: Date): string {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  const mins = Math.floor(diff / 60);
+  return `${mins}m ago`;
+}
+
+function latencyColor(ms: number): string {
+  if (ms < 200) return 'text-success';
+  if (ms < 500) return 'text-warning';
+  return 'text-danger';
+}
+
+function uptimeColor(pct: number): string {
+  if (pct >= 99.9) return 'text-success';
+  if (pct >= 99) return 'text-warning';
+  return 'text-danger';
+}
+
+function statusDotClass(status: SystemService['status']): string {
+  if (status === 'ok') return 'bg-success';
+  if (status === 'degraded') return 'bg-warning';
+  return 'bg-danger';
+}
+
+// ── Infrastructure metric tiles (mock values) ─────────────────────────────────
+
+const INFRA_METRICS = [
+  { label: 'API P50 Latency', value: '112ms' },
+  { label: 'API P95 Latency', value: '340ms' },
+  { label: 'Active WS Connections', value: '1,842' },
+  { label: 'DB Query Time P99', value: '45ms' },
+] as const;
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function ServiceCard({ service }: { service: SystemService }) {
+  return (
+    <div className="p-4 bg-surface border border-border rounded-xl space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-text-main truncate">{service.name}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span
+            className={cn('w-3 h-3 rounded-full flex-shrink-0', statusDotClass(service.status))}
+            aria-hidden="true"
+          />
+          <StatusBadge status={service.status} />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-xs text-text-muted">Latency</p>
+          <p className={cn('font-semibold', latencyColor(service.latency_ms))}>
+            {service.latency_ms}ms
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-text-muted">Uptime</p>
+          <p className={cn('font-semibold', uptimeColor(service.uptime_pct))}>
+            {service.uptime_pct.toFixed(2)}%
+          </p>
+        </div>
+      </div>
+
+      {/* Last checked */}
+      <p className="text-xs text-text-muted">
+        Checked {secondsAgo(new Date(service.last_checked))}
+      </p>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function SASystemHealth() {
+  const [services, setServices] = useState<SystemService[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [, tick] = useState(0); // force re-render every second for "X seconds ago"
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.system.getServices();
+      setServices(data);
+      setLastRefreshed(new Date());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+    intervalRef.current = setInterval(fetchServices, 30_000);
+
+    // Tick every second to keep "last updated" text fresh
+    const tickInterval = setInterval(() => tick((n) => n + 1), 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(tickInterval);
+    };
+  }, []);
+
+  // Derived counts
+  const downCount = services.filter((s) => s.status === 'down').length;
+  const degradedCount = services.filter((s) => s.status === 'degraded').length;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text-main">System Health</h1>
+          <p className="text-sm text-text-muted mt-0.5">
+            Last updated: {secondsAgo(lastRefreshed)}
+          </p>
+        </div>
+        <Button variant="outline" onClick={fetchServices} disabled={loading}>
+          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Overall status banner */}
+      {downCount > 0 ? (
+        <div className="flex items-center gap-2 px-4 py-3 bg-danger/10 border border-danger/20 rounded-lg text-danger text-sm font-medium">
+          ⚠ Critical: {downCount} service{downCount !== 1 ? 's' : ''} down
+        </div>
+      ) : degradedCount > 0 ? (
+        <div className="flex items-center gap-2 px-4 py-3 bg-warning/10 border border-warning/20 rounded-lg text-warning text-sm font-medium">
+          ⚡ Warning: {degradedCount} service{degradedCount !== 1 ? 's' : ''} degraded
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-4 py-3 bg-success/10 border border-success/20 rounded-lg text-success text-sm font-medium">
+          All systems operational
+        </div>
+      )}
+
+      {/* Service status board */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {services.map((service) => (
+          <ServiceCard key={service.name} service={service} />
+        ))}
+        {services.length === 0 && !loading && (
+          <p className="col-span-full text-sm text-text-muted text-center py-8">
+            No service data available.
+          </p>
+        )}
+      </div>
+
+      {/* Infrastructure summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Infrastructure Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {INFRA_METRICS.map(({ label, value }) => (
+              <div
+                key={label}
+                className="p-3 bg-surface-hover rounded-lg text-center"
+              >
+                <p className="text-2xl font-bold text-text-main">{value}</p>
+                <p className="text-xs text-text-muted mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
