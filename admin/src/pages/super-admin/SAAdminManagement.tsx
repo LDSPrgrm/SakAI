@@ -230,22 +230,26 @@ export function SAAdminManagement() {
 
                       {/* Status */}
                       <TableCell>
-                        <StatusBadge status={admin.status} />
+                        <StatusBadge status={admin.status || 'active'} />
                       </TableCell>
 
                       {/* Last Login */}
                       <TableCell className="text-sm text-text-muted">
-                        {formatDate(admin.last_login_at)}
+                        {admin.last_login_at ? formatDate(admin.last_login_at) : 'Never'}
                       </TableCell>
 
                       {/* Created By */}
                       <TableCell className="text-sm text-text-muted">
-                        <span className="font-mono text-xs">{admin.created_by.substring(0, 8)}…</span>
+                        {admin.created_by ? (
+                          <span className="font-mono text-xs">{admin.created_by.substring(0, 8)}…</span>
+                        ) : (
+                          <span className="text-xs italic">System</span>
+                        )}
                       </TableCell>
 
                       {/* Created */}
                       <TableCell className="text-sm text-text-muted">
-                        {formatDate(admin.created_at)}
+                        {admin.created_at ? formatDate(admin.created_at) : 'Unknown'}
                       </TableCell>
 
                       {/* Actions */}

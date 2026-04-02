@@ -142,6 +142,7 @@ export interface FeatureFlag {
 }
 
 export interface DashboardMetrics {
+  // Frontend-facing names (used by SADashboard.tsx)
   total_riders: number;
   riders_trend: string;
   total_drivers: number;
@@ -153,6 +154,11 @@ export interface DashboardMetrics {
   avg_wait_minutes: number;
   wait_trend: string;
   platform_uptime: number;
+  // Raw backend names from swagger DashboardResponse schema
+  active_riders?: number;
+  active_drivers?: number;
+  avg_wait_time_seconds?: number;
+  system_uptime?: number;
 }
 
 // ── Core helper (ready for real requests) ────────────────────────────────────
@@ -168,8 +174,30 @@ async function adminRequest<T>(method: string, path: string, body?: unknown): Pr
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const json = await res.json();
+
+  // Automatically unwrap standard { success: true, data: ... } envelopes
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    if (!json.success) throw new Error(json.error || 'API request failed');
+    return json.data;
+  }
+  return json;
 }
+
+// ── Defensive Array Extractor ─────────────────────────────────────────────────
+// Ensures we always return an array to the UI, regardless of how the backend wraps it
+function extractArray<T>(res: any): T[] {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.items)) return res.items;
+  if (Array.isArray(res.logs)) return res.logs;
+  // Probe object properties if no standard envelope matches
+  const found = Object.values(res).find(Array.isArray);
+  if (found) return found as T[];
+  return [];
+}
+
 // suppress unused warning until backend is ready
 void adminRequest;
 
@@ -177,15 +205,37 @@ void adminRequest;
 
 export const adminApi = {
   dashboard: {
-    getMetrics: () => adminRequest<DashboardMetrics>('GET', '/dashboard'),
+    getMetrics: () => adminRequest<any>('GET', '/dashboard').then((raw) => ({
+      // Map backend DashboardResponse fields to frontend DashboardMetrics shape
+      total_riders: raw.total_riders ?? raw.active_riders ?? 0,
+      riders_trend: raw.riders_trend ?? '',
+      total_drivers: raw.total_drivers ?? raw.active_drivers ?? 0,
+      drivers_trend: raw.drivers_trend ?? '',
+      rides_today: raw.rides_today ?? 0,
+      rides_trend: raw.rides_trend ?? '',
+      revenue_today: raw.revenue_today ?? 0,
+      revenue_trend: raw.revenue_trend ?? '',
+      // Swagger returns avg_wait_time_seconds; convert to minutes for UI
+      avg_wait_minutes: raw.avg_wait_minutes ?? (raw.avg_wait_time_seconds != null ? Math.round(raw.avg_wait_time_seconds / 60) : 0),
+      wait_trend: raw.wait_trend ?? '',
+      platform_uptime: raw.platform_uptime ?? raw.system_uptime ?? 0,
+    } as DashboardMetrics)),
     getRidesChart: () => adminRequest<{ name: string; rides: number }[]>('GET', '/reports/chart/rides'),
     getRevenueChart: () => adminRequest<{ name: string; revenue: number; gcash: number; cash: number; paymaya: number; card: number }[]>('GET', '/reports/chart/revenue'),
     getVehicleDistribution: () => adminRequest<{ name: string; value: number }[]>('GET', '/reports/chart/vehicles'),
-    getActivityFeed: () => adminRequest<dashboardMock.ActivityItem[]>('GET', '/audit?limit=10'),
+    getActivityFeed: () => adminRequest<any>('GET', '/audit?limit=10').then((res) => {
+      const logs = Array.isArray(res) ? res : (res?.logs ?? []);
+      return logs.map((log: any) => ({
+        id: log.id,
+        message: `${log.actor_name} ${log.action}d ${(log.resource_type || 'resource').replace('_', ' ')}`,
+        time: new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        isAlert: log.action === 'delete' || log.action === 'reject',
+      }));
+    }),
   },
 
   admins: {
-    list: () => adminRequest<AdminUser[]>('GET', '/users'),
+    list: () => adminRequest<any>('GET', '/users').then(extractArray<AdminUser>),
     create: (data: Omit<AdminUser, 'id' | 'created_at' | 'last_login_at'> & { password?: string }) =>
       adminRequest<AdminUser>('POST', '/users', data),
     update: (id: string, data: Partial<AdminUser>) =>
@@ -197,8 +247,8 @@ export const adminApi = {
   },
 
   fares: {
-    getConfigs: () => adminRequest<any>('GET', '/fares').then(res => res.fares as FareConfig[]),
-    getSurge: () => adminRequest<any>('GET', '/fares').then(res => res.surge as SurgeConfig),
+    getConfigs: () => adminRequest<any>('GET', '/fares').then(res => extractArray<FareConfig>(res?.fares || res)),
+    getSurge: () => adminRequest<any>('GET', '/fares').then(res => (res?.surge || {}) as SurgeConfig),
     updateConfig: (id: string, data: Partial<FareConfig>) =>
       adminRequest<FareConfig>('PUT', `/fares`, [data]),
     updateSurge: (data: Partial<SurgeConfig>) =>
@@ -212,8 +262,8 @@ export const adminApi = {
   },
 
   payments: {
-    getTransactions: () => adminRequest<Transaction[]>('GET', '/payments/transactions'),
-    getPayouts: () => adminRequest<DriverPayout[]>('GET', '/payments/payouts'),
+    getTransactions: () => adminRequest<any>('GET', '/payments/transactions').then(extractArray<Transaction>),
+    getPayouts: () => adminRequest<any>('GET', '/payments/payouts').then(extractArray<DriverPayout>),
     approvePayout: (id: string) => adminRequest<void>('PUT', `/payments/payouts/${id}/approve`),
     getSummary: () => adminRequest<any>('GET', '/payments/summary'),
     getCommissionConfig: () => adminRequest<any>('GET', '/payments/commission-config'),
@@ -221,10 +271,10 @@ export const adminApi = {
   },
 
   safety: {
-    getIncidents: () => adminRequest<Incident[]>('GET', '/incidents'),
+    getIncidents: () => adminRequest<any>('GET', '/incidents').then(extractArray<Incident>),
     updateIncident: (id: string, data: Partial<Incident>) =>
       adminRequest<Incident>('PUT', `/incidents/${id}/resolve`, { notes: data.resolution_notes || 'Resolved' }),
-    getKycQueue: () => adminRequest<KycEntry[]>('GET', '/safety/kyc'),
+    getKycQueue: () => adminRequest<any>('GET', '/safety/kyc').then(extractArray<KycEntry>),
     updateKyc: (id: string, status: 'approved' | 'rejected') =>
       adminRequest<KycEntry>('PUT', `/safety/kyc/${id}`, { status }),
     getLtfrbCompliance: async () => safetyMock.ltfrbCompliance,
@@ -237,20 +287,20 @@ export const adminApi = {
   },
 
   system: {
-    getIntegrations: () => adminRequest<any[]>('GET', '/system/integrations'),
+    getIntegrations: () => adminRequest<any>('GET', '/system/integrations').then(extractArray<any>),
     updateIntegration: (service: string, data: Record<string, string>) =>
       adminRequest<any>('PUT', `/system/integrations/${service}`, data),
-    getNotificationTemplates: () => adminRequest<any[]>('GET', '/system/notification-templates'),
+    getNotificationTemplates: () => adminRequest<any>('GET', '/system/notification-templates').then(extractArray<any>),
     updateTemplate: (event: string, body: string) =>
       adminRequest<any>('PUT', `/system/notification-templates/${event}`, { body }),
-    getFeatureFlags: () => adminRequest<FeatureFlag[]>('GET', '/system/feature-flags'),
+    getFeatureFlags: () => adminRequest<any>('GET', '/system/feature-flags').then(extractArray<FeatureFlag>),
     toggleFlag: (key: string, enabled: boolean) =>
       adminRequest<FeatureFlag>('PUT', `/system/feature-flags/${key}`, { enabled }),
-    getServices: () => adminRequest<SystemService[]>('GET', '/system/services'),
+    getServices: () => adminRequest<any>('GET', '/system/services').then(extractArray<SystemService>),
   },
 
   audit: {
-    getLogs: () => adminRequest<any>('GET', '/audit').then(res => res.logs as AuditLogEntry[]),
-    exportCsv: () => adminRequest<any>('POST', '/reports/export/audit').then(res => res.url),
+    getLogs: () => adminRequest<any>('GET', '/audit').then(extractArray<AuditLogEntry>),
+    exportCsv: () => adminRequest<any>('POST', '/reports/export/audit').then(res => res?.url || ''),
   },
 };

@@ -28,12 +28,14 @@ interface NotificationTemplate {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function maskedKey(key: string): string {
+function maskedKey(key: string | null | undefined): string {
+  if (!key) return '—';
   const last4 = key.slice(-4);
   return `••••••••${last4}`;
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
   return new Date(iso).toLocaleString('en-PH', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -45,7 +47,8 @@ function extractVariables(template: string): string[] {
   return [...new Set(matches)];
 }
 
-function humanizeEvent(event: string): string {
+function humanizeEvent(event: string | null | undefined): string {
+  if (!event) return '—';
   return event
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -209,14 +212,12 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
         aria-checked={flag.enabled}
         aria-label={`${flag.enabled ? 'Disable' : 'Enable'} ${flag.label}`}
         onClick={handleClick}
-        className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
-          flag.enabled ? 'bg-primary' : 'bg-border'
-        }`}
+        className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${flag.enabled ? 'bg-primary' : 'bg-border'
+          }`}
       >
         <div
-          className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${
-            flag.enabled ? 'translate-x-6' : 'translate-x-1'
-          }`}
+          className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${flag.enabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
         />
       </button>
 
