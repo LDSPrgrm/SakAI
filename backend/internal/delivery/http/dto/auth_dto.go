@@ -20,7 +20,7 @@ type CreateAdminRequest struct {
 	Name     string          `json:"name" binding:"required,min=2,max=100"`
 	Email    string          `json:"email" binding:"required,email"`
 	Password string          `json:"password" binding:"required,min=8"`
-	Role     domain.UserRole `json:"role" binding:"required,oneof=admin superadmin"`
+	Role     domain.UserRole `json:"role" binding:"required,oneof=admin superadmin operations finance support"`
 }
 
 // VehicleInput is the nested vehicle block in RegisterRequest.

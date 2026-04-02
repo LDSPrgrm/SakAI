@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AuthUseCase,RideUseCase,DriverUseCase
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase
 
 import (
 	"context"
@@ -111,6 +111,60 @@ type DriverRepository interface {
 	FindNearbyOnline(ctx context.Context, origin LatLng, radiusMeters float64) ([]*Driver, error)
 }
 
+// AdminRepository defines management of admin accounts and system settings.
+type AdminRepository interface {
+	GetAdmins(ctx context.Context) ([]*User, error)
+	UpdateAdminStatus(ctx context.Context, id uuid.UUID, status UserRole) error
+	// Extra config persistence (payments, commission)
+	GetPaymentConfigs(ctx context.Context) ([]*PaymentGatewayConfig, error)
+	UpdatePaymentConfig(ctx context.Context, config *PaymentGatewayConfig) error
+	GetCommissionSettings(ctx context.Context) ([]*CommissionSettings, error)
+	UpdateCommissionSettings(ctx context.Context, settings *CommissionSettings) error
+}
+
+// FareRepository manages pricing rules.
+type FareRepository interface {
+	GetFareConfigs(ctx context.Context) ([]*FareConfig, error)
+	UpdateFareConfig(ctx context.Context, config *FareConfig) error
+	GetSurgeConfig(ctx context.Context) (*SurgeConfig, error)
+	UpdateSurgeConfig(ctx context.Context, config *SurgeConfig) error
+}
+
+// AuditRepository handles the immutable record of admin actions.
+type AuditRepository interface {
+	Store(ctx context.Context, entry *AuditLogEntry) error
+	List(ctx context.Context, query AuditQuery) ([]*AuditLogEntry, int, error)
+}
+
+type AuditQuery struct {
+	ActorID      *uuid.UUID
+	ResourceType *string
+	Action       *string
+	Page         int
+	Limit        int
+}
+
+// IncidentRepository tracks safety and compliance triggers.
+type IncidentRepository interface {
+	ListIncidents(ctx context.Context, status *string) ([]*Incident, error)
+	GetIncidentByID(ctx context.Context, id uuid.UUID) (*Incident, error)
+	UpdateIncident(ctx context.Context, id uuid.UUID, status string, notes string, assignedTo *uuid.UUID) error
+}
+
+// SystemMetricsRepository aggregates platform-wide KPIs.
+type SystemMetricsRepository interface {
+	GetDashboardMetrics(ctx context.Context) (*DashboardMetrics, error)
+}
+
+type DashboardMetrics struct {
+	ActiveRiders       int
+	ActiveDrivers      int
+	RidesToday         int
+	RevenueToday       float64
+	AvgWaitTimeSeconds float64
+	SystemUptime       float64
+}
+
 // ─── UseCase Ports ───────────────────────────────────────────────────────────
 // These interfaces are consumed by the delivery layer. The delivery layer
 // depends only on these abstractions, never on usecase implementations.
@@ -146,4 +200,30 @@ type DriverUseCase interface {
 	// GetActiveRide returns the driver's current active ride regardless of state.
 	// Used by the HTTP handler to forward location updates to the passenger.
 	GetActiveRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
+}
+
+// AdminUseCase defines the business logic for platform administration.
+type AdminUseCase interface {
+	GetDashboard(ctx context.Context) (*DashboardMetrics, error)
+	ListAdmins(ctx context.Context) ([]*User, error)
+	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole) (*User, error)
+	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
+	
+	// Safety & Incidents
+	ListIncidents(ctx context.Context, status *string) ([]*Incident, error)
+	ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error
+}
+
+// FareUseCase handles pricing configuration and simulation.
+type FareUseCase interface {
+	GetConfig(ctx context.Context) ([]*FareConfig, *SurgeConfig, error)
+	UpdateFares(ctx context.Context, actorID uuid.UUID, configs []*FareConfig) error
+	UpdateSurge(ctx context.Context, actorID uuid.UUID, config *SurgeConfig) error
+	SimulateFare(ctx context.Context, vehicleType string, origin, destination LatLng) (float64, error)
+}
+
+// AuditUseCase provides auditing services to other system components.
+type AuditUseCase interface {
+	LogAction(ctx context.Context, entry *AuditLogEntry) error
+	GetLogs(ctx context.Context, query AuditQuery) ([]*AuditLogEntry, int, error)
 }
