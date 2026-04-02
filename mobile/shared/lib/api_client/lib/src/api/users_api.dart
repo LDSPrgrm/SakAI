@@ -40,7 +40,7 @@ class UsersApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/users/me';
+    final _path = r'/api/users/me';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{

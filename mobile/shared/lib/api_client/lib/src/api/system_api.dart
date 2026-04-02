@@ -39,7 +39,7 @@ class SystemApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/health';
+    final _path = r'/api/health';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{

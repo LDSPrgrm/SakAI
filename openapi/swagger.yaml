@@ -57,6 +57,8 @@ tags:
     description: Driver availability and location management
   - name: Rides
     description: Ride lifecycle — request, match, and state transitions
+  - name: Admin
+    description: Platform administrative operations
 
 # ---------------------------------------------------------------------------
 # PATHS
@@ -650,6 +652,282 @@ paths:
               example:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Rides cannot be cancelled once they are in progress"
+
+  # ── Admin ─────────────────────────────────────────────────────────────────
+
+  /api/admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Get platform dashboard metrics
+      description: Returns platform-wide metrics. Requires Admin, Operations, Finance, or Support role.
+      operationId: adminGetDashboard
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all administrators
+      description: Requires Superadmin role.
+      operationId: adminListUsers
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of administrators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Create a new administrator
+      description: Requires Superadmin role.
+      operationId: adminCreateUser
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdminRequest"
+      responses:
+        "201":
+          description: Admin created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/users/{id}:
+    put:
+      tags: [Admin]
+      summary: Update administrator status
+      description: Requires Superadmin role.
+      operationId: adminUpdateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAdminStatusRequest"
+      responses:
+        "204":
+          description: Admin status updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/fares:
+    get:
+      tags: [Admin]
+      summary: Get fare configurations
+      description: Requires Superadmin or Finance role.
+      operationId: adminGetFares
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Fares and surge configs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFaresResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Admin]
+      summary: Update base fares
+      description: Requires Superadmin role.
+      operationId: adminUpdateFares
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/FareConfig"
+      responses:
+        "204":
+          description: Fares updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/surge:
+    put:
+      tags: [Admin]
+      summary: Update surge configuration
+      description: Requires Superadmin role.
+      operationId: adminUpdateSurge
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SurgeConfig"
+      responses:
+        "204":
+          description: Surge updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/fares/simulate:
+    post:
+      tags: [Admin]
+      summary: Simulate a ride fare
+      description: Requires Superadmin role.
+      operationId: adminSimulateFare
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FareSimulationRequest"
+      responses:
+        "200":
+          description: Estimated fare
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FareSimulationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/incidents:
+    get:
+      tags: [Admin]
+      summary: List system incidents
+      description: Requires Superadmin, Operations, or Support role.
+      operationId: adminListIncidents
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/incidents/{id}/resolve:
+    put:
+      tags: [Admin]
+      summary: Resolve an incident
+      description: Requires Superadmin or Operations role.
+      operationId: adminResolveIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentResolveRequest"
+      responses:
+        "204":
+          description: Incident resolved
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/audit:
+    get:
+      tags: [Admin]
+      summary: List audit logs
+      description: Requires Superadmin role.
+      operationId: adminListAudit
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Paginated audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
 # ---------------------------------------------------------------------------
 # COMPONENTS
@@ -1308,3 +1586,214 @@ components:
         message:
           type: string
           example: "No drivers are available in your area right now. Please try again shortly."
+
+    DashboardResponse:
+      type: object
+      properties:
+        active_riders:
+          type: integer
+        active_drivers:
+          type: integer
+        rides_today:
+          type: integer
+        revenue_today:
+          type: number
+        avg_wait_time_seconds:
+          type: number
+        system_uptime:
+          type: number
+
+    CreateAdminRequest:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+          enum: [admin, superadmin, operations, finance, support]
+
+    UpdateAdminStatusRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, superadmin, operations, finance, support]
+
+    AdminFaresResponse:
+      type: object
+      properties:
+        fares:
+          type: array
+          items:
+            $ref: "#/components/schemas/FareConfig"
+        surge:
+          $ref: "#/components/schemas/SurgeConfig"
+
+    FareConfig:
+      type: object
+      properties:
+        vehicle_type:
+          type: string
+        base_fare:
+          type: number
+        per_km_rate:
+          type: number
+        per_min_rate:
+          type: number
+        minimum_fare:
+          type: number
+        booking_fee:
+          type: number
+        cancellation_fee:
+          type: number
+
+    SurgeConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        max_multiplier:
+          type: number
+        trigger_ratio:
+          type: number
+        zones:
+          $ref: "#/components/schemas/GeoJSONFeatureCollection"
+        blackout_hours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlackoutHour"
+
+    GeoJSONFeatureCollection:
+      type: object
+      required: [type, features]
+      properties:
+        type:
+          type: string
+          enum: [FeatureCollection]
+        features:
+          type: array
+          items:
+            type: object
+            required: [type, geometry]
+            properties:
+              type:
+                type: string
+                enum: [Feature]
+              geometry:
+                type: object
+                required: [type, coordinates]
+                properties:
+                  type:
+                    type: string
+                    enum: [Polygon, MultiPolygon]
+                  coordinates:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: number
+              properties:
+                type: object
+                additionalProperties: true
+
+    BlackoutHour:
+      type: object
+      properties:
+        day_of_week:
+          type: integer
+        start_time:
+          type: string
+        end_time:
+          type: string
+
+    FareSimulationRequest:
+      type: object
+      required: [vehicle_type, origin, destination]
+      properties:
+        vehicle_type:
+          type: string
+        origin:
+          $ref: "#/components/schemas/LatLng"
+        destination:
+          $ref: "#/components/schemas/LatLng"
+
+    FareSimulationResponse:
+      type: object
+      properties:
+        estimated_fare:
+          type: number
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ride_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        status:
+          type: string
+        triggered_by:
+          type: string
+        rider_id:
+          type: string
+          format: uuid
+        driver_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        resolution_notes:
+          type: string
+
+    IncidentResolveRequest:
+      type: object
+      required: [notes]
+      properties:
+        notes:
+          type: string
+
+    AuditLogResponse:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        reason:
+          type: string

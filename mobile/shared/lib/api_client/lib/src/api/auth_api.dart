@@ -46,7 +46,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/login';
+    final _path = r'/api/auth/login';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -141,7 +141,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/logout';
+    final _path = r'/api/auth/logout';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -214,7 +214,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/refresh';
+    final _path = r'/api/auth/refresh';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -309,7 +309,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/register';
+    final _path = r'/api/auth/register';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{

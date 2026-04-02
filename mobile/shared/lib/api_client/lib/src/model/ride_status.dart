@@ -37,3 +37,4 @@ class RideStatus extends EnumClass {
   static BuiltSet<RideStatus> get values => _$values;
   static RideStatus valueOf(String name) => _$valueOf(name);
 }
+

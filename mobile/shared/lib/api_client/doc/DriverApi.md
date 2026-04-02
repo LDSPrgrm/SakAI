@@ -5,13 +5,13 @@
 import 'package:sakai_api_client/api.dart';
 ```
 
-All URIs are relative to *http://localhost:8080/api/v1*
+All URIs are relative to *http://localhost:8080*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
-[**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
-[**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
+[**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /api/driver/rides/incoming | Get the current pending ride offer for this driver
+[**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /api/driver/status | Set driver online/offline status
+[**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /api/driver/location | Update driver&#39;s current location
 
 
 # **driverGetIncomingRide**

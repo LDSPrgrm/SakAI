@@ -64,3 +64,4 @@ class ErrorCode extends EnumClass {
   static BuiltSet<ErrorCode> get values => _$values;
   static ErrorCode valueOf(String name) => _$valueOf(name);
 }
+

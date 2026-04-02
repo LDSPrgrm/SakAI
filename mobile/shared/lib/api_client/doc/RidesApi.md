@@ -5,19 +5,19 @@
 import 'package:sakai_api_client/api.dart';
 ```
 
-All URIs are relative to *http://localhost:8080/api/v1*
+All URIs are relative to *http://localhost:8080*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**rideAccept**](RidesApi.md#rideaccept) | **POST** /rides/{rideId}/accept | Driver accepts the ride offer
-[**rideArrive**](RidesApi.md#ridearrive) | **POST** /rides/{rideId}/arrive | Driver signals arrival at pickup
-[**rideCancel**](RidesApi.md#ridecancel) | **POST** /rides/{rideId}/cancel | Cancel an active ride
-[**rideComplete**](RidesApi.md#ridecomplete) | **POST** /rides/{rideId}/complete | Driver completes the ride at dropoff
-[**rideDecline**](RidesApi.md#ridedecline) | **POST** /rides/{rideId}/decline | Driver declines the ride offer
-[**rideGet**](RidesApi.md#rideget) | **GET** /rides/{rideId} | Get ride details by ID
-[**rideGetActive**](RidesApi.md#ridegetactive) | **GET** /rides/active | Get the caller&#39;s current active ride
-[**rideRequest**](RidesApi.md#riderequest) | **POST** /rides | Request a new ride
-[**rideStart**](RidesApi.md#ridestart) | **POST** /rides/{rideId}/start | Driver starts the ride after passenger boards
+[**rideAccept**](RidesApi.md#rideaccept) | **POST** /api/rides/{rideId}/accept | Driver accepts the ride offer
+[**rideArrive**](RidesApi.md#ridearrive) | **POST** /api/rides/{rideId}/arrive | Driver signals arrival at pickup
+[**rideCancel**](RidesApi.md#ridecancel) | **POST** /api/rides/{rideId}/cancel | Cancel an active ride
+[**rideComplete**](RidesApi.md#ridecomplete) | **POST** /api/rides/{rideId}/complete | Driver completes the ride at dropoff
+[**rideDecline**](RidesApi.md#ridedecline) | **POST** /api/rides/{rideId}/decline | Driver declines the ride offer
+[**rideGet**](RidesApi.md#rideget) | **GET** /api/rides/{rideId} | Get ride details by ID
+[**rideGetActive**](RidesApi.md#ridegetactive) | **GET** /api/rides/active | Get the caller&#39;s current active ride
+[**rideRequest**](RidesApi.md#riderequest) | **POST** /api/rides | Request a new ride
+[**rideStart**](RidesApi.md#ridestart) | **POST** /api/rides/{rideId}/start | Driver starts the ride after passenger boards
 
 
 # **rideAccept**

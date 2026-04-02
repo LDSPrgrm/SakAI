@@ -9,6 +9,7 @@ import 'package:sakai_api_client/src/auth/api_key_auth.dart';
 import 'package:sakai_api_client/src/auth/basic_auth.dart';
 import 'package:sakai_api_client/src/auth/bearer_auth.dart';
 import 'package:sakai_api_client/src/auth/oauth.dart';
+import 'package:sakai_api_client/src/api/admin_api.dart';
 import 'package:sakai_api_client/src/api/auth_api.dart';
 import 'package:sakai_api_client/src/api/driver_api.dart';
 import 'package:sakai_api_client/src/api/rides_api.dart';
@@ -16,7 +17,7 @@ import 'package:sakai_api_client/src/api/system_api.dart';
 import 'package:sakai_api_client/src/api/users_api.dart';
 
 class SakaiApiClient {
-  static const String basePath = r'http://localhost:8080/api/v1';
+  static const String basePath = r'http://localhost:8080';
 
   final Dio dio;
   final Serializers serializers;
@@ -67,6 +68,12 @@ class SakaiApiClient {
     if (this.dio.interceptors.any((i) => i is ApiKeyAuthInterceptor)) {
       (this.dio.interceptors.firstWhere((element) => element is ApiKeyAuthInterceptor) as ApiKeyAuthInterceptor).apiKeys[name] = apiKey;
     }
+  }
+
+  /// Get AdminApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  AdminApi getAdminApi() {
+    return AdminApi(dio, serializers);
   }
 
   /// Get AuthApi instance, base route and serializer can be overridden by a given but be careful,
