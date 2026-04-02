@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sakai_shared/sakai_shared.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key, required this.onSignOut});
@@ -112,16 +111,16 @@ class ProfileScreen extends StatelessWidget {
         _buildCustomPaymentTile(
           context,
           icon: Icons.account_balance_wallet,
-          iconBgColor: Colors.blue.withOpacity(0.1),
+          iconBgColor: Colors.blue.withValues(alpha: 0.1),
           iconColor: Colors.blue,
           title: 'GCash',
           subtitle: '**** 4567',
           trailingValue: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.15),
+              color: Colors.green.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.green.withOpacity(0.3)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: const Text(
               'PRIMARY',
@@ -133,7 +132,7 @@ class ProfileScreen extends StatelessWidget {
         _buildCustomPaymentTile(
           context,
           icon: Icons.credit_card,
-          iconBgColor: Colors.purple.withOpacity(0.1),
+          iconBgColor: Colors.purple.withValues(alpha: 0.1),
           iconColor: Colors.purple,
           title: 'Visa ending in 8890',
           subtitle: 'Expires 12/26',
@@ -150,7 +149,7 @@ class ProfileScreen extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5), style: BorderStyle.solid),
+                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.5), style: BorderStyle.solid),
                   ),
                   child: Icon(Icons.add, color: theme.colorScheme.primary),
                 ),
@@ -194,8 +193,8 @@ class ProfileScreen extends StatelessWidget {
             onPressed: onSignOut,
             style: OutlinedButton.styleFrom(
               foregroundColor: dangerColor,
-              side: BorderSide(color: dangerColor.withOpacity(0.3)),
-              backgroundColor: dangerColor.withOpacity(0.05),
+              side: BorderSide(color: dangerColor.withValues(alpha: 0.3)),
+              backgroundColor: dangerColor.withValues(alpha: 0.05),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),

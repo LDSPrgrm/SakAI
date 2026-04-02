@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
-import '../../domain/auth_session.dart';
-import '../../domain/ride_repository.dart';
-import '../ride/waiting_screen.dart';
+import '../../auth/models/auth_session.dart';
+import '../../ride/repositories/ride_repository.dart';
+import '../../ride/views/waiting_screen.dart';
 import 'activity_screen.dart';
 import 'destination_sheet.dart';
-import 'home_tab.dart'; // Note: You might not need HomeTab if the Map logic is now here
-import 'home_view_model.dart';
+import '../view_models/home_view_model.dart';
 import 'profile_screen.dart';
 
 /// Full-screen Google Map home screen for ride requesting (REQ-3.2.4).

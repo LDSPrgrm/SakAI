@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../../domain/ride_repository.dart';
+import '../repositories/ride_repository.dart';
+import '../view_models/waiting_view_model.dart';
 
 /// Waiting screen shown immediately after a successful POST /rides.
 ///
 /// REQ-3.2.5 will wire up WebSocket events (ride.accepted / offer_expired).
 /// For now it shows a loading animation + cancel button.
+///
+/// All cancel logic lives in [WaitingViewModel]; this widget is pure View.
 class WaitingScreen extends StatefulWidget {
   const WaitingScreen({
     super.key,
@@ -24,7 +27,7 @@ class WaitingScreen extends StatefulWidget {
 class _WaitingScreenState extends State<WaitingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
-  bool _cancelling = false;
+  late final WaitingViewModel _vm;
 
   @override
   void initState() {
@@ -33,26 +36,33 @@ class _WaitingScreenState extends State<WaitingScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    _vm = WaitingViewModel(
+      rideRepository: widget.rideRepository,
+      rideId: widget.ride.id,
+    );
+    _vm.addListener(_onVmChanged);
   }
 
   @override
   void dispose() {
+    _vm.removeListener(_onVmChanged);
+    _vm.dispose();
     _pulse.dispose();
     super.dispose();
   }
 
-  Future<void> _cancelRide() async {
-    setState(() => _cancelling = true);
-    try {
-      await widget.rideRepository.cancelRide(widget.ride.id);
-      if (mounted) Navigator.of(context).pop();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not cancel. Try again.')),
-        );
-        setState(() => _cancelling = false);
-      }
+  /// React to ViewModel state changes — navigation and snack bars stay here.
+  void _onVmChanged() {
+    if (_vm.cancelled && mounted) {
+      Navigator.of(context).pop();
+      return;
+    }
+    if (_vm.errorMessage != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_vm.errorMessage!)),
+      );
+      _vm.clearError();
     }
   }
 
@@ -69,7 +79,7 @@ class _WaitingScreenState extends State<WaitingScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pulse animation
+              // Pulse animation — UI-only, stays in View
               AnimatedBuilder(
                 animation: _pulse,
                 builder: (context, child) => Transform.scale(
@@ -104,10 +114,13 @@ class _WaitingScreenState extends State<WaitingScreen>
                     ),
               ),
               SizedBox(height: tokens.spaceXl),
-              SakaiSecondaryButton(
-                label: _cancelling ? 'Cancelling…' : 'Cancel Ride',
-                icon: Icons.close,
-                onPressed: _cancelling ? null : _cancelRide,
+              ListenableBuilder(
+                listenable: _vm,
+                builder: (context, _) => SakaiSecondaryButton(
+                  label: _vm.cancelling ? 'Cancelling…' : 'Cancel Ride',
+                  icon: Icons.close,
+                  onPressed: _vm.cancelling ? null : _vm.cancel,
+                ),
               ),
             ],
           ),

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import '../../domain/auth_exception.dart';
-import '../../domain/auth_repository.dart';
-import '../../domain/auth_session.dart';
+import '../models/auth_exception.dart';
+import '../models/auth_session.dart';
+import '../repositories/auth_repository.dart';
 
 /// MVVM: presentation logic for rider registration. View listens via [Listenable].
 class RegisterViewModel extends ChangeNotifier {

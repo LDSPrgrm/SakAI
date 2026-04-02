@@ -2,8 +2,8 @@ import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../domain/ride_exception.dart';
-import '../domain/ride_repository.dart';
+import '../models/ride_exception.dart';
+import 'ride_repository.dart';
 
 class RideRepositoryImpl implements RideRepository {
   RideRepositoryImpl(this._client);

@@ -1,4 +1,4 @@
-import 'auth_session.dart';
+import '../models/auth_session.dart';
 
 /// Port for sign-in and future auth operations (Clean Architecture: domain boundary).
 abstract class AuthRepository {

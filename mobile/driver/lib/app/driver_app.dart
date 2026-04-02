@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../presentation/home/driver_home_screen.dart';
+import '../features/home/views/driver_home_screen.dart';
 
 class DriverApp extends StatelessWidget {
   const DriverApp({super.key});

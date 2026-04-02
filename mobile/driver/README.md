@@ -1,6 +1,6 @@
 # driver
 
-Driver-facing Flutter app. Follows the mobile module-split convention → see [`mobile/README.md`](../README.md).
+Driver-facing Flutter app. Follows feature-first MVVM → see [`mobile/README.md`](../README.md).
 
 ## Module layout
 
@@ -8,16 +8,14 @@ Driver-facing Flutter app. Follows the mobile module-split convention → see [`
 lib/
 ├── main.dart                              # runApp(DriverApp())
 ├── app/driver_app.dart                    # MaterialApp, routes
-├── domain/
-│   └── driver_session.dart               # DriverSession entity (placeholder)
-├── data/
-│   └── driver_repository_impl.dart        # Stub — ready for auth/WS/location work
-└── presentation/
-    └── home/
-        └── driver_home_screen.dart        # Home placeholder
+└── features/home/
+    ├── models/driver_session.dart         # DriverSession entity (placeholder)
+    ├── repositories/driver_repository_impl.dart
+    ├── view_models/driver_home_view_model.dart
+    └── views/driver_home_screen.dart
 ```
 
-**Status:** Domain and data boundaries are in place. UI is scaffolded.  
+**Status:** Feature-first MVVM boundaries are in place. UI is scaffolded.  
 **Planned:** driver auth, WebSocket trip-state, GPS location reporting.
 
 ## Running

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:passenger/app/passenger_app.dart';
-import 'package:passenger/domain/auth_repository.dart';
-import 'package:passenger/domain/auth_session.dart';
-import 'package:passenger/domain/ride_repository.dart';
+import 'package:passenger/features/auth/models/auth_session.dart';
+import 'package:passenger/features/auth/repositories/auth_repository.dart';
+import 'package:passenger/features/ride/repositories/ride_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 class _FakeAuthRepository implements AuthRepository {

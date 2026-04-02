@@ -1,6 +1,6 @@
 # Mobile — Module Split (Passenger + Driver)
 
-Both apps follow **Clean Architecture + Riverpod** and are structured identically inside `lib/`.
+Both apps now follow a **feature-first MVVM** layout inside `lib/`.
 
 ---
 
@@ -17,28 +17,29 @@ mobile/
 
 ## Module structure (per app)
 
-Each app's `lib/` is split into four layers:
+Each app's `lib/` is split by feature, and each feature keeps MVVM parts together:
 
 ```
 lib/
-├── main.dart                 # Entry point — wires DI, calls runApp()
-├── app/                      # App root (MaterialApp, router, DI composition)
-├── domain/                   # Entities + repository interfaces (pure Dart — NO Flutter/networking imports)
-├── data/                     # Repository implementations, DTO mapping, API calls
-└── presentation/             # Screens + Riverpod Notifiers / AsyncNotifiers
+├── main.dart                 # Entry point — wires dependencies, calls runApp()
+├── app/                      # App root (MaterialApp, routes)
+└── features/
     └── <feature>/
-        ├── <feature>_screen.dart
-        └── <feature>_provider.dart   # StateNotifierProvider / AsyncNotifierProvider
+        ├── models/           # Feature entities/value types/exceptions
+        ├── repositories/     # Repository contracts + implementations
+        ├── view_models/      # ChangeNotifier-based view models
+        └── views/            # Widgets/screens (View layer)
 ```
 
-### Layer responsibilities
+### MVVM responsibilities
 
-| Layer            | What lives here                                                           | Must NOT import            |
-|------------------|---------------------------------------------------------------------------|----------------------------|
-| `domain/`        | Entities (`*Session`, `*Exception`), abstract repository interfaces       | Flutter, `dio`, any `data/`|
-| `data/`          | `*RepositoryImpl` — calls generated API client, maps DTOs to domain types | `presentation/`            |
-| `presentation/`  | Widgets/screens + Riverpod `Notifier` / `AsyncNotifier` providers         | `data/` directly           |
-| `app/`           | `MaterialApp`, route table, `ProviderScope` at root (overrides for repos) | business logic             |
+| Area              | What lives here                                                           | Must NOT import            |
+|-------------------|---------------------------------------------------------------------------|----------------------------|
+| `features/*/models`       | Feature entities (`*Session`, `*Exception`)                               | Flutter UI concerns        |
+| `features/*/repositories` | Repository interfaces + implementations, API calls, DTO mapping          | View widgets               |
+| `features/*/view_models`  | UI state/actions (`ChangeNotifier`)                                       | Widget tree concerns       |
+| `features/*/views`        | Screens/widgets only                                                      | HTTP/API clients directly  |
+| `app/`                    | `MaterialApp`, routes, app-level composition                             | feature business logic     |
 
 ---
 
@@ -48,20 +49,23 @@ lib/
 
 ```
 lib/
-├── main.dart                            # Creates AuthRepositoryImpl via sakai_shared client, runApp
-├── app/passenger_app.dart               # MaterialApp + named routes
-├── domain/
-│   ├── auth_repository.dart             # Abstract AuthRepository port
-│   ├── auth_session.dart                # AuthSession entity (token, userId, …)
-│   └── auth_exception.dart             # Typed domain errors from auth failures
-├── data/
-│   └── auth_repository_impl.dart        # Calls generated OpenAPI client, maps → AuthSession
-└── presentation/
+├── main.dart                            # Creates repositories, runApp
+├── app/passenger_app.dart               # MaterialApp + routes
+└── features/
     ├── auth/
-    │   ├── login_screen.dart            # Rider login UI
-    │   └── login_provider.dart          # loginProvider (AsyncNotifier, calls AuthRepository)
-    └── home/
-        └── rider_home_screen.dart       # Post-login home placeholder
+    │   ├── models/
+    │   ├── repositories/
+    │   ├── view_models/
+    │   └── views/
+    ├── home/
+    │   ├── repositories/
+    │   ├── view_models/
+    │   └── views/
+    └── ride/
+        ├── models/
+        ├── repositories/
+        ├── view_models/
+        └── views/
 ```
 
 **Key dependency:** `sakai_shared` (theme + generated `SakaiApiClient`), `built_value`, `dio`.
@@ -70,19 +74,17 @@ lib/
 
 ## driver (`mobile/driver`)
 
-**Current state:** Scaffold in place; UI-only with domain/data boundaries ready for future work.
+**Current state:** Scaffold in place; UI-only with feature-first MVVM boundaries ready for future work.
 
 ```
 lib/
 ├── main.dart                            # runApp(DriverApp())
 ├── app/driver_app.dart                  # MaterialApp + routes
-├── domain/
-│   └── driver_session.dart             # DriverSession entity (placeholder)
-├── data/
-│   └── driver_repository_impl.dart      # Stub — ready for auth/WS/location integration
-└── presentation/
-    └── home/
-        └── driver_home_screen.dart      # Driver home placeholder
+└── features/home/
+    ├── models/driver_session.dart       # DriverSession entity (placeholder)
+    ├── repositories/driver_repository_impl.dart
+    ├── view_models/driver_home_view_model.dart
+    └── views/driver_home_screen.dart
 ```
 
 **Planned additions:** driver auth, WebSocket trip-state updates, GPS location reporting.
@@ -119,20 +121,20 @@ lib/
 ## Adding a new feature — checklist
 
 1. **API contract first** — add endpoint to `openapi/swagger.yaml`; regenerate client.
-2. **Domain layer** — add entity + abstract repository interface in `domain/`; no external imports.
-3. **Data layer** — implement repository in `data/` using the generated `sakai_api_client`.
-4. **Presentation layer** — create a `*Provider` (`AsyncNotifierProvider` / `NotifierProvider`) + screen widget in `presentation/<feature>/`.
-5. **Wire it up** — expose the repository as a Riverpod `Provider` and inject it into the feature provider via `ref.watch()`; no manual constructor injection needed.
+2. **Feature models** — add entities/exceptions in `features/<feature>/models/`.
+3. **Feature repositories** — add interface + implementation in `features/<feature>/repositories/`.
+4. **Feature view model** — create a `ChangeNotifier` in `features/<feature>/view_models/`.
+5. **Feature views** — build screen widgets in `features/<feature>/views/`; inject repositories/view models via constructor.
 6. **Shared UI only** — if the widget is used in both apps, add it to `sakai_shared/widgets/`.
 
 ---
 
 ## Rules
 
-- **`domain/` must stay pure Dart** — no `package:flutter`, no `package:dio`.
-- **Notifiers must not import `data/`** directly — only `domain/` interfaces (consumed via `ref.watch()`).
-- **Screens must not call repositories** — go through the Notifier provider.
-- **`ProviderScope`** must wrap the app root (`main.dart`); feature providers override repository providers in tests via `ProviderScope(overrides: [...])`.
+- **Feature models stay UI-free** — avoid widget concerns inside `models/`.
+- **View models coordinate state and actions** — views should not call API clients directly.
+- **Views stay declarative** — user interaction delegates to view models.
+- **Repository contracts + implementations are side-by-side** in each feature's `repositories/`.
 - Regenerate the API client after any `swagger.yaml` change:
   ```sh
   cd shared && dart run build_runner build --delete-conflicting-outputs

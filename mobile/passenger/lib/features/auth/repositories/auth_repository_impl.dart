@@ -2,9 +2,9 @@ import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 
-import '../domain/auth_exception.dart';
-import '../domain/auth_repository.dart';
-import '../domain/auth_session.dart';
+import '../models/auth_exception.dart';
+import '../models/auth_session.dart';
+import 'auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._client);

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import 'app/passenger_app.dart';
-import 'data/auth_repository_impl.dart';
-import 'data/ride_repository_impl.dart';
+import 'features/auth/repositories/auth_repository_impl.dart';
+import 'features/ride/repositories/ride_repository_impl.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

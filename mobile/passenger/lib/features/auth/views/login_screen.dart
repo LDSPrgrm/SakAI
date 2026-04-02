@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../../domain/auth_repository.dart';
-import '../../domain/ride_repository.dart';
-import '../home/rider_home_screen.dart';
-import 'login_screen.dart';
-import 'register_view_model.dart';
+import '../../home/views/rider_home_screen.dart';
+import '../../ride/repositories/ride_repository.dart';
+import '../repositories/auth_repository.dart';
+import '../view_models/login_view_model.dart';
+import 'register_screen.dart';
 
-/// Rider create account screen
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({
+/// Rider sign-in — layout inspired by modern mobility / Stitch-style mobile auth.
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({
     super.key,
     required this.authRepository,
     required this.rideRepository,
@@ -19,12 +19,11 @@ class RegisterScreen extends StatefulWidget {
   final RideRepository rideRepository;
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  late final RegisterViewModel _viewModel;
-  final _nameCtrl = TextEditingController();
+class _LoginScreenState extends State<LoginScreen> {
+  late final LoginViewModel _viewModel;
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
@@ -32,22 +31,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = RegisterViewModel(widget.authRepository);
+    _viewModel = LoginViewModel(widget.authRepository);
   }
 
   @override
   void dispose() {
     _viewModel.dispose();
-    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _onRegister() async {
+  Future<void> _onSignIn() async {
     FocusScope.of(context).unfocus();
-    final session = await _viewModel.register(
-      name: _nameCtrl.text,
+    final session = await _viewModel.signIn(
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
     );
@@ -79,21 +76,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final tokens = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        leading: BackButton(
-          onPressed: _viewModel.busy
-              ? null
-              : () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => LoginScreen(
-                        authRepository: widget.authRepository,
-                        rideRepository: widget.rideRepository,
-                      ),
-                    ),
-                  ),
-        ),
-      ),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: _viewModel,
@@ -103,7 +85,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: tokens.spaceLg),
+                  SizedBox(height: tokens.spaceXl),
+                  _BrandHeader(colorScheme: scheme, textTheme: textTheme),
+                  SizedBox(height: tokens.spaceXl),
                   if (_viewModel.errorMessage != null)
                     Padding(
                       padding: EdgeInsets.only(bottom: tokens.spaceMd),
@@ -134,28 +118,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Join SakAI',
+                          'Sign in',
                           style: textTheme.titleLarge,
                         ),
                         SizedBox(height: tokens.spaceXs),
                         Text(
-                          'Book rides and track drivers in real time.',
+                          'Use the email and password for your rider account.',
                           style: textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
                         SizedBox(height: tokens.spaceLg),
                         SakaiTextField(
-                          key: const Key('register_name'),
-                          controller: _nameCtrl,
-                          label: 'Full Name',
-                          hint: 'Jane Doe',
-                          textInputAction: TextInputAction.next,
-                          prefixIcon: const Icon(Icons.person_outline),
-                          onChanged: (_) => _viewModel.clearError(),
-                        ),
-                        SakaiTextField(
-                          key: const Key('register_email'),
+                          key: const Key('login_email'),
                           controller: _emailCtrl,
                           label: 'Email',
                           hint: 'you@example.com',
@@ -165,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onChanged: (_) => _viewModel.clearError(),
                         ),
                         SakaiTextField(
-                          key: const Key('register_password'),
+                          key: const Key('login_password'),
                           controller: _passwordCtrl,
                           label: 'Password',
                           obscureText: _obscurePassword,
@@ -184,14 +159,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                         ),
-                        SizedBox(height: tokens.spaceLg),
+                        SizedBox(height: tokens.spaceSm),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _viewModel.busy
+                                ? null
+                                : () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Password reset is not wired yet.'),
+                                      ),
+                                    );
+                                  },
+                            child: const Text('Forgot password?'),
+                          ),
+                        ),
                         SakaiPrimaryButton(
-                          label: _viewModel.busy ? 'Creating Account…' : 'Create Account',
-                          icon: Icons.person_add_outlined,
-                          onPressed: _viewModel.busy ? null : _onRegister,
+                          label: _viewModel.busy ? 'Signing in…' : 'Sign in',
+                          icon: Icons.login,
+                          onPressed: _viewModel.busy ? null : _onSignIn,
                         ),
                       ],
                     ),
+                  ),
+                  SizedBox(height: tokens.spaceLg),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'New rider?',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _viewModel.busy
+                            ? null
+                            : () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => RegisterScreen(
+                                      authRepository: widget.authRepository,
+                                      rideRepository: widget.rideRepository,
+                                    ),
+                                  ),
+                                );
+                              },
+                        child: const Text('Create account'),
+                      ),
+                    ],
                   ),
                   SizedBox(height: tokens.spaceLg),
                 ],
@@ -200,6 +217,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader({
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.local_taxi_outlined,
+                color: colorScheme.onPrimaryContainer,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              'SakAI',
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Welcome back',
+          style: textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.25,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Sign in to book rides and track your driver in real time.',
+          style: textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.35,
+          ),
+        ),
+      ],
     );
   }
 }

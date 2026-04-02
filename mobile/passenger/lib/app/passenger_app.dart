@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../domain/auth_repository.dart';
-import '../domain/ride_repository.dart';
-import '../presentation/auth/login_screen.dart';
+import '../features/auth/repositories/auth_repository.dart';
+import '../features/auth/views/login_screen.dart';
+import '../features/ride/repositories/ride_repository.dart';
 
 class PassengerApp extends StatelessWidget {
   const PassengerApp({

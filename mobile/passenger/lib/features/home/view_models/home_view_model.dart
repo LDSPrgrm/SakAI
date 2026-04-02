@@ -5,8 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 import 'package:uuid/uuid.dart';
 
-import '../../domain/ride_exception.dart';
-import '../../domain/ride_repository.dart';
+import '../../ride/models/ride_exception.dart';
+import '../../ride/repositories/ride_repository.dart';
 
 /// State enum for the home screen map experience.
 enum HomeState { idle, locating, destinationSet, requesting }
