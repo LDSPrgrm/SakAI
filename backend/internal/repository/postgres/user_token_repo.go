@@ -152,3 +152,19 @@ func (r *tokenRepo) Delete(ctx context.Context, token string) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM refresh_tokens WHERE token = $1`, token)
 	return err
 }
+
+func (r *tokenRepo) Rotate(ctx context.Context, oldToken string, newToken string, userID uuid.UUID, expiresAt time.Time) error {
+	return database.Transact(ctx, r.db, func(tx pgx.Tx) error {
+		const delQ = `DELETE FROM refresh_tokens WHERE token = $1`
+		if _, err := tx.Exec(ctx, delQ, oldToken); err != nil {
+			return err
+		}
+
+		const insQ = `INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)`
+		if _, err := tx.Exec(ctx, insQ, newToken, userID, expiresAt); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

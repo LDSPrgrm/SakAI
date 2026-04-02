@@ -155,7 +155,7 @@ The system uses role-based access control. Public registration (`/auth/register`
 
 Run the administrative seed CLI tool from `backend/`:
 ```bash
-go run ./cmd/seed-admin -role superadmin -name "SuperAdmin" -email "superadmin@sakai.com" -password "yourpassword"
+go run ./cmd/seed-admin -role superadmin -name "SuperAdmin" -email "superadmin@sakai.com" -password "admin123"
 ```
 Once seeded, you can create additional admins using the built-in REST endpoint `POST /admin/users` by passing a valid `superadmin` JWT in the Authorization header.
 

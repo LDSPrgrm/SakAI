@@ -77,6 +77,11 @@ func main() {
 	tokenRepo := postgres.NewTokenRepo(pool)
 	driverRepo := postgres.NewDriverRepo(pool)
 	rideRepo := postgres.NewRideRepo(pool)
+	adminRepo := postgres.NewAdminRepo(pool)
+	fareRepo := postgres.NewFareRepo(pool)
+	auditRepo := postgres.NewAuditRepo(pool)
+	incidentRepo := postgres.NewIncidentRepo(pool)
+	metricsRepo := postgres.NewSystemMetricsRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -87,6 +92,9 @@ func main() {
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo)
 	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo)
+	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, incidentRepo, metricsRepo, auditRepo)
+	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
+	auditUC := usecase.NewAuditUseCase(auditRepo)
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
@@ -103,6 +111,9 @@ func main() {
 		Auth:   handler.NewAuthHandler(authUC),
 		Driver: handler.NewDriverHandler(driverUC, dispatcher),
 		Ride:   handler.NewRideHandler(rideUC, dispatcher),
+		Admin:  handler.NewAdminHandler(adminUC, auditUC),
+		Fare:   handler.NewFareHandler(fareUC),
+		Audit:  handler.NewAuditHandler(auditUC),
 		WS:     ws.NewHandler(hub),
 	}
 

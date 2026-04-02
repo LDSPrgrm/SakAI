@@ -14,6 +14,9 @@ const (
 	RoleDriver     UserRole = "driver"
 	RoleAdmin      UserRole = "admin"
 	RoleSuperadmin UserRole = "superadmin"
+	RoleOperations UserRole = "operations"
+	RoleFinance    UserRole = "finance"
+	RoleSupport    UserRole = "support"
 )
 
 // User is the core identity entity for both passengers and drivers.

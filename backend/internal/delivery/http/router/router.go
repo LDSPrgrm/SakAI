@@ -17,6 +17,9 @@ type Deps struct {
 	Auth   *handler.AuthHandler
 	Driver *handler.DriverHandler
 	Ride   *handler.RideHandler
+	Admin  *handler.AdminHandler
+	Fare   *handler.FareHandler
+	Audit  *handler.AuditHandler
 	WS     *ws.Handler
 }
 
@@ -27,6 +30,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(gin.Logger())
 
 	// Apply Global Security Middlewares
+	r.Use(middleware.CORS())
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
 
@@ -64,11 +68,29 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
 		}
 
-		// Superadmin-only routes
-		superadminOnly := authed.Group("/admin")
-		superadminOnly.Use(middleware.RequireRole(domain.RoleSuperadmin))
+		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
+		admin := authed.Group("/admin")
 		{
-			superadminOnly.POST("/users", d.Auth.CreateAdmin)
+			// Dashboard: All admin roles (content filtered by UC)
+			admin.GET("/dashboard", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.GetDashboard)
+
+			// Admin Management: Super Admin only
+			admin.GET("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ListAdmins)
+			admin.POST("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.CreateAdmin)
+			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
+
+			// Fare & Surge: Super Admin and Finance (view for Finance)
+			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
+			admin.PUT("/fares", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateFares)
+			admin.PUT("/surge", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateSurge)
+			admin.POST("/fares/simulate", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.SimulateFare)
+
+			// Incidents: Super Admin, Operations, Support (read only for Support)
+			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
+			admin.PUT("/incidents/:id/resolve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
+
+			// Audit Log: Super Admin only
+			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
 		}
 
 
