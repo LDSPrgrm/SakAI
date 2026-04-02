@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:driver/main.dart';
+import 'package:driver/app/driver_app.dart';
 
 void main() {
   testWidgets('app builds with shared theme', (WidgetTester tester) async {

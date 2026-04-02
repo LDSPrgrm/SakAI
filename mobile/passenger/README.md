@@ -1,16 +1,39 @@
 # passenger
 
-A new Flutter project.
+Rider-facing Flutter app. Follows the mobile module-split convention → see [`mobile/README.md`](../README.md).
 
-## Getting Started
+## Module layout
 
-This project is a starting point for a Flutter application.
+```
+lib/
+├── main.dart                          # Creates AuthRepositoryImpl, calls runApp(PassengerApp)
+├── app/passenger_app.dart             # MaterialApp, routes
+├── domain/
+│   ├── auth_repository.dart           # Abstract AuthRepository port (interface)
+│   ├── auth_session.dart              # AuthSession entity
+│   └── auth_exception.dart            # Typed domain auth errors
+├── data/
+│   └── auth_repository_impl.dart      # Calls sakai_api_client, maps → AuthSession
+└── presentation/
+    ├── auth/
+    │   ├── login_screen.dart          # Rider login UI
+    │   └── login_view_model.dart      # LoginViewModel (ChangeNotifier)
+    └── home/
+        └── rider_home_screen.dart     # Home placeholder (post-login)
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Running
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```sh
+cd mobile/passenger
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Dependencies
+
+| Package           | Purpose                                    |
+|-------------------|--------------------------------------------|
+| `sakai_shared`    | Shared theme, widgets, generated API client |
+| `built_value`     | Immutable value types (API DTOs)           |
+| `dio`             | HTTP client                                |
