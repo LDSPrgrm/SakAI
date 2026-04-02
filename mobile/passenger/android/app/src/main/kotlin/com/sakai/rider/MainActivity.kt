@@ -1,4 +1,4 @@
-package com.example.passenger
+package com.sakai.rider
 
 import io.flutter.embedding.android.FlutterActivity
 

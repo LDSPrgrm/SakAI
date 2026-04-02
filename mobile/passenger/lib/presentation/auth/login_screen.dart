@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../domain/auth_repository.dart';
+import '../../domain/ride_repository.dart';
 import '../home/rider_home_screen.dart';
 import 'login_view_model.dart';
 import 'register_screen.dart';
 
 /// Rider sign-in — layout inspired by modern mobility / Stitch-style mobile auth.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.authRepository});
+  const LoginScreen({
+    super.key,
+    required this.authRepository,
+    required this.rideRepository,
+  });
 
   final AuthRepository authRepository;
+  final RideRepository rideRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -47,11 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute<void>(
         builder: (context) => RiderHomeScreen(
           session: session,
+          rideRepository: widget.rideRepository,
           onSignOut: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
                 builder: (context) => LoginScreen(
                   authRepository: widget.authRepository,
+                  rideRepository: widget.rideRepository,
                 ),
               ),
             );
@@ -191,8 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             : () {
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute<void>(
-                                    builder: (context) => RegisterScreen(
+                                    builder: (_) => RegisterScreen(
                                       authRepository: widget.authRepository,
+                                      rideRepository: widget.rideRepository,
                                     ),
                                   ),
                                 );

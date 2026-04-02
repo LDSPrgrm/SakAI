@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../domain/auth_repository.dart';
+import '../../domain/ride_repository.dart';
 import '../home/rider_home_screen.dart';
 import 'login_screen.dart';
 import 'register_view_model.dart';
 
 /// Rider create account screen
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, required this.authRepository});
+  const RegisterScreen({
+    super.key,
+    required this.authRepository,
+    required this.rideRepository,
+  });
 
   final AuthRepository authRepository;
+  final RideRepository rideRepository;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -50,11 +56,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       MaterialPageRoute<void>(
         builder: (context) => RiderHomeScreen(
           session: session,
+          rideRepository: widget.rideRepository,
           onSignOut: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
                 builder: (context) => LoginScreen(
                   authRepository: widget.authRepository,
+                  rideRepository: widget.rideRepository,
                 ),
               ),
             );
@@ -77,9 +85,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: _viewModel.busy
               ? null
               : () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (_) => LoginScreen(
                         authRepository: widget.authRepository,
+                        rideRepository: widget.rideRepository,
                       ),
                     ),
                   ),
