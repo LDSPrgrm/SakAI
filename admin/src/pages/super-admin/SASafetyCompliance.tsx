@@ -121,10 +121,10 @@ export function SASafetyCompliance() {
   const filteredIncidents = incidents.filter((inc) => {
     const q = search.toLowerCase();
     const matchesSearch =
-      inc.id.toLowerCase().includes(q) ||
-      inc.ride_id.toLowerCase().includes(q) ||
-      inc.rider_name.toLowerCase().includes(q) ||
-      inc.driver_name.toLowerCase().includes(q);
+      (inc.id ?? '').toLowerCase().includes(q) ||
+      (inc.ride_id ?? '').toLowerCase().includes(q) ||
+      (inc.rider_name ?? '').toLowerCase().includes(q) ||
+      (inc.driver_name ?? '').toLowerCase().includes(q);
     const matchesStatus = statusFilter === '' || inc.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -260,26 +260,26 @@ export function SASafetyCompliance() {
                             {inc.id}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted whitespace-nowrap">
-                            {fmtDate(inc.created_at)}
+                            {inc.created_at ? fmtDate(inc.created_at) : '—'}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
                             {inc.ride_id}
                           </TableCell>
                           <TableCell>
                             <Badge variant="default">
-                              {inc.triggered_by === 'rider' ? 'Rider' : 'Driver'}
+                              {inc.triggered_by === 'rider' ? 'Rider' : inc.triggered_by === 'driver' ? 'Driver' : 'Unknown'}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-text-main">
-                              {inc.rider_name}
+                              {inc.rider_name ?? '—'}
                             </span>
                             <br />
                             <span className="text-xs text-text-muted">
-                              {inc.driver_name}
+                              {inc.driver_name ?? '—'}
                             </span>
                           </TableCell>
-                          <TableCell>{incidentTypeBadge(inc.type)}</TableCell>
+                          <TableCell>{inc.type ? incidentTypeBadge(inc.type) : '—'}</TableCell>
                           <TableCell>
                             <StatusBadge status={inc.status} />
                           </TableCell>
@@ -323,9 +323,9 @@ export function SASafetyCompliance() {
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-text-main">{entry.driver_name}</p>
+                      <p className="font-medium text-text-main">{entry.driver_name ?? 'Unknown Driver'}</p>
                       <p className="text-xs text-text-muted mt-0.5">
-                        Submitted {fmtDate(entry.submitted_at)}
+                        Submitted {entry.submitted_at ? fmtDate(entry.submitted_at) : '—'}
                       </p>
                     </div>
                     <StatusBadge status={entry.status} />
@@ -333,7 +333,7 @@ export function SASafetyCompliance() {
 
                   {/* Documents */}
                   <div className="flex flex-wrap gap-1.5">
-                    {entry.docs.map((doc) => (
+                    {(entry.docs ?? []).map((doc) => (
                       <Badge key={doc} variant="default">
                         {doc}
                       </Badge>

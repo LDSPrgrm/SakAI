@@ -39,21 +39,24 @@ const ACTION_OPTIONS: { value: string; label: string }[] = [
   { value: 'logout', label: 'Logout' },
 ];
 
-function formatTimestamp(iso: string): string {
+function formatTimestamp(iso: string | null | undefined): string {
+  if (!iso) return '—';
   return new Date(iso).toLocaleString('en-PH', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 }
 
-function humanizeResourceType(type: string): string {
+function humanizeResourceType(type: string | null | undefined): string {
+  if (!type) return '—';
   return type
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
 }
 
-function truncate(str: string, max = 24): string {
+function truncate(str: string | null | undefined, max = 24): string {
+  if (!str) return '—';
   if (str.length <= max) return str;
   return str.slice(0, max) + '…';
 }
@@ -175,11 +178,11 @@ export function SAAuditLog() {
     URL.revokeObjectURL(url);
   };
 
-  const filteredLogs = logs.filter((log) => {
+  const filteredLogs = (logs || []).filter((log) => {
     const matchesSearch =
       !search ||
-      log.actor_name.toLowerCase().includes(search.toLowerCase()) ||
-      log.resource_type.toLowerCase().includes(search.toLowerCase());
+      (log.actor_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (log.resource_type ?? '').toLowerCase().includes(search.toLowerCase());
     const matchesAction = !actionFilter || log.action === actionFilter;
     return matchesSearch && matchesAction;
   });

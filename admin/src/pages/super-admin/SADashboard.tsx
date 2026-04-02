@@ -84,38 +84,38 @@ export function SADashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <SummaryCard
           title="Total Riders"
-          value={metrics.total_riders.toLocaleString()}
+          value={(metrics.total_riders ?? 0).toLocaleString()}
           icon={<Users className="w-5 h-5 text-primary" />}
-          trend={metrics.riders_trend}
+          trend={metrics.riders_trend ?? ''}
         />
         <SummaryCard
           title="Total Drivers"
-          value={metrics.total_drivers.toLocaleString()}
+          value={(metrics.total_drivers ?? 0).toLocaleString()}
           icon={<Car className="w-5 h-5 text-primary" />}
-          trend={metrics.drivers_trend}
+          trend={metrics.drivers_trend ?? ''}
         />
         <SummaryCard
           title="Rides Today"
-          value={metrics.rides_today.toLocaleString()}
+          value={(metrics.rides_today ?? 0).toLocaleString()}
           icon={<Activity className="w-5 h-5 text-primary" />}
-          trend={metrics.rides_trend}
+          trend={metrics.rides_trend ?? ''}
         />
         <SummaryCard
           title="Revenue Today"
-          value={formatPHP(metrics.revenue_today)}
+          value={formatPHP(metrics.revenue_today ?? 0)}
           icon={<PhpIcon className="w-5 h-5 text-success" />}
-          trend={metrics.revenue_trend}
+          trend={metrics.revenue_trend ?? ''}
         />
         <SummaryCard
           title="Avg Wait Time"
-          value={`${metrics.avg_wait_minutes} mins`}
+          value={`${metrics.avg_wait_minutes ?? 0} mins`}
           icon={<Clock className="w-5 h-5 text-warning" />}
-          trend={metrics.wait_trend}
+          trend={metrics.wait_trend ?? ''}
           trendDownIsGood
         />
         <SummaryCard
           title="Platform Uptime"
-          value={`${metrics.platform_uptime}%`}
+          value={`${metrics.platform_uptime ?? 0}%`}
           icon={<Server className="w-5 h-5 text-success" />}
         />
       </div>

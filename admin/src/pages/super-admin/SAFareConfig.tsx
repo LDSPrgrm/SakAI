@@ -156,17 +156,26 @@ export function SAFareConfig() {
   const [simError, setSimError] = useState('');
   const [simLoading, setSimLoading] = useState(false);
 
+  // Data loading state
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     async function load() {
-      const [configs, surge] = await Promise.all([
-        adminApi.fares.getConfigs(),
-        adminApi.fares.getSurge(),
-      ]);
-      setFareConfigs(configs);
-      setSurgeConfig(surge);
-      setSurgeEnabled(surge.enabled);
-      setMaxMultiplier(String(surge.max_multiplier));
-      setTriggerRatio(String(surge.trigger_ratio));
+      try {
+        const [configs, surge] = await Promise.all([
+          adminApi.fares.getConfigs(),
+          adminApi.fares.getSurge(),
+        ]);
+        setFareConfigs(configs || []);
+        setSurgeConfig(surge || { enabled: false, max_multiplier: 1, trigger_ratio: 1 } as SurgeConfig);
+        setSurgeEnabled(surge?.enabled ?? false);
+        setMaxMultiplier(String(surge?.max_multiplier ?? 2.5));
+        setTriggerRatio(String(surge?.trigger_ratio ?? 1.5));
+      } catch (err) {
+        console.error('Failed to load fare configs', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     load();
   }, []);
@@ -208,7 +217,7 @@ export function SAFareConfig() {
     setSimLoading(false);
   }
 
-  if (!surgeConfig || fareConfigs.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-text-muted text-sm">
         Loading…
@@ -241,14 +250,24 @@ export function SAFareConfig() {
               </TabsList>
 
               {VEHICLE_TABS.map(({ value }) => {
-                const config = fareConfigs.find((f) => f.vehicle_type === value);
-                if (!config) return null;
+                const config = fareConfigs.find((f) => f.vehicle_type === value) || {
+                  id: 'new',
+                  vehicle_type: value,
+                  base_fare: 0,
+                  per_km_rate: 0,
+                  per_min_rate: 0,
+                  minimum_fare: 0,
+                  booking_fee: 0,
+                  cancellation_fee: 0,
+                  updated_by: '—',
+                  updated_at: new Date().toISOString(),
+                };
                 return (
                   <TabsContent key={value} value={value}>
                     <FareTabForm
-                      config={config}
+                      config={config as FareConfig}
                       onSaved={() => {
-                        adminApi.fares.getConfigs().then(setFareConfigs);
+                        adminApi.fares.getConfigs().then((res) => setFareConfigs(res || []));
                       }}
                       onBannerShow={showBanner}
                     />
@@ -281,14 +300,12 @@ export function SAFareConfig() {
                   aria-checked={surgeEnabled}
                   role="switch"
                   onClick={() => setSurgeEnabled((v) => !v)}
-                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
-                    surgeEnabled ? 'bg-primary' : 'bg-border'
-                  }`}
+                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${surgeEnabled ? 'bg-primary' : 'bg-border'
+                    }`}
                 >
                   <div
-                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${
-                      surgeEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${surgeEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                   />
                 </button>
               </div>

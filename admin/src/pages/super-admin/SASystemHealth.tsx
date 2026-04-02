@@ -63,21 +63,21 @@ function ServiceCard({ service }: { service: SystemService }) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
           <p className="text-xs text-text-muted">Latency</p>
-          <p className={cn('font-semibold', latencyColor(service.latency_ms))}>
-            {service.latency_ms}ms
+          <p className={cn('font-semibold', latencyColor(service.latency_ms ?? 0))}>
+            {service.latency_ms != null ? `${service.latency_ms}ms` : '—'}
           </p>
         </div>
         <div>
           <p className="text-xs text-text-muted">Uptime</p>
-          <p className={cn('font-semibold', uptimeColor(service.uptime_pct))}>
-            {service.uptime_pct.toFixed(2)}%
+          <p className={cn('font-semibold', uptimeColor(service.uptime_pct ?? 0))}>
+            {service.uptime_pct != null ? `${service.uptime_pct.toFixed(2)}%` : '—'}
           </p>
         </div>
       </div>
 
       {/* Last checked */}
       <p className="text-xs text-text-muted">
-        Checked {secondsAgo(new Date(service.last_checked))}
+        {service.last_checked ? `Checked ${secondsAgo(new Date(service.last_checked))}` : 'Not checked'}
       </p>
     </div>
   );

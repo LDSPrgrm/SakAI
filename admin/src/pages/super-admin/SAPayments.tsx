@@ -149,10 +149,10 @@ export function SAPayments() {
   const filtered = transactions.filter((t) => {
     const q = search.toLowerCase();
     return (
-      t.id.toLowerCase().includes(q) ||
-      t.ride_id.toLowerCase().includes(q) ||
-      t.rider_name.toLowerCase().includes(q) ||
-      t.driver_name.toLowerCase().includes(q)
+      (t.id ?? '').toLowerCase().includes(q) ||
+      (t.ride_id ?? '').toLowerCase().includes(q) ||
+      (t.rider_name ?? '').toLowerCase().includes(q) ||
+      (t.driver_name ?? '').toLowerCase().includes(q)
     );
   });
 
@@ -248,7 +248,7 @@ export function SAPayments() {
         />
         <SummaryCard
           title="Failed Transactions"
-          value={summary.failed_transactions.toString()}
+          value={(summary.failed_transactions ?? 0).toString()}
           icon={<AlertCircle className="w-5 h-5 text-danger" />}
         />
       </div>
@@ -317,11 +317,11 @@ export function SAPayments() {
                         {/* Rider + Driver names */}
                         <TableCell>
                           <span className="text-sm text-text-main">
-                            {t.rider_name}
+                            {t.rider_name ?? '—'}
                           </span>
                           <br />
                           <span className="text-xs text-text-muted">
-                            {t.driver_name}
+                            {t.driver_name ?? '—'}
                           </span>
                         </TableCell>
 
@@ -346,9 +346,11 @@ export function SAPayments() {
 
                         {/* Payment Method */}
                         <TableCell>
-                          <Badge variant={methodVariant(t.payment_method)}>
-                            {t.payment_method.toUpperCase()}
-                          </Badge>
+                          {t.payment_method ? (
+                            <Badge variant={methodVariant(t.payment_method)}>
+                              {t.payment_method.toUpperCase()}
+                            </Badge>
+                          ) : '—'}
                         </TableCell>
 
                         {/* Status */}
@@ -358,11 +360,13 @@ export function SAPayments() {
 
                         {/* Date */}
                         <TableCell className="text-sm text-text-muted whitespace-nowrap">
-                          {new Date(t.created_at).toLocaleDateString('en-PH', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+                          {t.created_at
+                            ? new Date(t.created_at).toLocaleDateString('en-PH', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                            : '—'}
                         </TableCell>
                       </TableRow>
                     ))
