@@ -31,6 +31,12 @@ func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
 	return err
 }
 
+func (r *userRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	const q = `UPDATE users SET password_hash = $1 WHERE id = $2`
+	_, err := r.db.Exec(ctx, q, passwordHash, userID)
+	return err
+}
+
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	const q = `SELECT id, name, email, password_hash, role, created_at FROM users WHERE id = $1`
 	u := &domain.User{}

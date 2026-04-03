@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase
 
 import (
 	"context"
@@ -39,6 +39,9 @@ type UserRepository interface {
 	// search is matched case-insensitively against name and email.
 	// Returns the slice and the total count (before pagination) for metadata.
 	ListByRole(ctx context.Context, filter UserListFilter) ([]*User, int, error)
+
+	// UpdatePassword sets a new bcrypt password hash for the user.
+	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
 }
 
 // TokenRepository manages opaque refresh tokens (stored server-side).
@@ -126,11 +129,69 @@ type DriverRepository interface {
 type AdminRepository interface {
 	GetAdmins(ctx context.Context) ([]*User, error)
 	UpdateAdminStatus(ctx context.Context, id uuid.UUID, status UserRole) error
+	DeactivateAdmin(ctx context.Context, id uuid.UUID) error
 	// Extra config persistence (payments, commission)
 	GetPaymentConfigs(ctx context.Context) ([]*PaymentGatewayConfig, error)
 	UpdatePaymentConfig(ctx context.Context, config *PaymentGatewayConfig) error
 	GetCommissionSettings(ctx context.Context) ([]*CommissionSettings, error)
 	UpdateCommissionSettings(ctx context.Context, settings *CommissionSettings) error
+}
+
+// RoleRepository manages dynamic RBAC roles.
+type RoleRepository interface {
+	ListRoles(ctx context.Context) ([]*Role, error)
+	CreateRole(ctx context.Context, role *Role) error
+	GetRoleByID(ctx context.Context, id uuid.UUID) (*Role, error)
+	UpdateRole(ctx context.Context, role *Role) error
+	DeleteRole(ctx context.Context, id uuid.UUID) error
+	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]RolePermission, error)
+	GetAdminsByRole(ctx context.Context, roleID uuid.UUID) ([]*User, error)
+}
+
+// PaymentRepository handles financial data access.
+type PaymentRepository interface {
+	ListTransactions(ctx context.Context, page, limit int) ([]*Transaction, int, error)
+	GetPaymentSummary(ctx context.Context) (*PaymentSummary, error)
+	ListPayouts(ctx context.Context) ([]*DriverPayout, error)
+	ApprovePayout(ctx context.Context, id uuid.UUID) error
+	GetGatewayConfigs(ctx context.Context) ([]*PaymentGatewayConfig, error)
+	UpdateGatewayConfig(ctx context.Context, config *PaymentGatewayConfig) error
+	GetCommissionSettings(ctx context.Context) ([]*CommissionSettings, error)
+	UpdateCommissionSettings(ctx context.Context, settings *CommissionSettings) error
+}
+
+// SafetyRepository handles KYC and compliance data.
+type SafetyRepository interface {
+	ListKyc(ctx context.Context) ([]*KycEntry, error)
+	UpdateKycStatus(ctx context.Context, id uuid.UUID, status string, reason string) error
+	GetCompliance(ctx context.Context) (*ComplianceData, error)
+}
+
+// SystemRepository manages platform configuration and health.
+type SystemRepository interface {
+	ListServices(ctx context.Context) ([]*SystemService, error)
+	ListFeatureFlags(ctx context.Context) ([]*FeatureFlag, error)
+	UpdateFeatureFlag(ctx context.Context, key string, enabled bool) error
+	ListIntegrations(ctx context.Context) ([]*Integration, error)
+	UpdateIntegration(ctx context.Context, service string, config map[string]string) error
+	ListNotificationTemplates(ctx context.Context) ([]*NotificationTemplate, error)
+	UpdateNotificationTemplate(ctx context.Context, event string, subject, body string) error
+}
+
+// ReportRepository provides report data.
+type ReportRepository interface {
+	ListReports(ctx context.Context) ([]*ReportDefinition, error)
+	GetChartData(ctx context.Context, reportType string) ([]map[string]interface{}, error)
+	ExportReport(ctx context.Context, reportType string) ([]byte, error)
+}
+
+// MetricsRepository provides individual KPI metrics.
+type MetricsRepository interface {
+	GetRiderMetrics(ctx context.Context) (*MetricResponse, error)
+	GetDriverMetrics(ctx context.Context) (*MetricResponse, error)
+	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
+	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
+	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
 }
 
 // FareRepository manages pricing rules.
@@ -188,6 +249,7 @@ type AuthUseCase interface {
 	Logout(ctx context.Context, refreshToken string) error
 	// GetUserByID is a helper for the auth middleware and /users/me endpoint.
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
+	ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
 }
 
 // RideUseCase defines the ride lifecycle contract.
@@ -255,6 +317,8 @@ type AdminUseCase interface {
 	ListAdmins(ctx context.Context) ([]*User, error)
 	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole) (*User, error)
 	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
+	DeactivateAdmin(ctx context.Context, actorID, targetID uuid.UUID) error
+	GetAdminActivity(ctx context.Context, adminID uuid.UUID) ([]*AuditLogEntry, error)
 
 	// Ride browsing (admin)
 	ListRides(ctx context.Context, filter AdminRideFilter) ([]*AdminRideItem, PaginationMeta, error)
@@ -279,4 +343,65 @@ type FareUseCase interface {
 type AuditUseCase interface {
 	LogAction(ctx context.Context, entry *AuditLogEntry) error
 	GetLogs(ctx context.Context, query AuditQuery) ([]*AuditLogEntry, int, error)
+	ExportLogs(ctx context.Context, query AuditQuery) ([]byte, error)
+}
+
+// RoleUseCase manages dynamic RBAC roles.
+type RoleUseCase interface {
+	ListRoles(ctx context.Context) ([]*Role, error)
+	CreateRole(ctx context.Context, actorID uuid.UUID, name, description string, permissions []RolePermission) (*Role, error)
+	GetRole(ctx context.Context, id uuid.UUID) (*Role, error)
+	UpdateRole(ctx context.Context, actorID, roleID uuid.UUID, name, description string, permissions []RolePermission) (*Role, error)
+	DeleteRole(ctx context.Context, actorID, roleID uuid.UUID) error
+	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]RolePermission, error)
+	GetRoleAdmins(ctx context.Context, roleID uuid.UUID) ([]*User, error)
+}
+
+// PaymentUseCase handles payment operations.
+type PaymentUseCase interface {
+	ListTransactions(ctx context.Context, page, limit int) ([]*Transaction, int, error)
+	GetSummary(ctx context.Context) (*PaymentSummary, error)
+	ListPayouts(ctx context.Context) ([]*DriverPayout, error)
+	ApprovePayout(ctx context.Context, actorID, payoutID uuid.UUID) error
+	BatchApprovePayouts(ctx context.Context, actorID uuid.UUID, ids []uuid.UUID) (int, error)
+	GetGatewayConfigs(ctx context.Context) ([]*PaymentGatewayConfig, error)
+	UpdateGatewayConfig(ctx context.Context, actorID uuid.UUID, config *PaymentGatewayConfig) error
+	GetCommissionSettings(ctx context.Context) ([]*CommissionSettings, error)
+	UpdateCommissionSettings(ctx context.Context, actorID uuid.UUID, settings *CommissionSettings) error
+}
+
+// SafetyUseCase handles KYC and compliance operations.
+type SafetyUseCase interface {
+	ListKyc(ctx context.Context) ([]*KycEntry, error)
+	UpdateKyc(ctx context.Context, actorID, kycID uuid.UUID, status, reason string) error
+	BatchKyc(ctx context.Context, actorID uuid.UUID, ids []uuid.UUID, status string) (int, error)
+	GetCompliance(ctx context.Context) (*ComplianceData, error)
+}
+
+// SystemUseCase manages platform configuration.
+type SystemUseCase interface {
+	ListServices(ctx context.Context) ([]*SystemService, error)
+	ListFeatureFlags(ctx context.Context) ([]*FeatureFlag, error)
+	UpdateFeatureFlag(ctx context.Context, actorID uuid.UUID, key string, enabled bool) error
+	ListIntegrations(ctx context.Context) ([]*Integration, error)
+	UpdateIntegration(ctx context.Context, actorID uuid.UUID, service string, config map[string]string) error
+	TestIntegration(ctx context.Context, service string) (*SystemService, error)
+	ListNotificationTemplates(ctx context.Context) ([]*NotificationTemplate, error)
+	UpdateNotificationTemplate(ctx context.Context, actorID uuid.UUID, event, subject, body string) error
+}
+
+// ReportUseCase provides analytics reports.
+type ReportUseCase interface {
+	ListReports(ctx context.Context) ([]*ReportDefinition, error)
+	GetChartData(ctx context.Context, reportType string) ([]map[string]interface{}, error)
+	ExportReport(ctx context.Context, reportType string) ([]byte, error)
+}
+
+// MetricsUseCase provides individual KPI metrics for the dashboard.
+type MetricsUseCase interface {
+	GetRiderMetrics(ctx context.Context) (*MetricResponse, error)
+	GetDriverMetrics(ctx context.Context) (*MetricResponse, error)
+	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
+	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
+	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
 }

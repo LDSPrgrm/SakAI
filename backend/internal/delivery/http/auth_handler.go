@@ -98,3 +98,17 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	}
 	respondOK(c, dto.NewUserResponse(user))
 }
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	if err := h.uc.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
