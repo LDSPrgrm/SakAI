@@ -14,7 +14,7 @@ dependencies:
 
   sakai_api_client:
     path: lib/api_client
-  geocoding: ^3.0.0
+  geocoding: ^4.0.0
 
 dev_dependencies:
   flutter_test:

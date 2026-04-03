@@ -7,14 +7,14 @@ part of 'health_response_dependencies.dart';
 // **************************************************************************
 
 const HealthResponseDependenciesDatabaseEnum
-    _$healthResponseDependenciesDatabaseEnum_ok =
+_$healthResponseDependenciesDatabaseEnum_ok =
     const HealthResponseDependenciesDatabaseEnum._('ok');
 const HealthResponseDependenciesDatabaseEnum
-    _$healthResponseDependenciesDatabaseEnum_down =
+_$healthResponseDependenciesDatabaseEnum_down =
     const HealthResponseDependenciesDatabaseEnum._('down');
 
 HealthResponseDependenciesDatabaseEnum
-    _$healthResponseDependenciesDatabaseEnumValueOf(String name) {
+_$healthResponseDependenciesDatabaseEnumValueOf(String name) {
   switch (name) {
     case 'ok':
       return _$healthResponseDependenciesDatabaseEnum_ok;
@@ -26,21 +26,23 @@ HealthResponseDependenciesDatabaseEnum
 }
 
 final BuiltSet<HealthResponseDependenciesDatabaseEnum>
-    _$healthResponseDependenciesDatabaseEnumValues = BuiltSet<
-        HealthResponseDependenciesDatabaseEnum>(const <HealthResponseDependenciesDatabaseEnum>[
-  _$healthResponseDependenciesDatabaseEnum_ok,
-  _$healthResponseDependenciesDatabaseEnum_down,
-]);
+_$healthResponseDependenciesDatabaseEnumValues =
+    BuiltSet<HealthResponseDependenciesDatabaseEnum>(
+      const <HealthResponseDependenciesDatabaseEnum>[
+        _$healthResponseDependenciesDatabaseEnum_ok,
+        _$healthResponseDependenciesDatabaseEnum_down,
+      ],
+    );
 
 const HealthResponseDependenciesRedisEnum
-    _$healthResponseDependenciesRedisEnum_ok =
+_$healthResponseDependenciesRedisEnum_ok =
     const HealthResponseDependenciesRedisEnum._('ok');
 const HealthResponseDependenciesRedisEnum
-    _$healthResponseDependenciesRedisEnum_down =
+_$healthResponseDependenciesRedisEnum_down =
     const HealthResponseDependenciesRedisEnum._('down');
 
 HealthResponseDependenciesRedisEnum
-    _$healthResponseDependenciesRedisEnumValueOf(String name) {
+_$healthResponseDependenciesRedisEnumValueOf(String name) {
   switch (name) {
     case 'ok':
       return _$healthResponseDependenciesRedisEnum_ok;
@@ -52,17 +54,19 @@ HealthResponseDependenciesRedisEnum
 }
 
 final BuiltSet<HealthResponseDependenciesRedisEnum>
-    _$healthResponseDependenciesRedisEnumValues = BuiltSet<
-        HealthResponseDependenciesRedisEnum>(const <HealthResponseDependenciesRedisEnum>[
-  _$healthResponseDependenciesRedisEnum_ok,
-  _$healthResponseDependenciesRedisEnum_down,
-]);
+_$healthResponseDependenciesRedisEnumValues =
+    BuiltSet<HealthResponseDependenciesRedisEnum>(
+      const <HealthResponseDependenciesRedisEnum>[
+        _$healthResponseDependenciesRedisEnum_ok,
+        _$healthResponseDependenciesRedisEnum_down,
+      ],
+    );
 
 Serializer<HealthResponseDependenciesDatabaseEnum>
-    _$healthResponseDependenciesDatabaseEnumSerializer =
+_$healthResponseDependenciesDatabaseEnumSerializer =
     _$HealthResponseDependenciesDatabaseEnumSerializer();
 Serializer<HealthResponseDependenciesRedisEnum>
-    _$healthResponseDependenciesRedisEnumSerializer =
+_$healthResponseDependenciesRedisEnumSerializer =
     _$HealthResponseDependenciesRedisEnumSerializer();
 
 class _$HealthResponseDependenciesDatabaseEnumSerializer
@@ -78,23 +82,26 @@ class _$HealthResponseDependenciesDatabaseEnumSerializer
 
   @override
   final Iterable<Type> types = const <Type>[
-    HealthResponseDependenciesDatabaseEnum
+    HealthResponseDependenciesDatabaseEnum,
   ];
   @override
   final String wireName = 'HealthResponseDependenciesDatabaseEnum';
 
   @override
-  Object serialize(Serializers serializers,
-          HealthResponseDependenciesDatabaseEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    HealthResponseDependenciesDatabaseEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   HealthResponseDependenciesDatabaseEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      HealthResponseDependenciesDatabaseEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => HealthResponseDependenciesDatabaseEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$HealthResponseDependenciesRedisEnumSerializer
@@ -110,23 +117,26 @@ class _$HealthResponseDependenciesRedisEnumSerializer
 
   @override
   final Iterable<Type> types = const <Type>[
-    HealthResponseDependenciesRedisEnum
+    HealthResponseDependenciesRedisEnum,
   ];
   @override
   final String wireName = 'HealthResponseDependenciesRedisEnum';
 
   @override
   Object serialize(
-          Serializers serializers, HealthResponseDependenciesRedisEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    HealthResponseDependenciesRedisEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   HealthResponseDependenciesRedisEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      HealthResponseDependenciesRedisEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => HealthResponseDependenciesRedisEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$HealthResponseDependencies extends HealthResponseDependencies {
@@ -135,15 +145,15 @@ class _$HealthResponseDependencies extends HealthResponseDependencies {
   @override
   final HealthResponseDependenciesRedisEnum? redis;
 
-  factory _$HealthResponseDependencies(
-          [void Function(HealthResponseDependenciesBuilder)? updates]) =>
-      (HealthResponseDependenciesBuilder()..update(updates))._build();
+  factory _$HealthResponseDependencies([
+    void Function(HealthResponseDependenciesBuilder)? updates,
+  ]) => (HealthResponseDependenciesBuilder()..update(updates))._build();
 
   _$HealthResponseDependencies._({this.database, this.redis}) : super._();
   @override
   HealthResponseDependencies rebuild(
-          void Function(HealthResponseDependenciesBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(HealthResponseDependenciesBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   HealthResponseDependenciesBuilder toBuilder() =>
@@ -218,11 +228,8 @@ class HealthResponseDependenciesBuilder
   HealthResponseDependencies build() => _build();
 
   _$HealthResponseDependencies _build() {
-    final _$result = _$v ??
-        _$HealthResponseDependencies._(
-          database: database,
-          redis: redis,
-        );
+    final _$result =
+        _$v ?? _$HealthResponseDependencies._(database: database, redis: redis);
     replace(_$result);
     return _$result;
   }

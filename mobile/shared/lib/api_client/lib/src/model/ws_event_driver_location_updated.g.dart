@@ -14,17 +14,19 @@ class _$WsEventDriverLocationUpdated extends WsEventDriverLocationUpdated {
   @override
   final double? heading;
 
-  factory _$WsEventDriverLocationUpdated(
-          [void Function(WsEventDriverLocationUpdatedBuilder)? updates]) =>
-      (WsEventDriverLocationUpdatedBuilder()..update(updates))._build();
+  factory _$WsEventDriverLocationUpdated([
+    void Function(WsEventDriverLocationUpdatedBuilder)? updates,
+  ]) => (WsEventDriverLocationUpdatedBuilder()..update(updates))._build();
 
-  _$WsEventDriverLocationUpdated._(
-      {required this.rideId, required this.location, this.heading})
-      : super._();
+  _$WsEventDriverLocationUpdated._({
+    required this.rideId,
+    required this.location,
+    this.heading,
+  }) : super._();
   @override
   WsEventDriverLocationUpdated rebuild(
-          void Function(WsEventDriverLocationUpdatedBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(WsEventDriverLocationUpdatedBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   WsEventDriverLocationUpdatedBuilder toBuilder() =>
@@ -61,8 +63,10 @@ class _$WsEventDriverLocationUpdated extends WsEventDriverLocationUpdated {
 
 class WsEventDriverLocationUpdatedBuilder
     implements
-        Builder<WsEventDriverLocationUpdated,
-            WsEventDriverLocationUpdatedBuilder> {
+        Builder<
+          WsEventDriverLocationUpdated,
+          WsEventDriverLocationUpdatedBuilder
+        > {
   _$WsEventDriverLocationUpdated? _$v;
 
   String? _rideId;
@@ -108,10 +112,14 @@ class WsEventDriverLocationUpdatedBuilder
   _$WsEventDriverLocationUpdated _build() {
     _$WsEventDriverLocationUpdated _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$WsEventDriverLocationUpdated._(
             rideId: BuiltValueNullFieldError.checkNotNull(
-                rideId, r'WsEventDriverLocationUpdated', 'rideId'),
+              rideId,
+              r'WsEventDriverLocationUpdated',
+              'rideId',
+            ),
             location: location.build(),
             heading: heading,
           );
@@ -122,7 +130,10 @@ class WsEventDriverLocationUpdatedBuilder
         location.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'WsEventDriverLocationUpdated', _$failedField, e.toString());
+          r'WsEventDriverLocationUpdated',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

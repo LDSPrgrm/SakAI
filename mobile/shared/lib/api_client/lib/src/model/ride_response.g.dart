@@ -23,14 +23,15 @@ RideResponseCancelledByEnum _$rideResponseCancelledByEnumValueOf(String name) {
 }
 
 final BuiltSet<RideResponseCancelledByEnum>
-    _$rideResponseCancelledByEnumValues =
-    BuiltSet<RideResponseCancelledByEnum>(const <RideResponseCancelledByEnum>[
-  _$rideResponseCancelledByEnum_passenger,
-  _$rideResponseCancelledByEnum_driver,
-]);
+_$rideResponseCancelledByEnumValues = BuiltSet<RideResponseCancelledByEnum>(
+  const <RideResponseCancelledByEnum>[
+    _$rideResponseCancelledByEnum_passenger,
+    _$rideResponseCancelledByEnum_driver,
+  ],
+);
 
 Serializer<RideResponseCancelledByEnum>
-    _$rideResponseCancelledByEnumSerializer =
+_$rideResponseCancelledByEnumSerializer =
     _$RideResponseCancelledByEnumSerializer();
 
 class _$RideResponseCancelledByEnumSerializer
@@ -50,16 +51,20 @@ class _$RideResponseCancelledByEnumSerializer
   final String wireName = 'RideResponseCancelledByEnum';
 
   @override
-  Object serialize(Serializers serializers, RideResponseCancelledByEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RideResponseCancelledByEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   RideResponseCancelledByEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideResponseCancelledByEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideResponseCancelledByEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$RideResponse extends RideResponse {
@@ -91,20 +96,20 @@ class _$RideResponse extends RideResponse {
   factory _$RideResponse([void Function(RideResponseBuilder)? updates]) =>
       (RideResponseBuilder()..update(updates))._build();
 
-  _$RideResponse._(
-      {required this.id,
-      required this.status,
-      required this.passenger,
-      this.driver,
-      required this.origin,
-      required this.destination,
-      this.originAddress,
-      this.destinationAddress,
-      this.notes,
-      this.cancelledBy,
-      required this.createdAt,
-      required this.updatedAt})
-      : super._();
+  _$RideResponse._({
+    required this.id,
+    required this.status,
+    required this.passenger,
+    this.driver,
+    required this.origin,
+    required this.destination,
+    this.originAddress,
+    this.destinationAddress,
+    this.notes,
+    this.cancelledBy,
+    required this.createdAt,
+    required this.updatedAt,
+  }) : super._();
   @override
   RideResponse rebuild(void Function(RideResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -265,12 +270,19 @@ class RideResponseBuilder
   _$RideResponse _build() {
     _$RideResponse _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$RideResponse._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'RideResponse', 'id'),
+              id,
+              r'RideResponse',
+              'id',
+            ),
             status: BuiltValueNullFieldError.checkNotNull(
-                status, r'RideResponse', 'status'),
+              status,
+              r'RideResponse',
+              'status',
+            ),
             passenger: passenger.build(),
             driver: _driver?.build(),
             origin: origin.build(),
@@ -280,9 +292,15 @@ class RideResponseBuilder
             notes: notes,
             cancelledBy: cancelledBy,
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'RideResponse', 'createdAt'),
+              createdAt,
+              r'RideResponse',
+              'createdAt',
+            ),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
-                updatedAt, r'RideResponse', 'updatedAt'),
+              updatedAt,
+              r'RideResponse',
+              'updatedAt',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -297,7 +315,10 @@ class RideResponseBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'RideResponse', _$failedField, e.toString());
+          r'RideResponse',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

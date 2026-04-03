@@ -19,12 +19,12 @@ class _$AuthResponse extends AuthResponse {
   factory _$AuthResponse([void Function(AuthResponseBuilder)? updates]) =>
       (AuthResponseBuilder()..update(updates))._build();
 
-  _$AuthResponse._(
-      {required this.accessToken,
-      required this.refreshToken,
-      required this.accessTokenExpiresAt,
-      required this.user})
-      : super._();
+  _$AuthResponse._({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.accessTokenExpiresAt,
+    required this.user,
+  }) : super._();
   @override
   AuthResponse rebuild(void Function(AuthResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -117,14 +117,24 @@ class AuthResponseBuilder
   _$AuthResponse _build() {
     _$AuthResponse _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$AuthResponse._(
             accessToken: BuiltValueNullFieldError.checkNotNull(
-                accessToken, r'AuthResponse', 'accessToken'),
+              accessToken,
+              r'AuthResponse',
+              'accessToken',
+            ),
             refreshToken: BuiltValueNullFieldError.checkNotNull(
-                refreshToken, r'AuthResponse', 'refreshToken'),
+              refreshToken,
+              r'AuthResponse',
+              'refreshToken',
+            ),
             accessTokenExpiresAt: BuiltValueNullFieldError.checkNotNull(
-                accessTokenExpiresAt, r'AuthResponse', 'accessTokenExpiresAt'),
+              accessTokenExpiresAt,
+              r'AuthResponse',
+              'accessTokenExpiresAt',
+            ),
             user: user.build(),
           );
     } catch (_) {
@@ -134,7 +144,10 @@ class AuthResponseBuilder
         user.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'AuthResponse', _$failedField, e.toString());
+          r'AuthResponse',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

@@ -21,13 +21,13 @@ class _$RideRequestBody extends RideRequestBody {
   factory _$RideRequestBody([void Function(RideRequestBodyBuilder)? updates]) =>
       (RideRequestBodyBuilder()..update(updates))._build();
 
-  _$RideRequestBody._(
-      {required this.origin,
-      required this.destination,
-      this.originAddress,
-      this.destinationAddress,
-      this.notes})
-      : super._();
+  _$RideRequestBody._({
+    required this.origin,
+    required this.destination,
+    this.originAddress,
+    this.destinationAddress,
+    this.notes,
+  }) : super._();
   @override
   RideRequestBody rebuild(void Function(RideRequestBodyBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -130,7 +130,8 @@ class RideRequestBodyBuilder
   _$RideRequestBody _build() {
     _$RideRequestBody _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$RideRequestBody._(
             origin: origin.build(),
             destination: destination.build(),
@@ -147,7 +148,10 @@ class RideRequestBodyBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'RideRequestBody', _$failedField, e.toString());
+          r'RideRequestBody',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

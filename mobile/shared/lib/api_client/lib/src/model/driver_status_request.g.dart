@@ -12,7 +12,8 @@ const DriverStatusRequestStatusEnum _$driverStatusRequestStatusEnum_offline =
     const DriverStatusRequestStatusEnum._('offline');
 
 DriverStatusRequestStatusEnum _$driverStatusRequestStatusEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'online':
       return _$driverStatusRequestStatusEnum_online;
@@ -24,14 +25,15 @@ DriverStatusRequestStatusEnum _$driverStatusRequestStatusEnumValueOf(
 }
 
 final BuiltSet<DriverStatusRequestStatusEnum>
-    _$driverStatusRequestStatusEnumValues = BuiltSet<
-        DriverStatusRequestStatusEnum>(const <DriverStatusRequestStatusEnum>[
-  _$driverStatusRequestStatusEnum_online,
-  _$driverStatusRequestStatusEnum_offline,
-]);
+_$driverStatusRequestStatusEnumValues = BuiltSet<DriverStatusRequestStatusEnum>(
+  const <DriverStatusRequestStatusEnum>[
+    _$driverStatusRequestStatusEnum_online,
+    _$driverStatusRequestStatusEnum_offline,
+  ],
+);
 
 Serializer<DriverStatusRequestStatusEnum>
-    _$driverStatusRequestStatusEnumSerializer =
+_$driverStatusRequestStatusEnumSerializer =
     _$DriverStatusRequestStatusEnumSerializer();
 
 class _$DriverStatusRequestStatusEnumSerializer
@@ -52,31 +54,34 @@ class _$DriverStatusRequestStatusEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, DriverStatusRequestStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    DriverStatusRequestStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   DriverStatusRequestStatusEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      DriverStatusRequestStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => DriverStatusRequestStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$DriverStatusRequest extends DriverStatusRequest {
   @override
   final DriverStatusRequestStatusEnum status;
 
-  factory _$DriverStatusRequest(
-          [void Function(DriverStatusRequestBuilder)? updates]) =>
-      (DriverStatusRequestBuilder()..update(updates))._build();
+  factory _$DriverStatusRequest([
+    void Function(DriverStatusRequestBuilder)? updates,
+  ]) => (DriverStatusRequestBuilder()..update(updates))._build();
 
   _$DriverStatusRequest._({required this.status}) : super._();
   @override
   DriverStatusRequest rebuild(
-          void Function(DriverStatusRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(DriverStatusRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   DriverStatusRequestBuilder toBuilder() =>
@@ -98,9 +103,9 @@ class _$DriverStatusRequest extends DriverStatusRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'DriverStatusRequest')
-          ..add('status', status))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'DriverStatusRequest',
+    )..add('status', status)).toString();
   }
 }
 
@@ -139,10 +144,14 @@ class DriverStatusRequestBuilder
   DriverStatusRequest build() => _build();
 
   _$DriverStatusRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$DriverStatusRequest._(
           status: BuiltValueNullFieldError.checkNotNull(
-              status, r'DriverStatusRequest', 'status'),
+            status,
+            r'DriverStatusRequest',
+            'status',
+          ),
         );
     replace(_$result);
     return _$result;

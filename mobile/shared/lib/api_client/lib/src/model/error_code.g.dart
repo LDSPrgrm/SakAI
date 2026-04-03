@@ -6,30 +6,39 @@ part of 'error_code.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const ErrorCode _$EMAIL_ALREADY_REGISTERED =
-    const ErrorCode._('EMAIL_ALREADY_REGISTERED');
-const ErrorCode _$INVALID_CREDENTIALS =
-    const ErrorCode._('INVALID_CREDENTIALS');
+const ErrorCode _$EMAIL_ALREADY_REGISTERED = const ErrorCode._(
+  'EMAIL_ALREADY_REGISTERED',
+);
+const ErrorCode _$INVALID_CREDENTIALS = const ErrorCode._(
+  'INVALID_CREDENTIALS',
+);
 const ErrorCode _$TOKEN_INVALID = const ErrorCode._('TOKEN_INVALID');
 const ErrorCode _$TOKEN_EXPIRED = const ErrorCode._('TOKEN_EXPIRED');
-const ErrorCode _$REFRESH_TOKEN_INVALID =
-    const ErrorCode._('REFRESH_TOKEN_INVALID');
+const ErrorCode _$REFRESH_TOKEN_INVALID = const ErrorCode._(
+  'REFRESH_TOKEN_INVALID',
+);
 const ErrorCode _$VALIDATION_ERROR = const ErrorCode._('VALIDATION_ERROR');
 const ErrorCode _$FORBIDDEN = const ErrorCode._('FORBIDDEN');
 const ErrorCode _$RIDE_NOT_FOUND = const ErrorCode._('RIDE_NOT_FOUND');
 const ErrorCode _$USER_NOT_FOUND = const ErrorCode._('USER_NOT_FOUND');
-const ErrorCode _$RIDE_INVALID_STATE_TRANSITION =
-    const ErrorCode._('RIDE_INVALID_STATE_TRANSITION');
-const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE =
-    const ErrorCode._('PASSENGER_HAS_ACTIVE_RIDE');
-const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE =
-    const ErrorCode._('DRIVER_HAS_ACTIVE_RIDE');
-const ErrorCode _$NO_DRIVERS_AVAILABLE =
-    const ErrorCode._('NO_DRIVERS_AVAILABLE');
-const ErrorCode _$RATE_LIMIT_EXCEEDED =
-    const ErrorCode._('RATE_LIMIT_EXCEEDED');
-const ErrorCode _$INTERNAL_SERVER_ERROR =
-    const ErrorCode._('INTERNAL_SERVER_ERROR');
+const ErrorCode _$RIDE_INVALID_STATE_TRANSITION = const ErrorCode._(
+  'RIDE_INVALID_STATE_TRANSITION',
+);
+const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE = const ErrorCode._(
+  'PASSENGER_HAS_ACTIVE_RIDE',
+);
+const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE = const ErrorCode._(
+  'DRIVER_HAS_ACTIVE_RIDE',
+);
+const ErrorCode _$NO_DRIVERS_AVAILABLE = const ErrorCode._(
+  'NO_DRIVERS_AVAILABLE',
+);
+const ErrorCode _$RATE_LIMIT_EXCEEDED = const ErrorCode._(
+  'RATE_LIMIT_EXCEEDED',
+);
+const ErrorCode _$INTERNAL_SERVER_ERROR = const ErrorCode._(
+  'INTERNAL_SERVER_ERROR',
+);
 
 ErrorCode _$valueOf(String name) {
   switch (name) {
@@ -130,15 +139,20 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
   final String wireName = 'ErrorCode';
 
   @override
-  Object serialize(Serializers serializers, ErrorCode object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    ErrorCode object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  ErrorCode deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      ErrorCode.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  ErrorCode deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => ErrorCode.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

@@ -37,9 +37,9 @@ class _$CancelRequest extends CancelRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'CancelRequest')
-          ..add('reason', reason))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'CancelRequest',
+    )..add('reason', reason)).toString();
   }
 }
 
@@ -78,10 +78,7 @@ class CancelRequestBuilder
   CancelRequest build() => _build();
 
   _$CancelRequest _build() {
-    final _$result = _$v ??
-        _$CancelRequest._(
-          reason: reason,
-        );
+    final _$result = _$v ?? _$CancelRequest._(reason: reason);
     replace(_$result);
     return _$result;
   }
