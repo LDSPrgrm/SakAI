@@ -2251,7 +2251,6 @@ components:
           type: string
         resource_type:
           type: string
-          type: string
         reason:
           type: string
 
