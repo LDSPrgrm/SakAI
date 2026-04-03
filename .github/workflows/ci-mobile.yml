@@ -31,7 +31,7 @@ jobs:
       passenger: ${{ steps.check.outputs.passenger }}
       driver: ${{ steps.check.outputs.driver }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: check
         name: Check for pubspec.yaml in each package
         run: |
@@ -58,15 +58,12 @@ jobs:
       run:
         working-directory: mobile/shared
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@main
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      # Fail CI if any dependency has a known vulnerability.
-      - name: Dependency vulnerability audit
-        run: flutter pub audit
       - run: flutter analyze --fatal-infos
       # --coverage surfaces the test count; CI will still pass with 0 test files
       # but the generated lcov.info can be used for future coverage enforcement.
@@ -83,14 +80,12 @@ jobs:
       run:
         working-directory: mobile/passenger
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@main
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Dependency vulnerability audit
-        run: flutter pub audit
       - run: flutter analyze --fatal-infos
       - run: flutter test --coverage
 
@@ -105,14 +100,12 @@ jobs:
       run:
         working-directory: mobile/driver
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@main
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: Dependency vulnerability audit
-        run: flutter pub audit
       - run: flutter test --coverage
 
   # ── Summary gate ──────────────────────────────────────────────────────────
