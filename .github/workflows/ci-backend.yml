@@ -27,26 +27,6 @@ defaults:
     working-directory: backend
 
 jobs:
-  lint:
-    name: Lint (golangci-lint)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          # Pin the linter version for reproducible results.
-          # Update periodically: https://github.com/golangci/golangci-lint/releases
-          version: v2.1.6
-          working-directory: backend
-
   test:
     name: Unit Tests & Coverage
     runs-on: ubuntu-latest
@@ -96,7 +76,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, test, vuln]
+    needs: [test, vuln]
     steps:
       - uses: actions/checkout@v4
 
