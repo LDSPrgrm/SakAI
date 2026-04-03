@@ -57,6 +57,7 @@ src/
 │   └── super-admin/
 │       ├── DashboardPage.tsx
 │       ├── AdminManagementPage.tsx
+│       ├── RoleManagementPage.tsx
 │       ├── FareConfigPage.tsx
 │       ├── PaymentsPage.tsx
 │       ├── SafetyCompliancePage.tsx
@@ -86,6 +87,7 @@ src/
 │       ├── modals/
 │       │   ├── ConfirmationModal.tsx     # Reusable for all destructive actions
 │       │   ├── CreateAdminModal.tsx
+│       │   ├── CreateRoleModal.tsx
 │       │   ├── FareChangePreview.tsx
 │       │   └── PayoutApprovalModal.tsx
 │       ├── forms/
@@ -94,6 +96,7 @@ src/
 │       │   ├── CommissionForm.tsx
 │       │   ├── NotificationTemplateForm.tsx
 │       │   └── IntegrationConfigForm.tsx
+│       │   └── RolePermissionForm.tsx    # Permission toggle grid for role creation/editing
 │       └── shared/
 │           ├── StatusBadge.tsx
 │           ├── CurrencyDisplay.tsx       # Formats PHP values
@@ -102,8 +105,9 @@ src/
 │           ├── ServiceHealthIndicator.tsx
 │           └── DateRangePicker.tsx
 ├── hooks/
-│   ├── usePermissions.ts                # Role-based permission checks
+│   ├── usePermissions.ts                # Dynamic permission checks from role's permission set
 │   ├── useAuth.ts                       # JWT auth context
+│   ├── useRoles.ts                      # CRUD for roles and permissions
 │   ├── useAuditLog.ts                   # Log admin actions
 │   ├── useFareConfig.ts
 │   ├── useMetrics.ts
@@ -113,6 +117,7 @@ src/
 │       ├── auth.ts
 │       ├── metrics.ts
 │       ├── admins.ts
+│       ├── roles.ts
 │       ├── fares.ts
 │       ├── payments.ts
 │       ├── safety.ts
@@ -122,6 +127,7 @@ src/
 ├── types/
 │   └── super-admin/
 │       ├── admin.ts
+│       ├── role.ts
 │       ├── fare.ts
 │       ├── payment.ts
 │       ├── incident.ts
@@ -142,57 +148,105 @@ src/
 
 ---
 
-## 3. Role-Based Access Control (RBAC)
+## 3. Role-Based Access Control (Dynamic RBAC)
 
-### Roles
+The Super Admin Panel uses **dynamic RBAC** — roles and their permissions are stored in the database, not hardcoded. Super Admins can create custom roles and toggle individual permissions per feature through the UI, without code changes or redeployment.
 
-| Role | Description |
-|------|-------------|
-| `super_admin` | Full platform access. Can configure all settings, manage admin accounts, approve financial operations, access audit logs. Limited to 1–3 people. |
-| `operations` | User/ride management. Can manage riders/drivers, monitor rides, handle disputes, review KYC. Cannot modify fares, payment settings, or system config. |
-| `finance` | Financial oversight. Can view/export reports, approve driver payouts, propose commission changes (Super Admin must approve). Cannot manage users or system config. |
-| `support` | Read-heavy, limited write. Can view user profiles, ride history, respond to support tickets. Cannot modify settings or manage admins. |
+### 3.1 Built-in Roles (Defaults)
 
-### Permission Matrix
+These roles are seeded on first deployment. They can be modified (except `super_admin`) but not deleted.
 
-| Feature | super_admin | operations | finance | support |
-|---------|:-----------:|:----------:|:-------:|:-------:|
-| Dashboard (system health) | ✓ | ✓ (limited) | ✓ (financial) | ✓ (read) |
-| Admin user management | ✓ | ✗ | ✗ | ✗ |
-| Fare configuration | ✓ | ✗ | view only | ✗ |
-| Surge pricing controls | ✓ | ✗ | ✗ | ✗ |
-| Payment gateway config | ✓ | ✗ | ✗ | ✗ |
-| Commission settings | ✓ | ✗ | propose | ✗ |
-| Driver payout approval | ✓ | ✗ | ✓ | ✗ |
-| User/driver management | ✓ | ✓ | ✗ | read only |
-| KYC verification queue | ✓ | ✓ | ✗ | ✗ |
-| Safety/incident log | ✓ | ✓ | ✗ | read only |
-| Reports/analytics export | ✓ | ✓ | ✓ | ✗ |
-| System config (API keys) | ✓ | ✗ | ✗ | ✗ |
-| Audit log | ✓ | ✗ | ✗ | ✗ |
-| Notification templates | ✓ | ✓ | ✗ | ✗ |
-| LTFRB compliance | ✓ | view only | ✗ | ✗ |
+| Role | Default Permissions | Editable | Deletable |
+|------|-------------------|:--------:|:---------:|
+| `super_admin` | All permissions (read + write) | ✗ | ✗ |
+| `operations` | Users, rides, KYC, safety, reports, notifications | ✓ | ✓ |
+| `finance` | Payments, reports, commission (propose only) | ✓ | ✓ |
+| `support` | Read-only: users, rides, incidents | ✓ | ✓ |
 
-### Implementation
+The `super_admin` role is a system-level constant — it always has full access and cannot be modified or deleted. This is enforced at the backend, not just the frontend.
+
+### 3.2 Permission Keys
+
+Permissions are defined as feature + access level pairs. Each permission has a `read` and `write` scope.
+
+| Permission Key | Read | Write | Description |
+|---------------|------|-------|-------------|
+| `dashboard` | View KPIs and charts | N/A (read-only) | Dashboard and system overview |
+| `admin_management` | View admin list | Create, edit, suspend, deactivate admins | Admin account management |
+| `role_management` | View roles and permissions | Create, edit, delete roles | Role and permission configuration |
+| `fare_config` | View fare settings | Edit base fares, surge settings | Fare and surge pricing |
+| `payments` | View transactions, summaries | Edit gateway config, commission rates | Payment and financial config |
+| `payouts` | View payout queue | Approve/reject driver payouts | Driver payout management |
+| `user_management` | View rider/driver profiles | Edit, suspend, deactivate users | Rider and driver accounts |
+| `kyc_verification` | View KYC queue | Approve, reject, flag submissions | Driver document verification |
+| `safety_incidents` | View incident log | Update status, assign, resolve | Emergency and safety management |
+| `reports` | View reports and charts | Export reports (CSV/PDF) | Reports and analytics |
+| `system_config` | View integration settings | Edit API keys, feature flags, templates | System-level configuration |
+| `system_health` | View service status | Trigger health checks, toggle maintenance | Infrastructure monitoring |
+| `audit_log` | View audit entries | Export audit log | Audit trail access |
+| `ltfrb_compliance` | View compliance status | Edit compliance records | LTFRB regulatory tracking |
+
+### 3.3 How Dynamic Roles Work
+
+1. Super Admin creates a role via the Role Management page (e.g., "City Manager")
+2. Toggles permissions using a grid of on/off switches per feature, with separate read/write columns
+3. Role is saved to the database with its permission set
+4. When assigning an admin, the role dropdown includes the custom role
+5. On login, the JWT includes the `role_id` — the backend looks up that role's permissions from the database
+6. Frontend fetches permissions via `GET /api/admin/roles/:id/permissions` on auth, caches in Zustand, and uses `usePermissions()` hook to gate UI elements
+7. Backend middleware checks permissions on every API request — the frontend is only a convenience layer
+
+### 3.4 Default Permission Sets for Built-in Roles
+
+These are the default permission assignments for the seeded roles. Super Admin can modify the non-super_admin roles at any time.
+
+| Permission Key | super_admin | operations (default) | finance (default) | support (default) |
+|---------------|:-----------:|:-------------------:|:-----------------:|:----------------:|
+| `dashboard` | R | R | R | R |
+| `admin_management` | R+W | — | — | — |
+| `role_management` | R+W | — | — | — |
+| `fare_config` | R+W | — | R | — |
+| `payments` | R+W | — | R | — |
+| `payouts` | R+W | — | R+W | — |
+| `user_management` | R+W | R+W | — | R |
+| `kyc_verification` | R+W | R+W | — | — |
+| `safety_incidents` | R+W | R+W | — | R |
+| `reports` | R+W | R+W | R+W | — |
+| `system_config` | R+W | — | — | — |
+| `system_health` | R+W | R | — | — |
+| `audit_log` | R+W | — | — | — |
+| `ltfrb_compliance` | R+W | R | — | — |
+
+R = read, W = write, R+W = both, — = no access
+
+### 3.5 Implementation
 
 ```typescript
 // hooks/usePermissions.ts
-// Reads role from JWT via useAuth() context
-// Returns: { can(permission: string): boolean, role: Role }
-// All /super-admin/* routes wrapped in <ProtectedRoute requiredRole="super_admin" />
-// Sub-features check permissions via can() for granular access
+// On auth, fetches role's permissions from API and caches in Zustand
+// Returns: { can(key: string, scope: 'read' | 'write'): boolean, permissions: Permission[], role: Role }
 
-// JWT must include: { sub: adminId, role: "super_admin", exp: ... }
-// Backend middleware validates role on every request
-// Frontend hides inaccessible UI elements (don't just rely on frontend — backend enforces too)
+// Usage in components:
+const { can } = usePermissions();
+if (!can('fare_config', 'write')) return <AccessDenied />;
+
+// Sidebar dynamically shows/hides nav items based on permissions:
+{can('payments', 'read') && <SidebarItem to="/super-admin/payments" />}
+
+// JWT includes: { sub: adminId, role_id: "uuid", exp: ... }
+// Backend middleware: decode JWT → look up role_id → load permissions → check against endpoint
 ```
 
-### Business Rules
+### 3.6 Business Rules
 
-- Cannot deactivate the last remaining super_admin account
+- `super_admin` role is immutable — always has all permissions, cannot be edited or deleted
+- Cannot delete a role that is currently assigned to any active admin (must reassign first)
+- Cannot deactivate the last remaining `super_admin` account
 - Cannot modify own role (prevents accidental self-demotion)
-- All role assignments logged in audit trail
+- Only `super_admin` can access Role Management by default
+- All role changes (create, edit, delete, assign) logged in audit trail
 - Suspended admins have JWT tokens invalidated server-side immediately
+- When a role's permissions are modified, affected admins see changes on next API request (frontend refreshes on 401)
 
 ---
 
@@ -235,7 +289,7 @@ Real-time event stream, most recent first. Filterable by type:
 
 ### 4.2 Admin User Management (`/super-admin/admins`)
 
-**Permissions:** super_admin only
+**Permissions:** `admin_management` (read to view, write to create/edit/suspend)
 
 #### Table Columns
 
@@ -243,7 +297,7 @@ Real-time event stream, most recent first. Filterable by type:
 |--------|------|
 | Name | String |
 | Email | String |
-| Role | Enum: super_admin / operations / finance / support |
+| Role | String (dynamic — from roles table, displayed as badge) |
 | Status | Enum: active / suspended / deactivated |
 | Last Login | Datetime (PHT) |
 | Created By | String (admin name) |
@@ -251,15 +305,83 @@ Real-time event stream, most recent first. Filterable by type:
 
 #### Actions
 
-- **Create Admin:** Modal → name, email, role (dropdown), temporary password. Sends invitation email. Must change password on first login.
-- **Edit Admin:** Modify role or status. Role changes show confirmation modal with impact description.
+- **Create Admin:** Modal → name, email, role (dropdown populated from `GET /api/admin/roles`), temporary password. Sends invitation email. Must change password on first login.
+- **Edit Admin:** Modify role or status. Role dropdown shows all active roles. Role changes show confirmation modal listing permissions gained/lost.
 - **Suspend Admin:** Immediate access revocation. Server-side JWT invalidation.
 - **Deactivate Admin:** Permanent. Account kept for audit trail, cannot be reactivated.
 - **View Activity:** Opens audit log filtered to this admin's actions.
 
 ---
 
-### 4.3 Fare Configuration (`/super-admin/fares`)
+### 4.3 Role Management (`/super-admin/roles`)
+
+**Permissions:** `role_management` (super_admin only by default)
+
+This is the core of the dynamic RBAC system. Super Admins create, edit, and delete roles with custom permission sets.
+
+#### Role List
+
+| Column | Type |
+|--------|------|
+| Role Name | String |
+| Description | String |
+| Type | Badge: System (built-in) / Custom |
+| Active Admins | Number (count of admins assigned) |
+| Permissions Count | Number (e.g., "8 of 14") |
+| Created By | String (admin name) |
+| Date Created | Datetime |
+
+#### Create/Edit Role
+
+Modal or full-page form with:
+
+1. **Role Name:** Text input (e.g., "City Manager", "Auditor", "Marketing Lead")
+2. **Description:** Text input explaining the role's purpose
+3. **Permission Grid:** Toggle table with all permission keys as rows, Read / Write as columns
+
+```
+┌────────────────────┬──────┬───────┐
+│ Permission         │ Read │ Write │
+├────────────────────┼──────┼───────┤
+│ Dashboard          │ [ON] │ [--]  │  ← no write scope
+│ Admin management   │ [  ] │ [  ]  │
+│ Role management    │ [  ] │ [  ]  │
+│ Fare config        │ [ON] │ [  ]  │
+│ Payments           │ [  ] │ [  ]  │
+│ Payouts            │ [ON] │ [ON]  │
+│ User management    │ [ON] │ [ON]  │
+│ KYC verification   │ [ON] │ [ON]  │
+│ Safety / incidents │ [ON] │ [ON]  │
+│ Reports            │ [ON] │ [  ]  │
+│ System config      │ [  ] │ [  ]  │
+│ System health      │ [ON] │ [  ]  │
+│ Audit log          │ [  ] │ [  ]  │
+│ LTFRB compliance   │ [ON] │ [  ]  │
+└────────────────────┴──────┴───────┘
+```
+
+- Toggling "Write" automatically enables "Read" for that permission
+- "Select All Read" / "Select All Write" / "Clear All" bulk actions at the top
+- Preview section below the grid showing which sidebar items this role will see
+
+#### Actions
+
+- **Create Role:** Permission grid form. Requires name + at least one permission.
+- **Edit Role:** Grid pre-filled with current permissions. Warning: "X admin(s) will be affected."
+- **Duplicate Role:** Creates copy with "Copy of [name]" — useful for variants.
+- **Delete Role:** Only if no active admins assigned. Must reassign first.
+- **View Admins:** Filtered list of admins assigned to this role.
+
+#### Business Rules
+
+- `super_admin` displayed but not editable (greyed out, "System role — cannot be modified")
+- Role names must be unique (case-insensitive)
+- Cannot delete a role with active admins — must reassign first
+- All role changes logged with full before/after permission diff
+
+---
+
+### 4.4 Fare Configuration (`/super-admin/fares`)
 
 **Permissions:** super_admin (full), finance (view only)
 **Traces to:** FR-02 (Fare Calculation), AC1 (fare within 10% of estimate)
@@ -300,7 +422,7 @@ Purpose: validate config changes produce expected results before going live.
 
 ---
 
-### 4.4 Payments & Financial Controls (`/super-admin/payments`)
+### 4.5 Payments & Financial Controls (`/super-admin/payments`)
 
 **Permissions:** super_admin (full), finance (reports + payout approval)
 **Traces to:** FR-03 (Payment Processing)
@@ -360,7 +482,7 @@ Rules:
 
 ---
 
-### 4.5 Safety & Compliance (`/super-admin/safety`)
+### 4.6 Safety & Compliance (`/super-admin/safety`)
 
 **Permissions:** super_admin (full), operations (incident management), support (read only)
 **Traces to:** FR-10 (In-App SOS), BR3 (Safety)
@@ -405,7 +527,7 @@ Batch processing supported. Document viewer with zoom, rotate, side-by-side comp
 
 ---
 
-### 4.6 Reports & Analytics (`/super-admin/reports`)
+### 4.7 Reports & Analytics (`/super-admin/reports`)
 
 **Permissions:** super_admin (all), operations (operational), finance (financial)
 
@@ -438,7 +560,7 @@ Batch processing supported. Document viewer with zoom, rotate, side-by-side comp
 
 ---
 
-### 4.7 System Configuration (`/super-admin/system`)
+### 4.8 System Configuration (`/super-admin/system`)
 
 **Permissions:** super_admin only
 
@@ -486,7 +608,7 @@ Rules: API keys masked. Changes require password re-confirmation. Health check r
 
 ---
 
-### 4.8 System Health Monitoring (`/super-admin/health`)
+### 4.9 System Health Monitoring (`/super-admin/health`)
 
 **Permissions:** super_admin (full), operations (limited view)
 
@@ -517,7 +639,7 @@ Rules: API keys masked. Changes require password re-confirmation. Health check r
 
 ---
 
-### 4.9 Audit Log (`/super-admin/audit`)
+### 4.10 Audit Log (`/super-admin/audit`)
 
 **Permissions:** super_admin only
 
@@ -582,6 +704,18 @@ All prefixed with `/api/admin`. JWT authentication required. Standard response e
 | PUT | `/admins/:id` | Update admin |
 | DELETE | `/admins/:id` | Deactivate admin |
 | GET | `/admins/:id/activity` | Admin's audit entries |
+
+### Roles
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/roles` | List all roles |
+| POST | `/roles` | Create role |
+| GET | `/roles/:id` | Get role with permissions |
+| PUT | `/roles/:id` | Update role name/description/permissions |
+| DELETE | `/roles/:id` | Delete role (fails if admins assigned) |
+| GET | `/roles/:id/permissions` | Get permission set for a role |
+| GET | `/roles/:id/admins` | List admins assigned to this role |
 
 ### Fares
 
@@ -655,11 +789,34 @@ interface AdminUser {
   id: string;                  // UUID
   name: string;
   email: string;               // unique, login credential
-  role: 'super_admin' | 'operations' | 'finance' | 'support';
+  role_id: string;             // UUID — references Role.id
+  role_name: string;           // denormalized for display
   status: 'active' | 'suspended' | 'deactivated';
   created_by: string;          // UUID of creating admin
   created_at: string;          // ISO timestamp UTC
   last_login_at: string | null;
+}
+```
+
+### Role
+
+```typescript
+interface Role {
+  id: string;                  // UUID
+  name: string;                // e.g., "City Manager", "Operations"
+  description: string;
+  is_system: boolean;          // true for built-in roles (super_admin, operations, finance, support)
+  permissions: RolePermission[];
+  admin_count: number;         // number of active admins with this role
+  created_by: string;          // AdminUser UUID
+  created_at: string;
+  updated_at: string;
+}
+
+interface RolePermission {
+  permission_key: string;      // e.g., "fare_config", "payments", "audit_log"
+  read: boolean;
+  write: boolean;
 }
 ```
 
@@ -756,22 +913,25 @@ interface Transaction {
 ### Route Guards
 
 ```typescript
-// Every /super-admin/* route wrapped in:
-<ProtectedRoute allowedRoles={['super_admin']}>
-  <SuperAdminShell>
-    <Outlet />
-  </SuperAdminShell>
-</ProtectedRoute>
+// Routes no longer check for specific role names — they check permissions
+// SuperAdminShell loads permissions on mount via usePermissions()
 
-// Sub-features use usePermissions() for granular checks:
+// Page-level guard:
 const { can } = usePermissions();
-if (!can('manage_fares')) return <AccessDenied />;
+if (!can('fare_config', 'read')) return <AccessDenied />;
+
+// Sidebar dynamically renders based on permissions:
+const sidebarItems = allItems.filter(item => can(item.permissionKey, 'read'));
+
+// Role Management page specifically checks:
+if (!can('role_management', 'write')) return <AccessDenied />;
 ```
 
 ### Confirmation Modals
 
 Every destructive or high-impact action must trigger a confirmation modal:
 - Deactivate/suspend admin
+- Create, edit, or delete roles
 - Change fare configuration
 - Toggle maintenance mode
 - Approve/reject KYC
@@ -815,7 +975,7 @@ Each page wrapped in error boundary to prevent cascading failures:
 
 | Requirement | Super Admin Coverage |
 |-------------|---------------------|
-| FR-01 (Authentication) | Admin RBAC, JWT auth, role management |
+| FR-01 (Authentication) | Dynamic RBAC, JWT auth, role management, permission-based access control |
 | FR-02 (Fare Calculation) | Fare config page, surge controls, simulator |
 | FR-03 (Payment) | Gateway config, commission settings, payout management |
 | FR-04 (Dispatch) | Dashboard metrics (match rate/time), dispatch health |
