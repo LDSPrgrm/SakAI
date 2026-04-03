@@ -64,6 +64,11 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Generate code for api_client
+        run: |
+          cd lib/api_client
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze --fatal-infos
       # --coverage surfaces the test count; CI will still pass with 0 test files
       # but the generated lcov.info can be used for future coverage enforcement.
@@ -86,6 +91,11 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Generate code for api_client
+        run: |
+          cd ../shared/lib/api_client
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze --fatal-infos
       - run: flutter test --coverage
 
@@ -106,6 +116,11 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Generate code for api_client
+        run: |
+          cd ../shared/lib/api_client
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
       - run: flutter test --coverage
 
   # ── Summary gate ──────────────────────────────────────────────────────────
