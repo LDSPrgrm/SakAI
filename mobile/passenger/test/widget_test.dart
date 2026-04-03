@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:passenger/app/passenger_app.dart';
+import 'package:passenger/app/providers.dart';
 import 'package:passenger/features/auth/models/auth_session.dart';
 import 'package:passenger/features/auth/repositories/auth_repository.dart';
 import 'package:passenger/features/ride/repositories/ride_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
+
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
 
 class _FakeAuthRepository implements AuthRepository {
   @override
@@ -32,6 +38,9 @@ class _FakeAuthRepository implements AuthRepository {
       accessTokenExpiresAt: DateTime.now().add(const Duration(hours: 1)),
     );
   }
+
+  @override
+  Future<bool> hasValidSession() async => false; // always redirect to login in tests
 }
 
 class _FakeRideRepository implements RideRepository {
@@ -59,14 +68,26 @@ class _FakeRideRepository implements RideRepository {
   Future<void> cancelRide(String rideId) async {}
 }
 
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 void main() {
-  testWidgets('login screen shows rider auth chrome', (WidgetTester tester) async {
+  testWidgets('after splash resolves unauthenticated → shows login screen', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      PassengerApp(
-        authRepository: _FakeAuthRepository(),
-        rideRepository: _FakeRideRepository(),
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+          rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+        ],
+        child: const PassengerApp(),
       ),
     );
+    // Let the splash async check resolve.
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('Welcome back'), findsOneWidget);
     expect(find.byKey(const Key('login_email')), findsOneWidget);
     expect(find.byKey(const Key('login_password')), findsOneWidget);

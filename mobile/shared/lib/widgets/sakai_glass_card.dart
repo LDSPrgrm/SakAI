@@ -35,12 +35,20 @@ class SakaiGlassCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           decoration: BoxDecoration(
-            color: colorScheme.surface.withValues(alpha: opacity),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface.withValues(alpha: opacity * 2),
+                colorScheme.surface.withValues(alpha: opacity),
+              ],
+            ),
             borderRadius: radius,
             border: Border.all(
               color: colorScheme.onSurface.withValues(alpha: borderOpacity),
-              width: 1.5,
+              width: 1.2,
             ),
+            boxShadow: SakaiDesignTokens.of(context).elevationMd,
           ),
           child: Padding(padding: inset, child: child),
         ),

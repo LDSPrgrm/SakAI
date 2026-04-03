@@ -83,7 +83,7 @@ abstract final class SakaiTheme {
             vertical: tokens.spaceMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
           ),
         ),
       ),
@@ -94,15 +94,19 @@ abstract final class SakaiTheme {
             vertical: tokens.spaceMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor:
-            schemeWithOverrides.surfaceContainerHighest.withValues(alpha: 0.35),
-        border: OutlineInputBorder(borderRadius: radii),
+        fillColor: schemeWithOverrides.surfaceContainerHighest.withValues(
+          alpha: brightness == Brightness.dark ? 0.2 : 0.4,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: radii,
           borderSide: BorderSide(color: schemeWithOverrides.outlineVariant),

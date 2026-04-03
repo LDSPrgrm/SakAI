@@ -1,13 +1,12 @@
-import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 
 import '../models/auth_exception.dart';
 import '../models/auth_session.dart';
-import 'auth_repository.dart';
+import 'driver_auth_repository.dart';
 
-class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl(this._client);
+class DriverAuthRepositoryImpl implements DriverAuthRepository {
+  DriverAuthRepositoryImpl(this._client);
 
   final SakaiApiClient _client;
 
@@ -27,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       final data = response.data;
       if (data == null) {
-        throw AuthException(userMessage: 'Empty response from server');
+        throw const AuthException(userMessage: 'Empty response from server');
       }
       return AuthSession(
         accessToken: data.accessToken,
@@ -40,10 +39,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthSession> register({
+  Future<AuthSession> registerDriver({
     required String name,
     required String email,
     required String password,
+    required String vehicleMake,
+    required String vehicleModel,
+    required String vehiclePlate,
+    required String vehicleColor,
+    required int vehicleYear,
   }) async {
     try {
       final request = RegisterRequest(
@@ -51,14 +55,14 @@ class AuthRepositoryImpl implements AuthRepository {
           ..name = name
           ..email = email
           ..password = password
-          ..role = RegisterRequestRoleEnum.passenger,
+          ..role = RegisterRequestRoleEnum.driver,
       );
       final response = await _client.getAuthApi().authRegister(
         registerRequest: request,
       );
       final data = response.data;
       if (data == null) {
-        throw AuthException(userMessage: 'Empty response from server');
+        throw const AuthException(userMessage: 'Empty response from server');
       }
       return AuthSession(
         accessToken: data.accessToken,
@@ -75,54 +79,29 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _client.getUsersApi().usersGetMe();
       return true;
-    } on DioException catch (e) {
-      // 401 = token expired or missing; any other error = treat as not authenticated
-      if (e.response?.statusCode == 401) return false;
-      // Network errors: conservatively return false so user lands on login.
+    } on DioException {
       return false;
     }
   }
 
   AuthException _fromDio(DioException e) {
-    final data = e.response?.data;
-    if (data != null) {
-      try {
-        final err =
-            standardSerializers.deserialize(
-                  data,
-                  specifiedType: const FullType(ErrorResponse),
-                )
-                as ErrorResponse;
-        return AuthException(
-          machineCode: err.code.name,
-          userMessage: _friendlyMessage(err.code, err.message),
-        );
-      } catch (_) {
-        /* fall through */
-      }
+    final status = e.response?.statusCode;
+    if (status == 401 || status == 403) {
+      return const AuthException(userMessage: 'Invalid email or password.');
     }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return AuthException(userMessage: 'Connection timed out. Try again.');
+    if (status == 409) {
+      return const AuthException(
+        userMessage: 'An account with that email already exists.',
+      );
     }
-    if (e.type == DioExceptionType.connectionError) {
-      return AuthException(
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout) {
+      return const AuthException(
         userMessage: 'No connection. Check network or server URL.',
       );
     }
     return AuthException(
       userMessage: e.message ?? 'Something went wrong. Try again.',
     );
-  }
-
-  String _friendlyMessage(ErrorCode code, String serverMessage) {
-    switch (code) {
-      case ErrorCode.INVALID_CREDENTIALS:
-        return 'Invalid email or password.';
-      case ErrorCode.RATE_LIMIT_EXCEEDED:
-        return 'Too many attempts. Wait a moment and try again.';
-      default:
-        return serverMessage;
-    }
   }
 }

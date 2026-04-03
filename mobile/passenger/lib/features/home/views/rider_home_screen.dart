@@ -1,104 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
-import '../../auth/models/auth_session.dart';
-import '../../ride/repositories/ride_repository.dart';
-import '../../ride/views/waiting_screen.dart';
+import '../../../app/router.dart';
 import 'activity_screen.dart';
+
 import 'destination_sheet.dart';
-import '../view_models/home_view_model.dart';
+import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
 
 /// Full-screen Google Map home screen for ride requesting (REQ-3.2.4).
-class RiderHomeScreen extends StatefulWidget {
-  const RiderHomeScreen({
-    super.key,
-    required this.session,
-    required this.rideRepository,
-    required this.onSignOut,
-  });
-
-  final AuthSession session;
-  final RideRepository rideRepository;
-  final VoidCallback onSignOut;
+class RiderHomeScreen extends ConsumerStatefulWidget {
+  const RiderHomeScreen({super.key});
 
   @override
-  State<RiderHomeScreen> createState() => _RiderHomeScreenState();
+  ConsumerState<RiderHomeScreen> createState() => _RiderHomeScreenState();
 }
 
-class _RiderHomeScreenState extends State<RiderHomeScreen> {
+class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // Navigation State
   int _currentIndex = 0;
 
   // Map & Ride Logic State
-  late final HomeViewModel _vm;
   GoogleMapController? _mapController;
   static const _defaultLatLng = LatLng(14.5995, 120.9842); // Manila fallback
 
   @override
   void initState() {
     super.initState();
-    _vm = HomeViewModel(widget.rideRepository);
-    _vm.addListener(_onVmChanged);
-    _vm.initLocation();
+    // Schedule initLocation after first build to read provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeNotifierProvider.notifier).initLocation();
+    });
   }
 
   @override
   void dispose() {
-    _vm.removeListener(_onVmChanged);
-    _vm.dispose();
     _mapController?.dispose();
     super.dispose();
   }
 
-  void _onVmChanged() {
-    final pos = _vm.currentLatLng;
-    if (pos != null && _mapController != null) {
-      _mapController!.animateCamera(CameraUpdate.newLatLngZoom(pos, 15));
-    }
-
-    if (_vm.createdRide != null && mounted) {
-      final ride = _vm.createdRide!;
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => WaitingScreen(ride: ride, rideRepository: widget.rideRepository),
-        ),
-      );
-    }
-
-    if (_vm.errorMessage != null && mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(_vm.errorMessage!),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-          ),
+  void _listenToState() {
+    ref.listen<HomeState>(homeNotifierProvider, (previous, next) {
+      if (next.currentLatLng != null &&
+          previous?.currentLatLng == null &&
+          _mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(next.currentLatLng!, 15),
         );
-      _vm.clearError();
-    }
+      }
+
+      if (next.createdRide != null &&
+          next.createdRide != previous?.createdRide &&
+          mounted) {
+        final ride = next.createdRide!;
+        context.push(Routes.rideWaiting, extra: ride.id);
+      }
+
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage &&
+          mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage!),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+            ),
+          );
+        ref.read(homeNotifierProvider.notifier).clearError();
+      }
+    });
   }
 
   String _getTitle(int index) {
     switch (index) {
-      case 0: return 'SakAI · Home';
-      case 1: return 'Activity';
-      case 2: return 'Profile';
-      default: return 'SakAI';
+      case 0:
+        return 'SakAI · Home';
+      case 1:
+        return 'Activity';
+      case 2:
+        return 'Profile';
+      default:
+        return 'SakAI';
     }
   }
 
   Future<void> _openLocationSearchSheet(LocationSearchMode mode) async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
     await showLocationSearchSheet(
       context,
       mode: mode,
       onLocationConfirmed: (loc) {
         if (mode == LocationSearchMode.pickup) {
-          _vm.setPickup(loc);
+          notifier.setPickup(loc);
         } else {
-          _vm.setDestination(loc);
+          notifier.setDestination(loc);
         }
       },
     );
@@ -106,6 +106,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _listenToState();
     final scheme = Theme.of(context).colorScheme;
 
     // Determine the main body based on navigation index
@@ -115,7 +116,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         body = const ActivityScreen();
         break;
       case 2:
-        body = ProfileScreen(onSignOut: widget.onSignOut);
+        body = ProfileScreen(onSignOut: () => context.go(Routes.login));
         break;
       case 0:
       default:
@@ -125,8 +126,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
     // Using a standard Scaffold to handle the Stack properly
     return Scaffold(
-      appBar: _currentIndex != 0 
-          ? AppBar(title: Text(_getTitle(_currentIndex))) 
+      appBar: _currentIndex != 0
+          ? AppBar(title: Text(_getTitle(_currentIndex)))
           : null, // Map handles its own top bar
       body: body,
       bottomNavigationBar: _buildBottomNav(scheme),
@@ -135,64 +136,66 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   /// The original Map-based UI for the Home tab
   Widget _buildMapHomeStack(BuildContext context, ColorScheme scheme) {
-    return ListenableBuilder(
-      listenable: _vm,
-      builder: (context, _) {
-        return Stack(
-          children: [
-            _buildMap(scheme),
-            _buildTopBar(context, scheme),
-            if (_vm.state == HomeState.idle)
-              Positioned(
-                right: 16,
-                bottom: 320, // Adjusted to sit above the bottom card
-                child: FloatingActionButton.small(
-                  onPressed: () {
-                    if (_vm.currentLatLng != null && _mapController != null) {
-                      _mapController!.animateCamera(CameraUpdate.newLatLngZoom(_vm.currentLatLng!, 15));
-                    }
-                  },
-                  backgroundColor: scheme.surface.withAlpha(230),
-                  child: Icon(Icons.my_location, color: scheme.onSurface),
-                ),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _vm.state == HomeState.idle
-                  ? _buildIdleBottomCard(context, scheme)
-                  : _buildActiveBottomCard(context, scheme),
+    return Stack(
+      children: [
+        _buildMap(scheme),
+        _buildTopBar(context, scheme),
+        if (ref.watch(homeNotifierProvider).status == HomeStatus.idle)
+          Positioned(
+            right: 16,
+            bottom: 320, // Adjusted to sit above the bottom card
+            child: FloatingActionButton.small(
+              onPressed: () {
+                if (ref.watch(homeNotifierProvider).currentLatLng != null &&
+                    _mapController != null) {
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLngZoom(
+                      ref.watch(homeNotifierProvider).currentLatLng!,
+                      15,
+                    ),
+                  );
+                }
+              },
+              backgroundColor: scheme.surface.withAlpha(230),
+              child: Icon(Icons.my_location, color: scheme.onSurface),
             ),
-            if (_vm.state == HomeState.locating)
-              const Positioned.fill(
-                child: ColoredBox(
-                  color: Color(0x88000000),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-          ],
-        );
-      },
+          ),
+        _buildDraggableSheet(context, scheme),
+        if (ref.watch(homeNotifierProvider).status == HomeStatus.locating)
+          const Positioned.fill(
+            child: ColoredBox(
+              color: Color(0x88000000),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+      ],
     );
   }
 
   // --- UI Helpers (Map, TopBar, Cards) ---
 
   Widget _buildMap(ColorScheme scheme) {
-    final center = _vm.currentLatLng ?? _defaultLatLng;
+    final center =
+        ref.watch(homeNotifierProvider).currentLatLng ?? _defaultLatLng;
     final markers = <Marker>{
-      if (_vm.currentLatLng != null)
+      if (ref.watch(homeNotifierProvider).currentLatLng != null)
         Marker(
           markerId: const MarkerId('pickup'),
-          position: _vm.currentLatLng!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          position: ref.watch(homeNotifierProvider).currentLatLng!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
         ),
-      if (_vm.destination != null)
+      if (ref.watch(homeNotifierProvider).destination != null)
         Marker(
           markerId: const MarkerId('destination'),
-          position: LatLng(_vm.destination!.lat, _vm.destination!.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          position: LatLng(
+            ref.watch(homeNotifierProvider).destination!.lat,
+            ref.watch(homeNotifierProvider).destination!.lng,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
         ),
     };
 
@@ -224,7 +227,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               backgroundColor: scheme.surface.withAlpha(235),
               child: IconButton(
                 icon: Icon(Icons.logout, color: scheme.onSurface),
-                onPressed: widget.onSignOut,
+                onPressed: () => context.go(Routes.login),
               ),
             ),
           ],
@@ -244,63 +247,310 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         });
       },
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history), label: 'Activity'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.history_outlined),
+          selectedIcon: Icon(Icons.history),
+          label: 'Activity',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
       ],
     );
   }
 
-  Widget _buildIdleBottomCard(BuildContext context, ColorScheme scheme) {
+  Widget _buildDraggableSheet(BuildContext context, ColorScheme scheme) {
     final tokens = SakaiDesignTokens.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(tokens.spaceLg, tokens.spaceMd, tokens.spaceLg, tokens.spaceLg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: () => _openLocationSearchSheet(LocationSearchMode.destination),
-            child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+    final isIdle = ref.watch(homeNotifierProvider).status == HomeStatus.idle;
+
+    return DraggableScrollableSheet(
+      initialChildSize: isIdle ? 0.22 : 0.45,
+      minChildSize: 0.22,
+      maxChildSize: 0.9,
+      snap: true,
+      snapSizes: const [0.22, 0.45, 0.9],
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: tokens.elevationLg,
+          ),
+          child: CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    // Drag Handle
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: scheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, color: scheme.primary),
-                  const SizedBox(width: 12),
-                  const Text('Saan kayo pupunta?'),
-                ],
-              ),
+              if (isIdle)
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildIdleContent(context, scheme, tokens),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildActiveContent(context, scheme, tokens),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildIdleContent(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => _openLocationSearchSheet(LocationSearchMode.destination),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search, color: scheme.primary),
+                const SizedBox(width: 12),
+                Text(
+                  'Saan kayo pupunta?',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+        const SizedBox(height: 24),
+        // Recent Destinations Mockup
+        _buildRecentItem(
+          Icons.home,
+          'Home',
+          'San Lorenzo, Makati',
+          scheme,
+          tokens,
+        ),
+        _buildRecentItem(
+          Icons.work,
+          'Work',
+          'Ayala Avenue, Makati',
+          scheme,
+          tokens,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentItem(
+    IconData icon,
+    String title,
+    String subtitle,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: scheme.surfaceContainerHighest,
+            child: Icon(icon, size: 20, color: scheme.primary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: scheme.outline),
         ],
       ),
     );
   }
 
-  Widget _buildActiveBottomCard(BuildContext context, ColorScheme scheme) {
-    final tokens = SakaiDesignTokens.of(context);
+  Widget _buildActiveContent(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Column(
+              children: [
+                Icon(Icons.my_location, size: 16, color: scheme.primary),
+                Container(width: 1, height: 24, color: scheme.outlineVariant),
+                Icon(Icons.place, size: 16, color: scheme.error),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ref.watch(homeNotifierProvider).pickup?.address ??
+                        "Locating...",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    ref.watch(homeNotifierProvider).destination?.address ??
+                        "Select destination",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () =>
+                  ref.read(homeNotifierProvider.notifier).clearDestination(),
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+        const Divider(height: 32),
+        Text('Available Rides', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 16),
+        // Ride Options Mockup
+        _buildRideOption(
+          'SakAI Eco',
+          '4-seat economy',
+          '₱120.00',
+          Icons.directions_car,
+          scheme,
+          tokens,
+          selected: true,
+        ),
+        _buildRideOption(
+          'SakAI Premium',
+          'Luxury sedan',
+          '₱250.00',
+          Icons.directions_car_filled,
+          scheme,
+          tokens,
+        ),
+        _buildRideOption(
+          'SakAI Moto',
+          'Fastest through traffic',
+          '₱65.00',
+          Icons.motorcycle,
+          scheme,
+          tokens,
+        ),
+        const SizedBox(height: 24),
+        SakaiPrimaryButton(
+          label: 'I-request ang SakAI Eco',
+          onPressed: ref.watch(homeNotifierProvider).canRequest
+              ? () => ref.read(homeNotifierProvider.notifier).requestRide()
+              : null,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildRideOption(
+    String name,
+    String type,
+    String price,
+    IconData icon,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens, {
+    bool selected = false,
+  }) {
     return Container(
-      color: scheme.surface,
-      padding: EdgeInsets.all(tokens.spaceLg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: selected
+            ? scheme.primaryContainer.withValues(alpha: 0.3)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(
+          color: selected ? scheme.primary : scheme.outlineVariant,
+        ),
+      ),
+      child: Row(
         children: [
-          Text('Pickup: ${_vm.pickup?.address ?? "Locating..."}'),
-          Text('Dropoff: ${_vm.destination?.address ?? "Select destination"}'),
-          const SizedBox(height: 16),
-          SakaiPrimaryButton(
-            label: 'Request Ride',
-            onPressed: _vm.canRequest ? () => _vm.requestRide() : null,
+          Icon(
+            icon,
+            size: 32,
+            color: selected ? scheme.primary : scheme.onSurfaceVariant,
           ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  type,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );

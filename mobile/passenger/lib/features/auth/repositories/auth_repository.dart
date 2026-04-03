@@ -2,14 +2,15 @@ import '../models/auth_session.dart';
 
 /// Port for sign-in and future auth operations (Clean Architecture: domain boundary).
 abstract class AuthRepository {
-  Future<AuthSession> login({
-    required String email,
-    required String password,
-  });
+  Future<AuthSession> login({required String email, required String password});
 
   Future<AuthSession> register({
     required String name,
     required String email,
     required String password,
   });
+
+  /// Returns true if a valid (or silently refreshable) session exists.
+  /// Calls GET /users/me internally; attempts a token refresh on 401.
+  Future<bool> hasValidSession();
 }

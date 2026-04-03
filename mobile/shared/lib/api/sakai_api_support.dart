@@ -4,8 +4,8 @@ import 'package:sakai_api_client/sakai_api_client.dart';
 abstract final class SakaiApiEndpoints {
   SakaiApiEndpoints._();
 
-  /// Default local API (see OpenAPI `servers[0]`).
-  static const String defaultRestBaseUrl = 'http://192.168.7.130:8080/api';
+  /// Default local API. Uses Dart environment `API_URL` if passed,
+  static const String defaultRestBaseUrl = String.fromEnvironment('API_URL');
 
   /// `ws://{host}/ws` or `wss://…` using the same host as [restBaseUrl].
   static Uri webSocketUri(String restBaseUrl, String accessToken) {

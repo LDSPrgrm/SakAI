@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../repositories/ride_repository.dart';
+import '../../../app/providers.dart';
 import '../view_models/waiting_view_model.dart';
 
 /// Waiting screen shown immediately after a successful POST /rides.
@@ -10,21 +11,16 @@ import '../view_models/waiting_view_model.dart';
 /// For now it shows a loading animation + cancel button.
 ///
 /// All cancel logic lives in [WaitingViewModel]; this widget is pure View.
-class WaitingScreen extends StatefulWidget {
-  const WaitingScreen({
-    super.key,
-    required this.ride,
-    required this.rideRepository,
-  });
+class WaitingScreen extends ConsumerStatefulWidget {
+  const WaitingScreen({super.key, required this.rideId});
 
-  final RideEntity ride;
-  final RideRepository rideRepository;
+  final String rideId;
 
   @override
-  State<WaitingScreen> createState() => _WaitingScreenState();
+  ConsumerState<WaitingScreen> createState() => _WaitingScreenState();
 }
 
-class _WaitingScreenState extends State<WaitingScreen>
+class _WaitingScreenState extends ConsumerState<WaitingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   late final WaitingViewModel _vm;
@@ -38,8 +34,8 @@ class _WaitingScreenState extends State<WaitingScreen>
     )..repeat(reverse: true);
 
     _vm = WaitingViewModel(
-      rideRepository: widget.rideRepository,
-      rideId: widget.ride.id,
+      rideRepository: ref.read(rideRepositoryProvider),
+      rideId: widget.rideId,
     );
     _vm.addListener(_onVmChanged);
   }
@@ -59,9 +55,9 @@ class _WaitingScreenState extends State<WaitingScreen>
       return;
     }
     if (_vm.errorMessage != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_vm.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_vm.errorMessage!)));
       _vm.clearError();
     }
   }
@@ -79,21 +75,48 @@ class _WaitingScreenState extends State<WaitingScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pulse animation — UI-only, stays in View
-              AnimatedBuilder(
-                animation: _pulse,
-                builder: (context, child) => Transform.scale(
-                  scale: 0.85 + _pulse.value * 0.15,
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor:
-                        scheme.primaryContainer.withValues(alpha: 0.6 + _pulse.value * 0.4),
-                    child: Icon(
-                      Icons.local_taxi,
-                      size: 56,
-                      color: scheme.onPrimaryContainer,
+              // Radar/Ripple animation
+              SizedBox(
+                height: 200,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    for (int i = 0; i < 3; i++)
+                      AnimatedBuilder(
+                        animation: _pulse,
+                        builder: (context, child) {
+                          final progress = (_pulse.value + (i * 0.33)) % 1.0;
+                          return Container(
+                            width: 120 + (progress * 180),
+                            height: 120 + (progress * 180),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: scheme.primary.withValues(
+                                  alpha: (1.0 - progress) * 0.4,
+                                ),
+                                width: 2,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    AnimatedBuilder(
+                      animation: _pulse,
+                      builder: (context, child) => Transform.scale(
+                        scale: 0.9 + _pulse.value * 0.1,
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: scheme.primaryContainer,
+                          child: Icon(
+                            Icons.local_taxi,
+                            size: 48,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
               SizedBox(height: tokens.spaceXl),
@@ -101,17 +124,17 @@ class _WaitingScreenState extends State<WaitingScreen>
                 'Finding your driver…',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               SizedBox(height: tokens.spaceSm),
               Text(
                 'We\'re matching you with the nearest available driver.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
               SizedBox(height: tokens.spaceXl),
               ListenableBuilder(

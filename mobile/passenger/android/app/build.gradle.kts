@@ -14,7 +14,19 @@ if (localPropertiesFile.exists()) {
         localProperties.load(stream)
     }
 }
-val mapsApiKey = localProperties.getProperty("maps.api.key") ?: ""
+
+var mapsApiKey = ""
+val envFile = rootProject.file("../../.env")
+if (envFile.exists()) {
+    envFile.readLines().forEach {
+        if (it.startsWith("GOOGLE_MAPS_API_KEY=")) {
+            mapsApiKey = it.substringAfter("=").trim()
+        }
+    }
+}
+if (mapsApiKey.isEmpty()) {
+    mapsApiKey = localProperties.getProperty("maps.api.key") ?: ""
+}
 
 android {
     namespace = "com.sakai.rider"

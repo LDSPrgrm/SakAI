@@ -16,6 +16,9 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     required this.radiusMd,
     required this.radiusLg,
     required this.radiusFull,
+    required this.elevationSm,
+    required this.elevationMd,
+    required this.elevationLg,
   });
 
   static const SakaiDesignTokens defaults = SakaiDesignTokens(
@@ -28,6 +31,15 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     radiusMd: 12,
     radiusLg: 20,
     radiusFull: 999,
+    elevationSm: [
+      BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 2)),
+    ],
+    elevationMd: [
+      BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4)),
+    ],
+    elevationLg: [
+      BoxShadow(color: Color(0x1F000000), blurRadius: 24, offset: Offset(0, 8)),
+    ],
   );
 
   final double spaceXs;
@@ -39,10 +51,16 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
   final double radiusMd;
   final double radiusLg;
   final double radiusFull;
+  final List<BoxShadow> elevationSm;
+  final List<BoxShadow> elevationMd;
+  final List<BoxShadow> elevationLg;
 
   static SakaiDesignTokens of(BuildContext context) {
     final ext = Theme.of(context).extension<SakaiDesignTokens>();
-    assert(ext != null, 'SakaiDesignTokens missing — use SakaiTheme.light/dark');
+    assert(
+      ext != null,
+      'SakaiDesignTokens missing — use SakaiTheme.light/dark',
+    );
     return ext!;
   }
 
@@ -57,6 +75,9 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     double? radiusMd,
     double? radiusLg,
     double? radiusFull,
+    List<BoxShadow>? elevationSm,
+    List<BoxShadow>? elevationMd,
+    List<BoxShadow>? elevationLg,
   }) {
     return SakaiDesignTokens(
       spaceXs: spaceXs ?? this.spaceXs,
@@ -68,6 +89,9 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
       radiusMd: radiusMd ?? this.radiusMd,
       radiusLg: radiusLg ?? this.radiusLg,
       radiusFull: radiusFull ?? this.radiusFull,
+      elevationSm: elevationSm ?? this.elevationSm,
+      elevationMd: elevationMd ?? this.elevationMd,
+      elevationLg: elevationLg ?? this.elevationLg,
     );
   }
 
@@ -87,6 +111,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
       radiusMd: lerpDouble(radiusMd, other.radiusMd, t)!,
       radiusLg: lerpDouble(radiusLg, other.radiusLg, t)!,
       radiusFull: lerpDouble(radiusFull, other.radiusFull, t)!,
+      elevationSm:
+          BoxShadow.lerpList(elevationSm, other.elevationSm, t) ?? elevationSm,
+      elevationMd:
+          BoxShadow.lerpList(elevationMd, other.elevationMd, t) ?? elevationMd,
+      elevationLg:
+          BoxShadow.lerpList(elevationLg, other.elevationLg, t) ?? elevationLg,
     );
   }
 }
