@@ -67,6 +67,7 @@ jobs:
       - name: Generate code for api_client
         run: |
           cd lib/api_client
+          find . -name "*.g.dart" -delete
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze --fatal-infos
@@ -94,6 +95,7 @@ jobs:
       - name: Generate code for api_client
         run: |
           cd ../shared/lib/api_client
+          find . -name "*.g.dart" -delete
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze --fatal-infos
@@ -119,6 +121,7 @@ jobs:
       - name: Generate code for api_client
         run: |
           cd ../shared/lib/api_client
+          find . -name "*.g.dart" -delete
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
       - run: flutter test --coverage
