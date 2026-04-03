@@ -10,36 +10,31 @@ on:
       - "openapi/**"
       - ".github/workflows/ci-api-contract.yml"
 
+# Cancel in-progress runs on the same branch to avoid wasting runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate OpenAPI spec (Spectral)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@main
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
 
-      - name: Install Spectral CLI
-        run: npm install -g @stoplight/spectral-cli
-
-      - name: Lint openapi/swagger.yaml
-        # Generates config on-the-fly so it doesn't clutter the repo.
+      # npx handles install+run without polluting the global node_modules.
+      # Pinned to @6 for reproducible linting results.
+      # Note: Spectral validates YAML syntax internally — no separate YAML check needed.
+      - name: Lint OpenAPI spec with Spectral
         run: |
           echo 'extends: "spectral:oas"' > .spectral.yaml
-          spectral lint openapi/swagger.yaml --fail-severity error
-
-      - name: Check file is valid YAML
-        run: |
-          python3 -c "
-          import yaml, sys
-          with open('openapi/swagger.yaml') as f:
-              try:
-                  yaml.safe_load(f)
-                  print('✅ swagger.yaml is valid YAML')
-              except yaml.YAMLError as e:
-                  print(f'❌ swagger.yaml parse error: {e}')
-                  sys.exit(1)
-          "
+          npx --yes @stoplight/spectral-cli@6 lint openapi/swagger.yaml --fail-severity error

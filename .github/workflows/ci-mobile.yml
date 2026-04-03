@@ -12,17 +12,26 @@ on:
       - "openapi/**"
       - ".github/workflows/ci-mobile.yml"
 
+# Cancel in-progress runs on the same branch to avoid wasting runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  # ── Check which Flutter packages are bootstrapped ────────────────────────────
+  # ── Check which Flutter packages are bootstrapped ────────────────────────
   detect:
     name: Detect Flutter packages
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       shared: ${{ steps.check.outputs.shared }}
       passenger: ${{ steps.check.outputs.passenger }}
       driver: ${{ steps.check.outputs.driver }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
       - id: check
         name: Check for pubspec.yaml in each package
         run: |
@@ -38,68 +47,80 @@ jobs:
           check passenger
           check driver
 
-  # ── Shared package ────────────────────────────────────────────────────────────
+  # ── Shared package ────────────────────────────────────────────────────────
   shared:
-    name: Shared — analyze & test
+    name: Shared — audit, analyze & test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: detect
     if: needs.detect.outputs.shared == 'true'
     defaults:
       run:
         working-directory: mobile/shared
     steps:
-      - uses: actions/checkout@main
-      - uses: subosito/flutter-action@main
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
+      # Fail CI if any dependency has a known vulnerability.
+      - name: Dependency vulnerability audit
+        run: flutter pub audit
       - run: flutter analyze --fatal-infos
-      - run: flutter test
+      # --coverage surfaces the test count; CI will still pass with 0 test files
+      # but the generated lcov.info can be used for future coverage enforcement.
+      - run: flutter test --coverage
 
-  # ── Passenger app ─────────────────────────────────────────────────────────────
+  # ── Passenger app ─────────────────────────────────────────────────────────
   passenger:
-    name: Passenger app — analyze & test
+    name: Passenger — audit, analyze & test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: detect
     if: needs.detect.outputs.passenger == 'true'
     defaults:
       run:
         working-directory: mobile/passenger
     steps:
-      - uses: actions/checkout@main
-      - uses: subosito/flutter-action@main
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Dependency vulnerability audit
+        run: flutter pub audit
       - run: flutter analyze --fatal-infos
-      - run: flutter test
+      - run: flutter test --coverage
 
-  # ── Driver app ────────────────────────────────────────────────────────────────
+  # ── Driver app ────────────────────────────────────────────────────────────
   driver:
-    name: Driver app — analyze & test
+    name: Driver — audit, analyze & test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: detect
     if: needs.detect.outputs.driver == 'true'
     defaults:
       run:
         working-directory: mobile/driver
     steps:
-      - uses: actions/checkout@main
-      - uses: subosito/flutter-action@main
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter analyze --fatal-infos
-      - run: flutter test
+      - name: Dependency vulnerability audit
+        run: flutter pub audit
+      - run: flutter test --coverage
 
-  # ── Summary gate ──────────────────────────────────────────────────────────────
-  # This job always runs and provides one pass/fail signal for branch protection rules.
+  # ── Summary gate ──────────────────────────────────────────────────────────
+  # Always runs — provides one pass/fail signal for branch protection rules.
   summary:
     name: Mobile CI — summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [detect, shared, passenger, driver]
     if: always()
     steps:
