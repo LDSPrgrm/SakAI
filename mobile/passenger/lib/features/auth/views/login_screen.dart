@@ -76,145 +76,166 @@ class _LoginScreenState extends State<LoginScreen> {
     final tokens = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: _viewModel,
-          builder: (context, _) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: tokens.spaceXl),
-                  _BrandHeader(colorScheme: scheme, textTheme: textTheme),
-                  SizedBox(height: tokens.spaceXl),
-                  if (_viewModel.errorMessage != null)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: tokens.spaceMd),
-                      child: Material(
-                        color: scheme.errorContainer,
-                        borderRadius: BorderRadius.circular(tokens.radiusMd),
-                        child: Padding(
-                          padding: EdgeInsets.all(tokens.spaceMd),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error_outline, color: scheme.onErrorContainer),
-                              SizedBox(width: tokens.spaceSm),
-                              Expanded(
-                                child: Text(
-                                  _viewModel.errorMessage!,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: scheme.onErrorContainer,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.primary.withValues(alpha: 0.15),
+              scheme.surface,
+              scheme.secondary.withValues(alpha: 0.1),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: ListenableBuilder(
+            listenable: _viewModel,
+            builder: (context, _) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: tokens.spaceXl),
+                    _BrandHeader(colorScheme: scheme, textTheme: textTheme),
+                    SizedBox(height: tokens.spaceXl),
+                    if (_viewModel.errorMessage != null)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: tokens.spaceMd),
+                        child: Material(
+                          color: scheme.errorContainer,
+                          borderRadius: BorderRadius.circular(tokens.radiusMd),
+                          child: Padding(
+                            padding: EdgeInsets.all(tokens.spaceMd),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: scheme.onErrorContainer,
+                                ),
+                                SizedBox(width: tokens.spaceSm),
+                                Expanded(
+                                  child: Text(
+                                    _viewModel.errorMessage!,
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: scheme.onErrorContainer,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
+                    SakaiGlassCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Sign in', style: textTheme.titleLarge),
+                          SizedBox(height: tokens.spaceXs),
+                          Text(
+                            'Use the email and password for your rider account.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          SizedBox(height: tokens.spaceLg),
+                          SakaiTextField(
+                            key: const Key('login_email'),
+                            controller: _emailCtrl,
+                            label: 'Email',
+                            hint: 'you@example.com',
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: const Icon(Icons.mail_outline),
+                            onChanged: (_) => _viewModel.clearError(),
+                          ),
+                          SakaiTextField(
+                            key: const Key('login_password'),
+                            controller: _passwordCtrl,
+                            label: 'Password',
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            onChanged: (_) => _viewModel.clearError(),
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                              onPressed: () {
+                                setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: tokens.spaceSm),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _viewModel.busy
+                                  ? null
+                                  : () {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Password reset is not wired yet.',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                              child: const Text('Forgot password?'),
+                            ),
+                          ),
+                          SakaiPrimaryButton(
+                            label: _viewModel.busy ? 'Signing in…' : 'Sign in',
+                            icon: Icons.login,
+                            onPressed: _viewModel.busy ? null : _onSignIn,
+                          ),
+                        ],
+                      ),
                     ),
-                  SakaiSurfaceCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    SizedBox(height: tokens.spaceLg),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Sign in',
-                          style: textTheme.titleLarge,
-                        ),
-                        SizedBox(height: tokens.spaceXs),
-                        Text(
-                          'Use the email and password for your rider account.',
+                          'New rider?',
                           style: textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
-                        SizedBox(height: tokens.spaceLg),
-                        SakaiTextField(
-                          key: const Key('login_email'),
-                          controller: _emailCtrl,
-                          label: 'Email',
-                          hint: 'you@example.com',
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          prefixIcon: const Icon(Icons.mail_outline),
-                          onChanged: (_) => _viewModel.clearError(),
-                        ),
-                        SakaiTextField(
-                          key: const Key('login_password'),
-                          controller: _passwordCtrl,
-                          label: 'Password',
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          onChanged: (_) => _viewModel.clearError(),
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
-                            },
-                          ),
-                        ),
-                        SizedBox(height: tokens.spaceSm),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _viewModel.busy
-                                ? null
-                                : () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Password reset is not wired yet.'),
+                        TextButton(
+                          onPressed: _viewModel.busy
+                              ? null
+                              : () {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => RegisterScreen(
+                                        authRepository: widget.authRepository,
+                                        rideRepository: widget.rideRepository,
                                       ),
-                                    );
-                                  },
-                            child: const Text('Forgot password?'),
-                          ),
-                        ),
-                        SakaiPrimaryButton(
-                          label: _viewModel.busy ? 'Signing in…' : 'Sign in',
-                          icon: Icons.login,
-                          onPressed: _viewModel.busy ? null : _onSignIn,
+                                    ),
+                                  );
+                                },
+                          child: const Text('Create account'),
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(height: tokens.spaceLg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'New rider?',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _viewModel.busy
-                            ? null
-                            : () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => RegisterScreen(
-                                      authRepository: widget.authRepository,
-                                      rideRepository: widget.rideRepository,
-                                    ),
-                                  ),
-                                );
-                              },
-                        child: const Text('Create account'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: tokens.spaceLg),
-                ],
-              ),
-            );
-          },
+                    SizedBox(height: tokens.spaceLg),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -222,10 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _BrandHeader extends StatelessWidget {
-  const _BrandHeader({
-    required this.colorScheme,
-    required this.textTheme,
-  });
+  const _BrandHeader({required this.colorScheme, required this.textTheme});
 
   final ColorScheme colorScheme;
   final TextTheme textTheme;

@@ -36,9 +36,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   void _onVmChanged() {
     if (_vm.errorMessage != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_vm.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_vm.errorMessage!)));
       _vm.clearError();
     }
   }
@@ -47,68 +47,84 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Widget build(BuildContext context) {
     final tokens = SakaiDesignTokens.of(context);
 
-    return SakaiScreenScaffold(
-      title: 'SakAI · Driver',
-      body: ListenableBuilder(
-        listenable: _vm,
-        builder: (context, _) {
-          return ListView(
-            children: [
-              Text(
-                'Driver workspace',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              SizedBox(height: tokens.spaceSm),
-              Text(
-                'Shared theme from SakaiThemeConfig.driver(). '
-                'Tweak seeds in mobile/shared/lib/theme/sakai_theme_config.dart.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              SizedBox(height: tokens.spaceLg),
-              SakaiSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _vm.online ? 'You are online' : 'Go online',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SizedBox(height: tokens.spaceMd),
-                    if (!_vm.online)
-                      SakaiTextField(
-                        controller: _plate,
-                        label: 'Vehicle plate',
-                        prefixIcon: const Icon(Icons.directions_car_outlined),
-                      ),
-                    SakaiPrimaryButton(
-                      label: _vm.loading
-                          ? (_vm.online ? 'Going offline…' : 'Going online…')
-                          : (_vm.online ? 'End shift' : 'Start shift'),
-                      icon: _vm.online
-                          ? Icons.stop_circle
-                          : Icons.play_circle_outline,
-                      onPressed: _vm.loading
-                          ? null
-                          : () {
-                              if (_vm.online) {
-                                _vm.goOffline();
-                              } else {
-                                _vm.goOnline(_plate.text);
-                              }
-                            },
-                    ),
-                    SizedBox(height: tokens.spaceSm),
-                    SakaiSecondaryButton(
-                      label: 'View earnings',
-                      icon: Icons.payments_outlined,
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-              ),
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('SakAI · Driver')),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.primary.withValues(alpha: 0.1),
+              scheme.surface,
+              scheme.secondary.withValues(alpha: 0.05),
             ],
-          );
-        },
+          ),
+        ),
+        child: ListenableBuilder(
+          listenable: _vm,
+          builder: (context, _) {
+            return ListView(
+              padding: EdgeInsets.all(tokens.spaceMd),
+              children: [
+                Text(
+                  'Driver workspace',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                SizedBox(height: tokens.spaceSm),
+                Text(
+                  'Shared theme from SakaiThemeConfig.driver(). '
+                  'Tweak seeds in mobile/shared/lib/theme/sakai_theme_config.dart.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                SizedBox(height: tokens.spaceLg),
+                SakaiGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        _vm.online ? 'You are online' : 'Go online',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(height: tokens.spaceMd),
+                      if (!_vm.online)
+                        SakaiTextField(
+                          controller: _plate,
+                          label: 'Vehicle plate',
+                          prefixIcon: const Icon(Icons.directions_car_outlined),
+                        ),
+                      SakaiPrimaryButton(
+                        label: _vm.loading
+                            ? (_vm.online ? 'Going offline…' : 'Going online…')
+                            : (_vm.online ? 'End shift' : 'Start shift'),
+                        icon: _vm.online
+                            ? Icons.stop_circle
+                            : Icons.play_circle_outline,
+                        onPressed: _vm.loading
+                            ? null
+                            : () {
+                                if (_vm.online) {
+                                  _vm.goOffline();
+                                } else {
+                                  _vm.goOnline(_plate.text);
+                                }
+                              },
+                      ),
+                      SizedBox(height: tokens.spaceSm),
+                      SakaiSecondaryButton(
+                        label: 'View earnings',
+                        icon: Icons.payments_outlined,
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
