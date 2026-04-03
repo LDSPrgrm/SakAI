@@ -43,7 +43,7 @@ class DriverApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/driver/rides/incoming';
+    final _path = r'/driver/rides/incoming';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -124,7 +124,7 @@ class DriverApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/driver/status';
+    final _path = r'/driver/status';
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{
@@ -225,7 +225,7 @@ class DriverApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/driver/location';
+    final _path = r'/driver/location';
     final _options = Options(
       method: r'PUT',
       headers: <String, dynamic>{

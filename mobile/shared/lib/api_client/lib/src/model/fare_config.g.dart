@@ -8,31 +8,31 @@ part of 'fare_config.dart';
 
 class _$FareConfig extends FareConfig {
   @override
-  final String vehicleType;
+  final String? vehicleType;
   @override
-  final num baseFare;
+  final num? baseFare;
   @override
-  final num perKmRate;
+  final num? perKmRate;
   @override
-  final num perMinRate;
+  final num? perMinRate;
   @override
-  final num minimumFare;
+  final num? minimumFare;
   @override
-  final num bookingFee;
+  final num? bookingFee;
   @override
-  final num cancellationFee;
+  final num? cancellationFee;
 
   factory _$FareConfig([void Function(FareConfigBuilder)? updates]) =>
       (FareConfigBuilder()..update(updates))._build();
 
   _$FareConfig._({
-    required this.vehicleType,
-    required this.baseFare,
-    required this.perKmRate,
-    required this.perMinRate,
-    required this.minimumFare,
-    required this.bookingFee,
-    required this.cancellationFee,
+    this.vehicleType,
+    this.baseFare,
+    this.perKmRate,
+    this.perMinRate,
+    this.minimumFare,
+    this.bookingFee,
+    this.cancellationFee,
   }) : super._();
   @override
   FareConfig rebuild(void Function(FareConfigBuilder) updates) =>
@@ -150,41 +150,13 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
     final _$result =
         _$v ??
         _$FareConfig._(
-          vehicleType: BuiltValueNullFieldError.checkNotNull(
-            vehicleType,
-            r'FareConfig',
-            'vehicleType',
-          ),
-          baseFare: BuiltValueNullFieldError.checkNotNull(
-            baseFare,
-            r'FareConfig',
-            'baseFare',
-          ),
-          perKmRate: BuiltValueNullFieldError.checkNotNull(
-            perKmRate,
-            r'FareConfig',
-            'perKmRate',
-          ),
-          perMinRate: BuiltValueNullFieldError.checkNotNull(
-            perMinRate,
-            r'FareConfig',
-            'perMinRate',
-          ),
-          minimumFare: BuiltValueNullFieldError.checkNotNull(
-            minimumFare,
-            r'FareConfig',
-            'minimumFare',
-          ),
-          bookingFee: BuiltValueNullFieldError.checkNotNull(
-            bookingFee,
-            r'FareConfig',
-            'bookingFee',
-          ),
-          cancellationFee: BuiltValueNullFieldError.checkNotNull(
-            cancellationFee,
-            r'FareConfig',
-            'cancellationFee',
-          ),
+          vehicleType: vehicleType,
+          baseFare: baseFare,
+          perKmRate: perKmRate,
+          perMinRate: perMinRate,
+          minimumFare: minimumFare,
+          bookingFee: bookingFee,
+          cancellationFee: cancellationFee,
         );
     replace(_$result);
     return _$result;

@@ -5,14 +5,14 @@
 import 'package:sakai_api_client/api.dart';
 ```
 
-All URIs are relative to *http://localhost:8080*
+All URIs are relative to *http://localhost:8080/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**authLogin**](AuthApi.md#authlogin) | **POST** /api/auth/login | Login and receive tokens
-[**authLogout**](AuthApi.md#authlogout) | **POST** /api/auth/logout | Logout and invalidate tokens
-[**authRefresh**](AuthApi.md#authrefresh) | **POST** /api/auth/refresh | Refresh the access token
-[**authRegister**](AuthApi.md#authregister) | **POST** /api/auth/register | Register a new user
+[**authLogin**](AuthApi.md#authlogin) | **POST** /auth/login | Login and receive tokens
+[**authLogout**](AuthApi.md#authlogout) | **POST** /auth/logout | Logout and invalidate tokens
+[**authRefresh**](AuthApi.md#authrefresh) | **POST** /auth/refresh | Refresh the access token
+[**authRegister**](AuthApi.md#authregister) | **POST** /auth/register | Register a new user
 
 
 # **authLogin**

@@ -16,7 +16,6 @@ part 'audit_log.g.dart';
 /// * [actorId] 
 /// * [action] 
 /// * [resourceType] 
-/// * [resourceId] 
 /// * [reason] 
 @BuiltValue()
 abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
@@ -34,9 +33,6 @@ abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
 
   @BuiltValueField(wireName: r'resource_type')
   String? get resourceType;
-
-  @BuiltValueField(wireName: r'resource_id')
-  String? get resourceId;
 
   @BuiltValueField(wireName: r'reason')
   String? get reason;
@@ -96,13 +92,6 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
       yield r'resource_type';
       yield serializers.serialize(
         object.resourceType,
-        specifiedType: const FullType(String),
-      );
-    }
-    if (object.resourceId != null) {
-      yield r'resource_id';
-      yield serializers.serialize(
-        object.resourceId,
         specifiedType: const FullType(String),
       );
     }
@@ -170,13 +159,6 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
             specifiedType: const FullType(String),
           ) as String;
           result.resourceType = valueDes;
-          break;
-        case r'resource_id':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.resourceId = valueDes;
           break;
         case r'reason':
           final valueDes = serializers.deserialize(

@@ -17,6 +17,8 @@ class SplashScreen extends ConsumerWidget {
     ref.listen<AsyncValue<SplashState>>(splashProvider, (_, next) {
       next.whenData((state) {
         switch (state) {
+          case SplashState.welcome:
+            context.go(Routes.welcome);
           case SplashState.unauthenticated:
             context.go(Routes.login);
           case SplashState.home:

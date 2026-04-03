@@ -6,7 +6,7 @@ import 'package:sakai_shared/sakai_shared.dart';
 import '../../../app/router.dart';
 import '../view_models/login_notifier.dart';
 
-/// Clean, glassmorphism-based login screen.
+/// Clean, glassmorphism-based login screen with social auth options.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -38,6 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final t = SakaiDesignTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final state = ref.watch(loginNotifierProvider);
 
     ref.listen<LoginState>(loginNotifierProvider, (_, next) {
@@ -90,7 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Welcome back',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
                 ),
@@ -99,9 +100,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Sign in to start receiving rides',
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
+                style: textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               SizedBox(height: t.spaceXl * 2),
 
@@ -139,6 +140,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: Icons.login,
                         onPressed: state.busy ? null : _onSignIn,
                       ),
+                      SizedBox(height: t.spaceLg),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: t.spaceSm,
+                            ),
+                            child: Text(
+                              'Or continue with',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      SizedBox(height: t.spaceLg),
+                      SakaiSecondaryButton(
+                        label: 'Continue with Google',
+                        onPressed: state.busy
+                            ? null
+                            : () => ref
+                                  .read(loginNotifierProvider.notifier)
+                                  .signInWithGoogle(),
+                        icon: Icons.account_circle_outlined,
+                      ),
+                      SizedBox(height: t.spaceSm),
+                      SakaiSecondaryButton(
+                        label: 'Continue with Phone',
+                        onPressed: state.busy
+                            ? null
+                            : () => ref
+                                  .read(loginNotifierProvider.notifier)
+                                  .signInWithPhone(),
+                        icon: Icons.phone_outlined,
+                      ),
                     ],
                   ),
                 ),
@@ -149,7 +190,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Don\'t have an account? ',
+                    "Don't have an account? ",
                     style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                   TextButton(

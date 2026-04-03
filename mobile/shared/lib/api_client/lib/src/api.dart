@@ -17,7 +17,7 @@ import 'package:sakai_api_client/src/api/system_api.dart';
 import 'package:sakai_api_client/src/api/users_api.dart';
 
 class SakaiApiClient {
-  static const String basePath = r'http://localhost:8080';
+  static const String basePath = r'http://localhost:8080/api';
 
   final Dio dio;
   final Serializers serializers;

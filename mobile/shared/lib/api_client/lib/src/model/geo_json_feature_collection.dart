@@ -3,8 +3,8 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:sakai_api_client/src/model/geo_json_feature_collection_features_inner.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:sakai_api_client/src/model/geo_json_feature.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -22,7 +22,7 @@ abstract class GeoJSONFeatureCollection implements Built<GeoJSONFeatureCollectio
   // enum typeEnum {  FeatureCollection,  };
 
   @BuiltValueField(wireName: r'features')
-  BuiltList<GeoJSONFeature> get features;
+  BuiltList<GeoJSONFeatureCollectionFeaturesInner> get features;
 
   GeoJSONFeatureCollection._();
 
@@ -55,7 +55,7 @@ class _$GeoJSONFeatureCollectionSerializer implements PrimitiveSerializer<GeoJSO
     yield r'features';
     yield serializers.serialize(
       object.features,
-      specifiedType: const FullType(BuiltList, [FullType(GeoJSONFeature)]),
+      specifiedType: const FullType(BuiltList, [FullType(GeoJSONFeatureCollectionFeaturesInner)]),
     );
   }
 
@@ -90,8 +90,8 @@ class _$GeoJSONFeatureCollectionSerializer implements PrimitiveSerializer<GeoJSO
         case r'features':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(GeoJSONFeature)]),
-          ) as BuiltList<GeoJSONFeature>;
+            specifiedType: const FullType(BuiltList, [FullType(GeoJSONFeatureCollectionFeaturesInner)]),
+          ) as BuiltList<GeoJSONFeatureCollectionFeaturesInner>;
           result.features.replace(valueDes);
           break;
         default:

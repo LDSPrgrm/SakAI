@@ -3,7 +3,6 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -34,8 +33,7 @@ abstract class Incident implements Built<Incident, IncidentBuilder> {
   String? get type;
 
   @BuiltValueField(wireName: r'status')
-  IncidentStatusEnum? get status;
-  // enum statusEnum {  open,  restricted,  resolved,  };
+  String? get status;
 
   @BuiltValueField(wireName: r'triggered_by')
   String? get triggeredBy;
@@ -103,7 +101,7 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
       yield r'status';
       yield serializers.serialize(
         object.status,
-        specifiedType: const FullType(IncidentStatusEnum),
+        specifiedType: const FullType(String),
       );
     }
     if (object.triggeredBy != null) {
@@ -195,8 +193,8 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
         case r'status':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(IncidentStatusEnum),
-          ) as IncidentStatusEnum;
+            specifiedType: const FullType(String),
+          ) as String;
           result.status = valueDes;
           break;
         case r'triggered_by':
@@ -268,22 +266,5 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
     );
     return result.build();
   }
-}
-
-class IncidentStatusEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'open')
-  static const IncidentStatusEnum open = _$incidentStatusEnum_open;
-  @BuiltValueEnumConst(wireName: r'restricted')
-  static const IncidentStatusEnum restricted = _$incidentStatusEnum_restricted;
-  @BuiltValueEnumConst(wireName: r'resolved')
-  static const IncidentStatusEnum resolved = _$incidentStatusEnum_resolved;
-
-  static Serializer<IncidentStatusEnum> get serializer => _$incidentStatusEnumSerializer;
-
-  const IncidentStatusEnum._(String name): super(name);
-
-  static BuiltSet<IncidentStatusEnum> get values => _$incidentStatusEnumValues;
-  static IncidentStatusEnum valueOf(String name) => _$incidentStatusEnumValueOf(name);
 }
 

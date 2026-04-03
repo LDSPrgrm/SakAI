@@ -22,13 +22,13 @@ part 'surge_config.g.dart';
 @BuiltValue()
 abstract class SurgeConfig implements Built<SurgeConfig, SurgeConfigBuilder> {
   @BuiltValueField(wireName: r'enabled')
-  bool get enabled;
+  bool? get enabled;
 
   @BuiltValueField(wireName: r'max_multiplier')
-  num get maxMultiplier;
+  num? get maxMultiplier;
 
   @BuiltValueField(wireName: r'trigger_ratio')
-  num get triggerRatio;
+  num? get triggerRatio;
 
   @BuiltValueField(wireName: r'zones')
   GeoJSONFeatureCollection? get zones;
@@ -59,21 +59,27 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
     SurgeConfig object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    yield r'enabled';
-    yield serializers.serialize(
-      object.enabled,
-      specifiedType: const FullType(bool),
-    );
-    yield r'max_multiplier';
-    yield serializers.serialize(
-      object.maxMultiplier,
-      specifiedType: const FullType(num),
-    );
-    yield r'trigger_ratio';
-    yield serializers.serialize(
-      object.triggerRatio,
-      specifiedType: const FullType(num),
-    );
+    if (object.enabled != null) {
+      yield r'enabled';
+      yield serializers.serialize(
+        object.enabled,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.maxMultiplier != null) {
+      yield r'max_multiplier';
+      yield serializers.serialize(
+        object.maxMultiplier,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.triggerRatio != null) {
+      yield r'trigger_ratio';
+      yield serializers.serialize(
+        object.triggerRatio,
+        specifiedType: const FullType(num),
+      );
+    }
     if (object.zones != null) {
       yield r'zones';
       yield serializers.serialize(

@@ -68,6 +68,13 @@ class _FakeRideRepository implements RideRepository {
   Future<void> cancelRide(String rideId) async {}
 }
 
+class _FakeOnboardingService implements OnboardingService {
+  @override
+  bool hasSeenWelcome() => true;
+  @override
+  Future<void> markWelcomeComplete() async {}
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -81,6 +88,7 @@ void main() {
         overrides: [
           authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
           rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+          onboardingServiceProvider.overrideWithValue(_FakeOnboardingService()),
         ],
         child: const PassengerApp(),
       ),

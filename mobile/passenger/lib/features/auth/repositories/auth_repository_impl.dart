@@ -1,4 +1,5 @@
 import 'package:built_value/serializer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 
@@ -22,13 +23,17 @@ class AuthRepositoryImpl implements AuthRepository {
           ..email = email
           ..password = password,
       );
+      debugPrint('[AuthRepo] Base URL: ${_client.dio.options.baseUrl}');
+      debugPrint('[AuthRepo] Login attempt for: $email');
       final response = await _client.getAuthApi().authLogin(
         loginRequest: request,
       );
       final data = response.data;
       if (data == null) {
+        debugPrint('[AuthRepo] Login failed: Empty response');
         throw AuthException(userMessage: 'Empty response from server');
       }
+      debugPrint('[AuthRepo] Login success for $email');
       return AuthSession(
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -53,13 +58,17 @@ class AuthRepositoryImpl implements AuthRepository {
           ..password = password
           ..role = RegisterRequestRoleEnum.passenger,
       );
+      debugPrint('[AuthRepo] Base URL: ${_client.dio.options.baseUrl}');
+      debugPrint('[AuthRepo] Register attempt for: $email');
       final response = await _client.getAuthApi().authRegister(
         registerRequest: request,
       );
       final data = response.data;
       if (data == null) {
+        debugPrint('[AuthRepo] Register failed: Empty response');
         throw AuthException(userMessage: 'Empty response from server');
       }
+      debugPrint('[AuthRepo] Register success for $email');
       return AuthSession(
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
@@ -84,6 +93,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   AuthException _fromDio(DioException e) {
+    debugPrint('[AuthRepo] Error: ${e.type} - ${e.message}');
+    debugPrint('[AuthRepo] Requested URI: ${e.requestOptions.uri}');
+    if (e.response != null) {
+      debugPrint('[AuthRepo] Status: ${e.response?.statusCode}');
+      debugPrint('[AuthRepo] Response: ${e.response?.data}');
+    }
+
     final data = e.response?.data;
     if (data != null) {
       try {

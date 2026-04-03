@@ -8,15 +8,24 @@ part of 'serializers.dart';
 
 Serializers _$serializers =
     (Serializers().toBuilder()
+          ..add(AdminExportReport200Response.serializer)
           ..add(AdminFaresResponse.serializer)
+          ..add(AdminUpdateFeatureFlagRequest.serializer)
+          ..add(AdminUpdateKycStatusRequest.serializer)
+          ..add(AdminUpdateKycStatusRequestStatusEnum.serializer)
+          ..add(AdminUpdateNotificationTemplateRequest.serializer)
           ..add(AuditLog.serializer)
           ..add(AuditLogResponse.serializer)
           ..add(AuthResponse.serializer)
           ..add(BlackoutHour.serializer)
           ..add(CancelRequest.serializer)
+          ..add(CommissionConfig.serializer)
+          ..add(CommissionConfigRates.serializer)
           ..add(CreateAdminRequest.serializer)
           ..add(CreateAdminRequestRoleEnum.serializer)
           ..add(DashboardResponse.serializer)
+          ..add(DriverPayout.serializer)
+          ..add(DriverPayoutStatusEnum.serializer)
           ..add(DriverStatusRequest.serializer)
           ..add(DriverStatusRequestStatusEnum.serializer)
           ..add(DriverStatusResponse.serializer)
@@ -27,17 +36,15 @@ Serializers _$serializers =
           ..add(FareConfig.serializer)
           ..add(FareSimulationRequest.serializer)
           ..add(FareSimulationResponse.serializer)
-          ..add(GeoJSONFeature.serializer)
+          ..add(FeatureFlag.serializer)
           ..add(GeoJSONFeatureCollection.serializer)
+          ..add(GeoJSONFeatureCollectionFeaturesInner.serializer)
+          ..add(GeoJSONFeatureCollectionFeaturesInnerGeometry.serializer)
+          ..add(
+            GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum.serializer,
+          )
+          ..add(GeoJSONFeatureCollectionFeaturesInnerTypeEnum.serializer)
           ..add(GeoJSONFeatureCollectionTypeEnum.serializer)
-          ..add(GeoJSONFeatureTypeEnum.serializer)
-          ..add(GeoJSONGeometry.serializer)
-          ..add(GeoJSONMultiPolygon.serializer)
-          ..add(GeoJSONMultiPolygonTypeEnum.serializer)
-          ..add(GeoJSONPoint.serializer)
-          ..add(GeoJSONPointTypeEnum.serializer)
-          ..add(GeoJSONPolygon.serializer)
-          ..add(GeoJSONPolygonTypeEnum.serializer)
           ..add(HealthResponse.serializer)
           ..add(HealthResponseDependencies.serializer)
           ..add(HealthResponseDependenciesDatabaseEnum.serializer)
@@ -45,19 +52,31 @@ Serializers _$serializers =
           ..add(HealthResponseStatusEnum.serializer)
           ..add(Incident.serializer)
           ..add(IncidentResolveRequest.serializer)
-          ..add(IncidentStatusEnum.serializer)
+          ..add(Integration.serializer)
+          ..add(IntegrationStatusEnum.serializer)
+          ..add(KycEntry.serializer)
+          ..add(KycEntryStatusEnum.serializer)
           ..add(LatLng.serializer)
           ..add(LocationUpdateRequest.serializer)
           ..add(LoginRequest.serializer)
           ..add(LogoutRequest.serializer)
+          ..add(NotificationTemplate.serializer)
+          ..add(NotificationTemplateChannelEnum.serializer)
+          ..add(PaymentSummary.serializer)
           ..add(RefreshRequest.serializer)
           ..add(RegisterRequest.serializer)
           ..add(RegisterRequestRoleEnum.serializer)
+          ..add(ReportDefinition.serializer)
           ..add(RideRequestBody.serializer)
           ..add(RideResponse.serializer)
           ..add(RideResponseCancelledByEnum.serializer)
           ..add(RideStatus.serializer)
           ..add(SurgeConfig.serializer)
+          ..add(SystemService.serializer)
+          ..add(SystemServiceStatusEnum.serializer)
+          ..add(Transaction.serializer)
+          ..add(TransactionPaymentMethodEnum.serializer)
+          ..add(TransactionStatusEnum.serializer)
           ..add(UpdateAdminStatusRequest.serializer)
           ..add(UpdateAdminStatusRequestRoleEnum.serializer)
           ..add(UserProfile.serializer)
@@ -84,16 +103,6 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [
               const FullType(BuiltList, const [
-                const FullType(BuiltList, const [
-                  const FullType(BuiltList, const [const FullType(num)]),
-                ]),
-              ]),
-            ]),
-            () => ListBuilder<BuiltList<BuiltList<BuiltList<num>>>>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(BuiltList, const [
                 const FullType(BuiltList, const [const FullType(num)]),
               ]),
             ]),
@@ -104,12 +113,28 @@ Serializers _$serializers =
             () => ListBuilder<FareConfig>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(GeoJSONFeature)]),
-            () => ListBuilder<GeoJSONFeature>(),
+            const FullType(BuiltList, const [
+              const FullType(GeoJSONFeatureCollectionFeaturesInner),
+            ]),
+            () => ListBuilder<GeoJSONFeatureCollectionFeaturesInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(num)]),
-            () => ListBuilder<num>(),
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType(String),
+            ]),
+            () => MapBuilder<String, String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType.nullable(JsonObject),
+            ]),
+            () => MapBuilder<String, JsonObject?>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

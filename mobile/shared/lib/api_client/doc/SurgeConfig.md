@@ -8,9 +8,9 @@ import 'package:sakai_api_client/api.dart';
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**enabled** | **bool** |  | 
-**maxMultiplier** | **num** |  | 
-**triggerRatio** | **num** |  | 
+**enabled** | **bool** |  | [optional] 
+**maxMultiplier** | **num** |  | [optional] 
+**triggerRatio** | **num** |  | [optional] 
 **zones** | [**GeoJSONFeatureCollection**](GeoJSONFeatureCollection.md) |  | [optional] 
 **blackoutHours** | [**BuiltList&lt;BlackoutHour&gt;**](BlackoutHour.md) |  | [optional] 
 

@@ -6,72 +6,6 @@ part of 'incident.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const IncidentStatusEnum _$incidentStatusEnum_open = const IncidentStatusEnum._(
-  'open',
-);
-const IncidentStatusEnum _$incidentStatusEnum_restricted =
-    const IncidentStatusEnum._('restricted');
-const IncidentStatusEnum _$incidentStatusEnum_resolved =
-    const IncidentStatusEnum._('resolved');
-
-IncidentStatusEnum _$incidentStatusEnumValueOf(String name) {
-  switch (name) {
-    case 'open':
-      return _$incidentStatusEnum_open;
-    case 'restricted':
-      return _$incidentStatusEnum_restricted;
-    case 'resolved':
-      return _$incidentStatusEnum_resolved;
-    default:
-      throw ArgumentError(name);
-  }
-}
-
-final BuiltSet<IncidentStatusEnum> _$incidentStatusEnumValues =
-    BuiltSet<IncidentStatusEnum>(const <IncidentStatusEnum>[
-      _$incidentStatusEnum_open,
-      _$incidentStatusEnum_restricted,
-      _$incidentStatusEnum_resolved,
-    ]);
-
-Serializer<IncidentStatusEnum> _$incidentStatusEnumSerializer =
-    _$IncidentStatusEnumSerializer();
-
-class _$IncidentStatusEnumSerializer
-    implements PrimitiveSerializer<IncidentStatusEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'open': 'open',
-    'restricted': 'restricted',
-    'resolved': 'resolved',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'open': 'open',
-    'restricted': 'restricted',
-    'resolved': 'resolved',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[IncidentStatusEnum];
-  @override
-  final String wireName = 'IncidentStatusEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    IncidentStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  IncidentStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IncidentStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$Incident extends Incident {
   @override
   final String? id;
@@ -80,7 +14,7 @@ class _$Incident extends Incident {
   @override
   final String? type;
   @override
-  final IncidentStatusEnum? status;
+  final String? status;
   @override
   final String? triggeredBy;
   @override
@@ -181,9 +115,9 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
   String? get type => _$this._type;
   set type(String? type) => _$this._type = type;
 
-  IncidentStatusEnum? _status;
-  IncidentStatusEnum? get status => _$this._status;
-  set status(IncidentStatusEnum? status) => _$this._status = status;
+  String? _status;
+  String? get status => _$this._status;
+  set status(String? status) => _$this._status = status;
 
   String? _triggeredBy;
   String? get triggeredBy => _$this._triggeredBy;

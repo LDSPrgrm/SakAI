@@ -68,7 +68,7 @@ class _$GeoJSONFeatureCollection extends GeoJSONFeatureCollection {
   @override
   final GeoJSONFeatureCollectionTypeEnum type;
   @override
-  final BuiltList<GeoJSONFeature> features;
+  final BuiltList<GeoJSONFeatureCollectionFeaturesInner> features;
 
   factory _$GeoJSONFeatureCollection([
     void Function(GeoJSONFeatureCollectionBuilder)? updates,
@@ -120,10 +120,10 @@ class GeoJSONFeatureCollectionBuilder
   GeoJSONFeatureCollectionTypeEnum? get type => _$this._type;
   set type(GeoJSONFeatureCollectionTypeEnum? type) => _$this._type = type;
 
-  ListBuilder<GeoJSONFeature>? _features;
-  ListBuilder<GeoJSONFeature> get features =>
-      _$this._features ??= ListBuilder<GeoJSONFeature>();
-  set features(ListBuilder<GeoJSONFeature>? features) =>
+  ListBuilder<GeoJSONFeatureCollectionFeaturesInner>? _features;
+  ListBuilder<GeoJSONFeatureCollectionFeaturesInner> get features =>
+      _$this._features ??= ListBuilder<GeoJSONFeatureCollectionFeaturesInner>();
+  set features(ListBuilder<GeoJSONFeatureCollectionFeaturesInner>? features) =>
       _$this._features = features;
 
   GeoJSONFeatureCollectionBuilder() {

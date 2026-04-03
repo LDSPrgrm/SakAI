@@ -43,7 +43,7 @@ info:
     name: SakAI Engineering
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api
     description: Local development
 
 tags:
@@ -66,7 +66,7 @@ tags:
 paths:
   # ── System ────────────────────────────────────────────────────────────────
 
-  /api/health:
+  /health:
     get:
       tags: [System]
       summary: Health check
@@ -90,7 +90,7 @@ paths:
 
   # ── Auth ──────────────────────────────────────────────────────────────────
 
-  /api/auth/register:
+  /auth/register:
     post:
       tags: [Auth]
       summary: Register a new user
@@ -123,7 +123,7 @@ paths:
                 code: EMAIL_ALREADY_REGISTERED
                 message: "An account with this email already exists"
 
-  /api/auth/login:
+  /auth/login:
     post:
       tags: [Auth]
       summary: Login and receive tokens
@@ -154,7 +154,7 @@ paths:
                 code: INVALID_CREDENTIALS
                 message: "Email or password is incorrect"
 
-  /api/auth/refresh:
+  /auth/refresh:
     post:
       tags: [Auth]
       summary: Refresh the access token
@@ -186,7 +186,7 @@ paths:
                 code: REFRESH_TOKEN_INVALID
                 message: "Refresh token is expired or has already been used"
 
-  /api/auth/logout:
+  /auth/logout:
     post:
       tags: [Auth]
       summary: Logout and invalidate tokens
@@ -211,7 +211,7 @@ paths:
 
   # ── Users ─────────────────────────────────────────────────────────────────
 
-  /api/users/me:
+  /users/me:
     get:
       tags: [Users]
       summary: Get the authenticated user's profile
@@ -234,7 +234,7 @@ paths:
 
   # ── Driver ────────────────────────────────────────────────────────────────
 
-  /api/driver/status:
+  /driver/status:
     put:
       tags: [Driver]
       summary: Set driver online/offline status
@@ -275,7 +275,7 @@ paths:
                 code: DRIVER_HAS_ACTIVE_RIDE
                 message: "Cannot go offline while a ride is in progress"
 
-  /api/driver/location:
+  /driver/location:
     put:
       tags: [Driver]
       summary: Update driver's current location
@@ -308,7 +308,7 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
-  /api/driver/rides/incoming:
+  /driver/rides/incoming:
     get:
       tags: [Driver]
       summary: Get the current pending ride offer for this driver
@@ -335,7 +335,7 @@ paths:
 
   # ── Rides ─────────────────────────────────────────────────────────────────
 
-  /api/rides/active:
+  /rides/active:
     get:
       tags: [Rides]
       summary: Get the caller's current active ride
@@ -360,7 +360,7 @@ paths:
         "404":
           description: No active ride found for this user
 
-  /api/rides:
+  /rides:
     post:
       tags: [Rides]
       summary: Request a new ride
@@ -416,7 +416,7 @@ paths:
                 code: NO_DRIVERS_AVAILABLE
                 message: "No drivers are available in your area right now"
 
-  /api/rides/{rideId}:
+  /rides/{rideId}:
     get:
       tags: [Rides]
       summary: Get ride details by ID
@@ -440,7 +440,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/rides/{rideId}/accept:
+  /rides/{rideId}/accept:
     post:
       tags: [Rides]
       summary: Driver accepts the ride offer
@@ -478,7 +478,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride is not in a state that allows acceptance"
 
-  /api/rides/{rideId}/decline:
+  /rides/{rideId}/decline:
     post:
       tags: [Rides]
       summary: Driver declines the ride offer
@@ -504,7 +504,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /api/rides/{rideId}/arrive:
+  /rides/{rideId}/arrive:
     post:
       tags: [Rides]
       summary: Driver signals arrival at pickup
@@ -539,7 +539,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'accepted' state to mark arrival"
 
-  /api/rides/{rideId}/start:
+  /rides/{rideId}/start:
     post:
       tags: [Rides]
       summary: Driver starts the ride after passenger boards
@@ -574,7 +574,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'arrived' state to start"
 
-  /api/rides/{rideId}/complete:
+  /rides/{rideId}/complete:
     post:
       tags: [Rides]
       summary: Driver completes the ride at dropoff
@@ -610,7 +610,7 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Ride must be in 'in_progress' state to complete"
 
-  /api/rides/{rideId}/cancel:
+  /rides/{rideId}/cancel:
     post:
       tags: [Rides]
       summary: Cancel an active ride
@@ -655,7 +655,7 @@ paths:
 
   # ── Admin ─────────────────────────────────────────────────────────────────
 
-  /api/admin/dashboard:
+  /admin/dashboard:
     get:
       tags: [Admin]
       summary: Get platform dashboard metrics
@@ -675,7 +675,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/users:
+  /admin/users:
     get:
       tags: [Admin]
       summary: List all administrators
@@ -723,7 +723,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/users/{id}:
+  /admin/users/{id}:
     put:
       tags: [Admin]
       summary: Update administrator status
@@ -754,7 +754,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/fares:
+  /admin/fares:
     get:
       tags: [Admin]
       summary: Get fare configurations
@@ -798,7 +798,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/surge:
+  /admin/surge:
     put:
       tags: [Admin]
       summary: Update surge configuration
@@ -822,7 +822,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/fares/simulate:
+  /admin/fares/simulate:
     post:
       tags: [Admin]
       summary: Simulate a ride fare
@@ -850,7 +850,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/incidents:
+  /admin/incidents:
     get:
       tags: [Admin]
       summary: List system incidents
@@ -878,7 +878,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/incidents/{id}/resolve:
+  /admin/incidents/{id}/resolve:
     put:
       tags: [Admin]
       summary: Resolve an incident
@@ -909,7 +909,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/audit:
+  /admin/audit:
     get:
       tags: [Admin]
       summary: List audit logs
@@ -929,7 +929,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/payments/transactions:
+  /admin/payments/transactions:
     get:
       tags: [Admin]
       summary: Get recent transactions
@@ -951,7 +951,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/payments/payouts:
+  /admin/payments/payouts:
     get:
       tags: [Admin]
       summary: Get pending driver payouts
@@ -973,7 +973,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/payments/payouts/{id}/approve:
+  /admin/payments/payouts/{id}/approve:
     put:
       tags: [Admin]
       summary: Approve a driver payout
@@ -996,7 +996,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/payments/summary:
+  /admin/payments/summary:
     get:
       tags: [Admin]
       summary: Get financial summary
@@ -1016,7 +1016,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/payments/commission-config:
+  /admin/payments/commission-config:
     get:
       tags: [Admin]
       summary: Get commission configuration
@@ -1058,7 +1058,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/services:
+  /admin/system/services:
     get:
       tags: [Admin]
       summary: Get system services health
@@ -1080,7 +1080,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/feature-flags:
+  /admin/system/feature-flags:
     get:
       tags: [Admin]
       summary: Get all feature flags
@@ -1102,7 +1102,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/feature-flags/{key}:
+  /admin/system/feature-flags/{key}:
     put:
       tags: [Admin]
       summary: Update a feature flag
@@ -1136,7 +1136,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/integrations:
+  /admin/system/integrations:
     get:
       tags: [Admin]
       summary: Get 3rd party integrations
@@ -1158,7 +1158,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/integrations/{service}:
+  /admin/system/integrations/{service}:
     put:
       tags: [Admin]
       summary: Update integration settings
@@ -1190,7 +1190,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/notification-templates:
+  /admin/system/notification-templates:
     get:
       tags: [Admin]
       summary: Get notification templates
@@ -1212,7 +1212,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/system/notification-templates/{event}:
+  /admin/system/notification-templates/{event}:
     put:
       tags: [Admin]
       summary: Update a notification template
@@ -1246,7 +1246,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/safety/kyc:
+  /admin/safety/kyc:
     get:
       tags: [Admin]
       summary: Get KYC queue
@@ -1268,7 +1268,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/safety/kyc/{id}:
+  /admin/safety/kyc/{id}:
     put:
       tags: [Admin]
       summary: Update KYC status
@@ -1304,7 +1304,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/reports/list:
+  /admin/reports/list:
     get:
       tags: [Admin]
       summary: Get available reports
@@ -1326,7 +1326,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/reports/chart/{type}:
+  /admin/reports/chart/{type}:
     get:
       tags: [Admin]
       summary: Get data for a specific report chart
@@ -1355,7 +1355,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/admin/reports/export/{type}:
+  /admin/reports/export/{type}:
     post:
       tags: [Admin]
       summary: Generate a report export

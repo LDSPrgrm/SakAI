@@ -18,8 +18,6 @@ class _$AuditLog extends AuditLog {
   @override
   final String? resourceType;
   @override
-  final String? resourceId;
-  @override
   final String? reason;
 
   factory _$AuditLog([void Function(AuditLogBuilder)? updates]) =>
@@ -31,7 +29,6 @@ class _$AuditLog extends AuditLog {
     this.actorId,
     this.action,
     this.resourceType,
-    this.resourceId,
     this.reason,
   }) : super._();
   @override
@@ -50,7 +47,6 @@ class _$AuditLog extends AuditLog {
         actorId == other.actorId &&
         action == other.action &&
         resourceType == other.resourceType &&
-        resourceId == other.resourceId &&
         reason == other.reason;
   }
 
@@ -62,7 +58,6 @@ class _$AuditLog extends AuditLog {
     _$hash = $jc(_$hash, actorId.hashCode);
     _$hash = $jc(_$hash, action.hashCode);
     _$hash = $jc(_$hash, resourceType.hashCode);
-    _$hash = $jc(_$hash, resourceId.hashCode);
     _$hash = $jc(_$hash, reason.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -76,7 +71,6 @@ class _$AuditLog extends AuditLog {
           ..add('actorId', actorId)
           ..add('action', action)
           ..add('resourceType', resourceType)
-          ..add('resourceId', resourceId)
           ..add('reason', reason))
         .toString();
   }
@@ -105,10 +99,6 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   String? get resourceType => _$this._resourceType;
   set resourceType(String? resourceType) => _$this._resourceType = resourceType;
 
-  String? _resourceId;
-  String? get resourceId => _$this._resourceId;
-  set resourceId(String? resourceId) => _$this._resourceId = resourceId;
-
   String? _reason;
   String? get reason => _$this._reason;
   set reason(String? reason) => _$this._reason = reason;
@@ -125,7 +115,6 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
       _actorId = $v.actorId;
       _action = $v.action;
       _resourceType = $v.resourceType;
-      _resourceId = $v.resourceId;
       _reason = $v.reason;
       _$v = null;
     }
@@ -154,7 +143,6 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
           actorId: actorId,
           action: action,
           resourceType: resourceType,
-          resourceId: resourceId,
           reason: reason,
         );
     replace(_$result);

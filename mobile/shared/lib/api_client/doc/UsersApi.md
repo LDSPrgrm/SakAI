@@ -5,11 +5,11 @@
 import 'package:sakai_api_client/api.dart';
 ```
 
-All URIs are relative to *http://localhost:8080*
+All URIs are relative to *http://localhost:8080/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**usersGetMe**](UsersApi.md#usersgetme) | **GET** /api/users/me | Get the authenticated user&#39;s profile
+[**usersGetMe**](UsersApi.md#usersgetme) | **GET** /users/me | Get the authenticated user&#39;s profile
 
 
 # **usersGetMe**

@@ -45,7 +45,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/accept'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/accept'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -126,7 +126,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/arrive'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/arrive'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -209,7 +209,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/cancel'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/cancel'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -310,7 +310,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/complete'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/complete'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -391,7 +391,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/decline'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/decline'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -472,7 +472,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -551,7 +551,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/active';
+    final _path = r'/rides/active';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -634,7 +634,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides';
+    final _path = r'/rides';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -736,7 +736,7 @@ class RidesApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/rides/{rideId}/start'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _path = r'/rides/{rideId}/start'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{

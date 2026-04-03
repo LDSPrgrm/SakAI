@@ -56,6 +56,28 @@ class LoginNotifier extends Notifier<LoginState> {
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    state = const LoginState(busy: true);
+    try {
+      // TODO: implement OAuth Google flow with backend
+      await Future.delayed(const Duration(milliseconds: 500));
+      state = const LoginState(errorMessage: 'Google Sign-In coming soon');
+    } catch (e) {
+      state = LoginState(errorMessage: e.toString());
+    }
+  }
+
+  Future<void> signInWithPhone() async {
+    state = const LoginState(busy: true);
+    try {
+      // TODO: navigate to phone verification screen
+      await Future.delayed(const Duration(milliseconds: 300));
+      state = const LoginState(errorMessage: 'Phone Sign-In coming soon');
+    } catch (e) {
+      state = LoginState(errorMessage: e.toString());
+    }
+  }
+
   void clearError() {
     if (state.errorMessage != null) {
       state = state.copyWith(errorMessage: null);

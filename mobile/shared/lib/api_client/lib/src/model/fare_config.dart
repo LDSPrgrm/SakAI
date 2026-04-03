@@ -21,25 +21,25 @@ part 'fare_config.g.dart';
 @BuiltValue()
 abstract class FareConfig implements Built<FareConfig, FareConfigBuilder> {
   @BuiltValueField(wireName: r'vehicle_type')
-  String get vehicleType;
+  String? get vehicleType;
 
   @BuiltValueField(wireName: r'base_fare')
-  num get baseFare;
+  num? get baseFare;
 
   @BuiltValueField(wireName: r'per_km_rate')
-  num get perKmRate;
+  num? get perKmRate;
 
   @BuiltValueField(wireName: r'per_min_rate')
-  num get perMinRate;
+  num? get perMinRate;
 
   @BuiltValueField(wireName: r'minimum_fare')
-  num get minimumFare;
+  num? get minimumFare;
 
   @BuiltValueField(wireName: r'booking_fee')
-  num get bookingFee;
+  num? get bookingFee;
 
   @BuiltValueField(wireName: r'cancellation_fee')
-  num get cancellationFee;
+  num? get cancellationFee;
 
   FareConfig._();
 
@@ -64,41 +64,55 @@ class _$FareConfigSerializer implements PrimitiveSerializer<FareConfig> {
     FareConfig object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    yield r'vehicle_type';
-    yield serializers.serialize(
-      object.vehicleType,
-      specifiedType: const FullType(String),
-    );
-    yield r'base_fare';
-    yield serializers.serialize(
-      object.baseFare,
-      specifiedType: const FullType(num),
-    );
-    yield r'per_km_rate';
-    yield serializers.serialize(
-      object.perKmRate,
-      specifiedType: const FullType(num),
-    );
-    yield r'per_min_rate';
-    yield serializers.serialize(
-      object.perMinRate,
-      specifiedType: const FullType(num),
-    );
-    yield r'minimum_fare';
-    yield serializers.serialize(
-      object.minimumFare,
-      specifiedType: const FullType(num),
-    );
-    yield r'booking_fee';
-    yield serializers.serialize(
-      object.bookingFee,
-      specifiedType: const FullType(num),
-    );
-    yield r'cancellation_fee';
-    yield serializers.serialize(
-      object.cancellationFee,
-      specifiedType: const FullType(num),
-    );
+    if (object.vehicleType != null) {
+      yield r'vehicle_type';
+      yield serializers.serialize(
+        object.vehicleType,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.baseFare != null) {
+      yield r'base_fare';
+      yield serializers.serialize(
+        object.baseFare,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.perKmRate != null) {
+      yield r'per_km_rate';
+      yield serializers.serialize(
+        object.perKmRate,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.perMinRate != null) {
+      yield r'per_min_rate';
+      yield serializers.serialize(
+        object.perMinRate,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.minimumFare != null) {
+      yield r'minimum_fare';
+      yield serializers.serialize(
+        object.minimumFare,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.bookingFee != null) {
+      yield r'booking_fee';
+      yield serializers.serialize(
+        object.bookingFee,
+        specifiedType: const FullType(num),
+      );
+    }
+    if (object.cancellationFee != null) {
+      yield r'cancellation_fee';
+      yield serializers.serialize(
+        object.cancellationFee,
+        specifiedType: const FullType(num),
+      );
+    }
   }
 
   @override

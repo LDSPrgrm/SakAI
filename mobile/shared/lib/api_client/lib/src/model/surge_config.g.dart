@@ -8,11 +8,11 @@ part of 'surge_config.dart';
 
 class _$SurgeConfig extends SurgeConfig {
   @override
-  final bool enabled;
+  final bool? enabled;
   @override
-  final num maxMultiplier;
+  final num? maxMultiplier;
   @override
-  final num triggerRatio;
+  final num? triggerRatio;
   @override
   final GeoJSONFeatureCollection? zones;
   @override
@@ -22,9 +22,9 @@ class _$SurgeConfig extends SurgeConfig {
       (SurgeConfigBuilder()..update(updates))._build();
 
   _$SurgeConfig._({
-    required this.enabled,
-    required this.maxMultiplier,
-    required this.triggerRatio,
+    this.enabled,
+    this.maxMultiplier,
+    this.triggerRatio,
     this.zones,
     this.blackoutHours,
   }) : super._();
@@ -133,21 +133,9 @@ class SurgeConfigBuilder implements Builder<SurgeConfig, SurgeConfigBuilder> {
       _$result =
           _$v ??
           _$SurgeConfig._(
-            enabled: BuiltValueNullFieldError.checkNotNull(
-              enabled,
-              r'SurgeConfig',
-              'enabled',
-            ),
-            maxMultiplier: BuiltValueNullFieldError.checkNotNull(
-              maxMultiplier,
-              r'SurgeConfig',
-              'maxMultiplier',
-            ),
-            triggerRatio: BuiltValueNullFieldError.checkNotNull(
-              triggerRatio,
-              r'SurgeConfig',
-              'triggerRatio',
-            ),
+            enabled: enabled,
+            maxMultiplier: maxMultiplier,
+            triggerRatio: triggerRatio,
             zones: _zones?.build(),
             blackoutHours: _blackoutHours?.build(),
           );
