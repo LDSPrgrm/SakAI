@@ -14,13 +14,19 @@ import (
 
 // Deps is the set of pre-constructed handlers injected into the router.
 type Deps struct {
-	Auth   *handler.AuthHandler
-	Driver *handler.DriverHandler
-	Ride   *handler.RideHandler
-	Admin  *handler.AdminHandler
-	Fare   *handler.FareHandler
-	Audit  *handler.AuditHandler
-	WS     *ws.Handler
+	Auth    *handler.AuthHandler
+	Driver  *handler.DriverHandler
+	Ride    *handler.RideHandler
+	Admin   *handler.AdminHandler
+	Fare    *handler.FareHandler
+	Audit   *handler.AuditHandler
+	Role    *handler.RoleHandler
+	Payment *handler.PaymentHandler
+	Safety  *handler.SafetyHandler
+	System  *handler.SystemHandler
+	Report  *handler.ReportHandler
+	Metrics *handler.MetricsHandler
+	WS      *ws.Handler
 }
 
 // New builds and returns the configured Gin engine.
@@ -71,36 +77,86 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
 		admin := authed.Group("/admin")
 		{
-			// Dashboard: All admin roles (content filtered by UC)
+			// Dashboard
 			admin.GET("/dashboard", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.GetDashboard)
 
-			// Admin Management: Super Admin only
+			// Auth
+			admin.PUT("/auth/password", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Auth.ChangePassword)
+
+			// Metrics
+			admin.GET("/metrics/riders", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRiders)
+			admin.GET("/metrics/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetDrivers)
+			admin.GET("/metrics/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRides)
+			admin.GET("/metrics/revenue", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Metrics.GetRevenue)
+			admin.GET("/metrics/wait-time", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetWaitTime)
+
+			// Admin Management
 			admin.GET("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ListAdmins)
 			admin.POST("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.CreateAdmin)
 			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
+			admin.DELETE("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.DeactivateAdmin)
+			admin.GET("/users/:id/activity", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.GetAdminActivity)
 
-			// Ride browsing: all admin roles (operations, support need read access)
+			// Role Management
+			admin.GET("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.ListRoles)
+			admin.POST("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.CreateRole)
+			admin.GET("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRole)
+			admin.PUT("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.UpdateRole)
+			admin.DELETE("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DeleteRole)
+			admin.GET("/roles/:id/permissions", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRolePermissions)
+			admin.GET("/roles/:id/admins", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRoleAdmins)
+
+			// Ride & User browsing
 			admin.GET("/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.ListRides)
-
-			// User browsing: superadmin, operations, support
 			admin.GET("/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
 			admin.GET("/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
 
-			// Fare & Surge: Super Admin and Finance (view for Finance)
+			// Fare & Surge
 			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
 			admin.PUT("/fares", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateFares)
+			admin.GET("/fares/surge", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetSurgeConfig)
 			admin.PUT("/surge", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateSurge)
 			admin.POST("/fares/simulate", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.SimulateFare)
 
-			// Incidents: Super Admin, Operations, Support (read only for Support)
+			// Payments
+			admin.GET("/payments/transactions", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations), d.Payment.ListTransactions)
+			admin.GET("/payments/summary", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetSummary)
+			admin.GET("/payments/payouts", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.ListPayouts)
+			admin.PUT("/payments/payouts/:id/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.ApprovePayout)
+			admin.POST("/payments/payouts/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.BatchApprovePayouts)
+			admin.GET("/payments/config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.GetGatewayConfigs)
+			admin.PUT("/payments/config/:provider", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateGatewayConfig)
+			admin.GET("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
+			admin.PUT("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
+
+			// Safety & Incidents
 			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
 			admin.PUT("/incidents/:id/resolve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
+			admin.GET("/safety/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
+			admin.PUT("/safety/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
+			admin.GET("/safety/kyc", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.ListKyc)
+			admin.PUT("/safety/kyc/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.UpdateKyc)
+			admin.POST("/safety/kyc/batch", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.BatchKyc)
+			admin.GET("/safety/compliance", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.GetCompliance)
 
-			// Audit Log: Super Admin only
+			// System
+			admin.GET("/system/services", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.ListServices)
+			admin.GET("/system/feature-flags", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListFeatureFlags)
+			admin.PUT("/system/feature-flags/:key", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateFeatureFlag)
+			admin.GET("/system/integrations", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListIntegrations)
+			admin.PUT("/system/integrations/:service", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateIntegration)
+			admin.POST("/system/integrations/:service/test", middleware.RequireRole(domain.RoleSuperadmin), d.System.TestIntegration)
+			admin.GET("/system/notification-templates", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListNotificationTemplates)
+			admin.PUT("/system/notification-templates/:event", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateNotificationTemplate)
+
+			// Reports
+			admin.GET("/reports/list", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Report.ListReports)
+			admin.GET("/reports/chart/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Report.GetChartData)
+			admin.POST("/reports/export/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations), d.Report.ExportReport)
+
+			// Audit Log
 			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
-
-			// Reports: Super Admin, Finance, Operations, Support
-			admin.GET("/reports/chart/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Admin.GetReportChart)
+			admin.GET("/audit/export", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.Export)
 		}
 
 

@@ -82,6 +82,12 @@ func main() {
 	auditRepo := postgres.NewAuditRepo(pool)
 	incidentRepo := postgres.NewIncidentRepo(pool)
 	metricsRepo := postgres.NewSystemMetricsRepo(pool)
+	roleRepo := postgres.NewRoleRepo(pool)
+	paymentRepo := postgres.NewPaymentRepo(pool)
+	safetyRepo := postgres.NewSafetyRepo(pool)
+	systemRepo := postgres.NewSystemRepo(pool)
+	reportRepo := postgres.NewReportRepo(pool)
+	metricsIndividualRepo := postgres.NewMetricsRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -95,6 +101,12 @@ func main() {
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
+	roleUC := usecase.NewRoleUseCase(roleRepo, auditRepo)
+	paymentUC := usecase.NewPaymentUseCase(paymentRepo, auditRepo)
+	safetyUC := usecase.NewSafetyUseCase(safetyRepo, auditRepo)
+	systemUC := usecase.NewSystemUseCase(systemRepo, auditRepo)
+	reportUC := usecase.NewReportUseCase(reportRepo)
+	metricsUC := usecase.NewMetricsUseCase(metricsIndividualRepo)
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
@@ -108,13 +120,19 @@ func main() {
 
 	// ── HTTP handlers ─────────────────────────────────────────────────────────
 	deps := router.Deps{
-		Auth:   handler.NewAuthHandler(authUC),
-		Driver: handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:   handler.NewRideHandler(rideUC, dispatcher),
-		Admin:  handler.NewAdminHandler(adminUC, auditUC),
-		Fare:   handler.NewFareHandler(fareUC),
-		Audit:  handler.NewAuditHandler(auditUC),
-		WS:     ws.NewHandler(hub),
+		Auth:    handler.NewAuthHandler(authUC),
+		Driver:  handler.NewDriverHandler(driverUC, dispatcher),
+		Ride:    handler.NewRideHandler(rideUC, dispatcher),
+		Admin:   handler.NewAdminHandler(adminUC, auditUC),
+		Fare:    handler.NewFareHandler(fareUC),
+		Audit:   handler.NewAuditHandler(auditUC),
+		Role:    handler.NewRoleHandler(roleUC),
+		Payment: handler.NewPaymentHandler(paymentUC),
+		Safety:  handler.NewSafetyHandler(safetyUC),
+		System:  handler.NewSystemHandler(systemUC),
+		Report:  handler.NewReportHandler(reportUC),
+		Metrics: handler.NewMetricsHandler(metricsUC),
+		WS:      ws.NewHandler(hub),
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

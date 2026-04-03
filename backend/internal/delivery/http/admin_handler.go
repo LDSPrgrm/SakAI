@@ -114,19 +114,32 @@ func (h *AdminHandler) ResolveIncident(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *AdminHandler) GetReportChart(c *gin.Context) {
-	// chartType := c.Param("type")
-	// For now, return stub data to satisfy frontend charting
-	data := []gin.H{
-		{"label": "Mon", "value": 10},
-		{"label": "Tue", "value": 20},
-		{"label": "Wed", "value": 15},
-		{"label": "Thu", "value": 25},
-		{"label": "Fri", "value": 30},
-		{"label": "Sat", "value": 40},
-		{"label": "Sun", "value": 35},
+func (h *AdminHandler) DeactivateAdmin(c *gin.Context) {
+	actorID := c.MustGet("userID").(uuid.UUID)
+	targetID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid user id"})
+		return
 	}
-	respondOK(c, data)
+	if err := h.uc.DeactivateAdmin(c.Request.Context(), actorID, targetID); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *AdminHandler) GetAdminActivity(c *gin.Context) {
+	adminID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid user id"})
+		return
+	}
+	logs, err := h.uc.GetAdminActivity(c.Request.Context(), adminID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, logs)
 }
 
 func (h *AdminHandler) ListRides(c *gin.Context) {
@@ -210,6 +223,15 @@ func (h *FareHandler) GetConfig(c *gin.Context) {
 	})
 }
 
+func (h *FareHandler) GetSurgeConfig(c *gin.Context) {
+	_, surge, err := h.uc.GetConfig(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, surge)
+}
+
 func (h *FareHandler) UpdateFares(c *gin.Context) {
 	actorID := c.MustGet("userID").(uuid.UUID)
 	var req []*domain.FareConfig
@@ -279,4 +301,16 @@ func (h *AuditHandler) List(c *gin.Context) {
 		"logs":  logs,
 		"total": total,
 	})
+}
+
+func (h *AuditHandler) Export(c *gin.Context) {
+	var q domain.AuditQuery
+	_ = c.ShouldBindQuery(&q)
+	csvData, err := h.uc.ExportLogs(c.Request.Context(), q)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Header("Content-Disposition", "attachment; filename=audit-log.csv")
+	c.Data(http.StatusOK, "text/csv", csvData)
 }

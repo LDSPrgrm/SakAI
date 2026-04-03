@@ -140,6 +140,48 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 	return nil
 }
 
+func (uc *adminUseCase) DeactivateAdmin(ctx context.Context, actorID, targetID uuid.UUID) error {
+	if actorID == targetID {
+		return errors.New("cannot deactivate own account")
+	}
+	oldUser, err := uc.userRepo.GetByID(ctx, targetID)
+	if err != nil {
+		return err
+	}
+	// Protect last superadmin
+	if oldUser.Role == domain.RoleSuperadmin {
+		admins, _ := uc.adminRepo.GetAdmins(ctx)
+		superCount := 0
+		for _, a := range admins {
+			if a.Role == domain.RoleSuperadmin {
+				superCount++
+			}
+		}
+		if superCount <= 1 {
+			return errors.New("cannot deactivate the last superadmin")
+		}
+	}
+	if err := uc.adminRepo.DeactivateAdmin(ctx, targetID); err != nil {
+		return err
+	}
+	before, _ := json.Marshal(oldUser)
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "DEACTIVATE",
+		ResourceType: "admin_user",
+		ResourceID:   targetID.String(),
+		BeforeState:  before,
+		AfterState:   []byte(`{"status":"deactivated"}`),
+		IPAddress:    "internal",
+	})
+	return nil
+}
+
+func (uc *adminUseCase) GetAdminActivity(ctx context.Context, adminID uuid.UUID) ([]*domain.AuditLogEntry, error) {
+	logs, _, err := uc.auditRepo.List(ctx, domain.AuditQuery{ActorID: &adminID, Page: 0, Limit: 50})
+	return logs, err
+}
+
 func (uc *adminUseCase) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
 	return uc.incidentRepo.ListIncidents(ctx, status)
 }
@@ -313,4 +355,24 @@ func (uc *auditUseCase) LogAction(ctx context.Context, entry *domain.AuditLogEnt
 
 func (uc *auditUseCase) GetLogs(ctx context.Context, query domain.AuditQuery) ([]*domain.AuditLogEntry, int, error) {
 	return uc.auditRepo.List(ctx, query)
+}
+
+func (uc *auditUseCase) ExportLogs(ctx context.Context, query domain.AuditQuery) ([]byte, error) {
+	// Fetch all matching logs (no pagination for export)
+	query.Limit = 10000
+	query.Page = 0
+	logs, _, err := uc.auditRepo.List(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	var buf []byte
+	header := "id,timestamp,actor_id,action,resource_type,resource_id,reason\n"
+	buf = append(buf, []byte(header)...)
+	for _, e := range logs {
+		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s\n",
+			e.ID, e.Timestamp.Format(time.RFC3339),
+			e.ActorID, e.Action, e.ResourceType, e.ResourceID, e.Reason)
+		buf = append(buf, []byte(row)...)
+	}
+	return buf, nil
 }

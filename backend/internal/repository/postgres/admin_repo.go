@@ -49,6 +49,12 @@ func (r *adminRepo) UpdateAdminStatus(ctx context.Context, id uuid.UUID, role do
 	return err
 }
 
+func (r *adminRepo) DeactivateAdmin(ctx context.Context, id uuid.UUID) error {
+	const q = `UPDATE users SET role = 'deactivated' WHERE id = $1`
+	_, err := r.db.Exec(ctx, q, id)
+	return err
+}
+
 func (r *adminRepo) GetPaymentConfigs(ctx context.Context) ([]*domain.PaymentGatewayConfig, error) {
 	const q = `SELECT id, provider, config_fields, is_active, updated_at, updated_by FROM payment_gateway_configs`
 	rows, err := r.db.Query(ctx, q)
