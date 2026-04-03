@@ -92,7 +92,7 @@ func main() {
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo)
 	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo)
-	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, incidentRepo, metricsRepo, auditRepo)
+	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
 

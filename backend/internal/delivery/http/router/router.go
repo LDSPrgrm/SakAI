@@ -79,6 +79,13 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.POST("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.CreateAdmin)
 			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
 
+			// Ride browsing: all admin roles (operations, support need read access)
+			admin.GET("/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.ListRides)
+
+			// User browsing: superadmin, operations, support
+			admin.GET("/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
+			admin.GET("/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
+
 			// Fare & Surge: Super Admin and Finance (view for Finance)
 			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
 			admin.PUT("/fares", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateFares)

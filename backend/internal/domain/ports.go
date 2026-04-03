@@ -34,6 +34,11 @@ type UserRepository interface {
 	// refresh token in a single DB transaction. Use this from Register to
 	// prevent orphaned user records when token storage fails.
 	CreateWithTokens(ctx context.Context, user *User, refreshToken string, expiresAt time.Time) error
+
+	// ListByRole returns a paginated list of users matching the given filter.
+	// search is matched case-insensitively against name and email.
+	// Returns the slice and the total count (before pagination) for metadata.
+	ListByRole(ctx context.Context, filter UserListFilter) ([]*User, int, error)
 }
 
 // TokenRepository manages opaque refresh tokens (stored server-side).
@@ -86,6 +91,9 @@ type RideRepository interface {
 	// for longer than timeout. Returns the identity of the cancelled rides.
 	// Called periodically by the offer-expiry background worker.
 	CancelExpiredOffers(ctx context.Context, timeout time.Duration) ([]ExpiredOffer, error)
+
+	// ListAll returns a paginated list of all rides for admin browsing.
+	ListAll(ctx context.Context, filter AdminRideFilter) ([]*Ride, int, error)
 }
 
 // ExpiredOffer contains the identity of a ride canceled due to dispatch timeout.
@@ -205,13 +213,55 @@ type DriverUseCase interface {
 	GetActiveRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 }
 
+// AdminRideFilter is the filter/pagination input for admin ride browsing.
+type AdminRideFilter struct {
+	Status *RideStatus // optional — nil means all statuses
+	Page   int         // 1-based; 0 treated as 1
+	Limit  int         // max rows; 0 defaults to 20
+}
+
+// UserListFilter is the filter/pagination input for admin user browsing.
+type UserListFilter struct {
+	Role   *UserRole // nil means all roles
+	Search string    // case-insensitive substring match on name or email
+	Page   int
+	Limit  int
+}
+
+// AdminRideItem is a read-only projection of a ride enriched with participant names.
+type AdminRideItem struct {
+	Ride          *Ride
+	PassengerName string
+	DriverName    string // empty when no driver is assigned
+}
+
+// AdminDriverItem pairs a user record with their driver operational state.
+type AdminDriverItem struct {
+	User          *User
+	DriverStatus  DriverStatus
+}
+
+// PaginationMeta carries page metadata for list responses.
+type PaginationMeta struct {
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	Total      int `json:"total"`
+	TotalPages int `json:"total_pages"`
+}
+
 // AdminUseCase defines the business logic for platform administration.
 type AdminUseCase interface {
 	GetDashboard(ctx context.Context) (*DashboardMetrics, error)
 	ListAdmins(ctx context.Context) ([]*User, error)
 	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole) (*User, error)
 	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
-	
+
+	// Ride browsing (admin)
+	ListRides(ctx context.Context, filter AdminRideFilter) ([]*AdminRideItem, PaginationMeta, error)
+
+	// User browsing (admin)
+	ListUsers(ctx context.Context, filter UserListFilter) ([]*User, PaginationMeta, error)
+
 	// Safety & Incidents
 	ListIncidents(ctx context.Context, status *string) ([]*Incident, error)
 	ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error

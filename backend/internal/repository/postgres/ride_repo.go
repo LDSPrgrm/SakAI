@@ -139,6 +139,69 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 	return expired, rows.Err()
 }
 
+// ListAll returns a paginated list of all rides for admin browsing.
+// An optional Status filter is applied; Page and Limit follow standard
+// 1-based pagination. Zero values are replaced with sensible defaults.
+func (r *rideRepo) ListAll(ctx context.Context, f domain.AdminRideFilter) ([]*domain.Ride, int, error) {
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Limit < 1 {
+		f.Limit = 20
+	}
+	offset := (f.Page - 1) * f.Limit
+
+	// Build the base WHERE clause and args dynamically.
+	// We track the parameter index manually to keep the query safe.
+	args := []any{}
+	where := ""
+	if f.Status != nil {
+		args = append(args, *f.Status)
+		where = "WHERE status = $1"
+	}
+
+	// Count query (paginate against the same filter).
+	countQ := "SELECT COUNT(*) FROM rides " + where
+	var total int
+	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return nil, 0, nil
+	}
+
+	// Append LIMIT / OFFSET params after optional status param.
+	limitIdx := len(args) + 1
+	offsetIdx := limitIdx + 1
+	args = append(args, f.Limit, offset)
+
+	dataQ := fmt.Sprintf(`
+		SELECT id, passenger_id, driver_id, status,
+		       origin_lat, origin_lng, destination_lat, destination_lng,
+		       origin_address, destination_address, notes,
+		       cancelled_by, created_at, updated_at
+		FROM rides
+		%s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, where, limitIdx, offsetIdx)
+
+	rows, err := r.db.Query(ctx, dataQ, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var rides []*domain.Ride
+	for rows.Next() {
+		ride, err := r.scanRide(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		rides = append(rides, ride)
+	}
+	return rides, total, rows.Err()
+}
+
 // scanRide is a shared row scanner for ride queries.
 func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {
 	ride := &domain.Ride{}

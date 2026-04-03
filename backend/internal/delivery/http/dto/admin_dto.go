@@ -85,3 +85,51 @@ func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
 		ResolutionNotes: i.ResolutionNotes,
 	}
 }
+
+// AdminRideItemDTO is the API representation of a ride in the admin browse list.
+type AdminRideItemDTO struct {
+	ID                 string `json:"id"`
+	Status             string `json:"status"`
+	OriginAddress      string `json:"origin_address"`
+	DestinationAddress string `json:"destination_address"`
+	PassengerName      string `json:"passenger_name"`
+	DriverName         string `json:"driver_name,omitempty"`
+	CreatedAt          string `json:"created_at"`
+}
+
+// AdminRideListResponse wraps a paginated list of rides.
+type AdminRideListResponse struct {
+	Data       []AdminRideItemDTO    `json:"data"`
+	Pagination domain.PaginationMeta `json:"pagination"`
+}
+
+// AdminUserListResponse wraps a paginated list of users.
+type AdminUserListResponse struct {
+	Data       []UserResponse        `json:"data"`
+	Pagination domain.PaginationMeta `json:"pagination"`
+}
+
+func NewAdminRideListResponse(items []*domain.AdminRideItem, meta domain.PaginationMeta) AdminRideListResponse {
+	dtos := make([]AdminRideItemDTO, 0, len(items))
+	for _, item := range items {
+		dto := AdminRideItemDTO{
+			ID:                 item.Ride.ID.String(),
+			Status:             string(item.Ride.Status),
+			OriginAddress:      item.Ride.OriginAddress,
+			DestinationAddress: item.Ride.DestinationAddress,
+			PassengerName:      item.PassengerName,
+			DriverName:         item.DriverName,
+			CreatedAt:          item.Ride.CreatedAt.Format(time.RFC3339),
+		}
+		dtos = append(dtos, dto)
+	}
+	return AdminRideListResponse{Data: dtos, Pagination: meta}
+}
+
+func NewAdminUserListResponse(users []*domain.User, meta domain.PaginationMeta) AdminUserListResponse {
+	dtos := make([]UserResponse, 0, len(users))
+	for _, u := range users {
+		dtos = append(dtos, NewUserResponse(u))
+	}
+	return AdminUserListResponse{Data: dtos, Pagination: meta}
+}

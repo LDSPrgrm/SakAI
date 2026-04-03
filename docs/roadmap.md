@@ -117,8 +117,9 @@ This roadmap is structured around two key milestones:
 - [ ] Choose framework (React or Vue.js)
 - [ ] Auth flow (admin-only role or super-user JWT)
 - [ ] **Dashboard overview:** Active rides count, online drivers count, total users
-- [ ] **Ride list:** Searchable table with status filters, ride details view
-- [ ] **User list:** Browse passengers and drivers, view profiles
+- [x] **Ride list:** Searchable table with status filters, ride details view (Backend Done)
+- [x] **User list:** Browse passengers and drivers, view profiles (Backend Done)
+- [ ] **Driver management:** Approve/suspend drivers, view vehicle info
 - [ ] **Driver management:** Approve/suspend drivers, view vehicle info
 
 ### Definition of Done — Phase 4

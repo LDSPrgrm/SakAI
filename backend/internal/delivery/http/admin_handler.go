@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -127,6 +128,67 @@ func (h *AdminHandler) GetReportChart(c *gin.Context) {
 	}
 	respondOK(c, data)
 }
+
+func (h *AdminHandler) ListRides(c *gin.Context) {
+	filter := domain.AdminRideFilter{
+		Page:  parseIntQuery(c, "page", 1),
+		Limit: parseIntQuery(c, "limit", 20),
+	}
+	if s := c.Query("status"); s != "" {
+		rs := domain.RideStatus(s)
+		filter.Status = &rs
+	}
+	items, meta, err := h.uc.ListRides(c.Request.Context(), filter)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.NewAdminRideListResponse(items, meta))
+}
+
+func (h *AdminHandler) ListPassengers(c *gin.Context) {
+	role := domain.RolePassenger
+	filter := domain.UserListFilter{
+		Role:   &role,
+		Search: c.Query("search"),
+		Page:   parseIntQuery(c, "page", 1),
+		Limit:  parseIntQuery(c, "limit", 20),
+	}
+	users, meta, err := h.uc.ListUsers(c.Request.Context(), filter)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.NewAdminUserListResponse(users, meta))
+}
+
+func (h *AdminHandler) ListDrivers(c *gin.Context) {
+	role := domain.RoleDriver
+	filter := domain.UserListFilter{
+		Role:   &role,
+		Search: c.Query("search"),
+		Page:   parseIntQuery(c, "page", 1),
+		Limit:  parseIntQuery(c, "limit", 20),
+	}
+	users, meta, err := h.uc.ListUsers(c.Request.Context(), filter)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.NewAdminUserListResponse(users, meta))
+}
+
+// parseIntQuery reads an integer query param, returning defaultVal if absent or invalid.
+func parseIntQuery(c *gin.Context, key string, defaultVal int) int {
+	if s := c.Query(key); s != "" {
+		var v int
+		if _, err := fmt.Sscanf(s, "%d", &v); err == nil && v > 0 {
+			return v
+		}
+	}
+	return defaultVal
+}
+
 
 type FareHandler struct {
 	uc domain.FareUseCase

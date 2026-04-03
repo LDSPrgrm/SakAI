@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -111,6 +112,84 @@ func (r *userRepo) CreateWithTokens(
 		_, err := tx.Exec(ctx, insertToken, refreshToken, u.ID, expiresAt)
 		return err
 	})
+}
+
+// ListByRole returns a paginated list of users filtered by role and an
+// optional case-insensitive substring search against name or email.
+func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*domain.User, int, error) {
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Limit < 1 {
+		f.Limit = 20
+	}
+	offset := (f.Page - 1) * f.Limit
+
+	// Build args and WHERE clause dynamically.
+	args := []any{}
+	conditions := []string{}
+
+	if f.Role != nil {
+		args = append(args, *f.Role)
+		conditions = append(conditions, fmt.Sprintf("role = $%d", len(args)))
+	}
+	if f.Search != "" {
+		args = append(args, "%"+f.Search+"%")
+		idx := len(args)
+		conditions = append(conditions, fmt.Sprintf("(name ILIKE $%d OR email ILIKE $%d)", idx, idx))
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = "WHERE " + joinAnd(conditions)
+	}
+
+	countQ := "SELECT COUNT(*) FROM users " + where
+	var total int
+	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return nil, 0, nil
+	}
+
+	limitIdx := len(args) + 1
+	offsetIdx := limitIdx + 1
+	args = append(args, f.Limit, offset)
+
+	dataQ := fmt.Sprintf(
+		"SELECT id, name, email, password_hash, role, created_at "+
+			"FROM users %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
+		where, limitIdx, offsetIdx,
+	)
+
+	rows, err := r.db.Query(ctx, dataQ, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		u := &domain.User{}
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, rows.Err()
+}
+
+// joinAnd joins SQL condition strings with " AND ".
+func joinAnd(parts []string) string {
+	result := ""
+	for i, p := range parts {
+		if i > 0 {
+			result += " AND "
+		}
+		result += p
+	}
+	return result
 }
 
 // --- Token repository ---

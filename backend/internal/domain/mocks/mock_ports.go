@@ -101,6 +101,22 @@ func (mr *MockUserRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUserRepository)(nil).GetByID), ctx, id)
 }
 
+// ListByRole mocks base method.
+func (m *MockUserRepository) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*domain.User, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByRole", ctx, f)
+	ret0, _ := ret[0].([]*domain.User)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListByRole indicates an expected call of ListByRole.
+func (mr *MockUserRepositoryMockRecorder) ListByRole(ctx, f any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByRole", reflect.TypeOf((*MockUserRepository)(nil).ListByRole), ctx, f)
+}
+
 // MockTokenRepository is a mock of TokenRepository interface.
 type MockTokenRepository struct {
 	ctrl     *gomock.Controller
@@ -349,6 +365,22 @@ func (m *MockRideRepository) UpdateStatus(ctx context.Context, id uuid.UUID, sta
 func (mr *MockRideRepositoryMockRecorder) UpdateStatus(ctx, id, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockRideRepository)(nil).UpdateStatus), ctx, id, status)
+}
+
+// ListAll mocks base method.
+func (m *MockRideRepository) ListAll(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.Ride, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAll", ctx, filter)
+	ret0, _ := ret[0].([]*domain.Ride)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListAll indicates an expected call of ListAll.
+func (mr *MockRideRepositoryMockRecorder) ListAll(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockRideRepository)(nil).ListAll), ctx, filter)
 }
 
 // MockDriverRepository is a mock of DriverRepository interface.
@@ -1250,6 +1282,38 @@ func (m *MockAdminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targe
 func (mr *MockAdminUseCaseMockRecorder) UpdateAdminStatus(ctx, actorID, targetID, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminStatus", reflect.TypeOf((*MockAdminUseCase)(nil).UpdateAdminStatus), ctx, actorID, targetID, status)
+}
+
+// ListRides mocks base method.
+func (m *MockAdminUseCase) ListRides(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.AdminRideItem, domain.PaginationMeta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRides", ctx, filter)
+	ret0, _ := ret[0].([]*domain.AdminRideItem)
+	ret1, _ := ret[1].(domain.PaginationMeta)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListRides indicates an expected call of ListRides.
+func (mr *MockAdminUseCaseMockRecorder) ListRides(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRides", reflect.TypeOf((*MockAdminUseCase)(nil).ListRides), ctx, filter)
+}
+
+// ListUsers mocks base method.
+func (m *MockAdminUseCase) ListUsers(ctx context.Context, filter domain.UserListFilter) ([]*domain.User, domain.PaginationMeta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUsers", ctx, filter)
+	ret0, _ := ret[0].([]*domain.User)
+	ret1, _ := ret[1].(domain.PaginationMeta)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockAdminUseCaseMockRecorder) ListUsers(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockAdminUseCase)(nil).ListUsers), ctx, filter)
 }
 
 // MockFareUseCase is a mock of FareUseCase interface.

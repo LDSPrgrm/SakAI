@@ -14,16 +14,18 @@ import (
 
 // adminUseCase handles platform-level administration tasks.
 type adminUseCase struct {
-	adminRepo      domain.AdminRepository
-	userRepo       domain.UserRepository
-	incidentRepo   domain.IncidentRepository
-	metricsRepo    domain.SystemMetricsRepository
-	auditRepo      domain.AuditRepository
+	adminRepo    domain.AdminRepository
+	userRepo     domain.UserRepository
+	rideRepo     domain.RideRepository
+	incidentRepo domain.IncidentRepository
+	metricsRepo  domain.SystemMetricsRepository
+	auditRepo    domain.AuditRepository
 }
 
 func NewAdminUseCase(
 	adminRepo domain.AdminRepository,
 	userRepo domain.UserRepository,
+	rideRepo domain.RideRepository,
 	incidentRepo domain.IncidentRepository,
 	metricsRepo domain.SystemMetricsRepository,
 	auditRepo domain.AuditRepository,
@@ -31,6 +33,7 @@ func NewAdminUseCase(
 	return &adminUseCase{
 		adminRepo:    adminRepo,
 		userRepo:     userRepo,
+		rideRepo:     rideRepo,
 		incidentRepo: incidentRepo,
 		metricsRepo:  metricsRepo,
 		auditRepo:    auditRepo,
@@ -144,6 +147,66 @@ func (uc *adminUseCase) ListIncidents(ctx context.Context, status *string) ([]*d
 func (uc *adminUseCase) ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error {
 	return uc.incidentRepo.UpdateIncident(ctx, incidentID, "resolved", notes, &actorID)
 }
+
+func (uc *adminUseCase) ListRides(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.AdminRideItem, domain.PaginationMeta, error) {
+	rides, total, err := uc.rideRepo.ListAll(ctx, filter)
+	if err != nil {
+		return nil, domain.PaginationMeta{}, err
+	}
+
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.Limit < 1 {
+		filter.Limit = 20
+	}
+
+	meta := domain.PaginationMeta{
+		Page:       filter.Page,
+		Limit:      filter.Limit,
+		Total:      total,
+		TotalPages: (total + filter.Limit - 1) / filter.Limit,
+	}
+
+	items := make([]*domain.AdminRideItem, 0, len(rides))
+	for _, ride := range rides {
+		item := &domain.AdminRideItem{Ride: ride}
+		// Best-effort enrichment: missing user names are non-fatal.
+		if p, err := uc.userRepo.GetByID(ctx, ride.PassengerID); err == nil {
+			item.PassengerName = p.Name
+		}
+		if ride.DriverID != nil {
+			if d, err := uc.userRepo.GetByID(ctx, *ride.DriverID); err == nil {
+				item.DriverName = d.Name
+			}
+		}
+		items = append(items, item)
+	}
+	return items, meta, nil
+}
+
+func (uc *adminUseCase) ListUsers(ctx context.Context, filter domain.UserListFilter) ([]*domain.User, domain.PaginationMeta, error) {
+	users, total, err := uc.userRepo.ListByRole(ctx, filter)
+	if err != nil {
+		return nil, domain.PaginationMeta{}, err
+	}
+
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.Limit < 1 {
+		filter.Limit = 20
+	}
+
+	meta := domain.PaginationMeta{
+		Page:       filter.Page,
+		Limit:      filter.Limit,
+		Total:      total,
+		TotalPages: (total + filter.Limit - 1) / filter.Limit,
+	}
+	return users, meta, nil
+}
+
 
 // --- Fare Use Case ---
 
