@@ -753,6 +753,56 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+    delete:
+      tags: [Admin]
+      summary: Deactivate an administrator
+      description: Permanently deactivates the admin account. Account is preserved for audit trail. Requires Superadmin role.
+      operationId: adminDeactivateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Admin deactivated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/users/{id}/activity:
+    get:
+      tags: [Admin]
+      summary: Get admin activity log
+      description: Returns audit log entries where this admin was the actor. Requires Superadmin role.
+      operationId: adminGetUserActivity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Activity entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /admin/fares:
     get:
@@ -1509,6 +1559,533 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  # ── Admin Auth ────────────────────────────────────────────────────────────
+
+  /admin/auth/password:
+    put:
+      tags: [Admin]
+      summary: Change own password
+      description: Authenticated admin changes their password by providing the current one.
+      operationId: adminChangePassword
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Password changed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Metrics ───────────────────────────────────────────────────────────────
+
+  /admin/metrics/riders:
+    get:
+      tags: [Admin]
+      summary: Active rider count with trend
+      operationId: adminMetricsRiders
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Rider metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/metrics/drivers:
+    get:
+      tags: [Admin]
+      summary: Active driver count with trend
+      operationId: adminMetricsDrivers
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Driver metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/metrics/rides:
+    get:
+      tags: [Admin]
+      summary: Ride count for a period
+      operationId: adminMetricsRides
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: today
+      responses:
+        "200":
+          description: Rides metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/metrics/revenue:
+    get:
+      tags: [Admin]
+      summary: Revenue for a period (PHP)
+      operationId: adminMetricsRevenue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: today
+      responses:
+        "200":
+          description: Revenue metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/metrics/wait-time:
+    get:
+      tags: [Admin]
+      summary: Average wait time stats
+      operationId: adminMetricsWaitTime
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Wait time metric (value in seconds)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Role Management ───────────────────────────────────────────────────────
+
+  /admin/roles:
+    get:
+      tags: [Admin]
+      summary: List all roles
+      description: Returns built-in and custom roles. Requires Superadmin role.
+      operationId: adminListRoles
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Role list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Create a custom role
+      description: Creates a new role with a permission set. Requires Superadmin role.
+      operationId: adminCreateRole
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleRequest"
+      responses:
+        "201":
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/roles/{id}:
+    get:
+      tags: [Admin]
+      summary: Get role with permissions
+      operationId: adminGetRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Role detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Admin]
+      summary: Update role
+      description: Cannot modify the super_admin built-in role.
+      operationId: adminUpdateRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest"
+      responses:
+        "200":
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      tags: [Admin]
+      summary: Delete a role
+      description: Fails if any admin is assigned this role. Cannot delete system roles.
+      operationId: adminDeleteRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Role deleted
+        "400":
+          description: Role has assigned admins or is a system role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/roles/{id}/permissions:
+    get:
+      tags: [Admin]
+      summary: Get permission set for a role
+      operationId: adminGetRolePermissions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Permission list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RolePermission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/roles/{id}/admins:
+    get:
+      tags: [Admin]
+      summary: List admins assigned to a role
+      operationId: adminGetRoleAdmins
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Admin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Fare Surge GET ────────────────────────────────────────────────────────
+
+  /admin/fares/surge:
+    get:
+      tags: [Admin]
+      summary: Get surge pricing configuration
+      operationId: adminGetSurge
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current surge config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SurgeConfig"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Payments (additions) ──────────────────────────────────────────────────
+
+  /admin/payments/payouts/approve:
+    post:
+      tags: [Admin]
+      summary: Batch approve driver payouts
+      description: Approves multiple payouts in a single request.
+      operationId: adminBatchApprovePayouts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchApproveRequest"
+      responses:
+        "200":
+          description: Approved count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approved:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/payments/config:
+    get:
+      tags: [Admin]
+      summary: Get payment gateway configurations
+      description: API keys are masked (last 4 characters only). Requires Superadmin.
+      operationId: adminGetPaymentConfig
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Gateway configs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentGatewayConfig"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/payments/config/{provider}:
+    put:
+      tags: [Admin]
+      summary: Update payment gateway config
+      description: Requires Superadmin and password re-confirmation.
+      operationId: adminUpdatePaymentConfig
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [gcash, paymaya, card, cash]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePaymentConfigRequest"
+      responses:
+        "204":
+          description: Config updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Safety (additions) ────────────────────────────────────────────────────
+
+  /admin/safety/kyc/batch:
+    post:
+      tags: [Admin]
+      summary: Batch approve or reject KYC submissions
+      operationId: adminBatchKyc
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycBatchRequest"
+      responses:
+        "200":
+          description: Processed count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/safety/compliance:
+    get:
+      tags: [Admin]
+      summary: LTFRB compliance dashboard data
+      operationId: adminGetCompliance
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Compliance data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── System (additions) ────────────────────────────────────────────────────
+
+  /admin/system/integrations/{service}/test:
+    post:
+      tags: [Admin]
+      summary: Test integration health
+      description: Pings the external service and returns latency and status.
+      operationId: adminTestIntegration
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationTestResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Audit (additions) ─────────────────────────────────────────────────────
+
+  /admin/audit/export:
+    get:
+      tags: [Admin]
+      summary: Export audit log as CSV
+      description: Returns a CSV file of audit log entries matching optional filters.
+      operationId: adminAuditExport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv]
+            default: csv
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 # ---------------------------------------------------------------------------
 # COMPONENTS
 # ---------------------------------------------------------------------------
@@ -2198,15 +2775,34 @@ components:
       properties:
         active_riders:
           type: integer
+        total_riders:
+          type: integer
+        riders_trend:
+          type: string
+          description: Percentage change string (e.g. "+12%")
         active_drivers:
           type: integer
+        total_drivers:
+          type: integer
+        drivers_trend:
+          type: string
         rides_today:
           type: integer
+        rides_trend:
+          type: string
         revenue_today:
           type: number
+        revenue_trend:
+          type: string
         avg_wait_time_seconds:
           type: number
+        avg_wait_minutes:
+          type: number
+        wait_trend:
+          type: string
         system_uptime:
+          type: number
+        platform_uptime:
           type: number
 
     CreateAdminRequest:
@@ -2349,24 +2945,40 @@ components:
           format: uuid
         type:
           type: string
+          enum: [sos_triggered, reported_incident, safety_complaint]
+        severity:
+          type: string
+          enum: [low, medium, high]
+          description: Operator-assigned urgency level
         status:
           type: string
+          enum: [open, investigating, resolved, escalated]
         triggered_by:
           type: string
+          enum: [rider, driver]
         rider_id:
           type: string
           format: uuid
+        rider_name:
+          type: string
         driver_id:
           type: string
           format: uuid
+        driver_name:
+          type: string
+        assigned_to:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
         resolved_at:
           type: string
           format: date-time
+          nullable: true
         resolution_notes:
           type: string
+          nullable: true
 
     IncidentResolveRequest:
       type: object
@@ -2395,12 +3007,23 @@ components:
           format: date-time
         actor_id:
           type: string
+        ip_address:
+          type: string
         action:
           type: string
         resource_type:
           type: string
+        resource_id:
+          type: string
+        before_state:
+          type: object
+          nullable: true
+        after_state:
+          type: object
+          nullable: true
         reason:
           type: string
+          nullable: true
 
     Transaction:
       type: object
@@ -2583,6 +3206,15 @@ components:
               type: string
             driver_name:
               type: string
+            total_fare:
+              type: number
+              description: Final fare charged for the ride (null for non-completed rides)
+              nullable: true
+            payment_method:
+              type: string
+              enum: [cash, gcash, paymaya, card]
+              nullable: true
+              description: Payment method used; populated once the ride is completed
 
     AdminRideListResponse:
       type: object
@@ -2603,3 +3235,224 @@ components:
             $ref: "#/components/schemas/UserProfile"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
+
+    # ── New Schemas ───────────────────────────────────────────────────────────
+
+    ChangePasswordRequest:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+
+    MetricResponse:
+      type: object
+      properties:
+        current:
+          type: number
+          description: Current period value
+        previous:
+          type: number
+          description: Previous period value for comparison
+        change_percent:
+          type: number
+          description: Percentage change from previous to current
+        trend:
+          type: string
+          enum: [up, down, flat]
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: city_manager
+        description:
+          type: string
+        is_system:
+          type: boolean
+          description: True for built-in roles that cannot be deleted
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RolePermission"
+        admin_count:
+          type: integer
+          description: Number of active admins with this role
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RolePermission:
+      type: object
+      properties:
+        permission_key:
+          type: string
+          enum:
+            - dashboard
+            - admin_management
+            - role_management
+            - fare_config
+            - payments
+            - payouts
+            - user_management
+            - kyc_verification
+            - safety_incidents
+            - reports
+            - system_config
+            - system_health
+            - audit_log
+            - ltfrb_compliance
+        read:
+          type: boolean
+        write:
+          type: boolean
+
+    CreateRoleRequest:
+      type: object
+      required: [name, permissions]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        permissions:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RolePermission"
+
+    UpdateRoleRequest:
+      type: object
+      required: [name, permissions]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        permissions:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RolePermission"
+
+    BatchApproveRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+
+    PaymentGatewayConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [gcash, paymaya, card, cash]
+        config_fields:
+          type: object
+          additionalProperties:
+            type: string
+          description: API keys and settings — sensitive fields shown masked (last 4 chars)
+        is_active:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdatePaymentConfigRequest:
+      type: object
+      properties:
+        config_fields:
+          type: object
+          additionalProperties:
+            type: string
+        is_active:
+          type: boolean
+
+    KycBatchRequest:
+      type: object
+      required: [ids, status]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        status:
+          type: string
+          enum: [approved, rejected]
+
+    ComplianceData:
+      type: object
+      properties:
+        accreditation_status:
+          type: string
+          enum: [active, expiring, expired]
+        accreditation_expiry:
+          type: string
+          format: date-time
+        driver_compliance_rate:
+          type: number
+          description: Percentage of drivers with valid documents (0–100)
+        violation_count:
+          type: integer
+          description: LTFRB-reportable violations in current period
+
+    IntegrationTestResult:
+      type: object
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          enum: [ok, failed]
+        latency_ms:
+          type: integer
+        message:
+          type: string
+
+    AdminUser:
+      allOf:
+        - $ref: "#/components/schemas/UserProfile"
+        - type: object
+          properties:
+            role_id:
+              type: string
+              format: uuid
+            role_name:
+              type: string
+            status:
+              type: string
+              enum: [active, suspended, deactivated]
+            created_by:
+              type: string
+              format: uuid
+            last_login_at:
+              type: string
+              format: date-time
+              nullable: true

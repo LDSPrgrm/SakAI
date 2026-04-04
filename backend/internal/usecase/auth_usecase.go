@@ -122,6 +122,21 @@ func (uc *authUseCase) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.U
 	return uc.userRepo.GetByID(ctx, id)
 }
 
+func (uc *authUseCase) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error {
+	user, err := uc.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return domain.ErrInvalidCredentials
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	return uc.userRepo.UpdatePassword(ctx, userID, string(hash))
+}
+
 // issueTokens generates a new access + refresh token pair and persists the refresh token.
 func (uc *authUseCase) issueTokens(ctx context.Context, user *domain.User, oldRefreshToken string) (*domain.AuthOutput, error) {
 	accessToken, expiresAt, err := jwt.GenerateAccessToken(user.ID, user.Role, uc.jwtSecret, uc.accessExpiry)

@@ -133,3 +133,167 @@ func NewAdminUserListResponse(users []*domain.User, meta domain.PaginationMeta) 
 	}
 	return AdminUserListResponse{Data: dtos, Pagination: meta}
 }
+
+// ─── Role DTOs ────────────────────────────────────────────────────────────────
+
+type RolePermissionDTO struct {
+	PermissionKey string `json:"permission_key" binding:"required"`
+	Read          bool   `json:"read"`
+	Write         bool   `json:"write"`
+}
+
+type CreateRoleRequest struct {
+	Name        string              `json:"name" binding:"required"`
+	Description string              `json:"description"`
+	Permissions []RolePermissionDTO `json:"permissions" binding:"required,min=1"`
+}
+
+type UpdateRoleRequest struct {
+	Name        string              `json:"name" binding:"required"`
+	Description string              `json:"description"`
+	Permissions []RolePermissionDTO `json:"permissions" binding:"required,min=1"`
+}
+
+type RoleResponse struct {
+	ID          string              `json:"id"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	IsSystem    bool                `json:"is_system"`
+	Permissions []RolePermissionDTO `json:"permissions"`
+	AdminCount  int                 `json:"admin_count"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+}
+
+func NewRoleResponse(r *domain.Role) RoleResponse {
+	perms := make([]RolePermissionDTO, len(r.Permissions))
+	for i, p := range r.Permissions {
+		perms[i] = RolePermissionDTO{PermissionKey: p.PermissionKey, Read: p.Read, Write: p.Write}
+	}
+	return RoleResponse{
+		ID: r.ID.String(), Name: r.Name, Description: r.Description,
+		IsSystem: r.IsSystem, Permissions: perms, AdminCount: r.AdminCount,
+		CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+	}
+}
+
+// ─── Payment DTOs ─────────────────────────────────────────────────────────────
+
+type TransactionDTO struct {
+	ID            string    `json:"id"`
+	RideID        string    `json:"ride_id"`
+	RiderName     string    `json:"rider_name"`
+	DriverName    string    `json:"driver_name"`
+	Amount        float64   `json:"amount"`
+	PaymentMethod string    `json:"payment_method"`
+	Status        string    `json:"status"`
+	Commission    float64   `json:"commission"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type DriverPayoutDTO struct {
+	ID          string  `json:"id"`
+	Batch       string  `json:"batch"`
+	DriverCount int     `json:"driver_count"`
+	TotalAmount float64 `json:"total_amount"`
+	Period      string  `json:"period"`
+	Status      string  `json:"status"`
+}
+
+type BatchApproveRequest struct {
+	IDs []string `json:"ids" binding:"required,min=1"`
+}
+
+type CommissionUpdateRequest struct {
+	VehicleType   string  `json:"vehicle_type" binding:"required"`
+	RatePercent   float64 `json:"rate_percent" binding:"required"`
+	MinCommission float64 `json:"min_commission"`
+}
+
+func NewTransactionDTO(t *domain.Transaction) TransactionDTO {
+	return TransactionDTO{
+		ID: t.ID.String(), RideID: t.RideID.String(), RiderName: t.RiderName,
+		DriverName: t.DriverName, Amount: t.Amount, PaymentMethod: t.PaymentMethod,
+		Status: t.Status, Commission: t.Commission, CreatedAt: t.CreatedAt,
+	}
+}
+
+func NewDriverPayoutDTO(p *domain.DriverPayout) DriverPayoutDTO {
+	return DriverPayoutDTO{
+		ID: p.ID.String(), Batch: p.Batch, DriverCount: p.DriverCount,
+		TotalAmount: p.TotalAmount, Period: p.Period, Status: p.Status,
+	}
+}
+
+// ─── Safety DTOs ──────────────────────────────────────────────────────────────
+
+type KycEntryDTO struct {
+	ID          string    `json:"id"`
+	DriverID    string    `json:"driver_id"`
+	DriverName  string    `json:"driver_name"`
+	SubmittedAt time.Time `json:"submitted_at"`
+	Docs        []string  `json:"docs"`
+	Status      string    `json:"status"`
+}
+
+type UpdateKycRequest struct {
+	Status string `json:"status" binding:"required,oneof=approved rejected"`
+	Reason string `json:"reason"`
+}
+
+type KycBatchRequest struct {
+	IDs    []string `json:"ids" binding:"required,min=1"`
+	Status string   `json:"status" binding:"required,oneof=approved rejected"`
+}
+
+func NewKycEntryDTO(e *domain.KycEntry) KycEntryDTO {
+	return KycEntryDTO{
+		ID: e.ID.String(), DriverID: e.DriverID.String(), DriverName: e.DriverName,
+		SubmittedAt: e.SubmittedAt, Docs: e.Docs, Status: e.Status,
+	}
+}
+
+// ─── System DTOs ──────────────────────────────────────────────────────────────
+
+type UpdateFeatureFlagRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
+type UpdateIntegrationRequest struct {
+	Config map[string]string `json:"config" binding:"required"`
+}
+
+type UpdateNotificationTemplateRequest struct {
+	Subject string `json:"subject"`
+	Body    string `json:"body" binding:"required"`
+}
+
+type IntegrationTestResultDTO struct {
+	Service   string `json:"service"`
+	Status    string `json:"status"`
+	LatencyMs int    `json:"latency_ms"`
+	Message   string `json:"message"`
+}
+
+// ─── Metrics DTOs ─────────────────────────────────────────────────────────────
+
+type MetricResponseDTO struct {
+	Current       float64 `json:"current"`
+	Previous      float64 `json:"previous"`
+	ChangePercent float64 `json:"change_percent"`
+	Trend         string  `json:"trend"`
+}
+
+func NewMetricResponseDTO(m *domain.MetricResponse) MetricResponseDTO {
+	return MetricResponseDTO{
+		Current: m.Current, Previous: m.Previous,
+		ChangePercent: m.ChangePercent, Trend: m.Trend,
+	}
+}
+
+// ─── Auth DTOs ────────────────────────────────────────────────────────────────
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}

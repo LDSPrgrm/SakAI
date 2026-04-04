@@ -13,14 +13,14 @@ import {
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { adminApi, AdminUser, AdminRole, AdminStatus } from '@/lib/admin-api';
+import { adminApi, AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/lib/admin-api';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
 const adminSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Must be a valid email address'),
-  role: z.enum(['super_admin', 'operations', 'finance', 'support']),
+  role: z.string().min(1, 'Role is required'),
   status: z.enum(['active', 'suspended', 'deactivated']),
   password: z.string().min(8, 'Must be at least 8 characters').optional().or(z.literal('')),
 });
@@ -29,19 +29,27 @@ type AdminFormValues = z.infer<typeof adminSchema>;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const ROLE_BADGE: Record<AdminRole, 'danger' | 'info' | 'warning' | 'default'> = {
+const ROLE_BADGE: Record<string, 'danger' | 'info' | 'warning' | 'default'> = {
   super_admin: 'danger',
   operations: 'info',
   finance: 'warning',
   support: 'default',
 };
 
-const ROLE_LABELS: Record<AdminRole, string> = {
+const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
   operations: 'Operations',
   finance: 'Finance',
   support: 'Support',
 };
+
+function roleLabel(role: string): string {
+  return ROLE_LABELS[role] ?? role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function roleBadgeVariant(role: string): 'danger' | 'info' | 'warning' | 'default' {
+  return ROLE_BADGE[role] ?? 'default';
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return 'Never';
@@ -57,6 +65,7 @@ const CURRENT_USER_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 export function SAAdminManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [roleDefs, setRoleDefs] = useState<AdminRoleDefinition[]>([]);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -78,7 +87,10 @@ export function SAAdminManagement() {
     setAdmins(list);
   }
 
-  useEffect(() => { loadAdmins(); }, []);
+  useEffect(() => {
+    loadAdmins();
+    adminApi.roles.list().then(setRoleDefs).catch(() => {});
+  }, []);
 
   function generatePassword() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -106,15 +118,16 @@ export function SAAdminManagement() {
   }
 
   async function onSubmit(values: AdminFormValues) {
+    const payload = { ...values, role: values.role as AdminRole };
     if (editingAdmin) {
       if (editingAdmin.role !== values.role) {
         setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
         return;
       }
-      await adminApi.admins.update(editingAdmin.id, values);
+      await adminApi.admins.update(editingAdmin.id, payload);
     } else {
       await adminApi.admins.create({
-        ...values,
+        ...payload,
         created_by: CURRENT_USER_ID,
       });
     }
@@ -137,7 +150,7 @@ export function SAAdminManagement() {
       await adminApi.admins.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminApi.admins.update(admin.id, confirmModal.pendingData);
+      await adminApi.admins.update(admin.id, { ...confirmModal.pendingData, role: confirmModal.pendingData.role as AdminRole });
       setModalOpen(false);
     }
 
@@ -223,8 +236,8 @@ export function SAAdminManagement() {
 
                       {/* Role */}
                       <TableCell>
-                        <Badge variant={ROLE_BADGE[admin.role]}>
-                          {ROLE_LABELS[admin.role]}
+                        <Badge variant={roleBadgeVariant(admin.role)}>
+                          {roleLabel(admin.role)}
                         </Badge>
                       </TableCell>
 
@@ -394,10 +407,18 @@ export function SAAdminManagement() {
                       {...field}
                       className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
                     >
-                      <option value="super_admin">Super Admin</option>
-                      <option value="operations">Operations</option>
-                      <option value="finance">Finance</option>
-                      <option value="support">Support</option>
+                      {roleDefs.length > 0 ? (
+                        roleDefs.map((r) => (
+                          <option key={r.id} value={r.name}>{roleLabel(r.name)}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="super_admin">Super Admin</option>
+                          <option value="operations">Operations</option>
+                          <option value="finance">Finance</option>
+                          <option value="support">Support</option>
+                        </>
+                      )}
                     </select>
                   )}
                 />
@@ -464,7 +485,7 @@ export function SAAdminManagement() {
             confirmModal.type === 'reset_password'
               ? `Are you sure you want to reset the password for ${confirmModal.admin?.name}? A new temporary password will be generated for them.` :
               confirmModal.type === 'role_change'
-                ? `Change ${confirmModal.admin?.name}'s role to ${confirmModal.pendingData ? ROLE_LABELS[confirmModal.pendingData.role] : ''}? This alters their permissions significantly.` :
+                ? `Change ${confirmModal.admin?.name}'s role to ${confirmModal.pendingData ? roleLabel(confirmModal.pendingData.role) : ''}? This alters their permissions significantly.` :
                 confirmModal.type === 'activate'
                   ? `Re-activate ${confirmModal.admin?.name}? They will regain access immediately.`
                   : `Suspend ${confirmModal.admin?.name}? They will lose access until reactivated.`

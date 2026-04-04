@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/auth_exception.dart';
 import '../repositories/auth_repository.dart';
@@ -49,7 +50,15 @@ class LoginNotifier extends Notifier<LoginState> {
     state = const LoginState(busy: true);
 
     try {
-      await _authRepo.login(email: trimmed, password: password);
+      final session = await _authRepo.login(email: trimmed, password: password);
+      await ref
+          .read(tokenStorageProvider)
+          .save(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            expiresAt: session.accessTokenExpiresAt,
+          );
+      ref.read(authStateProvider.notifier).markAuthenticated();
       state = const LoginState(succeeded: true);
     } on AuthException catch (e) {
       state = LoginState(errorMessage: e.userMessage);

@@ -8,7 +8,7 @@ void main() {
       const customUrl = 'https://api.test.com/api';
       final c = SakaiApiSupport.createClient(
         baseUrl: customUrl,
-        accessToken: 'test-token',
+        authInterceptor: AuthInterceptor(const TokenStorage()),
       );
 
       expect(c.dio.options.baseUrl, customUrl);

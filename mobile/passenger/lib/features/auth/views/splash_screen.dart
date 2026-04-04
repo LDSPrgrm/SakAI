@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/router.dart';
+import '../../../app/routes.dart';
 import '../view_models/splash_notifier.dart';
 
 /// Entry point screen — invisible to user. Resolves session and routes accordingly.
@@ -25,6 +25,8 @@ class SplashScreen extends ConsumerWidget {
             context.go(Routes.home);
           case SplashState.activeRide:
             context.go(Routes.rideActive);
+          case SplashState.transientError:
+            break;
           case SplashState.loading:
             break;
         }
@@ -34,7 +36,9 @@ class SplashScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return splashAsync.when(
-      data: (_) => _SplashBody(scheme: scheme),
+      data: (state) => state == SplashState.transientError
+          ? _ErrorBody(onRetry: () => ref.invalidate(splashProvider))
+          : _SplashBody(scheme: scheme),
       loading: () => _SplashBody(scheme: scheme),
       error: (err, stack) =>
           _ErrorBody(onRetry: () => ref.invalidate(splashProvider)),

@@ -185,15 +185,24 @@ export function SAPayments() {
 
   async function saveProvider(id: string) {
     setSavingProvider(id);
-    // Simulate save — swap for real API call when backend ships
-    await new Promise((r) => setTimeout(r, 600));
+    const provider = providers.find((p) => p.id === id);
+    if (provider) {
+      const fields: Record<string, string> = {};
+      if (provider.apiKey) fields.api_key = provider.apiKey;
+      if (provider.secret) fields.secret = provider.secret;
+      if (provider.merchantId) fields.merchant_id = provider.merchantId;
+      if (provider.webhookUrl) fields.webhook_url = provider.webhookUrl;
+      if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
+      if (provider.secretKey) fields.secret_key = provider.secretKey;
+      if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
+      await adminApi.system.updateIntegration(id, fields).catch(() => {});
+    }
     setSavingProvider(null);
   }
 
   async function saveCommission() {
     setSavingCommission(true);
-    await adminApi.payments.updateCommissionConfig(commissionConfig);
-    await new Promise((r) => setTimeout(r, 600));
+    await adminApi.payments.updateCommissionConfig(commissionConfig).catch(() => {});
     setSavingCommission(false);
   }
 

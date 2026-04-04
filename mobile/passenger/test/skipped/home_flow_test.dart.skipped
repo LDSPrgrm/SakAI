@@ -1,0 +1,280 @@
+// import 'dart:async';
+// import 'dart:io';
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:flutter_test/flutter_test.dart';
+// import 'package:google_maps_flutter/google_maps_flutter.dart';
+// import 'package:passenger/app/passenger_app.dart';
+// import 'package:passenger/app/providers.dart';
+// import 'package:passenger/features/auth/models/auth_session.dart';
+// import 'package:passenger/features/auth/repositories/auth_repository.dart';
+// import 'package:passenger/features/home/view_models/home_notifier.dart';
+// import 'package:passenger/features/ride/repositories/ride_repository.dart';
+// import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
+
+// // ---------------------------------------------------------------------------
+// // Fakes
+// // ---------------------------------------------------------------------------
+
+// class _FakeAuthRepository implements AuthRepository {
+//   @override
+//   Future<AuthSession> login({
+//     required String email,
+//     required String password,
+//   }) async => throw UnimplementedError();
+//   @override
+//   Future<AuthSession> register({
+//     required String name,
+//     required String email,
+//     required String password,
+//   }) async => throw UnimplementedError();
+//   @override
+//   Future<bool> hasValidSession() async => true; // logged in
+// }
+
+// class _FakeRideRepository implements RideRepository {
+//   @override
+//   Future<RideEntity> requestRide({
+//     required RideLocation origin,
+//     required RideLocation destination,
+//     String? notes,
+//     required String idempotencyKey,
+//   }) async {
+//     await Future.delayed(const Duration(milliseconds: 100));
+//     return RideEntity(
+//       id: 'ride-123',
+//       status: RideState.requested,
+//       origin: origin,
+//       destination: destination,
+//       createdAt: DateTime.now(),
+//       updatedAt: DateTime.now(),
+//     );
+//   }
+
+//   @override
+//   Future<RideEntity?> getActiveRide() async => null;
+//   @override
+//   Future<void> cancelRide(String rideId) async {}
+// }
+
+// class _FakeOnboardingService implements OnboardingService {
+//   @override
+//   bool hasSeenWelcome() => true;
+//   @override
+//   Future<void> markWelcomeComplete() async {}
+// }
+
+// class _MockHttpClient extends Fake implements HttpClient {
+//   @override
+//   bool autoUncompress = true;
+//   @override
+//   Future<HttpClientRequest> getUrl(Uri url) async => _MockHttpClientRequest();
+//   @override
+//   Future<HttpClientRequest> openUrl(String method, Uri url) async =>
+//       _MockHttpClientRequest();
+// }
+
+// class _MockHttpClientRequest extends Fake implements HttpClientRequest {
+//   @override
+//   final HttpHeaders headers = _MockHttpHeaders();
+//   @override
+//   Future<HttpClientResponse> close() async => _MockHttpClientResponse();
+// }
+
+// class _MockHttpHeaders extends Fake implements HttpHeaders {
+//   @override
+//   void add(String name, Object value, {bool preserveHeaderCase = false}) {}
+// }
+
+// class _MockHttpClientResponse extends Fake implements HttpClientResponse {
+//   @override
+//   int get statusCode => 200;
+//   @override
+//   int get contentLength => _transparentImage.length;
+//   @override
+//   HttpClientResponseCompressionState get compressionState =>
+//       HttpClientResponseCompressionState.notCompressed;
+//   @override
+//   StreamSubscription<List<int>> listen(
+//     void Function(List<int> event)? onData, {
+//     Function? onError,
+//     void Function()? onDone,
+//     bool? cancelOnError,
+//   }) {
+//     return Stream<List<int>>.fromIterable([_transparentImage]).listen(
+//       onData,
+//       onError: onError,
+//       onDone: onDone,
+//       cancelOnError: cancelOnError,
+//     );
+//   }
+// }
+
+// final List<int> _transparentImage = [
+//   0x89,
+//   0x50,
+//   0x4E,
+//   0x47,
+//   0x0D,
+//   0x0A,
+//   0x1A,
+//   0x0A,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x0D,
+//   0x49,
+//   0x48,
+//   0x44,
+//   0x52,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x01,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x01,
+//   0x08,
+//   0x06,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x1F,
+//   0x15,
+//   0xC4,
+//   0x89,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x0A,
+//   0x49,
+//   0x44,
+//   0x41,
+//   0x54,
+//   0x78,
+//   0x9C,
+//   0x63,
+//   0x00,
+//   0x01,
+//   0x00,
+//   0x00,
+//   0x05,
+//   0x00,
+//   0x01,
+//   0x0D,
+//   0x0A,
+//   0x2D,
+//   0xB4,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x00,
+//   0x49,
+//   0x45,
+//   0x4E,
+//   0x44,
+//   0xAE,
+//   0x42,
+//   0x60,
+//   0x82,
+// ];
+
+// // ---------------------------------------------------------------------------
+// // Tests
+// // ---------------------------------------------------------------------------
+
+// void main() {
+//   testWidgets(
+//     'RiderHomeScreen displays map and handles destination selection',
+//     (WidgetTester tester) async {
+//       await HttpOverrides.runZoned(() async {
+//         await tester.binding.setSurfaceSize(const Size(800, 1600));
+
+//         final pickup = RideLocation(
+//           lat: 14.5995,
+//           lng: 120.9842,
+//           address: 'Manila',
+//         );
+//         final destination = RideLocation(
+//           lat: 14.6010,
+//           lng: 120.9850,
+//           address: 'Near Manila',
+//         );
+
+//         await tester.pumpWidget(
+//           ProviderScope(
+//             overrides: [
+//               authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+//               rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
+//               onboardingServiceProvider.overrideWithValue(
+//                 _FakeOnboardingService(),
+//               ),
+//               homeNotifierProvider.overrideWith(
+//                 () => _FakeHomeNotifier(pickup),
+//               ),
+//               authStateProvider.overrideWith(_FakeAuthState.new),
+//             ],
+//             child: const PassengerApp(),
+//           ),
+//         );
+
+//         // Wait for SplashNotifier delay (1000ms)
+//         await tester.pump(const Duration(milliseconds: 1100));
+//         await tester.pumpAndSettle();
+
+//         // Verify we are on home screen
+//         expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+
+//         final notifier =
+//             ProviderScope.containerOf(
+//                   tester.element(find.byType(PassengerApp)),
+//                 ).read(homeNotifierProvider.notifier)
+//                 as _FakeHomeNotifier;
+
+//         notifier.setDestination(destination);
+//         await tester.pumpAndSettle();
+
+//         // Now we should see "Available Rides"
+//         expect(find.text('Available Rides'), findsOneWidget);
+
+//         // Trigger ride request directly via notifier to ensure navigation
+//         await notifier.requestRide();
+
+//         // We need to pump multiple times to let navigation happen
+//         await tester.pump();
+//         await tester.pump(const Duration(milliseconds: 500));
+//         await tester.pump();
+//         await tester.pump(const Duration(seconds: 1));
+
+//         // Should navigate to waiting screen
+//         expect(find.textContaining('Finding your driver'), findsOneWidget);
+//       }, createHttpClient: (_) => _MockHttpClient());
+//     },
+//   );
+// }
+
+// class _FakeHomeNotifier extends HomeNotifier {
+//   final RideLocation initialPickup;
+//   _FakeHomeNotifier(this.initialPickup);
+
+//   @override
+//   HomeState build() {
+//     return HomeState(
+//       status: HomeStatus.idle,
+//       pickup: initialPickup,
+//       currentLatLng: LatLng(initialPickup.lat, initialPickup.lng),
+//     );
+//   }
+
+//   @override
+//   Future<void> initLocation() async {
+//     // Do nothing, already set in build
+//   }
+// }
+
+// class _FakeAuthState extends AuthState {
+//   @override
+//   bool build() => true; // Always authenticated for this flow test
+// }

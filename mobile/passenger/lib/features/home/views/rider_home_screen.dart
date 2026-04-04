@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
-import '../../../app/router.dart';
+import '../../../app/routes.dart';
 import 'activity_screen.dart';
 
 import 'destination_sheet.dart';
 import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
+import '../../../app/providers.dart';
 
 /// Full-screen Google Map home screen for ride requesting (REQ-3.2.4).
 class RiderHomeScreen extends ConsumerStatefulWidget {
@@ -104,6 +105,23 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    final tokenStorage = ref.read(tokenStorageProvider);
+    final refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      try {
+        await ref
+            .read(authRepositoryProvider)
+            .logout(refreshToken: refreshToken);
+      } catch (_) {
+        // Best effort: local session must still be cleared.
+      }
+    }
+
+    await tokenStorage.clear();
+    ref.read(authStateProvider.notifier).markUnauthenticated(forceLogin: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     _listenToState();
@@ -116,7 +134,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         body = const ActivityScreen();
         break;
       case 2:
-        body = ProfileScreen(onSignOut: () => context.go(Routes.login));
+        body = ProfileScreen(onSignOut: _logout);
         break;
       case 0:
       default:
@@ -227,7 +245,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               backgroundColor: scheme.surface.withAlpha(235),
               child: IconButton(
                 icon: Icon(Icons.logout, color: scheme.onSurface),
-                onPressed: () => context.go(Routes.login),
+                onPressed: _logout,
               ),
             ),
           ],

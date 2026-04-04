@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 
 /// REST and WebSocket entry points aligned with `openapi/swagger.yaml` servers.
@@ -5,7 +7,11 @@ abstract final class SakaiApiEndpoints {
   SakaiApiEndpoints._();
 
   /// Default local API. Uses Dart environment `API_URL` if passed via
-  static const String defaultRestBaseUrl = String.fromEnvironment('API_URL');
+  /// --dart-define, otherwise falls back to dotenv.
+  static String get defaultRestBaseUrl =>
+      const String.fromEnvironment('API_URL').isNotEmpty
+      ? const String.fromEnvironment('API_URL')
+      : dotenv.env['API_URL'] ?? '';
 
   /// `ws://{host}{path}/ws` or `wss://…` using the same host and prefix as [restBaseUrl].
   static Uri webSocketUri(String restBaseUrl, String accessToken) {
@@ -32,16 +38,17 @@ abstract final class SakaiApiSupport {
   /// OpenAPI security scheme name for JWT (see `BearerAuth` in swagger.yaml).
   static const String bearerAuthName = 'BearerAuth';
 
-  /// Creates a [SakaiApiClient] with optional JWT attached for protected routes.
+  /// Creates a [SakaiApiClient] with optional [authInterceptor] attached.
   static SakaiApiClient createClient({
-    String baseUrl = SakaiApiEndpoints.defaultRestBaseUrl,
-    String? accessToken,
+    String? baseUrl,
+    Interceptor? authInterceptor,
   }) {
+    final effectiveBaseUrl = baseUrl ?? SakaiApiEndpoints.defaultRestBaseUrl;
     final client = SakaiApiClient(
-      basePathOverride: baseUrl.isNotEmpty ? baseUrl : null,
+      basePathOverride: effectiveBaseUrl.isNotEmpty ? effectiveBaseUrl : null,
     );
-    if (accessToken != null && accessToken.isNotEmpty) {
-      client.setBearerAuth(bearerAuthName, accessToken);
+    if (authInterceptor != null) {
+      client.dio.interceptors.add(authInterceptor);
     }
     return client;
   }

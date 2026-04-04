@@ -12,11 +12,14 @@ dependencies:
   flutter:
     sdk: flutter
 
+  dio: ^5.7.0
   sakai_api_client:
     path: lib/api_client
   geocoding: ^4.0.0
   shared_preferences: ^2.5.5
   flutter_riverpod: ^3.3.1
+  flutter_secure_storage: ^9.2.2
+  flutter_dotenv: 6.0.0
 
 dev_dependencies:
   flutter_test:

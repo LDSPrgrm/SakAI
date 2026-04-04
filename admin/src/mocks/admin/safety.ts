@@ -1,10 +1,10 @@
 import { Incident, KycEntry } from '@/lib/admin-api';
 
 export const incidents: Incident[] = [
-  { id: 'INC-001', ride_id: 'RD-99421', triggered_by: 'rider', rider_name: 'Maria Santos', driver_name: 'Juan Dela Cruz', type: 'sos_triggered', status: 'investigating', assigned_to: 'Maria Santos (Ops)', resolution_notes: null, created_at: '2026-04-02T09:15:00Z', resolved_at: null },
-  { id: 'INC-002', ride_id: 'RD-99388', triggered_by: 'rider', rider_name: 'Jose Rizal', driver_name: 'Pedro Penduko', type: 'reported_incident', status: 'open', assigned_to: null, resolution_notes: null, created_at: '2026-04-01T18:30:00Z', resolved_at: null },
-  { id: 'INC-003', ride_id: 'RD-99210', triggered_by: 'driver', rider_name: 'Ana Reyes', driver_name: 'Carlo Bautista', type: 'safety_complaint', status: 'resolved', assigned_to: 'Ana Gonzales (Support)', resolution_notes: 'Resolved after investigation. No further action needed.', created_at: '2026-03-30T14:00:00Z', resolved_at: '2026-03-31T10:00:00Z' },
-  { id: 'INC-004', ride_id: 'RD-99105', triggered_by: 'rider', rider_name: 'Luisa Fernandez', driver_name: 'Ramon Cruz', type: 'sos_triggered', status: 'escalated', assigned_to: 'Eduardo Reyes (Super Admin)', resolution_notes: 'Escalated to law enforcement.', created_at: '2026-03-28T22:00:00Z', resolved_at: null },
+  { id: 'INC-001', ride_id: 'RD-99421', triggered_by: 'rider', rider_name: 'Maria Santos', driver_name: 'Juan Dela Cruz', type: 'sos_triggered', severity: 'high', status: 'investigating', assigned_to: 'Maria Santos (Ops)', resolution_notes: null, created_at: '2026-04-02T09:15:00Z', resolved_at: null },
+  { id: 'INC-002', ride_id: 'RD-99388', triggered_by: 'rider', rider_name: 'Jose Rizal', driver_name: 'Pedro Penduko', type: 'reported_incident', severity: 'medium', status: 'open', assigned_to: null, resolution_notes: null, created_at: '2026-04-01T18:30:00Z', resolved_at: null },
+  { id: 'INC-003', ride_id: 'RD-99210', triggered_by: 'driver', rider_name: 'Ana Reyes', driver_name: 'Carlo Bautista', type: 'safety_complaint', severity: 'low', status: 'resolved', assigned_to: 'Ana Gonzales (Support)', resolution_notes: 'Resolved after investigation. No further action needed.', created_at: '2026-03-30T14:00:00Z', resolved_at: '2026-03-31T10:00:00Z' },
+  { id: 'INC-004', ride_id: 'RD-99105', triggered_by: 'rider', rider_name: 'Luisa Fernandez', driver_name: 'Ramon Cruz', type: 'sos_triggered', severity: 'high', status: 'escalated', assigned_to: 'Eduardo Reyes (Super Admin)', resolution_notes: 'Escalated to law enforcement.', created_at: '2026-03-28T22:00:00Z', resolved_at: null },
 ];
 
 export const kycQueue: KycEntry[] = [

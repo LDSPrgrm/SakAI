@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -151,4 +152,111 @@ func TestAuthUseCase_Logout(t *testing.T) {
 	if err := uc.Logout(context.Background(), "refresh-token"); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
+}
+
+func TestAuthUseCase_Register_RepoError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, _ := newAuthUC(ctrl)
+
+	userRepo.EXPECT().GetByEmail(gomock.Any(), "error@example.com").Return(nil, errors.New("db error"))
+
+	_, err := uc.Register(context.Background(), "Alice", "error@example.com", "password123", domain.RolePassenger, nil)
+	if err == nil || err.Error() != "db error" {
+		t.Errorf("expected db error, got %v", err)
+	}
+}
+
+func TestAuthUseCase_Login_RepoError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, _ := newAuthUC(ctrl)
+
+	userRepo.EXPECT().GetByEmail(gomock.Any(), "error@example.com").Return(nil, errors.New("db error"))
+
+	_, err := uc.Login(context.Background(), "error@example.com", "password")
+	if err == nil || err.Error() != "db error" {
+		t.Errorf("expected db error, got %v", err)
+	}
+}
+
+func TestAuthUseCase_Refresh_UserRepoError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, tokenRepo := newAuthUC(ctrl)
+	uid := uuid.New()
+
+	tokenRepo.EXPECT().GetUserID(gomock.Any(), "token").Return(uid, nil)
+	userRepo.EXPECT().GetByID(gomock.Any(), uid).Return(nil, errors.New("db error"))
+
+	_, err := uc.Refresh(context.Background(), "token")
+	if err == nil || err.Error() != "db error" {
+		t.Errorf("expected db error, got %v", err)
+	}
+}
+
+func TestAuthUseCase_GetUserByID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, _ := newAuthUC(ctrl)
+	user := testutil.NewTestUser()
+
+	t.Run("Success", func(t *testing.T) {
+		userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(user, nil)
+		res, err := uc.GetUserByID(context.Background(), user.ID)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if res.ID != user.ID {
+			t.Errorf("expected ID %v, got %v", user.ID, res.ID)
+		}
+	})
+
+	t.Run("NotFound", func(t *testing.T) {
+		userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(nil, domain.ErrNotFound)
+		_, err := uc.GetUserByID(context.Background(), user.ID)
+		if !errors.Is(err, domain.ErrNotFound) {
+			t.Errorf("expected ErrNotFound, got %v", err)
+		}
+	})
+}
+
+func TestAuthUseCase_ChangePassword(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, _ := newAuthUC(ctrl)
+	user := testutil.NewTestUser() // password is "password"
+
+	t.Run("Success", func(t *testing.T) {
+		userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(user, nil)
+		userRepo.EXPECT().UpdatePassword(gomock.Any(), user.ID, gomock.Any()).Return(nil)
+
+		err := uc.ChangePassword(context.Background(), user.ID, "password", "newpassword")
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("WrongOldPassword", func(t *testing.T) {
+		userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(user, nil)
+
+		err := uc.ChangePassword(context.Background(), user.ID, "wrongpassword", "newpassword")
+		if !errors.Is(err, domain.ErrInvalidCredentials) {
+			t.Errorf("expected ErrInvalidCredentials, got %v", err)
+		}
+	})
+
+	t.Run("UserNotFound", func(t *testing.T) {
+		userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(nil, domain.ErrNotFound)
+
+		err := uc.ChangePassword(context.Background(), user.ID, "password", "newpassword")
+		if !errors.Is(err, domain.ErrNotFound) {
+			t.Errorf("expected ErrNotFound, got %v", err)
+		}
+	})
 }

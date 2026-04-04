@@ -1,20 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
+import { adminApi, Incident, KycEntry } from '@/lib/admin-api';
 
-const initialIncidents = [
-  { id: 'INC-001', date: '2026-04-01 16:30', rideId: 'RD-99284', reporter: 'Rider', type: 'Reported Incident', severity: 'Medium', status: 'Investigating' },
-  { id: 'INC-002', date: '2026-04-01 10:15', rideId: 'RD-99102', reporter: 'Driver', type: 'SOS Triggered', severity: 'High', status: 'Open' },
-  { id: 'INC-003', date: '2026-03-31 22:00', rideId: 'RD-98999', reporter: 'Rider', type: 'Lost Item', severity: 'Low', status: 'Resolved' },
-];
+function incidentTypeLabel(type: string): string {
+  switch (type) {
+    case 'sos_triggered': return 'SOS Triggered';
+    case 'reported_incident': return 'Reported Incident';
+    case 'safety_complaint': return 'Safety Complaint';
+    default: return type;
+  }
+}
 
-const initialKycQueue = [
-  { id: 'D-2002', name: 'Pedro Penduko', submitted: '2026-04-01', docs: ['License', 'OR/CR', 'NBI Clearance'] },
-  { id: 'D-2005', name: 'Lito Lapid', submitted: '2026-03-31', docs: ['License', 'OR/CR'] },
-];
+function severityVariant(severity: string | undefined): 'danger' | 'warning' | 'default' {
+  switch (severity) {
+    case 'high': return 'danger';
+    case 'medium': return 'warning';
+    default: return 'default';
+  }
+}
+
+function incidentStatusVariant(status: string): 'success' | 'danger' | 'warning' | 'default' {
+  switch (status) {
+    case 'resolved': return 'success';
+    case 'open': return 'danger';
+    case 'escalated': return 'danger';
+    case 'investigating': return 'warning';
+    default: return 'default';
+  }
+}
+
+function accreditationVariant(status: string): 'success' | 'warning' | 'danger' {
+  switch (status) {
+    case 'active': return 'success';
+    case 'expiring': return 'warning';
+    case 'expired': return 'danger';
+    default: return 'success';
+  }
+}
 
 interface ConfirmDialog {
   open: boolean;
@@ -36,11 +62,7 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
         <p className="text-sm text-text-muted">{dialog.message}</p>
         <div className="flex gap-3 justify-end">
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button
-            variant={dialog.variant}
-            size="sm"
-            onClick={() => { dialog.onConfirm(); onClose(); }}
-          >
+          <Button variant={dialog.variant} size="sm" onClick={() => { dialog.onConfirm(); onClose(); }}>
             Confirm
           </Button>
         </div>
@@ -50,10 +72,31 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 }
 
 export function SafetyCompliance() {
-  const [kycQueue, setKycQueue] = useState(initialKycQueue);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [kycQueue, setKycQueue] = useState<KycEntry[]>([]);
+  const [compliance, setCompliance] = useState<{
+    accreditation_status: string;
+    accreditation_expiry: string | null;
+    driver_compliance_rate: number;
+    violation_count: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState<ConfirmDialog>({
     open: false, title: '', message: '', variant: 'danger', onConfirm: () => {},
   });
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      adminApi.safety.getIncidents(),
+      adminApi.safety.getKycQueue(),
+      adminApi.safety.getLtfrbCompliance(),
+    ]).then(([inc, kyc, comp]) => {
+      setIncidents(inc);
+      setKycQueue(kyc);
+      setCompliance(comp);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
@@ -63,7 +106,10 @@ export function SafetyCompliance() {
       title: 'Approve KYC',
       message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
-      onConfirm: () => setKycQueue(prev => prev.filter(d => d.id !== id)),
+      onConfirm: () => {
+        adminApi.safety.updateKyc(id, 'approved').catch(() => {});
+        setKycQueue(prev => prev.filter(d => d.id !== id));
+      },
     });
   };
 
@@ -73,8 +119,23 @@ export function SafetyCompliance() {
       title: 'Reject KYC',
       message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
-      onConfirm: () => setKycQueue(prev => prev.filter(d => d.id !== id)),
+      onConfirm: () => {
+        adminApi.safety.updateKyc(id, 'rejected').catch(() => {});
+        setKycQueue(prev => prev.filter(d => d.id !== id));
+      },
     });
+  };
+
+  const handleResolveIncident = (id: string) => {
+    adminApi.safety.updateIncident(id, { resolution_notes: 'Resolved by admin' }).then(() => {
+      setIncidents(prev => prev.map(i => i.id === id ? { ...i, status: 'resolved' as any } : i));
+    }).catch(() => {});
+  };
+
+  const handleGenerateLtfrb = () => {
+    adminApi.reports.exportCsv('ltfrb').then(url => {
+      if (url) window.open(url, '_blank');
+    }).catch(() => {});
   };
 
   return (
@@ -106,32 +167,52 @@ export function SafetyCompliance() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {initialIncidents.map((inc) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-text-muted">Loading...</TableCell>
+                  </TableRow>
+                ) : incidents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-text-muted">No incidents found.</TableCell>
+                  </TableRow>
+                ) : incidents.map((inc) => (
                   <TableRow key={inc.id}>
                     <TableCell>
                       <p className="font-medium text-text-main">{inc.id}</p>
-                      <p className="text-xs text-text-muted">{inc.date}</p>
+                      <p className="text-xs text-text-muted">
+                        {inc.created_at ? new Date(inc.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+                      </p>
                     </TableCell>
                     <TableCell>
-                      <p className="text-sm">{inc.type}</p>
-                      <Badge
-                        variant={inc.severity === 'High' ? 'danger' : inc.severity === 'Medium' ? 'warning' : 'default'}
-                        className="mt-1"
-                      >
-                        {inc.severity}
-                      </Badge>
+                      <p className="text-sm">{incidentTypeLabel(inc.type)}</p>
+                      {inc.severity && (
+                        <Badge variant={severityVariant(inc.severity)} className="mt-1">
+                          {inc.severity.charAt(0).toUpperCase() + inc.severity.slice(1)}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <p className="text-sm font-medium text-primary">{inc.rideId}</p>
-                      <p className="text-xs text-text-muted">By: {inc.reporter}</p>
+                      <p className="text-sm font-medium text-primary">{inc.ride_id}</p>
+                      <p className="text-xs text-text-muted">By: {inc.triggered_by}</p>
+                      {(inc.rider_name || inc.driver_name) && (
+                        <p className="text-xs text-text-muted">
+                          {inc.rider_name ?? inc.driver_name}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={inc.status === 'Resolved' ? 'success' : inc.status === 'Open' ? 'danger' : 'warning'}>
-                        {inc.status}
+                      <Badge variant={incidentStatusVariant(inc.status)}>
+                        {inc.status.charAt(0).toUpperCase() + inc.status.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="secondary">Review</Button>
+                      {inc.status !== 'resolved' ? (
+                        <Button size="sm" variant="secondary" onClick={() => handleResolveIncident(inc.id)}>
+                          Resolve
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="ghost" disabled>Resolved</Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -149,7 +230,9 @@ export function SafetyCompliance() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {kycQueue.length === 0 ? (
+              {loading ? (
+                <p className="text-sm text-text-muted text-center py-6">Loading...</p>
+              ) : kycQueue.length === 0 ? (
                 <p className="text-sm text-text-muted text-center py-6">No pending KYC submissions.</p>
               ) : (
                 <div className="space-y-4">
@@ -157,8 +240,10 @@ export function SafetyCompliance() {
                     <div key={driver.id} className="p-4 bg-surface-hover rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium text-text-main">{driver.name}</p>
-                          <p className="text-xs text-text-muted">ID: {driver.id} • Submitted: {driver.submitted}</p>
+                          <p className="font-medium text-text-main">{driver.driver_name}</p>
+                          <p className="text-xs text-text-muted">
+                            ID: {driver.driver_id} • Submitted: {driver.submitted_at ? new Date(driver.submitted_at).toLocaleDateString('en-PH') : '—'}
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-3">
@@ -167,20 +252,10 @@ export function SafetyCompliance() {
                         ))}
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="success"
-                          className="w-full"
-                          onClick={() => approveDriver(driver.id, driver.name)}
-                        >
+                        <Button size="sm" variant="success" className="w-full" onClick={() => approveDriver(driver.id, driver.driver_name)}>
                           Approve
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          className="w-full"
-                          onClick={() => rejectDriver(driver.id, driver.name)}
-                        >
+                        <Button size="sm" variant="danger" className="w-full" onClick={() => rejectDriver(driver.id, driver.driver_name)}>
                           Reject
                         </Button>
                       </div>
@@ -200,18 +275,34 @@ export function SafetyCompliance() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-text-muted">Accreditation Validity</span>
-                <Badge variant="success">Valid until 2027</Badge>
+                <span className="text-sm text-text-muted">Accreditation Status</span>
+                <Badge variant={compliance ? accreditationVariant(compliance.accreditation_status) : 'default'}>
+                  {compliance ? compliance.accreditation_status.charAt(0).toUpperCase() + compliance.accreditation_status.slice(1) : '—'}
+                </Badge>
+              </div>
+              {compliance?.accreditation_expiry && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-text-muted">Expiry Date</span>
+                  <span className="text-sm text-text-main">
+                    {new Date(compliance.accreditation_expiry).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-muted">Driver Compliance Rate</span>
+                <span className="text-sm font-medium text-text-main">
+                  {compliance != null ? `${compliance.driver_compliance_rate.toFixed(1)}%` : '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-text-muted">Data Privacy Act (DPA)</span>
-                <Badge variant="success">Compliant</Badge>
+                <span className="text-sm text-text-muted">Violations (Current Period)</span>
+                <Badge variant={compliance && compliance.violation_count > 0 ? 'warning' : 'success'}>
+                  {compliance != null ? compliance.violation_count : '—'}
+                </Badge>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-text-muted">Pending Regulatory Reports</span>
-                <Badge variant="warning">2 Due Soon</Badge>
-              </div>
-              <Button variant="outline" className="w-full mt-2">Generate LTFRB Report</Button>
+              <Button variant="outline" className="w-full mt-2" onClick={handleGenerateLtfrb}>
+                Generate LTFRB Report
+              </Button>
             </CardContent>
           </Card>
         </div>
