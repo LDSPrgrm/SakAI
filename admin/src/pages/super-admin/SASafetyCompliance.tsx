@@ -168,8 +168,9 @@ export function SASafetyCompliance() {
   }
 
   function handleGenerateReport() {
-    // Placeholder — connect to real export API when backend ships
-    alert('Generating LTFRB report…');
+    adminApi.reports.exportCsv('ltfrb').then(url => {
+      if (url) window.open(url, '_blank');
+    }).catch(() => {});
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────

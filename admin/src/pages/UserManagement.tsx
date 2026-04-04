@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
@@ -6,18 +6,25 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Search, Eye, Ban, CheckCircle, AlertTriangle } from 'lucide-react';
+import { adminApi, PassengerUser, DriverUser, AdminStatus } from '@/lib/admin-api';
 
-const riders = [
-  { id: 'R-1001', name: 'Maria Santos', phone: '+63 917 123 4567', email: 'maria@example.com', status: 'Active', date: '2023-10-12', rating: 4.8 },
-  { id: 'R-1002', name: 'Jose Rizal', phone: '+63 918 987 6543', email: 'jose@example.com', status: 'Active', date: '2023-11-05', rating: 4.9 },
-  { id: 'R-1003', name: 'Andres Bonifacio', phone: '+63 919 456 7890', email: 'andres@example.com', status: 'Suspended', date: '2024-01-20', rating: 3.2 },
-];
+function vehicleLabel(v: DriverUser['vehicle']): string {
+  if (!v) return '—';
+  return `${v.make} ${v.model} (${v.plate})`;
+}
 
-const drivers = [
-  { id: 'D-2001', name: 'Juan Dela Cruz', phone: '+63 920 111 2222', email: 'juan@example.com', vehicle: 'Motorcycle', status: 'Active', kyc: 'Verified', rating: 4.7 },
-  { id: 'D-2002', name: 'Pedro Penduko', phone: '+63 921 333 4444', email: 'pedro@example.com', vehicle: 'Tricycle', status: 'Pending', kyc: 'Pending', rating: 0 },
-  { id: 'D-2003', name: 'Cardo Dalisay', phone: '+63 922 555 6666', email: 'cardo@example.com', vehicle: 'Car (4-seater)', status: 'Suspended', kyc: 'Rejected', rating: 4.1 },
-];
+function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
+  switch (status) {
+    case 'active': return 'success';
+    case 'suspended': return 'danger';
+    case 'deactivated': return 'default';
+    default: return 'default';
+  }
+}
+
+function statusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
 interface ConfirmDialog {
   open: boolean;
@@ -47,38 +54,48 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 
 export function UserManagement() {
   const [search, setSearch] = useState('');
-  const [riderList, setRiderList] = useState(riders);
-  const [driverList, setDriverList] = useState(drivers);
+  const [riderList, setRiderList] = useState<PassengerUser[]>([]);
+  const [driverList, setDriverList] = useState<DriverUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, title: '', message: '', onConfirm: () => {} });
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      adminApi.users.getPassengers(),
+      adminApi.users.getDrivers(),
+    ]).then(([passengers, drivers]) => {
+      setRiderList(passengers);
+      setDriverList(drivers);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
-  const suspendRider = (id: string, name: string) => {
+  const suspendUser = (id: string, name: string, type: 'Rider' | 'Driver') => {
     setConfirm({
       open: true,
-      title: 'Suspend Rider',
-      message: `Are you sure you want to suspend ${name}? They will no longer be able to book rides.`,
-      onConfirm: () => setRiderList(prev => prev.map(r => r.id === id ? { ...r, status: 'Suspended' } : r)),
-    });
-  };
-
-  const suspendDriver = (id: string, name: string) => {
-    setConfirm({
-      open: true,
-      title: 'Suspend Driver',
-      message: `Are you sure you want to suspend ${name}? They will no longer be able to accept rides.`,
-      onConfirm: () => setDriverList(prev => prev.map(d => d.id === id ? { ...d, status: 'Suspended' } : d)),
+      title: `Suspend ${type}`,
+      message: `Are you sure you want to suspend ${name}? They will no longer be able to ${type === 'Rider' ? 'book rides' : 'accept rides'}.`,
+      onConfirm: () => {
+        adminApi.users.updateStatus(id, { status: 'suspended' }).catch(() => {});
+        if (type === 'Rider') {
+          setRiderList(prev => prev.map(r => r.id === id ? { ...r, status: 'suspended' as any } : r));
+        } else {
+          setDriverList(prev => prev.map(d => d.id === id ? { ...d, status: 'suspended' as any } : d));
+        }
+      },
     });
   };
 
   const q = search.toLowerCase();
 
   const filteredRiders = riderList.filter(r =>
-    !q || r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.phone.includes(q)
+    !q || r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || (r.phone ?? '').includes(q)
   );
 
   const filteredDrivers = driverList.filter(d =>
-    !q || d.name.toLowerCase().includes(q) || d.id.toLowerCase().includes(q) || d.vehicle.toLowerCase().includes(q)
+    !q || d.name.toLowerCase().includes(q) || d.id.toLowerCase().includes(q) || vehicleLabel(d.vehicle).toLowerCase().includes(q)
   );
 
   return (
@@ -117,14 +134,17 @@ export function UserManagement() {
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date Registered</TableHead>
-                    <TableHead>Rating</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRiders.length === 0 ? (
+                  {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-text-muted">
+                      <TableCell colSpan={5} className="text-center py-10 text-text-muted">Loading...</TableCell>
+                    </TableRow>
+                  ) : filteredRiders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10 text-text-muted">
                         No riders match your search.
                       </TableCell>
                     </TableRow>
@@ -138,27 +158,28 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="text-sm">{rider.phone}</p>
+                          {rider.phone && <p className="text-sm">{rider.phone}</p>}
                           <p className="text-xs text-text-muted">{rider.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={rider.status === 'Active' ? 'success' : 'danger'}>
-                          {rider.status}
+                        <Badge variant={statusVariant((rider as any).status ?? 'active')}>
+                          {statusLabel((rider as any).status ?? 'active')}
                         </Badge>
                       </TableCell>
-                      <TableCell>{rider.date}</TableCell>
-                      <TableCell>⭐ {rider.rating}</TableCell>
+                      <TableCell className="text-sm text-text-muted">
+                        {rider.created_at ? new Date(rider.created_at).toLocaleDateString('en-PH') : '—'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
-                          {rider.status !== 'Suspended' && (
+                          {(rider as any).status !== 'suspended' && (rider as any).status !== 'deactivated' && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="text-danger"
                               aria-label="Suspend rider"
-                              onClick={() => suspendRider(rider.id, rider.name)}
+                              onClick={() => suspendUser(rider.id, rider.name, 'Rider')}
                             >
                               <Ban className="w-4 h-4" />
                             </Button>
@@ -178,15 +199,18 @@ export function UserManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Vehicle</TableHead>
-                    <TableHead>KYC Status</TableHead>
-                    <TableHead>Rating</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDrivers.length === 0 ? (
+                  {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-text-muted">
+                      <TableCell colSpan={5} className="text-center py-10 text-text-muted">Loading...</TableCell>
+                    </TableRow>
+                  ) : filteredDrivers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10 text-text-muted">
                         No drivers match your search.
                       </TableCell>
                     </TableRow>
@@ -200,31 +224,27 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="text-sm">{driver.phone}</p>
+                          {driver.phone && <p className="text-sm">{driver.phone}</p>}
                           <p className="text-xs text-text-muted">{driver.email}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{driver.vehicle}</TableCell>
+                      <TableCell className="text-sm">{vehicleLabel(driver.vehicle)}</TableCell>
                       <TableCell>
-                        <Badge variant={
-                          driver.kyc === 'Verified' ? 'success' :
-                          driver.kyc === 'Pending' ? 'warning' : 'danger'
-                        }>
-                          {driver.kyc}
+                        <Badge variant={statusVariant((driver as any).status ?? 'active')}>
+                          {statusLabel((driver as any).status ?? 'active')}
                         </Badge>
                       </TableCell>
-                      <TableCell>{driver.rating > 0 ? `⭐ ${driver.rating}` : '—'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" aria-label="Review Documents"><CheckCircle className="w-4 h-4 text-success" /></Button>
                           <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
-                          {driver.status !== 'Suspended' && (
+                          {(driver as any).status !== 'suspended' && (driver as any).status !== 'deactivated' && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="text-danger"
                               aria-label="Suspend driver"
-                              onClick={() => suspendDriver(driver.id, driver.name)}
+                              onClick={() => suspendUser(driver.id, driver.name, 'Driver')}
                             >
                               <Ban className="w-4 h-4" />
                             </Button>

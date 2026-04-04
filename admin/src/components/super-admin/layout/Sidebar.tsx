@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, ShieldCheck, UserCog, PhilippinePeso, Banknote, FileText, Wrench, Activity, ScrollText, Car
+    LayoutDashboard, ShieldCheck, UserCog, PhilippinePeso, Banknote, FileText, Wrench, Activity, ScrollText, Car, Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PERM } from '@/lib/permissions';
@@ -15,6 +15,7 @@ interface SidebarProps {
 const saNavItems = [
     { path: '/super-admin/dashboard', label: 'SA Dashboard', icon: LayoutDashboard, perm: PERM.DASHBOARD_VIEW },
     { path: '/super-admin/admins', label: 'Admin Management', icon: UserCog, perm: PERM.ADMINS_MANAGE },
+    { path: '/super-admin/roles', label: 'Role Management', icon: Shield, perm: PERM.ADMINS_MANAGE },
     { path: '/super-admin/fares', label: 'Fare Config', icon: PhilippinePeso, perm: PERM.FARES_VIEW },
     { path: '/super-admin/payments', label: 'Financial Controls', icon: Banknote, perm: PERM.PAYMENTS_VIEW },
     { path: '/super-admin/safety', label: 'Safety & KYC', icon: ShieldCheck, perm: PERM.SAFETY_READ },

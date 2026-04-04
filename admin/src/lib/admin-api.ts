@@ -5,14 +5,6 @@
 // ---------------------------------------------------------------------------
 
 import { tokenStore } from '@/lib/api';
-import * as dashboardMock from '@/mocks/admin/dashboard';
-import * as adminsMock from '@/mocks/admin/admins';
-import * as faresMock from '@/mocks/admin/fares';
-import * as paymentsMock from '@/mocks/admin/payments';
-import * as safetyMock from '@/mocks/admin/safety';
-import * as reportsMock from '@/mocks/admin/reports';
-import * as systemMock from '@/mocks/admin/system';
-import * as auditMock from '@/mocks/admin/audit';
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.22:8080/api';
 
@@ -29,6 +21,46 @@ export interface AdminApiResponse<T> {
 
 export type AdminRole = 'super_admin' | 'operations' | 'finance' | 'support';
 export type AdminStatus = 'active' | 'suspended' | 'deactivated';
+export type RideStatus = 'requested' | 'accepted' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface PassengerUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'passenger';
+  created_at: string;
+  phone?: string;
+}
+
+export interface DriverUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'driver';
+  created_at: string;
+  phone?: string;
+  vehicle?: {
+    make: string;
+    model: string;
+    color: string;
+    plate: string;
+  } | null;
+}
+
+export interface AdminRideItem {
+  id: string;
+  status: RideStatus;
+  passenger_name: string;
+  driver_name: string | null;
+  passenger: { id: string; name: string; email: string };
+  driver: { id: string; name: string; vehicle: { make: string; model: string; color: string; plate: string } } | null;
+  origin_address: string | null;
+  destination_address: string | null;
+  total_fare: number | null;
+  payment_method: 'cash' | 'gcash' | 'paymaya' | 'card' | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface AdminUser {
   id: string;
@@ -65,6 +97,8 @@ export interface SurgeConfig {
 export type IncidentType = 'sos_triggered' | 'reported_incident' | 'safety_complaint';
 export type IncidentStatus = 'open' | 'investigating' | 'resolved' | 'escalated';
 
+export type IncidentSeverity = 'low' | 'medium' | 'high';
+
 export interface Incident {
   id: string;
   ride_id: string;
@@ -72,6 +106,7 @@ export interface Incident {
   rider_name: string;
   driver_name: string;
   type: IncidentType;
+  severity: IncidentSeverity | null;
   status: IncidentStatus;
   assigned_to: string | null;
   resolution_notes: string | null;
@@ -110,6 +145,30 @@ export interface DriverPayout {
   total_amount: number;
   period: string;
   status: 'pending' | 'approved' | 'processing' | 'done';
+}
+
+export type RolePermissionKey =
+  | 'dashboard' | 'admin_management' | 'role_management' | 'fare_config'
+  | 'payments' | 'payouts' | 'user_management' | 'kyc_verification'
+  | 'safety_incidents' | 'reports' | 'system_config' | 'system_health'
+  | 'audit_log' | 'ltfrb_compliance';
+
+export interface RolePermission {
+  permission_key: RolePermissionKey;
+  read: boolean;
+  write: boolean;
+}
+
+export interface AdminRoleDefinition {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  permissions: RolePermission[];
+  admin_count: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuditLogEntry {
@@ -175,6 +234,10 @@ async function adminRequest<T>(method: string, path: string, body?: unknown): Pr
   });
   if (res.status === 204) return undefined as T;
   const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json?.error || json?.message || `Request failed (${res.status})`);
+  }
 
   // Automatically unwrap standard { success: true, data: ... } envelopes
   if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
@@ -268,6 +331,7 @@ export const adminApi = {
     getSummary: () => adminRequest<any>('GET', '/payments/summary'),
     getCommissionConfig: () => adminRequest<any>('GET', '/payments/commission-config'),
     updateCommissionConfig: (data: any) => adminRequest<any>('PUT', '/payments/commission-config', data),
+    getPaymentConfigs: () => adminRequest<any>('GET', '/payments/config').then(extractArray<any>),
   },
 
   safety: {
@@ -277,7 +341,7 @@ export const adminApi = {
     getKycQueue: () => adminRequest<any>('GET', '/safety/kyc').then(extractArray<KycEntry>),
     updateKyc: (id: string, status: 'approved' | 'rejected') =>
       adminRequest<KycEntry>('PUT', `/safety/kyc/${id}`, { status }),
-    getLtfrbCompliance: async () => safetyMock.ltfrbCompliance,
+    getLtfrbCompliance: () => adminRequest<any>('GET', '/safety/compliance'),
   },
 
   reports: {
@@ -299,8 +363,32 @@ export const adminApi = {
     getServices: () => adminRequest<any>('GET', '/system/services').then(extractArray<SystemService>),
   },
 
+  users: {
+    getPassengers: (q?: string) =>
+      adminRequest<any>('GET', `/users/passengers${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(extractArray<PassengerUser>),
+    getDrivers: (q?: string) =>
+      adminRequest<any>('GET', `/users/drivers${q ? `?q=${encodeURIComponent(q)}` : ''}`).then(extractArray<DriverUser>),
+    updateStatus: (id: string, data: { status: AdminStatus }) =>
+      adminRequest<void>('PUT', `/users/${id}`, data),
+  },
+
+  rides: {
+    list: (status?: string) =>
+      adminRequest<any>('GET', `/rides${status ? `?status=${encodeURIComponent(status)}` : ''}`).then(extractArray<AdminRideItem>),
+  },
+
   audit: {
     getLogs: () => adminRequest<any>('GET', '/audit').then(extractArray<AuditLogEntry>),
     exportCsv: () => adminRequest<any>('POST', '/reports/export/audit').then(res => res?.url || ''),
+  },
+
+  roles: {
+    list: () => adminRequest<any>('GET', '/roles').then(extractArray<AdminRoleDefinition>),
+    create: (data: { name: string; description: string; permissions: RolePermission[] }) =>
+      adminRequest<AdminRoleDefinition>('POST', '/roles', data),
+    update: (id: string, data: { name: string; description: string; permissions: RolePermission[] }) =>
+      adminRequest<AdminRoleDefinition>('PUT', `/roles/${id}`, data),
+    delete: (id: string) => adminRequest<void>('DELETE', `/roles/${id}`),
+    duplicate: (id: string) => adminRequest<AdminRoleDefinition>('POST', `/roles/${id}/duplicate`),
   },
 };
