@@ -3,6 +3,7 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -188,8 +189,8 @@ func TestAuthHandler_ChangePassword_Success(t *testing.T) {
 	r, mockUC := setupAuthTest(t)
 
 	req := dto.ChangePasswordRequest{
-		OldPassword: "old",
-		NewPassword: "new",
+		OldPassword: "oldpassword",
+		NewPassword: "newpassword",
 	}
 	body, _ := json.Marshal(req)
 
@@ -202,4 +203,40 @@ func TestAuthHandler_ChangePassword_Success(t *testing.T) {
 	r.ServeHTTP(w, reqHTTP)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
+}
+
+func TestAuthHandler_Register_ValidationError(t *testing.T) {
+	r, _ := setupAuthTest(t)
+
+	req := dto.RegisterRequest{
+		Name:  "A", // Too short
+		Email: "not-an-email",
+	}
+	body, _ := json.Marshal(req)
+
+	w := httptest.NewRecorder()
+	reqHTTP, _ := http.NewRequest("POST", "/auth/register", bytes.NewBuffer(body))
+	r.ServeHTTP(w, reqHTTP)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestAuthHandler_Login_UseCaseError(t *testing.T) {
+	r, mockUC := setupAuthTest(t)
+
+	req := dto.LoginRequest{
+		Email:    "error@example.com",
+		Password: "password123",
+	}
+	body, _ := json.Marshal(req)
+
+	mockUC.EXPECT().
+		Login(gomock.Any(), req.Email, req.Password).
+		Return(nil, errors.New("unexpected error"))
+
+	w := httptest.NewRecorder()
+	reqHTTP, _ := http.NewRequest("POST", "/auth/login", bytes.NewBuffer(body))
+	r.ServeHTTP(w, reqHTTP)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
