@@ -127,6 +127,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               ),
               SizedBox(height: tokens.spaceLg),
               SakaiPrimaryButton(
+                key: const Key('register_submit'),
                 label: registerState.busy
                     ? 'Creating Account…'
                     : 'Create Account',

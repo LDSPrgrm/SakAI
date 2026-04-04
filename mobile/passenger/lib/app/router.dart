@@ -1,37 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../features/auth/views/auth_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
 import '../features/home/views/rider_home_screen.dart';
 import '../features/ride/views/waiting_screen.dart';
-
-// ---------------------------------------------------------------------------
-// Route names — constants to avoid typos across the app.
-// ---------------------------------------------------------------------------
-
-abstract class Routes {
-  static const splash = '/';
-  static const welcome = '/welcome';
-  static const login = '/login';
-  static const register = '/register';
-  static const home = '/home';
-  static const rideWaiting = '/ride/waiting';
-  static const rideActive = '/ride/active';
-  static const rideComplete = '/ride/complete';
-  static const rideCancelled = '/ride/cancelled';
-}
-
-// ---------------------------------------------------------------------------
-// Router provider
-// ---------------------------------------------------------------------------
+import 'providers.dart';
+import 'routes.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final listenable = ValueNotifier<AuthStateModel>(ref.read(authStateProvider));
+  ref.listen<AuthStateModel>(authStateProvider, (_, next) {
+    listenable.value = next;
+  });
+
   return GoRouter(
     initialLocation: Routes.splash,
     debugLogDiagnostics: false,
+    refreshListenable: listenable,
+    redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
+      final onboarding = ref.read(onboardingServiceProvider);
+      final hasSeenWelcome = onboarding.hasSeenWelcome();
+
+      final isSplash = state.matchedLocation == Routes.splash;
+      final isWelcome = state.matchedLocation == Routes.welcome;
+      final isLogin = state.matchedLocation == Routes.login;
+      final isRegister = state.matchedLocation == Routes.register;
+      final isAuthRoute = isWelcome || isLogin || isRegister;
+
+      if (isSplash) return null;
+
+      if (authState.status == AuthStatus.unknown) {
+        return Routes.splash;
+      }
+
+      if (authState.status == AuthStatus.authenticated) {
+        if (isAuthRoute) return Routes.home;
+        return null;
+      }
+
+      if (authState.forceLogin) {
+        return isLogin ? null : Routes.login;
+      }
+
+      final unauthLanding = hasSeenWelcome ? Routes.login : Routes.welcome;
+      if (!isAuthRoute) return unauthLanding;
+      if (!hasSeenWelcome && !isWelcome) return Routes.welcome;
+      if (hasSeenWelcome && isWelcome) return Routes.login;
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: Routes.splash,
@@ -62,7 +84,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return WaitingScreen(rideId: rideId);
         },
       ),
-      // Active ride, complete, and cancelled screens added in Sprint 3.
       GoRoute(
         path: Routes.rideActive,
         builder: (context, state) => _PlaceholderScreen(Routes.rideActive),
@@ -79,7 +100,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Placeholder used for routes not yet implemented in the current sprint.
 class _PlaceholderScreen extends StatelessWidget {
   const _PlaceholderScreen(this.route);
   final String route;

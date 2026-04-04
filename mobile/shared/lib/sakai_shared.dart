@@ -2,6 +2,8 @@
 library;
 
 export 'api/onboarding_service.dart';
+export 'api/token_storage.dart';
+export 'api/auth_interceptor.dart';
 export 'api/sakai_api_support.dart';
 export 'models/sakai_models.dart';
 export 'package:sakai_api_client/sakai_api_client.dart';

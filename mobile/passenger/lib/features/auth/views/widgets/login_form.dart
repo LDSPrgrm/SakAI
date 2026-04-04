@@ -108,6 +108,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               ),
               SizedBox(height: tokens.spaceSm),
               SakaiPrimaryButton(
+                key: const Key('login_submit'),
                 label: loginState.busy ? 'Signing in…' : 'Sign in',
                 icon: Icons.arrow_forward_rounded,
                 onPressed: loginState.busy ? null : _onSignIn,
