@@ -2775,15 +2775,34 @@ components:
       properties:
         active_riders:
           type: integer
+        total_riders:
+          type: integer
+        riders_trend:
+          type: string
+          description: Percentage change string (e.g. "+12%")
         active_drivers:
           type: integer
+        total_drivers:
+          type: integer
+        drivers_trend:
+          type: string
         rides_today:
           type: integer
+        rides_trend:
+          type: string
         revenue_today:
           type: number
+        revenue_trend:
+          type: string
         avg_wait_time_seconds:
           type: number
+        avg_wait_minutes:
+          type: number
+        wait_trend:
+          type: string
         system_uptime:
+          type: number
+        platform_uptime:
           type: number
 
     CreateAdminRequest:
@@ -2926,24 +2945,40 @@ components:
           format: uuid
         type:
           type: string
+          enum: [sos_triggered, reported_incident, safety_complaint]
+        severity:
+          type: string
+          enum: [low, medium, high]
+          description: Operator-assigned urgency level
         status:
           type: string
+          enum: [open, investigating, resolved, escalated]
         triggered_by:
           type: string
+          enum: [rider, driver]
         rider_id:
           type: string
           format: uuid
+        rider_name:
+          type: string
         driver_id:
           type: string
           format: uuid
+        driver_name:
+          type: string
+        assigned_to:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
         resolved_at:
           type: string
           format: date-time
+          nullable: true
         resolution_notes:
           type: string
+          nullable: true
 
     IncidentResolveRequest:
       type: object
@@ -3171,6 +3206,15 @@ components:
               type: string
             driver_name:
               type: string
+            total_fare:
+              type: number
+              description: Final fare charged for the ride (null for non-completed rides)
+              nullable: true
+            payment_method:
+              type: string
+              enum: [cash, gcash, paymaya, card]
+              nullable: true
+              description: Payment method used; populated once the ride is completed
 
     AdminRideListResponse:
       type: object

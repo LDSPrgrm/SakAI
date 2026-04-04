@@ -34,6 +34,7 @@ const SAReports = lazy(() => import('@/pages/super-admin/SAReports').then(m => (
 const SASystemConfig = lazy(() => import('@/pages/super-admin/SASystemConfig').then(m => ({ default: m.SASystemConfig })));
 const SASystemHealth = lazy(() => import('@/pages/super-admin/SASystemHealth').then(m => ({ default: m.SASystemHealth })));
 const SAAuditLog = lazy(() => import('@/pages/super-admin/SAAuditLog').then(m => ({ default: m.SAAuditLog })));
+const SARoleManagement = lazy(() => import('@/pages/super-admin/SARoleManagement').then(m => ({ default: m.SARoleManagement })));
 
 function PageLoader() {
   return (
@@ -100,6 +101,9 @@ export default function App() {
             } />
             <Route path="admins" element={
               <Suspense fallback={<PageLoader />}><SAAdminManagement /></Suspense>
+            } />
+            <Route path="roles" element={
+              <Suspense fallback={<PageLoader />}><SARoleManagement /></Suspense>
             } />
             <Route path="fares" element={
               <Suspense fallback={<PageLoader />}><SAFareConfig /></Suspense>
