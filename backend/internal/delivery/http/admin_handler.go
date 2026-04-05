@@ -48,7 +48,22 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
 		return
 	}
-	user, err := h.uc.CreateAdmin(c.Request.Context(), actorID, req.Name, req.Email, req.Password, req.Role)
+	if req.Role == "" && req.RoleID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "role or role_id is required"})
+		return
+	}
+
+	var roleID *uuid.UUID
+	if req.RoleID != "" {
+		parsed, err := uuid.Parse(req.RoleID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid role_id format"})
+			return
+		}
+		roleID = &parsed
+	}
+
+	user, err := h.uc.CreateAdmin(c.Request.Context(), actorID, req.Name, req.Email, req.Password, domain.UserRole(req.Role), roleID)
 	if err != nil {
 		respondError(c, err)
 		return

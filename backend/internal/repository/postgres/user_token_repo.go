@@ -25,9 +25,9 @@ func NewUserRepo(db *pgxpool.Pool) domain.UserRepository {
 
 func (r *userRepo) Create(ctx context.Context, u *domain.User) error {
 	const q = `
-		INSERT INTO users (id, name, email, password_hash, role, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)`
-	_, err := r.db.Exec(ctx, q, u.ID, u.Name, u.Email, u.Password, u.Role, u.CreatedAt)
+		INSERT INTO users (id, name, email, password_hash, role, role_id, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	_, err := r.db.Exec(ctx, q, u.ID, u.Name, u.Email, u.Password, u.Role, u.RoleID, u.CreatedAt)
 	return err
 }
 
@@ -38,9 +38,9 @@ func (r *userRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, passwor
 }
 
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-	const q = `SELECT id, name, email, password_hash, role, created_at FROM users WHERE id = $1`
+	const q = `SELECT id, name, email, password_hash, role, role_id, created_at FROM users WHERE id = $1`
 	u := &domain.User{}
-	err := r.db.QueryRow(ctx, q, id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt)
+	err := r.db.QueryRow(ctx, q, id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.RoleID, &u.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
@@ -54,9 +54,9 @@ func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, err
 }
 
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	const q = `SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = $1`
+	const q = `SELECT id, name, email, password_hash, role, role_id, created_at FROM users WHERE email = $1`
 	u := &domain.User{}
-	err := r.db.QueryRow(ctx, q, email).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt)
+	err := r.db.QueryRow(ctx, q, email).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.RoleID, &u.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}

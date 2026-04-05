@@ -67,6 +67,7 @@ export interface AdminUser {
   name: string;
   email: string;
   role: AdminRole;
+  role_id?: string;   // UUID linking to the roles table (present for admin users)
   status: AdminStatus;
   created_by: string;
   created_at: string;

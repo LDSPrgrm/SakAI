@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
-import { CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
-import { adminApi, AdminUser } from '@/lib/admin-api';
+import { CheckCircle, Loader2, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { adminApi, AdminRole, AdminRoleDefinition, AdminUser } from '@/lib/admin-api';
 
 function roleVariant(role: string): 'info' | 'default' {
   return role === 'super_admin' ? 'info' : 'default';
@@ -31,6 +31,215 @@ function SaveBanner({ show }: { show: boolean }) {
   );
 }
 
+// ── Fallback hardcoded roles (shown when API hasn't loaded yet) ───────────────
+const FALLBACK_ROLES: { value: string; label: string }[] = [
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'operations',  label: 'Operations'  },
+  { value: 'finance',     label: 'Finance'     },
+  { value: 'support',     label: 'Support'     },
+];
+
+function roleOptionsFromDefinitions(defs: AdminRoleDefinition[]): { value: string; label: string }[] {
+  if (defs.length === 0) return FALLBACK_ROLES;
+  return defs.map(d => ({
+    value: d.name,
+    label: d.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+  }));
+}
+
+interface AdminFormState {
+  name: string;
+  email: string;
+  role: string;   // widened — supports both built-in AdminRole values and custom role names
+  password: string;
+}
+const EMPTY_FORM: AdminFormState = { name: '', email: '', role: 'support', password: '' };
+
+// ── Add / Edit Admin Modal ────────────────────────────────────────────────────
+interface AdminModalProps {
+  mode: 'add' | 'edit';
+  initial?: AdminFormState & { id?: string };
+  roleOptions: { value: string; label: string }[];
+  roleDefinitions: AdminRoleDefinition[];
+  onClose: () => void;
+  onSave: (admin: AdminUser) => void;
+}
+
+function AdminModal({ mode, initial, roleOptions, roleDefinitions, onClose, onSave }: AdminModalProps) {
+  const [form, setForm] = useState<AdminFormState>(
+    initial
+      ? { name: initial.name, email: initial.email, role: initial.role, password: '' }
+      : { ...EMPTY_FORM, role: roleOptions[0]?.value ?? 'support' },
+  );
+  const [errors, setErrors] = useState<Partial<AdminFormState>>({});
+  const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const firstRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { firstRef.current?.focus(); }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  function validate() {
+    const e: Partial<AdminFormState> = {};
+    if (!form.name.trim())  e.name  = 'Name is required.';
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      e.email = 'Valid email is required.';
+    if (mode === 'add' && form.password.length < 8)
+      e.password = 'Password must be at least 8 characters.';
+    return e;
+  }
+
+  async function handleSubmit(ev: React.FormEvent) {
+    ev.preventDefault();
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setErrors({});
+    setApiError('');
+    setSaving(true);
+    try {
+      const selectedRoleDef = roleDefinitions.find(r => r.name === form.role);
+      let saved: AdminUser;
+      if (mode === 'add') {
+        saved = await adminApi.admins.create({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          role: form.role as AdminRole,
+          role_id: selectedRoleDef?.id,
+          status: 'active',
+          created_by: 'current_admin',
+          password: form.password,
+        });
+      } else {
+        saved = await adminApi.admins.update(initial!.id!, {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          role: form.role as AdminRole,
+          role_id: selectedRoleDef?.id,
+        });
+      }
+      onSave(saved);
+      onClose();
+    } catch (err: any) {
+      setApiError(err?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function field(key: keyof AdminFormState, val: string) {
+    setForm(f => ({ ...f, [key]: val }));
+    setErrors(e => ({ ...e, [key]: '' }));
+  }
+
+  return (
+    /* Backdrop */
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={mode === 'add' ? 'Add Admin' : 'Edit Admin'}
+    >
+      <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-text-main">
+            {mode === 'add' ? 'Add New Admin' : 'Edit Admin'}
+          </h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-main transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="px-6 py-5 space-y-4">
+            {apiError && (
+              <p className="text-sm text-danger bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+                {apiError}
+              </p>
+            )}
+
+            {/* Name */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-text-muted">Full Name</label>
+              <Input
+                ref={firstRef}
+                value={form.name}
+                onChange={e => field('name', e.target.value)}
+                placeholder="Maria Santos"
+                className={errors.name ? 'border-danger' : ''}
+              />
+              {errors.name && <p className="text-xs text-danger">{errors.name}</p>}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-text-muted">Email Address</label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={e => field('email', e.target.value)}
+                placeholder="maria@sakai.ph"
+                className={errors.email ? 'border-danger' : ''}
+              />
+              {errors.email && <p className="text-xs text-danger">{errors.email}</p>}
+            </div>
+
+            {/* Role */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-text-muted">Role</label>
+              <select
+                value={form.role}
+                onChange={e => field('role', e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface text-text-main px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                {roleOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Password — add mode only */}
+            {mode === 'add' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-text-muted">Temporary Password</label>
+                <Input
+                  type="password"
+                  value={form.password}
+                  onChange={e => field('password', e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  className={errors.password ? 'border-danger' : ''}
+                />
+                {errors.password && <p className="text-xs text-danger">{errors.password}</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving
+                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving…</>
+                : mode === 'add' ? 'Add Admin' : 'Save Changes'
+              }
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 interface NotifTemplate {
   event: string;
   channel: string;
@@ -49,6 +258,12 @@ export function Settings() {
   // Admin Users tab
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(true);
+  const [roleDefinitions, setRoleDefinitions] = useState<AdminRoleDefinition[]>([]);
+  const [adminModal, setAdminModal] = useState<
+    | { mode: 'add' }
+    | { mode: 'edit'; admin: AdminUser }
+    | null
+  >(null);
 
   // Notifications tab
   const [templates, setTemplates] = useState<NotifTemplate[]>([]);
@@ -66,6 +281,10 @@ export function Settings() {
       .then(setAdmins)
       .catch(() => {})
       .finally(() => setAdminsLoading(false));
+
+    adminApi.roles.list()
+      .then(setRoleDefinitions)
+      .catch(() => {});
 
     adminApi.system.getNotificationTemplates()
       .then((raw: any[]) => {
@@ -123,6 +342,14 @@ export function Settings() {
     setTimeout(() => setSystemSaved(false), 3000);
   };
 
+  function handleAdminSaved(saved: AdminUser) {
+    if (adminModal?.mode === 'add') {
+      setAdmins(prev => [saved, ...prev]);
+    } else {
+      setAdmins(prev => prev.map(a => a.id === saved.id ? saved : a));
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -144,7 +371,7 @@ export function Settings() {
             <TabsContent value="admins" className="p-6 m-0">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Manage Admin Access</h3>
-                <Button>Add Admin</Button>
+                <Button onClick={() => setAdminModal({ mode: 'add' })}>Add Admin</Button>
               </div>
               {adminsLoading ? (
                 <p className="text-sm text-text-muted text-center py-6">Loading...</p>
@@ -181,16 +408,23 @@ export function Settings() {
                           {admin.last_login_at ? new Date(admin.last_login_at).toLocaleDateString('en-PH') : 'Never'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => adminApi.admins.update(admin.id, {}).catch(() => {})}>Edit</Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAdminModal({ mode: 'edit', admin })}
+                          >
+                            Edit
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-danger"
+                            disabled={admin.status === 'deactivated'}
                             onClick={() => adminApi.admins.deactivate(admin.id).then(() =>
                               setAdmins(prev => prev.map(a => a.id === admin.id ? { ...a, status: 'deactivated' } : a))
                             ).catch(() => {})}
                           >
-                            Remove
+                            {admin.status === 'deactivated' ? 'Removed' : 'Remove'}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -310,6 +544,20 @@ export function Settings() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {adminModal && (
+        <AdminModal
+          mode={adminModal.mode}
+          initial={adminModal.mode === 'edit'
+            ? { ...adminModal.admin, password: '' }
+            : undefined
+          }
+          roleOptions={roleOptionsFromDefinitions(roleDefinitions)}
+          roleDefinitions={roleDefinitions}
+          onClose={() => setAdminModal(null)}
+          onSave={handleAdminSaved}
+        />
+      )}
     </div>
   );
 }

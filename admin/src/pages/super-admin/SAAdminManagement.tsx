@@ -69,6 +69,7 @@ export function SAAdminManagement() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -99,14 +100,18 @@ export function SAAdminManagement() {
     return pass;
   }
 
-  function openAdd() {
+  async function openAdd() {
     setEditingAdmin(null);
+    setApiError(null); // Clear any previous errors
     reset({ name: '', email: '', role: 'support', status: 'active', password: generatePassword() });
+    // Refresh roleDefs to include any newly created custom roles
+    await adminApi.roles.list().then(setRoleDefs).catch(() => {});
     setModalOpen(true);
   }
 
-  function openEdit(admin: AdminUser) {
+  async function openEdit(admin: AdminUser) {
     setEditingAdmin(admin);
+    setApiError(null); // Clear any previous errors
     reset({
       name: admin.name,
       email: admin.email,
@@ -114,25 +119,50 @@ export function SAAdminManagement() {
       status: admin.status,
       password: '',
     });
+    // Refresh roleDefs to include any newly created custom roles
+    await adminApi.roles.list().then(setRoleDefs).catch(() => {});
     setModalOpen(true);
   }
 
   async function onSubmit(values: AdminFormValues) {
-    const payload = { ...values, role: values.role as AdminRole };
-    if (editingAdmin) {
-      if (editingAdmin.role !== values.role) {
-        setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
-        return;
-      }
-      await adminApi.admins.update(editingAdmin.id, payload);
-    } else {
-      await adminApi.admins.create({
-        ...payload,
-        created_by: CURRENT_USER_ID,
-      });
+    // Clear any previous errors
+    setApiError(null);
+
+    // Resolve role_id from the roles list by matching the selected role name
+    const selectedRoleDef = roleDefs.find(r => r.name === values.role);
+    
+    // Handle undefined selectedRoleDef gracefully (sub-task 3.3)
+    if (!selectedRoleDef) {
+      setApiError('Selected role not found. Please refresh the page or select a different role.');
+      return;
     }
-    setModalOpen(false);
-    await loadAdmins();
+
+    const payload = { ...values, role: values.role as AdminRole };
+
+    try {
+      if (editingAdmin) {
+        if (editingAdmin.role !== values.role) {
+          setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
+          return;
+        }
+        await adminApi.admins.update(editingAdmin.id, {
+          ...payload,
+          role_id: selectedRoleDef.id,
+        });
+      } else {
+        await adminApi.admins.create({
+          ...payload,
+          role_id: selectedRoleDef.id,
+          created_by: CURRENT_USER_ID,
+        });
+      }
+      setModalOpen(false);
+      await loadAdmins();
+    } catch (error: any) {
+      // Catch and display actual error message from backend
+      const errorMessage = error?.message || 'Failed to save admin. Please try again.';
+      setApiError(errorMessage);
+    }
   }
 
   async function confirmAction() {
@@ -338,13 +368,21 @@ export function SAAdminManagement() {
               <h2 className="text-base font-semibold text-text-main">
                 {editingAdmin ? 'Edit Admin' : 'Add Admin'}
               </h2>
-              <Button variant="ghost" size="icon" onClick={() => setModalOpen(false)}>
+              <Button variant="ghost" size="icon" onClick={() => { setApiError(null); setModalOpen(false); }}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Modal Body */}
             <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
+              {/* Error Message Display */}
+              {apiError && (
+                <div className="bg-danger/10 border border-danger rounded-lg p-3 flex items-start gap-2">
+                  <X className="w-4 h-4 text-danger mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-danger">{apiError}</p>
+                </div>
+              )}
+
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1">
@@ -457,7 +495,7 @@ export function SAAdminManagement() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => { setApiError(null); setModalOpen(false); }}
                 >
                   Cancel
                 </Button>
