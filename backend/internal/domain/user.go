@@ -21,11 +21,12 @@ const (
 
 // User is the core identity entity for both passengers and drivers.
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"` // bcrypt hash — never serialized
-	Role      UserRole  `json:"role"`
-	Vehicle   *Vehicle  `json:"vehicle,omitempty"` // non-nil only for drivers
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID  `json:"id"`
+	Name      string     `json:"name"`
+	Email     string     `json:"email"`
+	Password  string     `json:"-"` // bcrypt hash — never serialized
+	Role      UserRole   `json:"role"`
+	RoleID    *uuid.UUID `json:"role_id,omitempty"` // links to roles table for admin users
+	Vehicle   *Vehicle   `json:"vehicle,omitempty"` // non-nil only for drivers
+	CreatedAt time.Time  `json:"created_at"`
 }

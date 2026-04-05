@@ -20,6 +20,7 @@ type adminUseCase struct {
 	incidentRepo domain.IncidentRepository
 	metricsRepo  domain.SystemMetricsRepository
 	auditRepo    domain.AuditRepository
+	roleRepo     domain.RoleRepository
 }
 
 func NewAdminUseCase(
@@ -29,6 +30,7 @@ func NewAdminUseCase(
 	incidentRepo domain.IncidentRepository,
 	metricsRepo domain.SystemMetricsRepository,
 	auditRepo domain.AuditRepository,
+	roleRepo domain.RoleRepository,
 ) domain.AdminUseCase {
 	return &adminUseCase{
 		adminRepo:    adminRepo,
@@ -37,6 +39,7 @@ func NewAdminUseCase(
 		incidentRepo: incidentRepo,
 		metricsRepo:  metricsRepo,
 		auditRepo:    auditRepo,
+		roleRepo:     roleRepo,
 	}
 }
 
@@ -48,10 +51,37 @@ func (uc *adminUseCase) ListAdmins(ctx context.Context) ([]*domain.User, error) 
 	return uc.adminRepo.GetAdmins(ctx)
 }
 
-func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role domain.UserRole) (*domain.User, error) {
-	// 1. Business Rule: Only specific roles allowed
-	if role != domain.RoleAdmin && role != domain.RoleSuperadmin && role != domain.RoleOperations && role != domain.RoleFinance && role != domain.RoleSupport {
-		return nil, errors.New("invalid admin role")
+// roleNameToEnum maps a roles-table name to the closest UserRole ENUM value.
+// Custom role names that don't match any known ENUM fall back to "admin".
+func roleNameToEnum(name string) domain.UserRole {
+	switch name {
+	case "super_admin", "superadmin":
+		return domain.RoleSuperadmin
+	case "operations":
+		return domain.RoleOperations
+	case "finance":
+		return domain.RoleFinance
+	case "support":
+		return domain.RoleSupport
+	default:
+		return domain.RoleAdmin // generic fallback for custom roles
+	}
+}
+
+func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role domain.UserRole, roleID *uuid.UUID) (*domain.User, error) {
+	// 1. Resolve role: if role_id is provided, look up the role and derive the ENUM value.
+	if roleID != nil {
+		r, err := uc.roleRepo.GetRoleByID(ctx, *roleID)
+		if err != nil {
+			return nil, errors.New("invalid role_id: role not found")
+		}
+		role = roleNameToEnum(r.Name)
+	} else {
+		// Validate the bare role ENUM value when no role_id is given.
+		if role != domain.RoleAdmin && role != domain.RoleSuperadmin &&
+			role != domain.RoleOperations && role != domain.RoleFinance && role != domain.RoleSupport {
+			return nil, errors.New("invalid admin role")
+		}
 	}
 
 	// 2. Check if email exists
@@ -74,6 +104,7 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 		Email:     email,
 		Password:  string(hash),
 		Role:      role,
+		RoleID:    roleID,
 		CreatedAt: time.Now(),
 	}
 
@@ -90,7 +121,7 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 		ResourceType: "admin_user",
 		ResourceID:   user.ID.String(),
 		AfterState:   after,
-		IPAddress:    "internal", // This should ideally come from the request context
+		IPAddress:    "internal",
 	})
 
 	return user, nil

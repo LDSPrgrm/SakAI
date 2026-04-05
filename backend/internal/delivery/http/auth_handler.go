@@ -35,7 +35,7 @@ func (h *AuthHandler) CreateAdmin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
 		return
 	}
-	out, err := h.uc.Register(c.Request.Context(), req.Name, req.Email, req.Password, req.Role, nil)
+	out, err := h.uc.Register(c.Request.Context(), req.Name, req.Email, req.Password, domain.UserRole(req.Role), nil)
 	if err != nil {
 		respondError(c, err)
 		return

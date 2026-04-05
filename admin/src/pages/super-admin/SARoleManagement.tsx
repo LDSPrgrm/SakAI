@@ -1,6 +1,3 @@
-//TODO: FIX ADDING ROLES
-
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -225,13 +222,13 @@ export function SARoleManagement() {
     setPermGrid(fromPermissions(role.permissions));
   }
 
-  // ── Form submit — mirrors onSubmit in SAAdminManagement ───────────────────
+  // ── Form submit ───────────────────────────────────────────────────────────
 
   async function onSubmit(values: RoleFormValues) {
     const permissions = toPermissions(permGrid);
     if (permissions.length === 0) {
       setPermError('At least one permission must be enabled.');
-      throw new Error('no permissions'); // prevents RHF from treating it as success
+      return; // early return — keeps modal open so user sees the error
     }
     setPermError('');
 
@@ -242,13 +239,14 @@ export function SARoleManagement() {
     };
 
     if (editingRole) {
-      await adminApi.roles.update(editingRole.id, body);
+      const updated = await adminApi.roles.update(editingRole.id, body);
+      setRoles((prev) => prev.map((r) => r.id === editingRole.id ? updated : r));
     } else {
-      await adminApi.roles.create(body);
+      const created = await adminApi.roles.create(body);
+      setRoles((prev) => [created, ...prev]);
     }
 
     setModalOpen(false);
-    await loadRoles();
   }
 
   // ── Permission grid handlers ───────────────────────────────────────────────
@@ -289,14 +287,16 @@ export function SARoleManagement() {
   // ── Duplicate / delete ────────────────────────────────────────────────────
 
   async function handleDuplicate(role: AdminRoleDefinition) {
-    await adminApi.roles.duplicate(role.id);
-    await loadRoles();
+    const copy = await adminApi.roles.duplicate(role.id);
+    setRoles((prev) => [...prev, copy]);
   }
 
   async function handleDelete() {
     if (!deleteConfirm.role) return;
-    await adminApi.roles.delete(deleteConfirm.role.id);
-    await loadRoles();
+    const id = deleteConfirm.role.id;
+    await adminApi.roles.delete(id);
+    setRoles((prev) => prev.filter((r) => r.id !== id));
+    setDeleteConfirm({ open: false, role: null });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
