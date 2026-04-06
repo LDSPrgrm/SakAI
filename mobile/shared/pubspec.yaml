@@ -18,8 +18,12 @@ dependencies:
   geocoding: ^4.0.0
   shared_preferences: ^2.5.5
   flutter_riverpod: ^3.3.1
+<<<<<<< HEAD
   flutter_secure_storage: ^9.2.2
   flutter_dotenv: 6.0.0
+=======
+  google_fonts: ^8.0.2
+>>>>>>> f6141b1 (merge conflict)
 
 dev_dependencies:
   flutter_test:
