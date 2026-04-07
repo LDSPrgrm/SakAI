@@ -95,7 +95,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./backend          # Dockerfile lives here
+          context: .                    # repo root — gives access to backend/ AND migrations/
           file: ./backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
