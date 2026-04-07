@@ -16,11 +16,14 @@ type RegisterRequest struct {
 }
 
 // CreateAdminRequest is the body for POST /admin/users.
+// Either role_id (UUID from the roles table) or role (ENUM string) must be provided.
+// When role_id is given, the ENUM role value is derived server-side.
 type CreateAdminRequest struct {
-	Name     string          `json:"name" binding:"required,min=2,max=100"`
-	Email    string          `json:"email" binding:"required,email"`
-	Password string          `json:"password" binding:"required,min=8"`
-	Role     domain.UserRole `json:"role" binding:"required,oneof=admin superadmin operations finance support"`
+	Name     string `json:"name"     binding:"required,min=2,max=100"`
+	Email    string `json:"email"    binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	Role     string `json:"role"`    // optional when role_id is provided
+	RoleID   string `json:"role_id"` // UUID of a role from the roles table
 }
 
 // VehicleInput is the nested vehicle block in RegisterRequest.
@@ -64,6 +67,7 @@ type UserResponse struct {
 	Name      string          `json:"name"`
 	Email     string          `json:"email"`
 	Role      domain.UserRole `json:"role"`
+	RoleID    *string         `json:"role_id,omitempty"`
 	CreatedAt time.Time       `json:"created_at"`
 }
 
@@ -73,23 +77,24 @@ func NewAuthResponse(out *domain.AuthOutput) AuthResponse {
 		AccessToken:          out.AccessToken,
 		RefreshToken:         out.RefreshToken,
 		AccessTokenExpiresAt: out.AccessTokenExpiresAt,
-		User: &UserResponse{
-			ID:        out.User.ID.String(),
-			Name:      out.User.Name,
-			Email:     out.User.Email,
-			Role:      out.User.Role,
-			CreatedAt: out.User.CreatedAt,
-		},
+		User:                 ptr(NewUserResponse(out.User)),
 	}
 }
 
 // NewUserResponse maps a domain.User into the public user shape.
 func NewUserResponse(u *domain.User) UserResponse {
-	return UserResponse{
+	r := UserResponse{
 		ID:        u.ID.String(),
 		Name:      u.Name,
 		Email:     u.Email,
 		Role:      u.Role,
 		CreatedAt: u.CreatedAt,
 	}
+	if u.RoleID != nil {
+		s := u.RoleID.String()
+		r.RoleID = &s
+	}
+	return r
 }
+
+func ptr[T any](v T) *T { return &v }

@@ -21,11 +21,11 @@ func NewAdminRepo(db *pgxpool.Pool) domain.AdminRepository {
 
 func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	const q = `
-		SELECT id, name, email, role, created_at 
-		FROM users 
+		SELECT id, name, email, role, role_id, created_at
+		FROM users
 		WHERE role IN ('admin', 'superadmin', 'operations', 'finance', 'support')
 		ORDER BY created_at DESC`
-	
+
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	var admins []*domain.User
 	for rows.Next() {
 		u := &domain.User{}
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.RoleID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		admins = append(admins, u)

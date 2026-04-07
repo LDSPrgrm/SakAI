@@ -315,7 +315,7 @@ type PaginationMeta struct {
 type AdminUseCase interface {
 	GetDashboard(ctx context.Context) (*DashboardMetrics, error)
 	ListAdmins(ctx context.Context) ([]*User, error)
-	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole) (*User, error)
+	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole, roleID *uuid.UUID) (*User, error)
 	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
 	DeactivateAdmin(ctx context.Context, actorID, targetID uuid.UUID) error
 	GetAdminActivity(ctx context.Context, adminID uuid.UUID) ([]*AuditLogEntry, error)
