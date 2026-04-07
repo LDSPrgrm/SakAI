@@ -1,0 +1,153 @@
+name: Backend – Docker Hub CD
+
+# ─── Triggers ─────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main          # every merge to main → push a "latest" image
+    tags:
+      - "v*.*.*"      # e.g. v1.2.3  → push a versioned image
+    paths:
+      - "backend/**"
+      - ".github/workflows/cd-backend-dockerhub.yml"
+
+  # Allow ad-hoc runs from the Actions tab (e.g., hotfixes)
+  workflow_dispatch:
+
+# ─── Cancel superseded runs on the same branch / tag ──────────────────────────
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read   # only read the repo; nothing else needed for Docker Hub push
+
+# ─── Shared environment ───────────────────────────────────────────────────────
+env:
+  # Your Docker Hub namespace + image name, e.g. "sakai/backend"
+  IMAGE_NAME: ${{ vars.DOCKERHUB_NAMESPACE }}/backend
+
+jobs:
+  # ── 1. Build & push ──────────────────────────────────────────────────────────
+  build-push:
+    name: Build & Push to Docker Hub
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # 1a. Checkout full history so git describe works if you use it in ldflags
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1b. QEMU lets us cross-build arm64 images on x86 runners (optional but cheap)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 1c. BuildKit multi-platform builder
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1d. Authenticate to Docker Hub using secrets stored in the repo
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 1d-ii. Verify the resolved image name — mismatch between
+      #         DOCKERHUB_USERNAME and DOCKERHUB_NAMESPACE is the most common
+      #         cause of "push access denied" errors.
+      - name: "❶ Verify image name (debug)"
+        run: |
+          echo "Resolved IMAGE_NAME : ${{ env.IMAGE_NAME }}"
+          echo "DOCKERHUB_USERNAME  : ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "--- The namespace (first segment) MUST match DOCKERHUB_USERNAME"
+          echo "--- unless you are pushing to a Docker Hub Organisation."
+          NAMESPACE=$(echo "${{ env.IMAGE_NAME }}" | cut -d'/' -f1)
+          if [ "$NAMESPACE" != "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "::warning::Namespace '$NAMESPACE' does not match DOCKERHUB_USERNAME '${{ secrets.DOCKERHUB_USERNAME }}'. Push will fail unless this is a shared org."
+          fi
+
+      # 1e. Compute image tags & OCI labels automatically from Git metadata
+      #     Examples of tags produced:
+      #       push to main     → latest, main-<sha>
+      #       push v1.2.3 tag  → 1.2.3, 1.2, 1, latest
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          labels: |
+            org.opencontainers.image.title=SakAI Backend
+            org.opencontainers.image.description=Go API server for SakAI
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      # 1f. Build the image and push it (layer cache stored in GitHub Actions cache)
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .                    # repo root — gives access to backend/ AND migrations/
+          file: ./backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ github.workflow }}
+          # scope isolates the cache key so it does not collide with other images
+          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+
+      # 1g. Print image digest so it can be referenced in downstream deploy jobs
+      - name: Image digest
+        run: echo "Image digest → ${{ steps.build-push.outputs.digest }}"
+
+  # ── 2. (Optional) Update Docker Hub description from README ──────────────────
+  update-description:
+    name: Sync README → Docker Hub description
+    runs-on: ubuntu-latest
+    needs: build-push
+    # Only run on main branch, not on every tag push
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        continue-on-error: true   # never block the push because of a missing README
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE_NAME }}
+          readme-filepath: ./backend/README.md
+          short-description: "SakAI Go API server"
+
+  # ── 3. Trigger Render redeploy ────────────────────────────────────────────────
+  render-deploy:
+    name: Trigger Render Deploy
+    runs-on: ubuntu-latest
+    needs: build-push
+    # Fire on every successful image push (main branch and release tags)
+    if: ${{ always() && needs.build-push.result == 'success' }}
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          echo "Triggering Render deploy..."
+          HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --max-time 30 \
+            -X POST \
+            "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          echo "Render API responded with HTTP $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Render deploy hook failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
+          echo "Render deploy triggered successfully."

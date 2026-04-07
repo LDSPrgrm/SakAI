@@ -35,14 +35,17 @@ class HomeState {
     String? errorMessage,
     RideEntity? createdRide,
     bool clearError = false,
+    bool clearDestination = false,
+    bool clearPickup = false,
+    bool clearCreatedRide = false,
   }) {
     return HomeState(
       status: status ?? this.status,
       currentLatLng: currentLatLng ?? this.currentLatLng,
-      pickup: pickup ?? this.pickup,
-      destination: destination ?? this.destination,
+      pickup: clearPickup ? null : (pickup ?? this.pickup),
+      destination: clearDestination ? null : (destination ?? this.destination),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      createdRide: createdRide ?? this.createdRide,
+      createdRide: clearCreatedRide ? null : (createdRide ?? this.createdRide),
     );
   }
 
@@ -143,8 +146,7 @@ class HomeNotifier extends Notifier<HomeState> {
   void clearDestination() {
     state = state.copyWith(
       status: HomeStatus.idle,
-      destination:
-          null, // Cannot simply set to null with copyWith if it ignores nulls, wait let's redefine copyWith or just recreate state.
+      clearDestination: true,
     );
   }
 

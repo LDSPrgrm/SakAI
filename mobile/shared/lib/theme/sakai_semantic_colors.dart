@@ -14,6 +14,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     required this.darkBackground,
     required this.darkSurface,
     required this.darkBorder,
+    required this.warning,
   });
 
   static SakaiSemanticColors of(BuildContext context) {
@@ -31,6 +32,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
   final Color darkBackground;
   final Color darkSurface;
   final Color darkBorder;
+  final Color warning;
 
   @override
   SakaiSemanticColors copyWith({
@@ -40,6 +42,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     Color? darkBackground,
     Color? darkSurface,
     Color? darkBorder,
+    Color? warning,
   }) {
     return SakaiSemanticColors(
       success: success ?? this.success,
@@ -48,6 +51,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       darkBackground: darkBackground ?? this.darkBackground,
       darkSurface: darkSurface ?? this.darkSurface,
       darkBorder: darkBorder ?? this.darkBorder,
+      warning: warning ?? this.warning,
     );
   }
 
@@ -65,6 +69,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
           Color.lerp(darkBackground, other.darkBackground, t) ?? darkBackground,
       darkSurface: Color.lerp(darkSurface, other.darkSurface, t) ?? darkSurface,
       darkBorder: Color.lerp(darkBorder, other.darkBorder, t) ?? darkBorder,
+      warning: Color.lerp(warning, other.warning, t) ?? warning,
     );
   }
 }

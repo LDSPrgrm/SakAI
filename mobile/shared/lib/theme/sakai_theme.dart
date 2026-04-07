@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'sakai_semantic_colors.dart';
 import 'sakai_theme_config.dart';
@@ -25,6 +26,7 @@ abstract final class SakaiTheme {
 
     final success = config.successColor ?? scheme.secondary;
     final danger = config.dangerColor ?? scheme.error;
+    final warning = config.warningColor ?? const Color(0xFFFBBC04);
     final accentBlue = config.secondarySeed ?? scheme.secondary;
 
     // Only apply these overrides for the dark variant; for light we keep the
@@ -47,6 +49,7 @@ abstract final class SakaiTheme {
       success: success,
       danger: danger,
       accentBlue: accentBlue,
+      warning: warning,
       darkBackground: darkBackground,
       darkSurface: darkSurface,
       darkBorder: darkBorder,
@@ -59,6 +62,7 @@ abstract final class SakaiTheme {
     return ThemeData(
       useMaterial3: config.useMaterial3,
       colorScheme: schemeWithOverrides,
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(),
       brightness: brightness,
       extensions: <ThemeExtension<dynamic>>[tokens, semantic],
       scaffoldBackgroundColor: scaffoldBackgroundColor,
@@ -83,7 +87,7 @@ abstract final class SakaiTheme {
             vertical: tokens.spaceMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            borderRadius: BorderRadius.circular(tokens.radiusLg), // Or radiusXl if we want pills, but radiusLg (20px) is good. Mockups use 1.5rem (24px) for most buttons.
           ),
         ),
       ),

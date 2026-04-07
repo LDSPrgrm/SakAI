@@ -15,6 +15,7 @@ class SakaiThemeConfig {
     this.useMaterial3 = true,
     this.successColor,
     this.dangerColor,
+    this.warningColor,
     this.darkBackgroundColor,
     this.darkSurfaceColor,
     this.darkBorderColor,
@@ -22,7 +23,7 @@ class SakaiThemeConfig {
 
   /// Passenger app default: cool, trust-forward palette.
   factory SakaiThemeConfig.passenger() => SakaiThemeConfig(
-    primarySeed: const Color(0xFF00DC82),
+    primarySeed: const Color(0xFF1A73E8),
     secondarySeed: const Color(0xFF0369A1),
     tokens: SakaiDesignTokens.defaults,
   );
@@ -36,11 +37,11 @@ class SakaiThemeConfig {
     // - danger:     #EA4335
     // - dark bg:    #0D1117
     // - dark surface:#161B22
-    // - dark border:#30363d
-    primarySeed: const Color(0xFF00DC82),
+    primarySeed: const Color(0xFF1A73E8),
     secondarySeed: const Color(0xFF1A73E8),
     successColor: const Color(0xFF34A853),
     dangerColor: const Color(0xFFEA4335),
+    warningColor: const Color(0xFFFBBC04),
     darkBackgroundColor: const Color(0xFF0D1117),
     darkSurfaceColor: const Color(0xFF161B22),
     darkBorderColor: const Color(0xFF30363D),
@@ -53,6 +54,7 @@ class SakaiThemeConfig {
   final bool useMaterial3;
   final Color? successColor;
   final Color? dangerColor;
+  final Color? warningColor;
   final Color? darkBackgroundColor;
   final Color? darkSurfaceColor;
   final Color? darkBorderColor;
@@ -64,6 +66,7 @@ class SakaiThemeConfig {
     bool? useMaterial3,
     Color? successColor,
     Color? dangerColor,
+    Color? warningColor,
     Color? darkBackgroundColor,
     Color? darkSurfaceColor,
     Color? darkBorderColor,
@@ -75,6 +78,7 @@ class SakaiThemeConfig {
       useMaterial3: useMaterial3 ?? this.useMaterial3,
       successColor: successColor ?? this.successColor,
       dangerColor: dangerColor ?? this.dangerColor,
+      warningColor: warningColor ?? this.warningColor,
       darkBackgroundColor: darkBackgroundColor ?? this.darkBackgroundColor,
       darkSurfaceColor: darkSurfaceColor ?? this.darkSurfaceColor,
       darkBorderColor: darkBorderColor ?? this.darkBorderColor,
