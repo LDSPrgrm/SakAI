@@ -389,24 +389,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           children: [
             CircleAvatar(
               backgroundColor: scheme.surface.withAlpha(235),
-<<<<<<< HEAD
-              child: IconButton(
-                icon: Icon(Icons.menu, color: scheme.onSurface),
-                onPressed: () {},
-              ),
-            ),
-            CircleAvatar(
-              backgroundColor: scheme.surface.withAlpha(235),
-              child: IconButton(
-                icon: Icon(Icons.logout, color: scheme.onSurface),
-                onPressed: _logout,
-=======
               child: Builder(
                 builder: (context) => IconButton(
                   icon: Icon(Icons.menu, color: scheme.onSurface),
                   onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
->>>>>>> f6141b1 (merge conflict)
               ),
             ),
           ],
