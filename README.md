@@ -157,6 +157,16 @@ run-mobile.bat passenger
 run-mobile.bat driver
 ```
 
+> **`--clean` flag (optional):** Pass `--clean` to run `flutter clean` on all packages before installing dependencies. Use this when you encounter stale build artifacts, dependency conflicts, or after a major Flutter/Dart SDK upgrade. Normal day-to-day runs do **not** need it.
+>
+> ```bash
+> # macOS / Linux
+> ./run-mobile.sh passenger --clean
+>
+> # Windows
+> run-mobile.bat passenger --clean
+> ```
+
 Alternatively, you can run manually:
 ```bash
 cd mobile/passenger # or mobile/driver

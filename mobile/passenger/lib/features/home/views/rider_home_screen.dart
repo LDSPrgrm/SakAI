@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,11 @@ import '../../../app/routes.dart';
 import 'activity_screen.dart';
 
 import 'destination_sheet.dart';
+import '../repositories/geocoding_service.dart';
+import '../repositories/service_area_repository.dart';
+import '../repositories/driver_repository.dart';
+import '../models/service_area.dart';
+import '../models/nearby_driver.dart';
 import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
 import '../../../app/providers.dart';
@@ -24,23 +30,155 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // Navigation State
   int _currentIndex = 0;
 
+  // Sheet & Search State
+  final _sheetController = DraggableScrollableController();
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
+  bool _isSearching = false;
+  bool _isLoadingSuggestions = false;
+  List<String> _suggestions = [];
+  List<NearbyDriver> _nearbyDrivers = [];
+  Timer? _debounce;
+  Timer? _driverTimer;
+  final _sheetKey = GlobalKey();
+
   // Map & Ride Logic State
   GoogleMapController? _mapController;
+  List<ServiceArea> _serviceAreas = [];
   static const _defaultLatLng = LatLng(14.5995, 120.9842); // Manila fallback
 
   @override
   void initState() {
     super.initState();
+    _searchFocus.addListener(_onSearchFocusChange);
     // Schedule initLocation after first build to read provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeNotifierProvider.notifier).initLocation();
+      _fetchServiceAreas();
+      _startDriverPolling();
     });
+  }
+
+  void _startDriverPolling() {
+    _driverTimer?.cancel();
+    _driverTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _fetchNearbyDrivers();
+    });
+    // Immediate fetch
+    _fetchNearbyDrivers();
+  }
+
+  Future<void> _fetchNearbyDrivers() async {
+    final currentPos = ref.read(homeNotifierProvider).currentLatLng ?? 
+                      (_serviceAreas.isNotEmpty ? _serviceAreas.first.center : null);
+    if (currentPos == null) return;
+
+    final drivers = await DriverRepository().fetchNearbyDrivers(currentPos);
+    if (mounted) {
+      setState(() => _nearbyDrivers = drivers);
+    }
+  }
+
+  Future<void> _fetchServiceAreas() async {
+    final areas = await ServiceAreaRepository().fetchServiceAreas();
+    if (mounted) {
+      setState(() => _serviceAreas = areas);
+      
+      // If user location is not yet available, center on the first service area
+      final currentPos = ref.read(homeNotifierProvider).currentLatLng;
+      if (currentPos == null && areas.isNotEmpty && _mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(areas.first.center, 12),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _mapController?.dispose();
+    _sheetController.dispose();
+    _searchController.dispose();
+    _searchFocus.removeListener(_onSearchFocusChange);
+    _searchFocus.dispose();
+    _debounce?.cancel();
+    _driverTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String val) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      if (val.trim().isEmpty) {
+        setState(() {
+          _suggestions = [];
+          _isLoadingSuggestions = false;
+        });
+        return;
+      }
+      
+      setState(() => _isLoadingSuggestions = true);
+      try {
+        final currentPos = ref.read(homeNotifierProvider).currentLatLng;
+        final bias = _getNearestAreaBias(currentPos);
+        
+        final results = await GeocodingService().getSuggestions(
+          val,
+          location: bias != null ? '${bias.center.latitude},${bias.center.longitude}' : null,
+          radius: bias?.radius,
+          strictBounds: bias != null && _isInsideArea(currentPos, bias),
+        );
+        if (mounted) {
+          setState(() {
+            _suggestions = results;
+            _isLoadingSuggestions = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _isLoadingSuggestions = false);
+        }
+      }
+    });
+  }
+
+  ServiceArea? _getNearestAreaBias(LatLng? currentLoc) {
+    if (_serviceAreas.isEmpty) return null;
+    if (currentLoc == null) return _serviceAreas.first;
+
+    ServiceArea? nearest;
+    double minDistance = double.infinity;
+
+    for (final area in _serviceAreas) {
+      final distance = _calculateDistance(currentLoc, area.center);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = area;
+      }
+    }
+    return nearest;
+  }
+
+  bool _isInsideArea(LatLng? loc, ServiceArea area) {
+    if (loc == null) return false;
+    return _calculateDistance(loc, area.center) <= area.radius;
+  }
+
+  double _calculateDistance(LatLng p1, LatLng p2) {
+    // Basic approximate distance for biasing logic
+    // In a real app, use a proper Vincenty/Haversine or the 'geolocator' package helper
+    return (p1.latitude - p2.latitude).abs() + (p1.longitude - p2.longitude).abs();
+  }
+
+  void _onSearchFocusChange() {
+    if (_searchFocus.hasFocus && !_isSearching) {
+      setState(() => _isSearching = true);
+      _sheetController.animateTo(
+        0.9,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _listenToState() {
@@ -148,7 +286,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           ? AppBar(title: Text(_getTitle(_currentIndex)))
           : null, // Map handles its own top bar
       body: body,
-      bottomNavigationBar: _buildBottomNav(scheme),
+      drawer: _buildDrawer(context, scheme),
     );
   }
 
@@ -178,7 +316,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               child: Icon(Icons.my_location, color: scheme.onSurface),
             ),
           ),
-        _buildDraggableSheet(context, scheme),
+        Positioned.fill(
+          child: _buildDraggableSheet(context, scheme),
+        ),
         if (ref.watch(homeNotifierProvider).status == HomeStatus.locating)
           const Positioned.fill(
             child: ColoredBox(
@@ -215,6 +355,19 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             BitmapDescriptor.hueOrange,
           ),
         ),
+      ..._nearbyDrivers.map((d) => Marker(
+            markerId: MarkerId('driver_${d.id}'),
+            position: d.location,
+            rotation: d.heading,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              d.vehicleType == VehicleType.car
+                  ? BitmapDescriptor.hueBlue
+                  : d.vehicleType == VehicleType.motorcycle
+                      ? BitmapDescriptor.hueYellow
+                      : BitmapDescriptor.hueGreen,
+            ),
+            infoWindow: InfoWindow(title: d.name),
+          )),
     };
 
     return GoogleMap(
@@ -236,16 +389,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           children: [
             CircleAvatar(
               backgroundColor: scheme.surface.withAlpha(235),
-              child: IconButton(
-                icon: Icon(Icons.menu, color: scheme.onSurface),
-                onPressed: () {},
-              ),
-            ),
-            CircleAvatar(
-              backgroundColor: scheme.surface.withAlpha(235),
-              child: IconButton(
-                icon: Icon(Icons.logout, color: scheme.onSurface),
-                onPressed: _logout,
+              child: Builder(
+                builder: (context) => IconButton(
+                  icon: Icon(Icons.menu, color: scheme.onSurface),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
               ),
             ),
           ],
@@ -256,31 +404,58 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
   // --- Navigation & Bottom Sheets ---
 
-  Widget _buildBottomNav(ColorScheme scheme) {
-    return NavigationBar(
-      selectedIndex: _currentIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.history_outlined),
-          selectedIcon: Icon(Icons.history),
-          label: 'Activity',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
+  Widget _buildDrawer(BuildContext context, ColorScheme scheme) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: scheme.primary,
+            ),
+            child: Text(
+              'SakAI Menu',
+              style: TextStyle(
+                color: scheme.onPrimary,
+                fontSize: 24,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: Icon(_currentIndex == 0 ? Icons.home : Icons.home_outlined),
+            title: const Text('Home'),
+            selected: _currentIndex == 0,
+            onTap: () {
+              setState(() => _currentIndex = 0);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Icon(_currentIndex == 1 ? Icons.history : Icons.history_outlined),
+            title: const Text('Activity'),
+            selected: _currentIndex == 1,
+            onTap: () {
+              setState(() => _currentIndex = 1);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Icon(_currentIndex == 2 ? Icons.person : Icons.person_outline),
+            title: const Text('Profile'),
+            selected: _currentIndex == 2,
+            onTap: () {
+              setState(() => _currentIndex = 2);
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Log Out'),
+            onTap: () => context.go(Routes.login),
+          ),
+        ],
+      ),
     );
   }
 
@@ -289,11 +464,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     final isIdle = ref.watch(homeNotifierProvider).status == HomeStatus.idle;
 
     return DraggableScrollableSheet(
-      initialChildSize: isIdle ? 0.22 : 0.45,
+      key: _sheetKey,
+      controller: _sheetController,
+      initialChildSize: isIdle ? (_currentIndex == 0 ? 0.35 : 0.22) : 0.45,
       minChildSize: 0.22,
       maxChildSize: 0.9,
       snap: true,
-      snapSizes: const [0.22, 0.45, 0.9],
+      snapSizes: const [0.22, 0.35, 0.45, 0.9],
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -347,40 +524,124 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     ColorScheme scheme,
     SakaiDesignTokens tokens,
   ) {
+    if (_isSearching) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSearchField(context, scheme, tokens),
+          if (_isLoadingSuggestions)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: LinearProgressIndicator(minHeight: 2),
+            )
+          else
+            const SizedBox(height: 16),
+            
+          if (_suggestions.isNotEmpty) ...[
+            Text(
+              'Suggestions',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Real Suggestions List
+            ..._suggestions.map((s) => ListTile(
+              leading: Icon(Icons.place_outlined, size: 20, color: scheme.outline),
+              title: Text(s, style: const TextStyle(fontSize: 14)),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              onTap: () => _handleSuggestionTapped(s),
+            )),
+          ] else if (_searchController.text.isEmpty) ...[
+            // Show shortcuts even in search mode if query is empty
+            const SizedBox(height: 16),
+            Text(
+              'Recent Destinations',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildRecentItem(
+              Icons.home,
+              'Home',
+              'San Lorenzo, Makati',
+              scheme,
+              tokens,
+              onTap: () => _handleSuggestionTapped('San Lorenzo, Makati'),
+            ),
+            _buildRecentItem(
+              Icons.work,
+              'Work',
+              'Ayala Avenue, Makati',
+              scheme,
+              tokens,
+              onTap: () => _handleSuggestionTapped('Ayala Avenue, Makati'),
+            ),
+          ] else if (!_isLoadingSuggestions) ...[
+            // No results found
+            const SizedBox(height: 32),
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.search_off, size: 48, color: scheme.outlineVariant),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No results found',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Try a different or more specific address',
+                    style: TextStyle(color: scheme.outline, fontSize: 12),
+                  ),
+                  const SizedBox(height: 24),
+                  SakaiPrimaryButton(
+                    label: 'Confirm "${_searchController.text}"',
+                    onPressed: () => _handleSuggestionTapped(_searchController.text),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: () {
+              setState(() => _isSearching = false);
+              _searchFocus.unfocus();
+              _searchController.clear();
+              _sheetController.animateTo(
+                0.35,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            },
+            icon: const Icon(Icons.close),
+            label: const Text('Cancel Search'),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
-        InkWell(
-          onTap: () => _openLocationSearchSheet(LocationSearchMode.destination),
-          child: Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: scheme.primary),
-                const SizedBox(width: 12),
-                Text(
-                  'Saan kayo pupunta?',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+        // Recent Destinations Mockup on TOP
+        Text(
+          'Shortcuts',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 24),
-        // Recent Destinations Mockup
+        const SizedBox(height: 12),
         _buildRecentItem(
           Icons.home,
           'Home',
           'San Lorenzo, Makati',
           scheme,
           tokens,
+          onTap: () => _handleSuggestionTapped('San Lorenzo, Makati'),
         ),
         _buildRecentItem(
           Icons.work,
@@ -388,8 +649,61 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           'Ayala Avenue, Makati',
           scheme,
           tokens,
+          onTap: () => _handleSuggestionTapped('Ayala Avenue, Makati'),
         ),
+        const Divider(height: 32),
+        // Search field at the BOTTOM
+        _buildSearchField(context, scheme, tokens),
+        const SizedBox(height: 48), // Padding at bottom for scrollability
       ],
+    );
+  }
+
+  void _handleSuggestionTapped(String address) async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    setState(() {
+      _isSearching = false;
+      _suggestions = [];
+      _searchController.text = address;
+    });
+    _searchFocus.unfocus();
+
+    try {
+      final loc = await GeocodingService().geocode(address);
+      notifier.setDestination(loc);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not find that location.')),
+        );
+      }
+    }
+  }
+
+  Widget _buildSearchField(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return SakaiTextField(
+      controller: _searchController,
+      focusNode: _searchFocus,
+      label: 'Saan kayo pupunta?',
+      hint: 'Enter destination...',
+      prefixIcon: Icon(Icons.search, color: scheme.primary),
+      textInputAction: TextInputAction.search,
+      onChanged: _onSearchChanged,
+      suffixIcon: _searchController.text.isNotEmpty
+          ? IconButton(
+              icon: const Icon(Icons.clear, size: 18),
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _suggestions = [];
+                });
+              },
+            )
+          : null,
     );
   }
 
@@ -398,37 +712,42 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     String title,
     String subtitle,
     ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: scheme.surfaceContainerHighest,
-            child: Icon(icon, size: 20, color: scheme.primary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+    SakaiDesignTokens tokens, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(tokens.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16, top: 4),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: scheme.surfaceContainerHighest,
+              child: Icon(icon, size: 20, color: scheme.primary),
             ),
-          ),
-          Icon(Icons.chevron_right, color: scheme.outline),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: scheme.outline),
+          ],
+        ),
       ),
     );
   }

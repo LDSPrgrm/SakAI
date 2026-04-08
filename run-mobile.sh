@@ -1,28 +1,37 @@
 #!/usr/bin/env bash
 set -e
 
-APP=$1
+DO_CLEAN=false
+APP=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --clean) DO_CLEAN=true ;;
+        passenger|driver) APP="$arg" ;;
+        *) echo "Unknown argument: $arg" ;;
+    esac
+done
 
 if [ "$APP" != "passenger" ] && [ "$APP" != "driver" ]; then
-    echo "Usage: ./run-mobile.sh [passenger|driver]"
+    echo "Usage: ./run-mobile.sh [passenger|driver] [--clean]"
     exit 1
 fi
 
-echo "--- Cleaning and installing api_client dependencies ---"
+echo "--- Installing api_client dependencies ---"
 cd mobile/shared/lib/api_client
-flutter clean
+if [ "$DO_CLEAN" = true ]; then flutter clean; fi
 flutter pub get
 cd ../../../..
 
-echo "--- Cleaning and installing shared dependencies ---"
+echo "--- Installing shared dependencies ---"
 cd mobile/shared
-flutter clean
+if [ "$DO_CLEAN" = true ]; then flutter clean; fi
 flutter pub get
 cd ../..
 
-echo "--- Cleaning and installing $APP dependencies ---"
+echo "--- Installing $APP dependencies ---"
 cd mobile/$APP
-flutter clean
+if [ "$DO_CLEAN" = true ]; then flutter clean; fi
 flutter pub get
 
 echo "--- Running $APP app ---"

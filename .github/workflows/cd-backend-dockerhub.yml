@@ -56,6 +56,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 1d-ii. Verify the resolved image name — mismatch between
+      #         DOCKERHUB_USERNAME and DOCKERHUB_NAMESPACE is the most common
+      #         cause of "push access denied" errors.
+      - name: "❶ Verify image name (debug)"
+        run: |
+          echo "Resolved IMAGE_NAME : ${{ env.IMAGE_NAME }}"
+          echo "DOCKERHUB_USERNAME  : ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "--- The namespace (first segment) MUST match DOCKERHUB_USERNAME"
+          echo "--- unless you are pushing to a Docker Hub Organisation."
+          NAMESPACE=$(echo "${{ env.IMAGE_NAME }}" | cut -d'/' -f1)
+          if [ "$NAMESPACE" != "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "::warning::Namespace '$NAMESPACE' does not match DOCKERHUB_USERNAME '${{ secrets.DOCKERHUB_USERNAME }}'. Push will fail unless this is a shared org."
+          fi
+
       # 1e. Compute image tags & OCI labels automatically from Git metadata
       #     Examples of tags produced:
       #       push to main     → latest, main-<sha>
@@ -81,14 +95,15 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./backend          # Dockerfile lives here
+          context: .                    # repo root — gives access to backend/ AND migrations/
           file: ./backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ github.workflow }}
+          # scope isolates the cache key so it does not collide with other images
+          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
 
       # 1g. Print image digest so it can be referenced in downstream deploy jobs
       - name: Image digest
@@ -107,9 +122,32 @@ jobs:
 
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v4
+        continue-on-error: true   # never block the push because of a missing README
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.IMAGE_NAME }}
           readme-filepath: ./backend/README.md
           short-description: "SakAI Go API server"
+
+  # ── 3. Trigger Render redeploy ────────────────────────────────────────────────
+  render-deploy:
+    name: Trigger Render Deploy
+    runs-on: ubuntu-latest
+    needs: build-push
+    # Fire on every successful image push (main branch and release tags)
+    if: ${{ always() && needs.build-push.result == 'success' }}
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          echo "Triggering Render deploy..."
+          HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --max-time 30 \
+            -X POST \
+            "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          echo "Render API responded with HTTP $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Render deploy hook failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
+          echo "Render deploy triggered successfully."
