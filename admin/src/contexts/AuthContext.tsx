@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, tokenStore, UserProfile } from '@/lib/api';
-import { AdminRole, Permission, checkPermission } from '@/lib/permissions';
+import { AdminRole } from '@/lib/permissions';
+import { usePermissionsStore } from '@/hooks/usePermissions';
 
-// Admin users have role injected from the JWT or backend profile.
-// The mobile UserProfile role is 'passenger' | 'driver', so we extend here.
+// Admin users have role + role_id injected from the backend JWT payload.
 export interface AdminProfile extends Omit<UserProfile, 'role'> {
   role: AdminRole;
+  role_id?: string;
 }
 
 interface AuthContextValue {
@@ -14,28 +15,34 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  hasPermission: (permission: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// Derive admin role from backend user profile.
-// The mobile API returns role = 'passenger' | 'driver', which means this
-// admin panel is accessed by admin users. We default to 'super_admin' for now
-// until the backend ships admin-role claims in the JWT.
-function deriveAdminRole(user: UserProfile): AdminRole {
-  const roleMap: Record<string, AdminRole> = {
-    super_admin: 'super_admin',
-    operations: 'operations',
-    finance: 'finance',
-    support: 'support',
-  };
-  return roleMap[(user as unknown as Record<string, string>).role] ?? 'super_admin';
+/** Normalize the backend's role string to the frontend's AdminRole type.
+ *  The backend uses "superadmin" (no underscore); the frontend uses "super_admin". */
+function normalizeRole(raw: string): AdminRole {
+  if (raw === 'superadmin') return 'super_admin';
+  return (raw as AdminRole) ?? 'support';
+}
+
+function applyAdminProfile(raw: UserProfile): AdminProfile {
+  const r = raw as unknown as Record<string, string>;
+  const role = normalizeRole(r['role'] ?? '');
+  const role_id = r['role_id'];
+  return { ...raw, role, role_id };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AdminProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const afterAuth = (profile: AdminProfile) => {
+    setUser(profile);
+    if (profile.role_id) {
+      void usePermissionsStore.getState().loadPermissions(profile.role_id);
+    }
+  };
 
   useEffect(() => {
     const token = tokenStore.getAccess();
@@ -44,53 +51,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     api.users.me()
-      .then((profile) => setUser({ ...profile, role: deriveAdminRole(profile) }))
+      .then((profile) => afterAuth(applyAdminProfile(profile)))
       .catch(() => tokenStore.clear())
       .finally(() => setIsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email: string, password: string) => {
-    // ── MOCK BACKDOOR FOR PREVIEWING ────────────────────────────
-    // Temporary override to allow logging in with the mock admin 
-    // emails since they don't actually exist in the real backend DB.
-    const mockRoles: Record<string, AdminRole> = {
-      'maria.ops@sakai.ph': 'operations',
-      'jose.finance@sakai.ph': 'finance',
-      'ana.support@sakai.ph': 'support',
-    };
-
-    if (mockRoles[email]) {
-      tokenStore.set('mock_access', 'mock_refresh');
-      setUser({
-        id: crypto.randomUUID(),
-        name: email.split('@')[0].split('.')[0], // e.g 'maria'
-        email,
-        role: mockRoles[email],
-        created_at: new Date().toISOString(),
-      } as AdminProfile);
-      return;
-    }
-    // ────────────────────────────────────────────────────────────
-
     const res = await api.auth.login({ email, password });
     tokenStore.set(res.access_token, res.refresh_token);
-    setUser({ ...res.user, role: deriveAdminRole(res.user) });
+    afterAuth(applyAdminProfile(res.user));
   };
 
   const logout = async () => {
     const refresh = tokenStore.getRefresh();
     if (refresh) await api.auth.logout(refresh).catch(() => { });
     tokenStore.clear();
+    usePermissionsStore.getState().clear();
     setUser(null);
   };
 
-  const hasPermission = (permission: Permission): boolean => {
-    if (!user) return false;
-    return checkPermission(user.role, permission);
-  };
-
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, hasPermission }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
