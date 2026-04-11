@@ -35,9 +35,9 @@ func main() {
 	cfg := configs.Load()
 
 	// ── Migrations ────────────────────────────────────────────────────────────
-	// Runs all pending UP migrations at startup. Already-applied migrations are
-	// skipped. The path is relative to where the binary is executed.
-	if err := database.Migrate(cfg.DatabaseURL, cfg.MigrationsDir); err != nil {
+	// Runs all pending UP migrations at startup from embedded files.
+	// Already-applied migrations are skipped.
+	if err := database.Migrate(cfg.DatabaseURL); err != nil {
 		log.Fatalf("migrations: %v", err)
 	}
 	log.Println("migrations: up to date")

@@ -1,28 +1,36 @@
 package database
 
 import (
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/golang-migrate/migrate/v4"
 	// Register the pgx/v5 driver for golang-migrate.
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	// Register the "file://" source driver.
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	// source/iofs provides the go:embed compatible source driver.
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-// Migrate runs all pending UP migrations from the given directory.
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+// Migrate runs all pending UP migrations from the embedded file system.
 // It is safe to call on every startup — already-applied migrations are skipped.
 //
-// migrationsDir should be an absolute or relative path to the folder containing
-// numbered .sql files (e.g. "../../migrations" or "/app/migrations").
 // dsn must be a valid pgx DSN (postgres://...).
-func Migrate(dsn, migrationsDir string) error {
+func Migrate(dsn string) error {
+	sub, err := fs.Sub(migrationFS, "migrations")
+	if err != nil {
+		return fmt.Errorf("migrate: open embedded fs: %w", err)
+	}
+	src, err := iofs.New(sub, ".")
+	if err != nil {
+		return fmt.Errorf("migrate: open iofs source: %w", err)
+	}
 	// golang-migrate expects the pgx/v5 scheme explicitly.
-	m, err := migrate.New(
-		"file://"+migrationsDir,
-		"pgx5://"+stripScheme(dsn),
-	)
+	m, err := migrate.NewWithSourceInstance("iofs", src, "pgx5://"+stripScheme(dsn))
 	if err != nil {
 		return fmt.Errorf("migrate: init: %w", err)
 	}

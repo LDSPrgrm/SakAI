@@ -2,6 +2,7 @@ package ws
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -33,6 +34,14 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		return
 	}
 	h.hub.Register(userID, conn)
+
+	// Hardening: read limit and deadline prevent resource exhaustion.
+	conn.SetReadLimit(4096)
+	conn.SetReadDeadline(time.Now().Add(2 * h.hub.pingInterval))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(2 * h.hub.pingInterval))
+		return nil
+	})
 
 	// readPump — discard inbound frames; detect disconnection.
 	// WebSocket is server-push only in this design.
