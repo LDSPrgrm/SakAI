@@ -129,6 +129,11 @@ jobs:
           find . -name "*.g.dart" -delete
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
+      - name: Create fallback .env
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env || echo "API_URL=http://10.0.2.2:8080/api" > .env
+          fi
       - run: flutter test --coverage
 
   # ── Summary gate ──────────────────────────────────────────────────────────
