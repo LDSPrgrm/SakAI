@@ -228,21 +228,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     }
   }
 
-  Future<void> _openLocationSearchSheet(LocationSearchMode mode) async {
-    final notifier = ref.read(homeNotifierProvider.notifier);
-    await showLocationSearchSheet(
-      context,
-      mode: mode,
-      onLocationConfirmed: (loc) {
-        if (mode == LocationSearchMode.pickup) {
-          notifier.setPickup(loc);
-        } else {
-          notifier.setDestination(loc);
-        }
-      },
-    );
-  }
-
   Future<void> _logout() async {
     final tokenStorage = ref.read(tokenStorageProvider);
     final refreshToken = await tokenStorage.getRefreshToken();
