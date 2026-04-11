@@ -441,7 +441,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Log Out'),
-            onTap: () => context.go(Routes.login),
+            onTap: () {
+              Navigator.pop(context);
+              _logout();
+            },
           ),
         ],
       ),
