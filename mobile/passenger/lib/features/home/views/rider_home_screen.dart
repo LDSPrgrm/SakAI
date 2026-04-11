@@ -8,7 +8,6 @@ import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
 
-import 'destination_sheet.dart';
 import '../repositories/geocoding_service.dart';
 import '../repositories/service_area_repository.dart';
 import '../repositories/driver_repository.dart';
@@ -69,8 +68,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   }
 
   Future<void> _fetchNearbyDrivers() async {
-    final currentPos = ref.read(homeNotifierProvider).currentLatLng ?? 
-                      (_serviceAreas.isNotEmpty ? _serviceAreas.first.center : null);
+    final currentPos =
+        ref.read(homeNotifierProvider).currentLatLng ??
+        (_serviceAreas.isNotEmpty ? _serviceAreas.first.center : null);
     if (currentPos == null) return;
 
     final drivers = await DriverRepository().fetchNearbyDrivers(currentPos);
@@ -83,7 +83,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     final areas = await ServiceAreaRepository().fetchServiceAreas();
     if (mounted) {
       setState(() => _serviceAreas = areas);
-      
+
       // If user location is not yet available, center on the first service area
       final currentPos = ref.read(homeNotifierProvider).currentLatLng;
       if (currentPos == null && areas.isNotEmpty && _mapController != null) {
@@ -116,15 +116,17 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         });
         return;
       }
-      
+
       setState(() => _isLoadingSuggestions = true);
       try {
         final currentPos = ref.read(homeNotifierProvider).currentLatLng;
         final bias = _getNearestAreaBias(currentPos);
-        
+
         final results = await GeocodingService().getSuggestions(
           val,
-          location: bias != null ? '${bias.center.latitude},${bias.center.longitude}' : null,
+          location: bias != null
+              ? '${bias.center.latitude},${bias.center.longitude}'
+              : null,
           radius: bias?.radius,
           strictBounds: bias != null && _isInsideArea(currentPos, bias),
         );
@@ -167,7 +169,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   double _calculateDistance(LatLng p1, LatLng p2) {
     // Basic approximate distance for biasing logic
     // In a real app, use a proper Vincenty/Haversine or the 'geolocator' package helper
-    return (p1.latitude - p2.latitude).abs() + (p1.longitude - p2.longitude).abs();
+    return (p1.latitude - p2.latitude).abs() +
+        (p1.longitude - p2.longitude).abs();
   }
 
   void _onSearchFocusChange() {
@@ -301,9 +304,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               child: Icon(Icons.my_location, color: scheme.onSurface),
             ),
           ),
-        Positioned.fill(
-          child: _buildDraggableSheet(context, scheme),
-        ),
+        Positioned.fill(child: _buildDraggableSheet(context, scheme)),
         if (ref.watch(homeNotifierProvider).status == HomeStatus.locating)
           const Positioned.fill(
             child: ColoredBox(
@@ -340,19 +341,21 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             BitmapDescriptor.hueOrange,
           ),
         ),
-      ..._nearbyDrivers.map((d) => Marker(
-            markerId: MarkerId('driver_${d.id}'),
-            position: d.location,
-            rotation: d.heading,
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              d.vehicleType == VehicleType.car
-                  ? BitmapDescriptor.hueBlue
-                  : d.vehicleType == VehicleType.motorcycle
-                      ? BitmapDescriptor.hueYellow
-                      : BitmapDescriptor.hueGreen,
-            ),
-            infoWindow: InfoWindow(title: d.name),
-          )),
+      ..._nearbyDrivers.map(
+        (d) => Marker(
+          markerId: MarkerId('driver_${d.id}'),
+          position: d.location,
+          rotation: d.heading,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            d.vehicleType == VehicleType.car
+                ? BitmapDescriptor.hueBlue
+                : d.vehicleType == VehicleType.motorcycle
+                ? BitmapDescriptor.hueYellow
+                : BitmapDescriptor.hueGreen,
+          ),
+          infoWindow: InfoWindow(title: d.name),
+        ),
+      ),
     };
 
     return GoogleMap(
@@ -395,19 +398,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: scheme.primary,
-            ),
+            decoration: BoxDecoration(color: scheme.primary),
             child: Text(
               'SakAI Menu',
-              style: TextStyle(
-                color: scheme.onPrimary,
-                fontSize: 24,
-              ),
+              style: TextStyle(color: scheme.onPrimary, fontSize: 24),
             ),
           ),
           ListTile(
-            leading: Icon(_currentIndex == 0 ? Icons.home : Icons.home_outlined),
+            leading: Icon(
+              _currentIndex == 0 ? Icons.home : Icons.home_outlined,
+            ),
             title: const Text('Home'),
             selected: _currentIndex == 0,
             onTap: () {
@@ -416,7 +416,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             },
           ),
           ListTile(
-            leading: Icon(_currentIndex == 1 ? Icons.history : Icons.history_outlined),
+            leading: Icon(
+              _currentIndex == 1 ? Icons.history : Icons.history_outlined,
+            ),
             title: const Text('Activity'),
             selected: _currentIndex == 1,
             onTap: () {
@@ -425,7 +427,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             },
           ),
           ListTile(
-            leading: Icon(_currentIndex == 2 ? Icons.person : Icons.person_outline),
+            leading: Icon(
+              _currentIndex == 2 ? Icons.person : Icons.person_outline,
+            ),
             title: const Text('Profile'),
             selected: _currentIndex == 2,
             onTap: () {
@@ -521,31 +525,37 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             )
           else
             const SizedBox(height: 16),
-            
+
           if (_suggestions.isNotEmpty) ...[
             Text(
               'Suggestions',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             // Real Suggestions List
-            ..._suggestions.map((s) => ListTile(
-              leading: Icon(Icons.place_outlined, size: 20, color: scheme.outline),
-              title: Text(s, style: const TextStyle(fontSize: 14)),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              onTap: () => _handleSuggestionTapped(s),
-            )),
+            ..._suggestions.map(
+              (s) => ListTile(
+                leading: Icon(
+                  Icons.place_outlined,
+                  size: 20,
+                  color: scheme.outline,
+                ),
+                title: Text(s, style: const TextStyle(fontSize: 14)),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                onTap: () => _handleSuggestionTapped(s),
+              ),
+            ),
           ] else if (_searchController.text.isEmpty) ...[
             // Show shortcuts even in search mode if query is empty
             const SizedBox(height: 16),
             Text(
               'Recent Destinations',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             _buildRecentItem(
@@ -570,7 +580,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             Center(
               child: Column(
                 children: [
-                  Icon(Icons.search_off, size: 48, color: scheme.outlineVariant),
+                  Icon(
+                    Icons.search_off,
+                    size: 48,
+                    color: scheme.outlineVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No results found',
@@ -584,7 +598,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                   const SizedBox(height: 24),
                   SakaiPrimaryButton(
                     label: 'Confirm "${_searchController.text}"',
-                    onPressed: () => _handleSuggestionTapped(_searchController.text),
+                    onPressed: () =>
+                        _handleSuggestionTapped(_searchController.text),
                   ),
                 ],
               ),
