@@ -371,6 +371,9 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
 
+        // Open the drawer to reveal the logout button
+        await tester.tap(find.byIcon(Icons.menu).first);
+        await tester.pumpAndSettle();
         await tester.tap(find.byIcon(Icons.logout).first);
         await tester.pumpAndSettle();
 
@@ -393,6 +396,9 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
+        // Open the drawer to reveal the logout button
+        await tester.tap(find.byIcon(Icons.menu).first);
+        await tester.pumpAndSettle();
         await tester.tap(find.byIcon(Icons.logout).first);
         await tester.pumpAndSettle();
 
