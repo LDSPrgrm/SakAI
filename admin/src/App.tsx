@@ -6,6 +6,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Loader2 } from 'lucide-react';
 
 // Layouts
@@ -44,24 +45,24 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
 
   return <>{children}</>;
 }
 
 function RootRedirect() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <PageLoader />;
+  const { can, loading: permsLoading } = usePermissions();
+
+  if (isLoading || permsLoading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
-  if (user?.role === 'super_admin') {
+
+  // super_admin always goes to the super-admin portal regardless of permissions load state
+  if (user.role === 'super_admin' || can('dashboard', 'read')) {
     return <Navigate to="/super-admin/dashboard" replace />;
   }
   return <Navigate to="/admin/dashboard" replace />;
@@ -91,7 +92,7 @@ export default function App() {
           </Route>
 
           <Route path="/super-admin" element={
-            <ProtectedRoute allowedRoles={['super_admin']}>
+            <ProtectedRoute>
               <SuperAdminShell />
             </ProtectedRoute>
           }>

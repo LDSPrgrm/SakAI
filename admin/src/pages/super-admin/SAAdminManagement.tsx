@@ -14,6 +14,7 @@ import {
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { adminApi, AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/lib/admin-api';
+import { adminsApi } from '@/api/super-admin/admins';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -60,6 +61,12 @@ function formatDate(iso: string | null): string {
 
 // Hardcoded current user ID (replace with auth context if available)
 const CURRENT_USER_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+/** Convert backend ENUM role ("superadmin") to roles-table name ("super_admin"). */
+function toFormRole(role: string): string {
+  if (role === 'superadmin') return 'super_admin';
+  return role;
+}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -115,8 +122,8 @@ export function SAAdminManagement() {
     reset({
       name: admin.name,
       email: admin.email,
-      role: admin.role,
-      status: admin.status,
+      role: toFormRole(admin.role),
+      status: admin.status ?? 'active',
       password: '',
     });
     // Refresh roleDefs to include any newly created custom roles
@@ -125,41 +132,35 @@ export function SAAdminManagement() {
   }
 
   async function onSubmit(values: AdminFormValues) {
-    // Clear any previous errors
     setApiError(null);
-
-    // Resolve role_id from the roles list by matching the selected role name
-    const selectedRoleDef = roleDefs.find(r => r.name === values.role);
-    
-    // Handle undefined selectedRoleDef gracefully (sub-task 3.3)
-    if (!selectedRoleDef) {
-      setApiError('Selected role not found. Please refresh the page or select a different role.');
-      return;
-    }
-
-    const payload = { ...values, role: values.role as AdminRole };
 
     try {
       if (editingAdmin) {
-        if (editingAdmin.role !== values.role) {
+        // Compare normalized forms so "superadmin" == "super_admin" doesn't trigger a spurious confirm
+        const currentRole = toFormRole(editingAdmin.role);
+        if (currentRole !== values.role) {
           setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
           return;
         }
-        await adminApi.admins.update(editingAdmin.id, {
-          ...payload,
-          role_id: selectedRoleDef.id,
-        });
+        // update() only sends { role } — role_id not needed here
+        await adminApi.admins.update(editingAdmin.id, { role: values.role as AdminRole });
       } else {
-        await adminApi.admins.create({
-          ...payload,
+        // Create needs role_id to link the new user to the roles table
+        const selectedRoleDef = roleDefs.find(r => r.name === values.role);
+        if (!selectedRoleDef) {
+          setApiError('Selected role not found. Please refresh the page or select a different role.');
+          return;
+        }
+        await adminsApi.create({
+          name: values.name,
+          email: values.email,
           role_id: selectedRoleDef.id,
-          created_by: CURRENT_USER_ID,
+          password: values.password ?? '',
         });
       }
       setModalOpen(false);
       await loadAdmins();
     } catch (error: any) {
-      // Catch and display actual error message from backend
       const errorMessage = error?.message || 'Failed to save admin. Please try again.';
       setApiError(errorMessage);
     }
@@ -169,18 +170,14 @@ export function SAAdminManagement() {
     if (!confirmModal.admin) return;
     const admin = confirmModal.admin;
 
-    if (confirmModal.type === 'suspend') {
-      await adminApi.admins.update(admin.id, { status: 'suspended' });
-    } else if (confirmModal.type === 'activate') {
-      await adminApi.admins.update(admin.id, { status: 'active' });
-    } else if (confirmModal.type === 'deactivate') {
-      await adminApi.admins.update(admin.id, { status: 'deactivated' });
+    if (confirmModal.type === 'suspend' || confirmModal.type === 'deactivate') {
+      await adminApi.admins.deactivate(admin.id);
     } else if (confirmModal.type === 'reset_password') {
       const newPass = generatePassword();
       await adminApi.admins.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminApi.admins.update(admin.id, { ...confirmModal.pendingData, role: confirmModal.pendingData.role as AdminRole });
+      await adminApi.admins.update(admin.id, { role: confirmModal.pendingData.role as AdminRole });
       setModalOpen(false);
     }
 

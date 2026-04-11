@@ -33,12 +33,32 @@ class DriverHomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SakAI · Driver'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.go(Routes.login),
-          ),
-        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: scheme.primary),
+              child: Text(
+                'SakAI Driver\nMenu',
+                style: TextStyle(color: scheme.onPrimary, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              selected: true,
+              onTap: () => Navigator.pop(context),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log Out'),
+              onTap: () => context.go(Routes.login),
+            ),
+          ],
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(

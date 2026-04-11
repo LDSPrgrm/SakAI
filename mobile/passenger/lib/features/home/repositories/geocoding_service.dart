@@ -17,6 +17,8 @@ class GeocodingService {
 
   static const _baseUrl =
       'https://maps.googleapis.com/maps/api/geocode/json';
+  static const _autocompleteUrl =
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json';
 
   /// Converts [query] (free-text address) to a [RideLocation].
   ///
@@ -64,6 +66,55 @@ class GeocodingService {
       );
     } on DioException catch (e) {
       throw GeocodingException(_fromDio(e));
+    }
+  }
+
+  /// Fetches place suggestions from Google Places Autocomplete API.
+  Future<List<String>> getSuggestions(
+    String input, {
+    String? location,
+    double? radius,
+    bool strictBounds = false,
+  }) async {
+    const apiKey = String.fromEnvironment('MAPS_API_KEY');
+
+    if (apiKey.isEmpty || input.trim().isEmpty) {
+      return [];
+    }
+
+    try {
+      final queryParams = <String, dynamic>{
+        'input': input,
+        'key': apiKey,
+      };
+
+      if (location != null && radius != null) {
+        queryParams['location'] = location;
+        queryParams['radius'] = radius.toString();
+        if (strictBounds) {
+          queryParams['strictbounds'] = 'true';
+        }
+      }
+
+      final response = await _dio.get<Map<String, dynamic>>(
+        _autocompleteUrl,
+        queryParameters: queryParams,
+      );
+
+      final data = response.data;
+      final status = data?['status'] as String?;
+
+      if (status != 'OK') {
+        return [];
+      }
+
+      final predictions = data!['predictions'] as List;
+      return predictions
+          .map((p) => p['description'] as String)
+          .toList();
+    } catch (e) {
+      // Fail silently for suggestions
+      return [];
     }
   }
 

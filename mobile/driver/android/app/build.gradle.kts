@@ -5,6 +5,29 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream ->
+        localProperties.load(stream)
+    }
+}
+
+var mapsApiKey = ""
+val envFile = rootProject.file("../../.env")
+if (envFile.exists()) {
+    envFile.readLines().forEach {
+        if (it.startsWith("GOOGLE_MAPS_API_KEY=")) {
+            mapsApiKey = it.substringAfter("=").trim()
+        }
+    }
+}
+if (mapsApiKey.isEmpty()) {
+    mapsApiKey = localProperties.getProperty("maps.api.key") ?: ""
+}
+
 android {
     namespace = "com.example.driver"
     compileSdk = 36
@@ -28,6 +51,7 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 
     buildTypes {

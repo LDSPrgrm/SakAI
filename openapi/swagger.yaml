@@ -87,6 +87,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+                
+  /service-area:
+    get:
+      tags: [System]
+      summary: Get platform service areas
+      description: |
+        Returns the list of geographic zones where SakAI currently operates.
+        Used by the client to restrict search radius and matching.
+      operationId: getServiceAreas
+      responses:
+        "200":
+          description: List of service areas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceAreaResponse"
+
+  /drivers/nearby:
+    get:
+      tags: [Driver]
+      summary: Get nearby available drivers
+      description: |
+        Returns a list of online drivers currently available for matching
+        within a given radius of a location. Used to show markers on the map.
+      operationId: getNearbyDrivers
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: float }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: float }
+        - name: radius
+          in: query
+          required: false
+          schema: { type: number, format: float, default: 5000.0 }
+      responses:
+        "200":
+          description: List of nearby drivers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbyDriversResponse"
 
   # ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -2586,10 +2631,8 @@ components:
           description: Optional cancellation reason
           example: "Change of plans"
 
-    # =========================================================================
-    # WebSocket Event Schemas
-    # =========================================================================
-    # Connection: ws://{host}/ws?token={access_token}
+    # ==================================================================    # WebSocket Event Schemas
+    # ==================================================================    # Connection: ws://{host}/ws?token={access_token}
     #
     # Envelope format (all messages):
     #   { "event": "<event_name>", "payload": { ... } }
@@ -2601,8 +2644,7 @@ components:
     # Events are filtered server-side:
     #   - Drivers only receive events for their assigned ride
     #   - Passengers only receive events for their own ride
-    # =========================================================================
-
+    # ==================================================================
     WsEnvelope:
       type: object
       description: Wrapper for all WebSocket messages
@@ -3266,8 +3308,23 @@ components:
           type: string
           enum: [up, down, flat]
 
-    Role:
+    ServiceAreaResponse:
       type: object
+      properties:
+        areas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceArea"
+      example:
+        areas:
+          - id: "550e8400-e29b-41d4-a716-446655440000"
+            name: "Northern Luzon Service Area"
+            center: { lat: 16.607538, lng: 120.2693932 }
+            radius: 100000.0
+
+    ServiceArea:
+      type: object
+      required: [id, name, center, radius]
       properties:
         id:
           type: string
@@ -3365,6 +3422,43 @@ components:
 
     PaymentGatewayConfig:
       type: object
+          example: "Metro Manila"
+        center:
+          $ref: "#/components/schemas/LatLng"
+        radius:
+          type: number
+          format: float
+          description: Service radius in meters
+          example: 15000.0
+
+    NearbyDriversResponse:
+      type: object
+      properties:
+        drivers:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbyDriver"
+      example:
+        drivers:
+          - id: "driver-1"
+            name: "Juan"
+            location: { lat: 16.608, lng: 120.269 }
+            heading: 45.0
+            vehicle_type: "motorcycle"
+          - id: "driver-2"
+            name: "Pedro"
+            location: { lat: 16.612, lng: 120.272 }
+            heading: 180.0
+            vehicle_type: "car"
+          - id: "driver-3"
+            name: "Maria"
+            location: { lat: 16.605, lng: 120.262 }
+            heading: 270.0
+            vehicle_type: "tricycle"
+
+    NearbyDriver:
+      type: object
+      required: [id, name, location, vehicle_type]
       properties:
         id:
           type: string
@@ -3456,3 +3550,13 @@ components:
               type: string
               format: date-time
               nullable: true
+        name:
+          type: string
+        location:
+          $ref: "#/components/schemas/LatLng"
+        heading:
+          type: number
+          format: float
+        vehicle_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
