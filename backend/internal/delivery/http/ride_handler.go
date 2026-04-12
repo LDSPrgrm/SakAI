@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -9,16 +11,58 @@ import (
 	"github.com/sakai/backend/internal/delivery/http/dto"
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/usecase"
 )
 
 // RideHandler handles /rides/* routes.
 type RideHandler struct {
-	uc     domain.RideUseCase
-	upsert ws.Dispatcher
+	uc              domain.RideUseCase
+	userRideUC      usecase.UserRideUseCase
+	upsert          ws.Dispatcher
 }
 
-func NewRideHandler(uc domain.RideUseCase, upsert ws.Dispatcher) *RideHandler {
-	return &RideHandler{uc: uc, upsert: upsert}
+func NewRideHandler(uc domain.RideUseCase, userRideUC usecase.UserRideUseCase, upsert ws.Dispatcher) *RideHandler {
+	return &RideHandler{uc: uc, userRideUC: userRideUC, upsert: upsert}
+}
+
+// ListMyRides handles GET /rides with pagination and status filter.
+func (h *RideHandler) ListMyRides(c *gin.Context) {
+	userID := c.MustGet("userID").(uuid.UUID)
+
+	// Parse pagination
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	// Parse status filter (comma-separated)
+	var statuses []domain.RideStatus
+	if statusStr := c.Query("status"); statusStr != "" {
+		for _, s := range strings.Split(statusStr, ",") {
+			statuses = append(statuses, domain.RideStatus(strings.TrimSpace(s)))
+		}
+	}
+
+	filter := domain.UserRideFilter{
+		Statuses: statuses,
+		Page:     page,
+		Limit:    limit,
+	}
+
+	rides, pagination, err := h.userRideUC.ListMyRides(c.Request.Context(), userID, filter)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Convert to response DTOs
+	items := make([]dto.UserRideItemResponse, len(rides))
+	for i, ride := range rides {
+		items[i] = dto.NewUserRideItemResponse(ride)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":       items,
+		"pagination": pagination,
+	})
 }
 
 func (h *RideHandler) RequestRide(c *gin.Context) {

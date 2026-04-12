@@ -19,8 +19,8 @@ part 'user_profile.g.dart';
 /// * [role] 
 /// * [vehicle] - Present only when `role=driver`. Null for passengers.
 /// * [createdAt] 
-@BuiltValue()
-abstract class UserProfile implements Built<UserProfile, UserProfileBuilder> {
+@BuiltValue(instantiable: false)
+abstract class UserProfile  {
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -41,20 +41,13 @@ abstract class UserProfile implements Built<UserProfile, UserProfileBuilder> {
   @BuiltValueField(wireName: r'created_at')
   DateTime get createdAt;
 
-  UserProfile._();
-
-  factory UserProfile([void updates(UserProfileBuilder b)]) = _$UserProfile;
-
-  @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(UserProfileBuilder b) => b;
-
   @BuiltValueSerializer(custom: true)
   static Serializer<UserProfile> get serializer => _$UserProfileSerializer();
 }
 
 class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
   @override
-  final Iterable<Type> types = const [UserProfile, _$UserProfile];
+  final Iterable<Type> types = const [UserProfile];
 
   @override
   final String wireName = r'UserProfile';
@@ -105,6 +98,46 @@ class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
+  }
+
+  @override
+  UserProfile deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    return serializers.deserialize(serialized, specifiedType: FullType($UserProfile)) as $UserProfile;
+  }
+}
+
+/// a concrete implementation of [UserProfile], since [UserProfile] is not instantiable
+@BuiltValue(instantiable: true)
+abstract class $UserProfile implements UserProfile, Built<$UserProfile, $UserProfileBuilder> {
+  $UserProfile._();
+
+  factory $UserProfile([void Function($UserProfileBuilder)? updates]) = _$$UserProfile;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _defaults($UserProfileBuilder b) => b;
+
+  @BuiltValueSerializer(custom: true)
+  static Serializer<$UserProfile> get serializer => _$$UserProfileSerializer();
+}
+
+class _$$UserProfileSerializer implements PrimitiveSerializer<$UserProfile> {
+  @override
+  final Iterable<Type> types = const [$UserProfile, _$$UserProfile];
+
+  @override
+  final String wireName = r'$UserProfile';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    $UserProfile object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    return serializers.serialize(object, specifiedType: FullType(UserProfile))!;
   }
 
   void _deserializeProperties(
@@ -171,12 +204,12 @@ class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
   }
 
   @override
-  UserProfile deserialize(
+  $UserProfile deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = UserProfileBuilder();
+    final result = $UserProfileBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(

@@ -17,6 +17,9 @@ Name | Type | Description | Notes
 **originAddress** | **String** |  | [optional] 
 **destinationAddress** | **String** |  | [optional] 
 **notes** | **String** |  | [optional] 
+**fare** | **double** | Final fare amount (null if ride not completed) | [optional] 
+**estimatedFare** | **double** | Estimated fare at request time | [optional] 
+**paymentMethod** | **String** | Payment method used for ride | [optional] 
 **cancelledBy** | **String** | Set only when status is `cancelled` | [optional] 
 **createdAt** | [**DateTime**](DateTime.md) |  | 
 **updatedAt** | [**DateTime**](DateTime.md) |  | 

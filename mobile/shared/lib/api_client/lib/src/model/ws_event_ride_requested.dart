@@ -152,7 +152,7 @@ class _$WsEventRideRequestedSerializer implements PrimitiveSerializer<WsEventRid
             value,
             specifiedType: const FullType(UserProfile),
           ) as UserProfile;
-          result.passenger.replace(valueDes);
+          result.passenger = valueDes;
           break;
         case r'origin':
           final valueDes = serializers.deserialize(

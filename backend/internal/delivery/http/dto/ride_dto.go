@@ -63,3 +63,37 @@ func NewRideResponse(r *domain.Ride) RideResponse {
 	}
 	return resp
 }
+
+// UserRideItemResponse is the public API shape for a ride in the history list.
+type UserRideItemResponse struct {
+	ID                 string              `json:"id"`
+	Status             domain.RideStatus   `json:"status"`
+	OriginAddress      string              `json:"origin_address"`
+	DestinationAddress string              `json:"destination_address"`
+	Fare               *float64            `json:"fare,omitempty"`
+	EstimatedFare      float64             `json:"estimated_fare"`
+	DriverName         *string             `json:"driver_name,omitempty"`
+	PaymentMethod      string              `json:"payment_method"`
+	CreatedAt          time.Time           `json:"created_at"`
+	UpdatedAt          time.Time           `json:"updated_at"`
+}
+
+// NewUserRideItemResponse maps a domain.Ride into the history list item shape.
+func NewUserRideItemResponse(r *domain.Ride) UserRideItemResponse {
+	item := UserRideItemResponse{
+		ID:                 r.ID.String(),
+		Status:             r.Status,
+		OriginAddress:      r.OriginAddress,
+		DestinationAddress: r.DestinationAddress,
+		EstimatedFare:      r.EstimatedFare,
+		PaymentMethod:      string(domain.PaymentMethodCash), // Default, would come from payment data
+		CreatedAt:          r.CreatedAt,
+		UpdatedAt:          r.UpdatedAt,
+	}
+	// Include fare only if ride is completed
+	if r.Status == domain.RideStatusCompleted && r.Fare > 0 {
+		fare := r.Fare
+		item.Fare = &fare
+	}
+	return item
+}

@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
-import 'package:sakai_shared/sakai_shared.dart';
 
 import 'driver_repository.dart';
 
@@ -57,6 +56,19 @@ class DriverRepositoryImpl implements DriverRepository {
       );
     } on DioException catch (e) {
       throw _fromDio(e);
+    }
+  }
+
+  @override
+  Future<RideResponse?> getIncomingRide() async {
+    try {
+      final response = await _apiClient.getDriverApi().driverGetIncomingRide();
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _fromDio(e);
+    } catch (_) {
+      return null;
     }
   }
 

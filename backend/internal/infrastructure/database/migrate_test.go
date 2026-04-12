@@ -24,6 +24,8 @@ func TestMigrations_EmbeddedFilesExist(t *testing.T) {
 		"009_create_roles.down.sql",
 		"010_add_role_id_to_users.up.sql",
 		"010_add_role_id_to_users.down.sql",
+		"011_add_documents_ratings_payments.up.sql",
+		"011_add_documents_ratings_payments.down.sql",
 	}
 
 	sub, err := fs.Sub(testMigrationFS, "migrations")
@@ -51,9 +53,9 @@ func TestMigrations_Count(t *testing.T) {
 		t.Fatalf("failed to read embedded dir: %v", err)
 	}
 
-	// We expect 12 files (10 up + 2 down migrations).
-	if len(entries) != 12 {
-		t.Errorf("expected 12 migration files, got %d", len(entries))
+	// We expect 16 files (12 up + 2 down from original + 2 up + 2 down from new migrations).
+	if len(entries) != 16 {
+		t.Errorf("expected 16 migration files, got %d", len(entries))
 	}
 }
 

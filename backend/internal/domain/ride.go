@@ -59,6 +59,8 @@ type Ride struct {
 	OriginAddress      string       `json:"origin_address,omitempty"`
 	DestinationAddress string       `json:"destination_address,omitempty"`
 	Notes              string       `json:"notes,omitempty"`
+	Fare               float64      `json:"fare,omitempty"`               // Final fare (set on completion)
+	EstimatedFare      float64      `json:"estimated_fare,omitempty"`     // Estimated fare at request time
 	CancelledBy        *CancelledBy `json:"cancelled_by,omitempty"`
 	IdempotencyKey     string       `json:"-"` // internal, never serialized
 	CreatedAt          time.Time    `json:"created_at"`

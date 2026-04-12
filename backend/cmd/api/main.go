@@ -25,6 +25,15 @@ import (
 	"github.com/sakai/backend/internal/usecase"
 )
 
+// ─── Stripe Client Stub ──────────────────────────────────────────────────────
+// TODO: Replace with real Stripe SDK integration.
+type stripeClientStub struct{}
+
+func (s *stripeClientStub) Charge(ctx context.Context, amountCents int64, currency, paymentMethodToken, idempotencyKey string) (string, error) {
+	// Stub: simulate successful charge.
+	return "pi_stub_" + idempotencyKey[:8], nil
+}
+
 func main() {
 	// Load .env if present. In production the real env vars take precedence,
 	// so this is silently ignored when the file does not exist.
@@ -88,6 +97,10 @@ func main() {
 	systemRepo := postgres.NewSystemRepo(pool)
 	reportRepo := postgres.NewReportRepo(pool)
 	metricsIndividualRepo := postgres.NewMetricsRepo(pool)
+	// New repositories for documents, ratings, and ride payments.
+	docRepo := postgres.NewDocumentRepo(pool)
+	ratingRepo := postgres.NewRatingRepo(pool)
+	ridePaymentRepo := postgres.NewRidePaymentRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -107,6 +120,21 @@ func main() {
 	systemUC := usecase.NewSystemUseCase(systemRepo, auditRepo)
 	reportUC := usecase.NewReportUseCase(reportRepo)
 	metricsUC := usecase.NewMetricsUseCase(metricsIndividualRepo)
+	// New use cases for documents, ratings, and payment processing.
+	documentUC := usecase.NewDocumentUseCase(docRepo, rideRepo)
+	ratingUC := usecase.NewRatingUseCase(ratingRepo, rideRepo)
+	stripeClient := &stripeClientStub{}
+	paymentProcessingUC := usecase.NewPaymentProcessingUseCase(ridePaymentRepo, rideRepo, stripeClient)
+	// Tip use case.
+	tipRepo := postgres.NewTipRepo(pool)
+	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
+
+	// Payment method repository and usecase
+	pmRepo := postgres.NewPaymentMethodRepo(pool)
+	pmUC := usecase.NewPaymentMethodUseCase(pmRepo, stripeClient)
+
+	// User ride history usecase
+	userRideUC := usecase.NewUserRideUseCase(rideRepo)
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
@@ -120,19 +148,24 @@ func main() {
 
 	// ── HTTP handlers ─────────────────────────────────────────────────────────
 	deps := router.Deps{
-		Auth:    handler.NewAuthHandler(authUC),
-		Driver:  handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:    handler.NewRideHandler(rideUC, dispatcher),
-		Admin:   handler.NewAdminHandler(adminUC, auditUC),
-		Fare:    handler.NewFareHandler(fareUC),
-		Audit:   handler.NewAuditHandler(auditUC),
-		Role:    handler.NewRoleHandler(roleUC),
-		Payment: handler.NewPaymentHandler(paymentUC),
-		Safety:  handler.NewSafetyHandler(safetyUC),
-		System:  handler.NewSystemHandler(systemUC),
-		Report:  handler.NewReportHandler(reportUC),
-		Metrics: handler.NewMetricsHandler(metricsUC),
-		WS:      ws.NewHandler(hub),
+		Auth:           handler.NewAuthHandler(authUC),
+		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher),
+		Admin:          handler.NewAdminHandler(adminUC, auditUC),
+		Fare:           handler.NewFareHandler(fareUC),
+		Audit:          handler.NewAuditHandler(auditUC),
+		Role:           handler.NewRoleHandler(roleUC),
+		Payment:        handler.NewPaymentHandler(paymentUC),
+		Safety:         handler.NewSafetyHandler(safetyUC),
+		System:         handler.NewSystemHandler(systemUC),
+		Report:         handler.NewReportHandler(reportUC),
+		Metrics:        handler.NewMetricsHandler(metricsUC),
+		Document:       handler.NewDocumentHandler(documentUC),
+		Rating:         handler.NewRatingHandler(ratingUC),
+		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
+		Tip:            handler.NewTipHandler(tipUC),
+		PaymentMethod:  handler.NewPaymentMethodHandler(pmUC),
+		WS:             ws.NewHandler(hub),
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

@@ -5,6 +5,14 @@ import '../features/auth/repositories/auth_repository.dart';
 import '../features/auth/repositories/auth_repository_impl.dart';
 import '../features/ride/repositories/ride_repository.dart';
 import '../features/ride/repositories/ride_repository_impl.dart';
+import '../features/ride_complete/repositories/ride_complete_repository.dart';
+import '../features/ride_complete/repositories/ride_complete_repository_impl.dart';
+import '../features/ride_history/repositories/ride_history_repository.dart';
+import '../features/ride_history/repositories/ride_history_repository_impl.dart';
+import '../features/cancelled_ride/repositories/cancelled_ride_repository.dart';
+import '../features/cancelled_ride/repositories/cancelled_ride_repository_impl.dart';
+import '../features/receipt/repositories/receipt_repository.dart';
+import '../features/receipt/repositories/receipt_repository_impl.dart';
 
 /// Shared HTTP client - single instance per app lifetime.
 final apiClientProvider = Provider<SakaiApiClient>((ref) {
@@ -30,6 +38,53 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final rideRepositoryProvider = Provider<RideRepository>((ref) {
   return RideRepositoryImpl(ref.watch(apiClientProvider));
 });
+
+/// WebSocket client - singleton for real-time events.
+final wsClientProvider = Provider<WsClient>((ref) {
+  final client = WsClient();
+  ref.onDispose(() => client.disconnect());
+  return client;
+});
+
+/// WebSocket connection manager - watches auth state.
+final wsConnectionProvider = Provider<WsConnectionManager>((ref) {
+  return WsConnectionManager(ref);
+});
+
+/// Manages WebSocket connection lifecycle based on auth state.
+class WsConnectionManager {
+  final Ref _ref;
+  bool _isConnected = false;
+
+  WsConnectionManager(this._ref);
+
+  /// Connect WebSocket when authenticated.
+  Future<void> connectIfAuthenticated() async {
+    final client = _ref.read(wsClientProvider);
+    final tokenStorage = _ref.read(tokenStorageProvider);
+    final accessToken = await tokenStorage.getAccessToken();
+
+    if (accessToken != null && accessToken.isNotEmpty && !_isConnected) {
+      _isConnected = true;
+      await client.connect(
+        baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
+        accessToken: accessToken,
+      );
+    }
+  }
+
+  /// Disconnect WebSocket on logout.
+  Future<void> disconnect() async {
+    if (_isConnected) {
+      final client = _ref.read(wsClientProvider);
+      await client.disconnect();
+      _isConnected = false;
+    }
+  }
+
+  /// Check if currently connected.
+  bool get isConnected => _isConnected;
+}
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -76,3 +131,25 @@ class AuthState extends Notifier<AuthStateModel> {
 final authStateProvider = NotifierProvider<AuthState, AuthStateModel>(
   AuthState.new,
 );
+
+/// Ride complete repository - domain boundary over the generated API client.
+final rideCompleteRepositoryProvider = Provider<RideCompleteRepository>((ref) {
+  return RideCompleteRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Ride history repository - domain boundary over the generated API client.
+final rideHistoryRepositoryProvider = Provider<RideHistoryRepository>((ref) {
+  return RideHistoryRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Cancelled ride repository - domain boundary over the generated API client.
+final cancelledRideRepositoryProvider = Provider<CancelledRideRepository>((
+  ref,
+) {
+  return CancelledRideRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Receipt repository - domain boundary over the generated API client.
+final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
+  return ReceiptRepositoryImpl(ref.watch(apiClientProvider));
+});

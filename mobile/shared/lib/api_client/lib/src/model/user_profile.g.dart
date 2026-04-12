@@ -64,7 +64,29 @@ class _$UserProfileRoleEnumSerializer
   );
 }
 
-class _$UserProfile extends UserProfile {
+abstract mixin class UserProfileBuilder {
+  void replace(UserProfile other);
+  void update(void Function(UserProfileBuilder) updates);
+  String? get id;
+  set id(String? id);
+
+  String? get name;
+  set name(String? name);
+
+  String? get email;
+  set email(String? email);
+
+  UserProfileRoleEnum? get role;
+  set role(UserProfileRoleEnum? role);
+
+  VehicleInfoBuilder get vehicle;
+  set vehicle(VehicleInfoBuilder? vehicle);
+
+  DateTime? get createdAt;
+  set createdAt(DateTime? createdAt);
+}
+
+class _$$UserProfile extends $UserProfile {
   @override
   final String id;
   @override
@@ -78,10 +100,10 @@ class _$UserProfile extends UserProfile {
   @override
   final DateTime createdAt;
 
-  factory _$UserProfile([void Function(UserProfileBuilder)? updates]) =>
-      (UserProfileBuilder()..update(updates))._build();
+  factory _$$UserProfile([void Function($UserProfileBuilder)? updates]) =>
+      ($UserProfileBuilder()..update(updates))._build();
 
-  _$UserProfile._({
+  _$$UserProfile._({
     required this.id,
     required this.name,
     required this.email,
@@ -90,16 +112,16 @@ class _$UserProfile extends UserProfile {
     required this.createdAt,
   }) : super._();
   @override
-  UserProfile rebuild(void Function(UserProfileBuilder) updates) =>
+  $UserProfile rebuild(void Function($UserProfileBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  UserProfileBuilder toBuilder() => UserProfileBuilder()..replace(this);
+  $UserProfileBuilder toBuilder() => $UserProfileBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is UserProfile &&
+    return other is $UserProfile &&
         id == other.id &&
         name == other.name &&
         email == other.email &&
@@ -123,7 +145,7 @@ class _$UserProfile extends UserProfile {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'UserProfile')
+    return (newBuiltValueToStringHelper(r'$UserProfile')
           ..add('id', id)
           ..add('name', name)
           ..add('email', email)
@@ -134,38 +156,40 @@ class _$UserProfile extends UserProfile {
   }
 }
 
-class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
-  _$UserProfile? _$v;
+class $UserProfileBuilder
+    implements Builder<$UserProfile, $UserProfileBuilder>, UserProfileBuilder {
+  _$$UserProfile? _$v;
 
   String? _id;
   String? get id => _$this._id;
-  set id(String? id) => _$this._id = id;
+  set id(covariant String? id) => _$this._id = id;
 
   String? _name;
   String? get name => _$this._name;
-  set name(String? name) => _$this._name = name;
+  set name(covariant String? name) => _$this._name = name;
 
   String? _email;
   String? get email => _$this._email;
-  set email(String? email) => _$this._email = email;
+  set email(covariant String? email) => _$this._email = email;
 
   UserProfileRoleEnum? _role;
   UserProfileRoleEnum? get role => _$this._role;
-  set role(UserProfileRoleEnum? role) => _$this._role = role;
+  set role(covariant UserProfileRoleEnum? role) => _$this._role = role;
 
   VehicleInfoBuilder? _vehicle;
   VehicleInfoBuilder get vehicle => _$this._vehicle ??= VehicleInfoBuilder();
-  set vehicle(VehicleInfoBuilder? vehicle) => _$this._vehicle = vehicle;
+  set vehicle(covariant VehicleInfoBuilder? vehicle) =>
+      _$this._vehicle = vehicle;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
-  set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
+  set createdAt(covariant DateTime? createdAt) => _$this._createdAt = createdAt;
 
-  UserProfileBuilder() {
-    UserProfile._defaults(this);
+  $UserProfileBuilder() {
+    $UserProfile._defaults(this);
   }
 
-  UserProfileBuilder get _$this {
+  $UserProfileBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
@@ -180,44 +204,48 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
   }
 
   @override
-  void replace(UserProfile other) {
-    _$v = other as _$UserProfile;
+  void replace(covariant $UserProfile other) {
+    _$v = other as _$$UserProfile;
   }
 
   @override
-  void update(void Function(UserProfileBuilder)? updates) {
+  void update(void Function($UserProfileBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
   @override
-  UserProfile build() => _build();
+  $UserProfile build() => _build();
 
-  _$UserProfile _build() {
-    _$UserProfile _$result;
+  _$$UserProfile _build() {
+    _$$UserProfile _$result;
     try {
       _$result =
           _$v ??
-          _$UserProfile._(
-            id: BuiltValueNullFieldError.checkNotNull(id, r'UserProfile', 'id'),
+          _$$UserProfile._(
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'$UserProfile',
+              'id',
+            ),
             name: BuiltValueNullFieldError.checkNotNull(
               name,
-              r'UserProfile',
+              r'$UserProfile',
               'name',
             ),
             email: BuiltValueNullFieldError.checkNotNull(
               email,
-              r'UserProfile',
+              r'$UserProfile',
               'email',
             ),
             role: BuiltValueNullFieldError.checkNotNull(
               role,
-              r'UserProfile',
+              r'$UserProfile',
               'role',
             ),
             vehicle: _vehicle?.build(),
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
-              r'UserProfile',
+              r'$UserProfile',
               'createdAt',
             ),
           );
@@ -228,7 +256,7 @@ class UserProfileBuilder implements Builder<UserProfile, UserProfileBuilder> {
         _vehicle?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'UserProfile',
+          r'$UserProfile',
           _$failedField,
           e.toString(),
         );

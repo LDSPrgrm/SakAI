@@ -7,7 +7,23 @@ import '../features/auth/views/auth_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
 import '../features/home/views/rider_home_screen.dart';
+import '../features/profile/views/edit_profile_screen.dart';
 import '../features/ride/views/waiting_screen.dart';
+import '../features/active_ride/views/active_ride_screen.dart';
+import '../features/ride_complete/views/ride_complete_screen.dart';
+import '../features/ride_history/views/ride_history_list_screen.dart';
+import '../features/ride_history/views/ride_detail_screen.dart';
+import '../features/cancelled_ride/views/cancelled_ride_screen.dart';
+import '../features/receipt/views/receipt_screen.dart';
+import '../features/payment_methods/views/payment_methods_screen.dart';
+import '../features/payment_methods/views/add_payment_method_screen.dart';
+import '../features/settings/views/settings_menu_screen.dart';
+import '../features/settings/views/notification_settings_screen.dart';
+import '../features/settings/views/emergency_contacts_screen.dart';
+import '../features/settings/views/help_center_screen.dart';
+import '../features/settings/views/terms_screen.dart';
+import '../features/settings/views/privacy_policy_screen.dart';
+import '../features/settings/views/language_selection_screen.dart';
 import 'providers.dart';
 import 'routes.dart';
 
@@ -78,6 +94,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RiderHomeScreen(),
       ),
       GoRoute(
+        path: Routes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
         path: Routes.rideWaiting,
         builder: (context, state) {
           final rideId = state.extra as String;
@@ -86,29 +106,79 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.rideActive,
-        builder: (context, state) => _PlaceholderScreen(Routes.rideActive),
+        builder: (context, state) {
+          final rideId = state.extra as String;
+          return ActiveRideScreen(rideId: rideId);
+        },
       ),
       GoRoute(
         path: Routes.rideComplete,
-        builder: (context, state) => _PlaceholderScreen(Routes.rideComplete),
+        builder: (context, state) {
+          final rideId = state.extra as String;
+          return RideCompleteScreen(rideId: rideId);
+        },
       ),
       GoRoute(
         path: Routes.rideCancelled,
-        builder: (context, state) => _PlaceholderScreen(Routes.rideCancelled),
+        builder: (context, state) {
+          final rideId = state.pathParameters['rideId']!;
+          return CancelledRideScreen(rideId: rideId);
+        },
+      ),
+      GoRoute(
+        path: Routes.rideHistory,
+        builder: (context, state) => const RideHistoryListScreen(),
+      ),
+      GoRoute(
+        path: Routes.rideDetail,
+        builder: (context, state) {
+          final rideId = state.pathParameters['rideId']!;
+          return RideDetailScreen(rideId: rideId);
+        },
+      ),
+      GoRoute(
+        path: Routes.receipt,
+        builder: (context, state) {
+          final rideId = state.pathParameters['rideId']!;
+          return ReceiptScreen(rideId: rideId);
+        },
+      ),
+      GoRoute(
+        path: Routes.paymentMethods,
+        builder: (context, state) => const PaymentMethodsScreen(),
+      ),
+      GoRoute(
+        path: Routes.paymentMethodAdd,
+        builder: (context, state) => const AddPaymentMethodScreen(),
+      ),
+      GoRoute(
+        path: Routes.settings,
+        builder: (context, state) => const SettingsMenuScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsNotifications,
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsEmergencyContacts,
+        builder: (context, state) => const EmergencyContactsScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsHelp,
+        builder: (context, state) => const HelpCenterScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsTerms,
+        builder: (context, state) => const TermsScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsPrivacy,
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsLanguage,
+        builder: (context, state) => const LanguageSelectionScreen(),
       ),
     ],
   );
 });
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen(this.route);
-  final String route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(route)),
-      body: Center(child: Text('Coming in Sprint 3: $route')),
-    );
-  }
-}

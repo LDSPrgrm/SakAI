@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
+import 'package:sakai_shared/sakai_shared.dart'
+    hide LatLng, NearbyDriver, ServiceArea;
 
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
@@ -243,6 +244,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         // Best effort: local session must still be cleared.
       }
     }
+
+    // Disconnect WebSocket on logout.
+    await ref.read(wsConnectionProvider).disconnect();
 
     await tokenStorage.clear();
     ref.read(authStateProvider.notifier).markUnauthenticated(forceLogin: true);

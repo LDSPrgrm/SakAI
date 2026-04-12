@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase
 
 import (
 	"context"
@@ -97,6 +97,9 @@ type RideRepository interface {
 
 	// ListAll returns a paginated list of all rides for admin browsing.
 	ListAll(ctx context.Context, filter AdminRideFilter) ([]*Ride, int, error)
+
+	// ListByPassengerID returns a paginated list of rides for a specific passenger.
+	ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter UserRideFilter) ([]*Ride, int, error)
 }
 
 // ExpiredOffer contains the identity of a ride canceled due to dispatch timeout.
@@ -282,6 +285,13 @@ type AdminRideFilter struct {
 	Limit  int         // max rows; 0 defaults to 20
 }
 
+// UserRideFilter is the filter/pagination input for passenger ride history.
+type UserRideFilter struct {
+	Statuses []RideStatus // optional — empty means all statuses
+	Page     int          // 1-based; 0 treated as 1
+	Limit    int          // max rows; 0 defaults to 20
+}
+
 // UserListFilter is the filter/pagination input for admin user browsing.
 type UserListFilter struct {
 	Role   *UserRole // nil means all roles
@@ -404,4 +414,130 @@ type MetricsUseCase interface {
 	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
+}
+
+// ─── New Repository Ports for Documents, Ratings, Payments ───────────────────
+
+// DocumentRepository manages driver verification documents.
+type DocumentRepository interface {
+	// Create inserts a new driver document record.
+	Create(ctx context.Context, doc *DriverDocument) error
+
+	// GetByID retrieves a document by its UUID.
+	GetByID(ctx context.Context, id uuid.UUID) (*DriverDocument, error)
+
+	// ListByDriverID returns all documents for a driver.
+	ListByDriverID(ctx context.Context, driverID uuid.UUID) ([]*DriverDocument, error)
+
+	// UpdateStatus changes the verification status of a document.
+	UpdateStatus(ctx context.Context, id uuid.UUID, status UploadStatus, rejectionReason *string, reviewedAt time.Time, reviewedBy uuid.UUID) error
+}
+
+// RatingRepository manages ride ratings.
+type RatingRepository interface {
+	// Create inserts a new rating.
+	Create(ctx context.Context, rating *Rating) error
+
+	// GetByRideAndRater returns an existing rating for a ride+rater pair, or nil.
+	GetByRideAndRater(ctx context.Context, rideID, raterID uuid.UUID) (*Rating, error)
+
+	// GetAverageByUserID computes the average rating and count for a user.
+	GetAverageByUserID(ctx context.Context, userID uuid.UUID) (*RatingSummary, error)
+}
+
+// RidePaymentRepository manages ride-specific payment transactions.
+type RidePaymentRepository interface {
+	// Create inserts a new ride payment record.
+	Create(ctx context.Context, payment *Payment) error
+
+	// GetByRideID returns the payment for a ride, or nil.
+	GetByRideID(ctx context.Context, rideID uuid.UUID) (*Payment, error)
+
+	// UpdateStatus changes the payment status (e.g., failed -> completed on retry).
+	UpdateStatus(ctx context.Context, id uuid.UUID, status PaymentStatus, gatewayTxnID *string, processedAt time.Time, failureReason *string) error
+}
+
+// ─── New UseCase Ports ───────────────────────────────────────────────────────
+
+// DocumentUseCase defines the driver document upload contract.
+type DocumentUseCase interface {
+	// UploadDocument validates and stores a driver verification document.
+	UploadDocument(ctx context.Context, driverID uuid.UUID, docType DocumentType, docNumber string, expiryDate *time.Time, imageURL string) (*DriverDocument, error)
+
+	// GetDocument returns a document by ID (owner-only access).
+	GetDocument(ctx context.Context, driverID, documentID uuid.UUID) (*DriverDocument, error)
+
+	// ListDocuments returns all documents for a driver.
+	ListDocuments(ctx context.Context, driverID uuid.UUID) ([]*DriverDocument, error)
+}
+
+// RatingUseCase defines the rating submission contract.
+type RatingUseCase interface {
+	// SubmitRating validates and stores a rating for a completed ride.
+	SubmitRating(ctx context.Context, raterID uuid.UUID, rideID uuid.UUID, stars int, feedback *string) (*Rating, error)
+
+	// GetRatingSummary returns the average rating and count for a user.
+	GetRatingSummary(ctx context.Context, userID uuid.UUID) (*RatingSummary, error)
+}
+
+// PaymentProcessingUseCase defines the card payment processing contract.
+type PaymentProcessingUseCase interface {
+	// ProcessPayment charges the passenger's card for a completed ride.
+	ProcessPayment(ctx context.Context, passengerID uuid.UUID, rideID uuid.UUID, paymentToken string, idempotencyKey string) (*Payment, error)
+
+	// GetReceipt returns the payment receipt for a ride.
+	GetReceipt(ctx context.Context, userID uuid.UUID, rideID uuid.UUID) (*Payment, error)
+}
+
+// TipOutput carries the result of a successful tip transaction.
+type TipOutput struct {
+	RideID          uuid.UUID  `json:"ride_id"`
+	BaseFare        float64    `json:"base_fare"`
+	TipAmount       float64    `json:"tip_amount"`
+	FinalTotal      float64    `json:"final_total"`
+	Currency        string     `json:"currency"`
+	PaymentMethod   string     `json:"payment_method"`
+	TransactionID   string     `json:"transaction_id"`
+	ProcessedAt     time.Time  `json:"processed_at"`
+}
+
+// TipRepository manages tip-specific payment transactions.
+type TipRepository interface {
+	// AddTip stores a tip record and processes the charge via Stripe.
+	AddTip(ctx context.Context, rideID uuid.UUID, tipAmount float64) (*TipOutput, error)
+
+	// GetByRideID returns an existing tip for a ride, or nil.
+	GetByRideID(ctx context.Context, rideID uuid.UUID) (*TipOutput, error)
+}
+
+// TipUseCase defines the tip submission contract.
+type TipUseCase interface {
+	// AddTip validates and processes a tip for a completed ride.
+	AddTip(ctx context.Context, passengerID uuid.UUID, rideID uuid.UUID, tipAmount float64) (*TipOutput, error)
+}
+
+// ─── Saved Payment Method Repository ─────────────────────────────────────────
+
+// PaymentMethodRepository manages user's saved payment methods.
+type PaymentMethodRepository interface {
+	// Create inserts a new saved payment method.
+	Create(ctx context.Context, pm *SavedPaymentMethod) error
+
+	// GetByID retrieves a payment method by its UUID.
+	GetByID(ctx context.Context, id uuid.UUID) (*SavedPaymentMethod, error)
+
+	// ListByUserID returns all payment methods for a user.
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*SavedPaymentMethod, error)
+
+	// Delete removes a payment method.
+	Delete(ctx context.Context, id uuid.UUID) error
+
+	// SetDefault marks a payment method as the user's default.
+	SetDefault(ctx context.Context, id uuid.UUID) error
+
+	// ClearDefaults removes the default flag from all of a user's payment methods.
+	ClearDefaults(ctx context.Context, userID uuid.UUID) error
+
+	// ExistsByUser checks if a payment method belongs to a user (for authorization).
+	ExistsByUser(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 }
