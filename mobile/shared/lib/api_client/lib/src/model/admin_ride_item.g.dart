@@ -6,32 +6,6 @@ part of 'admin_ride_item.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_passenger =
-    const AdminRideItemCancelledByEnum._('passenger');
-const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_driver =
-    const AdminRideItemCancelledByEnum._('driver');
-
-AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
-  String name,
-) {
-  switch (name) {
-    case 'passenger':
-      return _$adminRideItemCancelledByEnum_passenger;
-    case 'driver':
-      return _$adminRideItemCancelledByEnum_driver;
-    default:
-      throw ArgumentError(name);
-  }
-}
-
-final BuiltSet<AdminRideItemCancelledByEnum>
-_$adminRideItemCancelledByEnumValues = BuiltSet<AdminRideItemCancelledByEnum>(
-  const <AdminRideItemCancelledByEnum>[
-    _$adminRideItemCancelledByEnum_passenger,
-    _$adminRideItemCancelledByEnum_driver,
-  ],
-);
-
 const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_cash =
     const AdminRideItemPaymentMethodEnum._('cash');
 const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_gcash =
@@ -69,45 +43,38 @@ _$adminRideItemPaymentMethodEnumValues =
       ],
     );
 
-Serializer<AdminRideItemCancelledByEnum>
-_$adminRideItemCancelledByEnumSerializer =
-    _$AdminRideItemCancelledByEnumSerializer();
+const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_passenger =
+    const AdminRideItemCancelledByEnum._('passenger');
+const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_driver =
+    const AdminRideItemCancelledByEnum._('driver');
+
+AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'passenger':
+      return _$adminRideItemCancelledByEnum_passenger;
+    case 'driver':
+      return _$adminRideItemCancelledByEnum_driver;
+    default:
+      throw ArgumentError(name);
+  }
+}
+
+final BuiltSet<AdminRideItemCancelledByEnum>
+_$adminRideItemCancelledByEnumValues = BuiltSet<AdminRideItemCancelledByEnum>(
+  const <AdminRideItemCancelledByEnum>[
+    _$adminRideItemCancelledByEnum_passenger,
+    _$adminRideItemCancelledByEnum_driver,
+  ],
+);
+
 Serializer<AdminRideItemPaymentMethodEnum>
 _$adminRideItemPaymentMethodEnumSerializer =
     _$AdminRideItemPaymentMethodEnumSerializer();
-
-class _$AdminRideItemCancelledByEnumSerializer
-    implements PrimitiveSerializer<AdminRideItemCancelledByEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'passenger': 'passenger',
-    'driver': 'driver',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'passenger': 'passenger',
-    'driver': 'driver',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[AdminRideItemCancelledByEnum];
-  @override
-  final String wireName = 'AdminRideItemCancelledByEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    AdminRideItemCancelledByEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  AdminRideItemCancelledByEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => AdminRideItemCancelledByEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
+Serializer<AdminRideItemCancelledByEnum>
+_$adminRideItemCancelledByEnumSerializer =
+    _$AdminRideItemCancelledByEnumSerializer();
 
 class _$AdminRideItemPaymentMethodEnumSerializer
     implements PrimitiveSerializer<AdminRideItemPaymentMethodEnum> {
@@ -146,13 +113,44 @@ class _$AdminRideItemPaymentMethodEnumSerializer
   );
 }
 
+class _$AdminRideItemCancelledByEnumSerializer
+    implements PrimitiveSerializer<AdminRideItemCancelledByEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'passenger': 'passenger',
+    'driver': 'driver',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'passenger': 'passenger',
+    'driver': 'driver',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[AdminRideItemCancelledByEnum];
+  @override
+  final String wireName = 'AdminRideItemCancelledByEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    AdminRideItemCancelledByEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  AdminRideItemCancelledByEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminRideItemCancelledByEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
 class _$AdminRideItem extends AdminRideItem {
   @override
   final String? passengerName;
   @override
   final num? totalFare;
-  @override
-  final AdminRideItemPaymentMethodEnum? paymentMethod;
   @override
   final String? driverName;
   @override
@@ -174,6 +172,12 @@ class _$AdminRideItem extends AdminRideItem {
   @override
   final String? notes;
   @override
+  final double? fare;
+  @override
+  final double? estimatedFare;
+  @override
+  final RideResponsePaymentMethodEnum? paymentMethod;
+  @override
   final RideResponseCancelledByEnum? cancelledBy;
   @override
   final DateTime createdAt;
@@ -186,7 +190,6 @@ class _$AdminRideItem extends AdminRideItem {
   _$AdminRideItem._({
     this.passengerName,
     this.totalFare,
-    this.paymentMethod,
     this.driverName,
     required this.id,
     required this.status,
@@ -197,6 +200,9 @@ class _$AdminRideItem extends AdminRideItem {
     this.originAddress,
     this.destinationAddress,
     this.notes,
+    this.fare,
+    this.estimatedFare,
+    this.paymentMethod,
     this.cancelledBy,
     required this.createdAt,
     required this.updatedAt,
@@ -214,7 +220,6 @@ class _$AdminRideItem extends AdminRideItem {
     return other is AdminRideItem &&
         passengerName == other.passengerName &&
         totalFare == other.totalFare &&
-        paymentMethod == other.paymentMethod &&
         driverName == other.driverName &&
         id == other.id &&
         status == other.status &&
@@ -225,6 +230,9 @@ class _$AdminRideItem extends AdminRideItem {
         originAddress == other.originAddress &&
         destinationAddress == other.destinationAddress &&
         notes == other.notes &&
+        fare == other.fare &&
+        estimatedFare == other.estimatedFare &&
+        paymentMethod == other.paymentMethod &&
         cancelledBy == other.cancelledBy &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
@@ -235,7 +243,6 @@ class _$AdminRideItem extends AdminRideItem {
     var _$hash = 0;
     _$hash = $jc(_$hash, passengerName.hashCode);
     _$hash = $jc(_$hash, totalFare.hashCode);
-    _$hash = $jc(_$hash, paymentMethod.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -246,6 +253,9 @@ class _$AdminRideItem extends AdminRideItem {
     _$hash = $jc(_$hash, originAddress.hashCode);
     _$hash = $jc(_$hash, destinationAddress.hashCode);
     _$hash = $jc(_$hash, notes.hashCode);
+    _$hash = $jc(_$hash, fare.hashCode);
+    _$hash = $jc(_$hash, estimatedFare.hashCode);
+    _$hash = $jc(_$hash, paymentMethod.hashCode);
     _$hash = $jc(_$hash, cancelledBy.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
@@ -258,7 +268,6 @@ class _$AdminRideItem extends AdminRideItem {
     return (newBuiltValueToStringHelper(r'AdminRideItem')
           ..add('passengerName', passengerName)
           ..add('totalFare', totalFare)
-          ..add('paymentMethod', paymentMethod)
           ..add('driverName', driverName)
           ..add('id', id)
           ..add('status', status)
@@ -269,6 +278,9 @@ class _$AdminRideItem extends AdminRideItem {
           ..add('originAddress', originAddress)
           ..add('destinationAddress', destinationAddress)
           ..add('notes', notes)
+          ..add('fare', fare)
+          ..add('estimatedFare', estimatedFare)
+          ..add('paymentMethod', paymentMethod)
           ..add('cancelledBy', cancelledBy)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
@@ -290,11 +302,6 @@ class AdminRideItemBuilder
   num? _totalFare;
   num? get totalFare => _$this._totalFare;
   set totalFare(covariant num? totalFare) => _$this._totalFare = totalFare;
-
-  AdminRideItemPaymentMethodEnum? _paymentMethod;
-  AdminRideItemPaymentMethodEnum? get paymentMethod => _$this._paymentMethod;
-  set paymentMethod(covariant AdminRideItemPaymentMethodEnum? paymentMethod) =>
-      _$this._paymentMethod = paymentMethod;
 
   String? _driverName;
   String? get driverName => _$this._driverName;
@@ -341,6 +348,20 @@ class AdminRideItemBuilder
   String? get notes => _$this._notes;
   set notes(covariant String? notes) => _$this._notes = notes;
 
+  double? _fare;
+  double? get fare => _$this._fare;
+  set fare(covariant double? fare) => _$this._fare = fare;
+
+  double? _estimatedFare;
+  double? get estimatedFare => _$this._estimatedFare;
+  set estimatedFare(covariant double? estimatedFare) =>
+      _$this._estimatedFare = estimatedFare;
+
+  RideResponsePaymentMethodEnum? _paymentMethod;
+  RideResponsePaymentMethodEnum? get paymentMethod => _$this._paymentMethod;
+  set paymentMethod(covariant RideResponsePaymentMethodEnum? paymentMethod) =>
+      _$this._paymentMethod = paymentMethod;
+
   RideResponseCancelledByEnum? _cancelledBy;
   RideResponseCancelledByEnum? get cancelledBy => _$this._cancelledBy;
   set cancelledBy(covariant RideResponseCancelledByEnum? cancelledBy) =>
@@ -363,7 +384,6 @@ class AdminRideItemBuilder
     if ($v != null) {
       _passengerName = $v.passengerName;
       _totalFare = $v.totalFare;
-      _paymentMethod = $v.paymentMethod;
       _driverName = $v.driverName;
       _id = $v.id;
       _status = $v.status;
@@ -374,6 +394,9 @@ class AdminRideItemBuilder
       _originAddress = $v.originAddress;
       _destinationAddress = $v.destinationAddress;
       _notes = $v.notes;
+      _fare = $v.fare;
+      _estimatedFare = $v.estimatedFare;
+      _paymentMethod = $v.paymentMethod;
       _cancelledBy = $v.cancelledBy;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
@@ -403,7 +426,6 @@ class AdminRideItemBuilder
           _$AdminRideItem._(
             passengerName: passengerName,
             totalFare: totalFare,
-            paymentMethod: paymentMethod,
             driverName: driverName,
             id: BuiltValueNullFieldError.checkNotNull(
               id,
@@ -426,6 +448,9 @@ class AdminRideItemBuilder
             originAddress: originAddress,
             destinationAddress: destinationAddress,
             notes: notes,
+            fare: fare,
+            estimatedFare: estimatedFare,
+            paymentMethod: paymentMethod,
             cancelledBy: cancelledBy,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,

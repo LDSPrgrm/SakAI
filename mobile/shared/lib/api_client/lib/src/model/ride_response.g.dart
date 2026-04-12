@@ -6,6 +6,32 @@ part of 'ride_response.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_cash =
+    const RideResponsePaymentMethodEnum._('cash');
+const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_card =
+    const RideResponsePaymentMethodEnum._('card');
+
+RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnumValueOf(
+  String name,
+) {
+  switch (name) {
+    case 'cash':
+      return _$rideResponsePaymentMethodEnum_cash;
+    case 'card':
+      return _$rideResponsePaymentMethodEnum_card;
+    default:
+      throw ArgumentError(name);
+  }
+}
+
+final BuiltSet<RideResponsePaymentMethodEnum>
+_$rideResponsePaymentMethodEnumValues = BuiltSet<RideResponsePaymentMethodEnum>(
+  const <RideResponsePaymentMethodEnum>[
+    _$rideResponsePaymentMethodEnum_cash,
+    _$rideResponsePaymentMethodEnum_card,
+  ],
+);
+
 const RideResponseCancelledByEnum _$rideResponseCancelledByEnum_passenger =
     const RideResponseCancelledByEnum._('passenger');
 const RideResponseCancelledByEnum _$rideResponseCancelledByEnum_driver =
@@ -30,9 +56,45 @@ _$rideResponseCancelledByEnumValues = BuiltSet<RideResponseCancelledByEnum>(
   ],
 );
 
+Serializer<RideResponsePaymentMethodEnum>
+_$rideResponsePaymentMethodEnumSerializer =
+    _$RideResponsePaymentMethodEnumSerializer();
 Serializer<RideResponseCancelledByEnum>
 _$rideResponseCancelledByEnumSerializer =
     _$RideResponseCancelledByEnumSerializer();
+
+class _$RideResponsePaymentMethodEnumSerializer
+    implements PrimitiveSerializer<RideResponsePaymentMethodEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'cash': 'cash',
+    'card': 'card',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'cash': 'cash',
+    'card': 'card',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[RideResponsePaymentMethodEnum];
+  @override
+  final String wireName = 'RideResponsePaymentMethodEnum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    RideResponsePaymentMethodEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  RideResponsePaymentMethodEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideResponsePaymentMethodEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
 
 class _$RideResponseCancelledByEnumSerializer
     implements PrimitiveSerializer<RideResponseCancelledByEnum> {
@@ -97,6 +159,15 @@ abstract mixin class RideResponseBuilder {
   String? get notes;
   set notes(String? notes);
 
+  double? get fare;
+  set fare(double? fare);
+
+  double? get estimatedFare;
+  set estimatedFare(double? estimatedFare);
+
+  RideResponsePaymentMethodEnum? get paymentMethod;
+  set paymentMethod(RideResponsePaymentMethodEnum? paymentMethod);
+
   RideResponseCancelledByEnum? get cancelledBy;
   set cancelledBy(RideResponseCancelledByEnum? cancelledBy);
 
@@ -127,6 +198,12 @@ class _$$RideResponse extends $RideResponse {
   @override
   final String? notes;
   @override
+  final double? fare;
+  @override
+  final double? estimatedFare;
+  @override
+  final RideResponsePaymentMethodEnum? paymentMethod;
+  @override
   final RideResponseCancelledByEnum? cancelledBy;
   @override
   final DateTime createdAt;
@@ -146,6 +223,9 @@ class _$$RideResponse extends $RideResponse {
     this.originAddress,
     this.destinationAddress,
     this.notes,
+    this.fare,
+    this.estimatedFare,
+    this.paymentMethod,
     this.cancelledBy,
     required this.createdAt,
     required this.updatedAt,
@@ -170,6 +250,9 @@ class _$$RideResponse extends $RideResponse {
         originAddress == other.originAddress &&
         destinationAddress == other.destinationAddress &&
         notes == other.notes &&
+        fare == other.fare &&
+        estimatedFare == other.estimatedFare &&
+        paymentMethod == other.paymentMethod &&
         cancelledBy == other.cancelledBy &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
@@ -187,6 +270,9 @@ class _$$RideResponse extends $RideResponse {
     _$hash = $jc(_$hash, originAddress.hashCode);
     _$hash = $jc(_$hash, destinationAddress.hashCode);
     _$hash = $jc(_$hash, notes.hashCode);
+    _$hash = $jc(_$hash, fare.hashCode);
+    _$hash = $jc(_$hash, estimatedFare.hashCode);
+    _$hash = $jc(_$hash, paymentMethod.hashCode);
     _$hash = $jc(_$hash, cancelledBy.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
@@ -206,6 +292,9 @@ class _$$RideResponse extends $RideResponse {
           ..add('originAddress', originAddress)
           ..add('destinationAddress', destinationAddress)
           ..add('notes', notes)
+          ..add('fare', fare)
+          ..add('estimatedFare', estimatedFare)
+          ..add('paymentMethod', paymentMethod)
           ..add('cancelledBy', cancelledBy)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
@@ -259,6 +348,20 @@ class $RideResponseBuilder
   String? get notes => _$this._notes;
   set notes(covariant String? notes) => _$this._notes = notes;
 
+  double? _fare;
+  double? get fare => _$this._fare;
+  set fare(covariant double? fare) => _$this._fare = fare;
+
+  double? _estimatedFare;
+  double? get estimatedFare => _$this._estimatedFare;
+  set estimatedFare(covariant double? estimatedFare) =>
+      _$this._estimatedFare = estimatedFare;
+
+  RideResponsePaymentMethodEnum? _paymentMethod;
+  RideResponsePaymentMethodEnum? get paymentMethod => _$this._paymentMethod;
+  set paymentMethod(covariant RideResponsePaymentMethodEnum? paymentMethod) =>
+      _$this._paymentMethod = paymentMethod;
+
   RideResponseCancelledByEnum? _cancelledBy;
   RideResponseCancelledByEnum? get cancelledBy => _$this._cancelledBy;
   set cancelledBy(covariant RideResponseCancelledByEnum? cancelledBy) =>
@@ -288,6 +391,9 @@ class $RideResponseBuilder
       _originAddress = $v.originAddress;
       _destinationAddress = $v.destinationAddress;
       _notes = $v.notes;
+      _fare = $v.fare;
+      _estimatedFare = $v.estimatedFare;
+      _paymentMethod = $v.paymentMethod;
       _cancelledBy = $v.cancelledBy;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
@@ -336,6 +442,9 @@ class $RideResponseBuilder
             originAddress: originAddress,
             destinationAddress: destinationAddress,
             notes: notes,
+            fare: fare,
+            estimatedFare: estimatedFare,
+            paymentMethod: paymentMethod,
             cancelledBy: cancelledBy,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,

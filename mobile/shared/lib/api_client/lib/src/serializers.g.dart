@@ -10,13 +10,13 @@ Serializers _$serializers =
     (Serializers().toBuilder()
           ..add($RideResponse.serializer)
           ..add($UserProfile.serializer)
+          ..add(AddPaymentMethodRequest.serializer)
           ..add(AddRideTipRequest.serializer)
           ..add(AdminBatchApprovePayouts200Response.serializer)
           ..add(AdminBatchKyc200Response.serializer)
           ..add(AdminExportReport200Response.serializer)
           ..add(AdminFaresResponse.serializer)
           ..add(AdminRideItem.serializer)
-          ..add(AdminRideItemPaymentMethodEnum.serializer)
           ..add(AdminRideListResponse.serializer)
           ..add(AdminUpdateFeatureFlagRequest.serializer)
           ..add(AdminUpdateKycStatusRequest.serializer)
@@ -31,6 +31,7 @@ Serializers _$serializers =
           ..add(BatchApproveRequest.serializer)
           ..add(BlackoutHour.serializer)
           ..add(CancelRequest.serializer)
+          ..add(CardDetails.serializer)
           ..add(ChangePasswordRequest.serializer)
           ..add(CommissionConfig.serializer)
           ..add(CommissionConfigRates.serializer)
@@ -50,6 +51,7 @@ Serializers _$serializers =
           ..add(DriverStatusResponse.serializer)
           ..add(DriverStatusResponseStatusEnum.serializer)
           ..add(DriverSummary.serializer)
+          ..add(EWalletDetails.serializer)
           ..add(ErrorCode.serializer)
           ..add(ErrorResponse.serializer)
           ..add(FareConfig.serializer)
@@ -99,6 +101,9 @@ Serializers _$serializers =
           ..add(PaymentFailureResponseCodeEnum.serializer)
           ..add(PaymentGatewayConfig.serializer)
           ..add(PaymentMethod.serializer)
+          ..add(PaymentMethodDetails.serializer)
+          ..add(PaymentMethodListResponse.serializer)
+          ..add(PaymentMethodType.serializer)
           ..add(PaymentProcessRequest.serializer)
           ..add(PaymentResponse.serializer)
           ..add(PaymentStatus.serializer)
@@ -111,6 +116,7 @@ Serializers _$serializers =
           ..add(ReportDefinition.serializer)
           ..add(RideRequestBody.serializer)
           ..add(RideResponseCancelledByEnum.serializer)
+          ..add(RideResponsePaymentMethodEnum.serializer)
           ..add(RideStatus.serializer)
           ..add(Role.serializer)
           ..add(RoleNameEnum.serializer)
@@ -133,6 +139,9 @@ Serializers _$serializers =
           ..add(UploadStatus.serializer)
           ..add(UserProfileRoleEnum.serializer)
           ..add(UserRatingResponse.serializer)
+          ..add(UserRideItem.serializer)
+          ..add(UserRideItemPaymentMethodEnum.serializer)
+          ..add(UserRideListResponse.serializer)
           ..add(VehicleInfo.serializer)
           ..add(WsEnvelope.serializer)
           ..add(WsEventDriverLocationUpdated.serializer)
@@ -185,6 +194,12 @@ Serializers _$serializers =
             () => ListBuilder<NearbyDriver>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(PaymentMethodDetails),
+            ]),
+            () => ListBuilder<PaymentMethodDetails>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(RolePermission)]),
             () => ListBuilder<RolePermission>(),
           )
@@ -219,6 +234,10 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(UserProfile)]),
             () => ListBuilder<UserProfile>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(UserRideItem)]),
+            () => ListBuilder<UserRideItem>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

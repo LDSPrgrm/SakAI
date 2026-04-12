@@ -18,6 +18,7 @@ class WsEvent {
 
 /// Event names as constants.
 class WsEventNames {
+  static const rideRequested = 'ride.requested';
   static const rideAccepted = 'ride.accepted';
   static const rideDeclined = 'ride.declined';
   static const rideOfferExpired = 'ride.offer_expired';
