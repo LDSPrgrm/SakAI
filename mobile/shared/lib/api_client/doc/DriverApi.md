@@ -9,10 +9,57 @@ All URIs are relative to *http://localhost:8080/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**driverGetDocumentStatus**](DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
 [**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
+[**driverListDocuments**](DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
+[**driverUploadDocument**](DriverApi.md#driveruploaddocument) | **POST** /drivers/documents | Upload a driver verification document
+[**getNearbyDrivers**](DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers
 
+
+# **driverGetDocumentStatus**
+> DriverDocumentResponse driverGetDocumentStatus(documentId)
+
+Get status of a specific document
+
+Retrieve the status and details of an uploaded document. Only the document owner can access this endpoint. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final String documentId = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | UUID of the document
+
+try {
+    final response = api.driverGetDocumentStatus(documentId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverGetDocumentStatus: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **documentId** | **String**| UUID of the document | 
+
+### Return type
+
+[**DriverDocumentResponse**](DriverDocumentResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **driverGetIncomingRide**
 > RideResponse driverGetIncomingRide()
@@ -41,6 +88,45 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**RideResponse**](RideResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **driverListDocuments**
+> DriverDocumentsListResponse driverListDocuments()
+
+List all uploaded documents for the authenticated driver
+
+Returns all documents uploaded by the authenticated driver with their current verification status. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+
+try {
+    final response = api.driverListDocuments();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverListDocuments: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**DriverDocumentsListResponse**](DriverDocumentsListResponse.md)
 
 ### Authorization
 
@@ -134,6 +220,102 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **driverUploadDocument**
+> DriverDocumentResponse driverUploadDocument(documentType, documentNumber, image, expiryDate)
+
+Upload a driver verification document
+
+Upload a driver verification document (license, registration, or insurance). Requires `role=driver`. Uploaded documents enter `uploaded` status and await admin review. Images must be JPEG or PNG, max 10MB. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final String documentType = documentType_example; // String | Type of document being uploaded
+final String documentNumber = documentNumber_example; // String | Document identifier (license number, registration number, etc.)
+final MultipartFile image = BINARY_DATA_HERE; // MultipartFile | Document image file (JPEG/PNG, max 10MB)
+final Date expiryDate = 2013-10-20; // Date | Document expiration date (optional)
+
+try {
+    final response = api.driverUploadDocument(documentType, documentNumber, image, expiryDate);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverUploadDocument: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **documentType** | **String**| Type of document being uploaded | 
+ **documentNumber** | **String**| Document identifier (license number, registration number, etc.) | 
+ **image** | **MultipartFile**| Document image file (JPEG/PNG, max 10MB) | 
+ **expiryDate** | **Date**| Document expiration date (optional) | [optional] 
+
+### Return type
+
+[**DriverDocumentResponse**](DriverDocumentResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: multipart/form-data
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getNearbyDrivers**
+> NearbyDriversResponse getNearbyDrivers(lat, lng, radius)
+
+Get nearby available drivers
+
+Returns a list of online drivers currently available for matching within a given radius of a location. Used to show markers on the map. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final double lat = 3.4; // double | 
+final double lng = 3.4; // double | 
+final double radius = 3.4; // double | 
+
+try {
+    final response = api.getNearbyDrivers(lat, lng, radius);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->getNearbyDrivers: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **lat** | **double**|  | 
+ **lng** | **double**|  | 
+ **radius** | **double**|  | [optional] [default to 5000.0]
+
+### Return type
+
+[**NearbyDriversResponse**](NearbyDriversResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

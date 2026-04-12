@@ -67,7 +67,47 @@ class _$RideResponseCancelledByEnumSerializer
   );
 }
 
-class _$RideResponse extends RideResponse {
+abstract mixin class RideResponseBuilder {
+  void replace(RideResponse other);
+  void update(void Function(RideResponseBuilder) updates);
+  String? get id;
+  set id(String? id);
+
+  RideStatus? get status;
+  set status(RideStatus? status);
+
+  UserProfile? get passenger;
+  set passenger(UserProfile? passenger);
+
+  DriverSummaryBuilder get driver;
+  set driver(DriverSummaryBuilder? driver);
+
+  LatLngBuilder get origin;
+  set origin(LatLngBuilder? origin);
+
+  LatLngBuilder get destination;
+  set destination(LatLngBuilder? destination);
+
+  String? get originAddress;
+  set originAddress(String? originAddress);
+
+  String? get destinationAddress;
+  set destinationAddress(String? destinationAddress);
+
+  String? get notes;
+  set notes(String? notes);
+
+  RideResponseCancelledByEnum? get cancelledBy;
+  set cancelledBy(RideResponseCancelledByEnum? cancelledBy);
+
+  DateTime? get createdAt;
+  set createdAt(DateTime? createdAt);
+
+  DateTime? get updatedAt;
+  set updatedAt(DateTime? updatedAt);
+}
+
+class _$$RideResponse extends $RideResponse {
   @override
   final String id;
   @override
@@ -93,10 +133,10 @@ class _$RideResponse extends RideResponse {
   @override
   final DateTime updatedAt;
 
-  factory _$RideResponse([void Function(RideResponseBuilder)? updates]) =>
-      (RideResponseBuilder()..update(updates))._build();
+  factory _$$RideResponse([void Function($RideResponseBuilder)? updates]) =>
+      ($RideResponseBuilder()..update(updates))._build();
 
-  _$RideResponse._({
+  _$$RideResponse._({
     required this.id,
     required this.status,
     required this.passenger,
@@ -111,16 +151,16 @@ class _$RideResponse extends RideResponse {
     required this.updatedAt,
   }) : super._();
   @override
-  RideResponse rebuild(void Function(RideResponseBuilder) updates) =>
+  $RideResponse rebuild(void Function($RideResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  RideResponseBuilder toBuilder() => RideResponseBuilder()..replace(this);
+  $RideResponseBuilder toBuilder() => $RideResponseBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is RideResponse &&
+    return other is $RideResponse &&
         id == other.id &&
         status == other.status &&
         passenger == other.passenger &&
@@ -156,7 +196,7 @@ class _$RideResponse extends RideResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'RideResponse')
+    return (newBuiltValueToStringHelper(r'$RideResponse')
           ..add('id', id)
           ..add('status', status)
           ..add('passenger', passenger)
@@ -173,73 +213,75 @@ class _$RideResponse extends RideResponse {
   }
 }
 
-class RideResponseBuilder
-    implements Builder<RideResponse, RideResponseBuilder> {
-  _$RideResponse? _$v;
+class $RideResponseBuilder
+    implements
+        Builder<$RideResponse, $RideResponseBuilder>,
+        RideResponseBuilder {
+  _$$RideResponse? _$v;
 
   String? _id;
   String? get id => _$this._id;
-  set id(String? id) => _$this._id = id;
+  set id(covariant String? id) => _$this._id = id;
 
   RideStatus? _status;
   RideStatus? get status => _$this._status;
-  set status(RideStatus? status) => _$this._status = status;
+  set status(covariant RideStatus? status) => _$this._status = status;
 
-  UserProfileBuilder? _passenger;
-  UserProfileBuilder get passenger =>
-      _$this._passenger ??= UserProfileBuilder();
-  set passenger(UserProfileBuilder? passenger) => _$this._passenger = passenger;
+  UserProfile? _passenger;
+  UserProfile? get passenger => _$this._passenger;
+  set passenger(covariant UserProfile? passenger) =>
+      _$this._passenger = passenger;
 
   DriverSummaryBuilder? _driver;
   DriverSummaryBuilder get driver => _$this._driver ??= DriverSummaryBuilder();
-  set driver(DriverSummaryBuilder? driver) => _$this._driver = driver;
+  set driver(covariant DriverSummaryBuilder? driver) => _$this._driver = driver;
 
   LatLngBuilder? _origin;
   LatLngBuilder get origin => _$this._origin ??= LatLngBuilder();
-  set origin(LatLngBuilder? origin) => _$this._origin = origin;
+  set origin(covariant LatLngBuilder? origin) => _$this._origin = origin;
 
   LatLngBuilder? _destination;
   LatLngBuilder get destination => _$this._destination ??= LatLngBuilder();
-  set destination(LatLngBuilder? destination) =>
+  set destination(covariant LatLngBuilder? destination) =>
       _$this._destination = destination;
 
   String? _originAddress;
   String? get originAddress => _$this._originAddress;
-  set originAddress(String? originAddress) =>
+  set originAddress(covariant String? originAddress) =>
       _$this._originAddress = originAddress;
 
   String? _destinationAddress;
   String? get destinationAddress => _$this._destinationAddress;
-  set destinationAddress(String? destinationAddress) =>
+  set destinationAddress(covariant String? destinationAddress) =>
       _$this._destinationAddress = destinationAddress;
 
   String? _notes;
   String? get notes => _$this._notes;
-  set notes(String? notes) => _$this._notes = notes;
+  set notes(covariant String? notes) => _$this._notes = notes;
 
   RideResponseCancelledByEnum? _cancelledBy;
   RideResponseCancelledByEnum? get cancelledBy => _$this._cancelledBy;
-  set cancelledBy(RideResponseCancelledByEnum? cancelledBy) =>
+  set cancelledBy(covariant RideResponseCancelledByEnum? cancelledBy) =>
       _$this._cancelledBy = cancelledBy;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
-  set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
+  set createdAt(covariant DateTime? createdAt) => _$this._createdAt = createdAt;
 
   DateTime? _updatedAt;
   DateTime? get updatedAt => _$this._updatedAt;
-  set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
+  set updatedAt(covariant DateTime? updatedAt) => _$this._updatedAt = updatedAt;
 
-  RideResponseBuilder() {
-    RideResponse._defaults(this);
+  $RideResponseBuilder() {
+    $RideResponse._defaults(this);
   }
 
-  RideResponseBuilder get _$this {
+  $RideResponseBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
       _status = $v.status;
-      _passenger = $v.passenger.toBuilder();
+      _passenger = $v.passenger;
       _driver = $v.driver?.toBuilder();
       _origin = $v.origin.toBuilder();
       _destination = $v.destination.toBuilder();
@@ -255,35 +297,39 @@ class RideResponseBuilder
   }
 
   @override
-  void replace(RideResponse other) {
-    _$v = other as _$RideResponse;
+  void replace(covariant $RideResponse other) {
+    _$v = other as _$$RideResponse;
   }
 
   @override
-  void update(void Function(RideResponseBuilder)? updates) {
+  void update(void Function($RideResponseBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
   @override
-  RideResponse build() => _build();
+  $RideResponse build() => _build();
 
-  _$RideResponse _build() {
-    _$RideResponse _$result;
+  _$$RideResponse _build() {
+    _$$RideResponse _$result;
     try {
       _$result =
           _$v ??
-          _$RideResponse._(
+          _$$RideResponse._(
             id: BuiltValueNullFieldError.checkNotNull(
               id,
-              r'RideResponse',
+              r'$RideResponse',
               'id',
             ),
             status: BuiltValueNullFieldError.checkNotNull(
               status,
-              r'RideResponse',
+              r'$RideResponse',
               'status',
             ),
-            passenger: passenger.build(),
+            passenger: BuiltValueNullFieldError.checkNotNull(
+              passenger,
+              r'$RideResponse',
+              'passenger',
+            ),
             driver: _driver?.build(),
             origin: origin.build(),
             destination: destination.build(),
@@ -293,20 +339,18 @@ class RideResponseBuilder
             cancelledBy: cancelledBy,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
-              r'RideResponse',
+              r'$RideResponse',
               'createdAt',
             ),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
               updatedAt,
-              r'RideResponse',
+              r'$RideResponse',
               'updatedAt',
             ),
           );
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'passenger';
-        passenger.build();
         _$failedField = 'driver';
         _driver?.build();
         _$failedField = 'origin';
@@ -315,7 +359,7 @@ class RideResponseBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'RideResponse',
+          r'$RideResponse',
           _$failedField,
           e.toString(),
         );

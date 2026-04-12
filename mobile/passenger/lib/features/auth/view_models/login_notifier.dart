@@ -59,6 +59,10 @@ class LoginNotifier extends Notifier<LoginState> {
             expiresAt: session.accessTokenExpiresAt,
           );
       ref.read(authStateProvider.notifier).markAuthenticated();
+
+      // Connect WebSocket for real-time ride updates.
+      await ref.read(wsConnectionProvider).connectIfAuthenticated();
+
       state = const LoginState(succeeded: true);
     } on AuthException catch (e) {
       state = LoginState(errorMessage: e.userMessage);

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/routes.dart';
 import '../view_models/waiting_view_model.dart';
 
 /// Waiting screen shown immediately after a successful POST /rides.
@@ -24,6 +28,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   late final WaitingViewModel _vm;
+  StreamSubscription<WsEvent>? _wsSub;
 
   @override
   void initState() {
@@ -38,6 +43,8 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
       rideId: widget.rideId,
     );
     _vm.addListener(_onVmChanged);
+
+    _setupWebSocketListener();
   }
 
   @override
@@ -45,6 +52,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     _vm.removeListener(_onVmChanged);
     _vm.dispose();
     _pulse.dispose();
+    _wsSub?.cancel();
     super.dispose();
   }
 
@@ -60,6 +68,34 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
       ).showSnackBar(SnackBar(content: Text(_vm.errorMessage!)));
       _vm.clearError();
     }
+  }
+
+  /// Listen for WebSocket events to navigate when driver accepts.
+  void _setupWebSocketListener() {
+    final wsClient = ref.read(wsClientProvider);
+    _wsSub = wsClient.events.listen((event) {
+      if (!mounted) return;
+
+      if (event.type == WsEventNames.rideAccepted) {
+        // Driver accepted — navigate to active ride screen.
+        context.go(Routes.rideActive, extra: widget.rideId);
+      } else if (event.type == WsEventNames.rideOfferExpired) {
+        // No drivers available.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No drivers available. Please try again.'),
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else if (event.type == WsEventNames.rideCancelled) {
+        // Ride was cancelled while waiting.
+        if (mounted) {
+          context.go('/ride/cancelled/${widget.rideId}');
+        }
+      }
+    });
   }
 
   @override

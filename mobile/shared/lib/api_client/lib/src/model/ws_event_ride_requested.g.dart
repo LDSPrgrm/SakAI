@@ -99,10 +99,9 @@ class WsEventRideRequestedBuilder
   String? get rideId => _$this._rideId;
   set rideId(String? rideId) => _$this._rideId = rideId;
 
-  UserProfileBuilder? _passenger;
-  UserProfileBuilder get passenger =>
-      _$this._passenger ??= UserProfileBuilder();
-  set passenger(UserProfileBuilder? passenger) => _$this._passenger = passenger;
+  UserProfile? _passenger;
+  UserProfile? get passenger => _$this._passenger;
+  set passenger(UserProfile? passenger) => _$this._passenger = passenger;
 
   LatLngBuilder? _origin;
   LatLngBuilder get origin => _$this._origin ??= LatLngBuilder();
@@ -139,7 +138,7 @@ class WsEventRideRequestedBuilder
     final $v = _$v;
     if ($v != null) {
       _rideId = $v.rideId;
-      _passenger = $v.passenger.toBuilder();
+      _passenger = $v.passenger;
       _origin = $v.origin.toBuilder();
       _destination = $v.destination.toBuilder();
       _originAddress = $v.originAddress;
@@ -175,7 +174,11 @@ class WsEventRideRequestedBuilder
               r'WsEventRideRequested',
               'rideId',
             ),
-            passenger: passenger.build(),
+            passenger: BuiltValueNullFieldError.checkNotNull(
+              passenger,
+              r'WsEventRideRequested',
+              'passenger',
+            ),
             origin: origin.build(),
             destination: destination.build(),
             originAddress: originAddress,
@@ -190,8 +193,6 @@ class WsEventRideRequestedBuilder
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'passenger';
-        passenger.build();
         _$failedField = 'origin';
         origin.build();
         _$failedField = 'destination';

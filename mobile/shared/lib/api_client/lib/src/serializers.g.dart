@@ -8,22 +8,41 @@ part of 'serializers.dart';
 
 Serializers _$serializers =
     (Serializers().toBuilder()
+          ..add($RideResponse.serializer)
+          ..add($UserProfile.serializer)
+          ..add(AddRideTipRequest.serializer)
+          ..add(AdminBatchApprovePayouts200Response.serializer)
+          ..add(AdminBatchKyc200Response.serializer)
           ..add(AdminExportReport200Response.serializer)
           ..add(AdminFaresResponse.serializer)
+          ..add(AdminRideItem.serializer)
+          ..add(AdminRideItemPaymentMethodEnum.serializer)
+          ..add(AdminRideListResponse.serializer)
           ..add(AdminUpdateFeatureFlagRequest.serializer)
           ..add(AdminUpdateKycStatusRequest.serializer)
           ..add(AdminUpdateKycStatusRequestStatusEnum.serializer)
           ..add(AdminUpdateNotificationTemplateRequest.serializer)
+          ..add(AdminUser.serializer)
+          ..add(AdminUserListResponse.serializer)
+          ..add(AdminUserStatusEnum.serializer)
           ..add(AuditLog.serializer)
           ..add(AuditLogResponse.serializer)
           ..add(AuthResponse.serializer)
+          ..add(BatchApproveRequest.serializer)
           ..add(BlackoutHour.serializer)
           ..add(CancelRequest.serializer)
+          ..add(ChangePasswordRequest.serializer)
           ..add(CommissionConfig.serializer)
           ..add(CommissionConfigRates.serializer)
+          ..add(ComplianceData.serializer)
+          ..add(ComplianceDataAccreditationStatusEnum.serializer)
           ..add(CreateAdminRequest.serializer)
           ..add(CreateAdminRequestRoleEnum.serializer)
+          ..add(CreateRoleRequest.serializer)
           ..add(DashboardResponse.serializer)
+          ..add(DocumentType.serializer)
+          ..add(DriverDocumentResponse.serializer)
+          ..add(DriverDocumentsListResponse.serializer)
           ..add(DriverPayout.serializer)
           ..add(DriverPayoutStatusEnum.serializer)
           ..add(DriverStatusRequest.serializer)
@@ -52,35 +71,68 @@ Serializers _$serializers =
           ..add(HealthResponseStatusEnum.serializer)
           ..add(Incident.serializer)
           ..add(IncidentResolveRequest.serializer)
+          ..add(IncidentSeverityEnum.serializer)
+          ..add(IncidentStatusEnum.serializer)
+          ..add(IncidentTriggeredByEnum.serializer)
+          ..add(IncidentTypeEnum.serializer)
           ..add(Integration.serializer)
           ..add(IntegrationStatusEnum.serializer)
+          ..add(IntegrationTestResult.serializer)
+          ..add(IntegrationTestResultStatusEnum.serializer)
+          ..add(KycBatchRequest.serializer)
+          ..add(KycBatchRequestStatusEnum.serializer)
           ..add(KycEntry.serializer)
           ..add(KycEntryStatusEnum.serializer)
           ..add(LatLng.serializer)
           ..add(LocationUpdateRequest.serializer)
           ..add(LoginRequest.serializer)
           ..add(LogoutRequest.serializer)
+          ..add(MetricResponse.serializer)
+          ..add(MetricResponseTrendEnum.serializer)
+          ..add(NearbyDriver.serializer)
+          ..add(NearbyDriverProviderEnum.serializer)
+          ..add(NearbyDriversResponse.serializer)
           ..add(NotificationTemplate.serializer)
           ..add(NotificationTemplateChannelEnum.serializer)
+          ..add(PaginationMeta.serializer)
+          ..add(PaymentFailureResponse.serializer)
+          ..add(PaymentFailureResponseCodeEnum.serializer)
+          ..add(PaymentGatewayConfig.serializer)
+          ..add(PaymentMethod.serializer)
+          ..add(PaymentProcessRequest.serializer)
+          ..add(PaymentResponse.serializer)
+          ..add(PaymentStatus.serializer)
           ..add(PaymentSummary.serializer)
+          ..add(RatingResponse.serializer)
+          ..add(ReceiptResponse.serializer)
           ..add(RefreshRequest.serializer)
           ..add(RegisterRequest.serializer)
           ..add(RegisterRequestRoleEnum.serializer)
           ..add(ReportDefinition.serializer)
           ..add(RideRequestBody.serializer)
-          ..add(RideResponse.serializer)
           ..add(RideResponseCancelledByEnum.serializer)
           ..add(RideStatus.serializer)
+          ..add(Role.serializer)
+          ..add(RoleNameEnum.serializer)
+          ..add(RolePermission.serializer)
+          ..add(RolePermissionPermissionKeyEnum.serializer)
+          ..add(ServiceArea.serializer)
+          ..add(ServiceAreaResponse.serializer)
+          ..add(SubmitRatingRequest.serializer)
           ..add(SurgeConfig.serializer)
           ..add(SystemService.serializer)
           ..add(SystemServiceStatusEnum.serializer)
+          ..add(TipResponse.serializer)
           ..add(Transaction.serializer)
           ..add(TransactionPaymentMethodEnum.serializer)
           ..add(TransactionStatusEnum.serializer)
           ..add(UpdateAdminStatusRequest.serializer)
           ..add(UpdateAdminStatusRequestRoleEnum.serializer)
-          ..add(UserProfile.serializer)
+          ..add(UpdatePaymentConfigRequest.serializer)
+          ..add(UpdateRoleRequest.serializer)
+          ..add(UploadStatus.serializer)
           ..add(UserProfileRoleEnum.serializer)
+          ..add(UserRatingResponse.serializer)
           ..add(VehicleInfo.serializer)
           ..add(WsEnvelope.serializer)
           ..add(WsEventDriverLocationUpdated.serializer)
@@ -92,6 +144,10 @@ Serializers _$serializers =
           ..add(WsEventRideOfferExpired.serializer)
           ..add(WsEventRideRequested.serializer)
           ..add(WsEventRideStatusChanged.serializer)
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AdminRideItem)]),
+            () => ListBuilder<AdminRideItem>(),
+          )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(AuditLog)]),
             () => ListBuilder<AuditLog>(),
@@ -109,6 +165,12 @@ Serializers _$serializers =
             () => ListBuilder<BuiltList<BuiltList<num>>>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [
+              const FullType(DriverDocumentResponse),
+            ]),
+            () => ListBuilder<DriverDocumentResponse>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(FareConfig)]),
             () => ListBuilder<FareConfig>(),
           )
@@ -119,8 +181,58 @@ Serializers _$serializers =
             () => ListBuilder<GeoJSONFeatureCollectionFeaturesInner>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(NearbyDriver)]),
+            () => ListBuilder<NearbyDriver>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(RolePermission)]),
+            () => ListBuilder<RolePermission>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(RolePermission)]),
+            () => ListBuilder<RolePermission>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(RolePermission)]),
+            () => ListBuilder<RolePermission>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(RolePermission)]),
+            () => ListBuilder<RolePermission>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ServiceArea)]),
+            () => ListBuilder<ServiceArea>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(UserProfile)]),
+            () => ListBuilder<UserProfile>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType(String),
+            ]),
+            () => MapBuilder<String, String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType(String),
+            ]),
+            () => MapBuilder<String, String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, const [

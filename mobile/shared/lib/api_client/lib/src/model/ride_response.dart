@@ -25,11 +25,14 @@ part 'ride_response.g.dart';
 /// * [originAddress] 
 /// * [destinationAddress] 
 /// * [notes] 
+/// * [fare] - Final fare amount (null if ride not completed)
+/// * [estimatedFare] - Estimated fare at request time
+/// * [paymentMethod] - Payment method used for ride
 /// * [cancelledBy] - Set only when status is `cancelled`
 /// * [createdAt] 
 /// * [updatedAt] 
-@BuiltValue()
-abstract class RideResponse implements Built<RideResponse, RideResponseBuilder> {
+@BuiltValue(instantiable: false)
+abstract class RideResponse  {
   @BuiltValueField(wireName: r'id')
   String get id;
 
@@ -59,6 +62,19 @@ abstract class RideResponse implements Built<RideResponse, RideResponseBuilder> 
   @BuiltValueField(wireName: r'notes')
   String? get notes;
 
+  /// Final fare amount (null if ride not completed)
+  @BuiltValueField(wireName: r'fare')
+  double? get fare;
+
+  /// Estimated fare at request time
+  @BuiltValueField(wireName: r'estimated_fare')
+  double? get estimatedFare;
+
+  /// Payment method used for ride
+  @BuiltValueField(wireName: r'payment_method')
+  RideResponsePaymentMethodEnum? get paymentMethod;
+  // enum paymentMethodEnum {  cash,  card,  };
+
   /// Set only when status is `cancelled`
   @BuiltValueField(wireName: r'cancelled_by')
   RideResponseCancelledByEnum? get cancelledBy;
@@ -70,20 +86,13 @@ abstract class RideResponse implements Built<RideResponse, RideResponseBuilder> 
   @BuiltValueField(wireName: r'updated_at')
   DateTime get updatedAt;
 
-  RideResponse._();
-
-  factory RideResponse([void updates(RideResponseBuilder b)]) = _$RideResponse;
-
-  @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(RideResponseBuilder b) => b;
-
   @BuiltValueSerializer(custom: true)
   static Serializer<RideResponse> get serializer => _$RideResponseSerializer();
 }
 
 class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
   @override
-  final Iterable<Type> types = const [RideResponse, _$RideResponse];
+  final Iterable<Type> types = const [RideResponse];
 
   @override
   final String wireName = r'RideResponse';
@@ -146,6 +155,27 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
         specifiedType: const FullType.nullable(String),
       );
     }
+    if (object.fare != null) {
+      yield r'fare';
+      yield serializers.serialize(
+        object.fare,
+        specifiedType: const FullType.nullable(double),
+      );
+    }
+    if (object.estimatedFare != null) {
+      yield r'estimated_fare';
+      yield serializers.serialize(
+        object.estimatedFare,
+        specifiedType: const FullType(double),
+      );
+    }
+    if (object.paymentMethod != null) {
+      yield r'payment_method';
+      yield serializers.serialize(
+        object.paymentMethod,
+        specifiedType: const FullType(RideResponsePaymentMethodEnum),
+      );
+    }
     if (object.cancelledBy != null) {
       yield r'cancelled_by';
       yield serializers.serialize(
@@ -172,6 +202,46 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
     FullType specifiedType = FullType.unspecified,
   }) {
     return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
+  }
+
+  @override
+  RideResponse deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    return serializers.deserialize(serialized, specifiedType: FullType($RideResponse)) as $RideResponse;
+  }
+}
+
+/// a concrete implementation of [RideResponse], since [RideResponse] is not instantiable
+@BuiltValue(instantiable: true)
+abstract class $RideResponse implements RideResponse, Built<$RideResponse, $RideResponseBuilder> {
+  $RideResponse._();
+
+  factory $RideResponse([void Function($RideResponseBuilder)? updates]) = _$$RideResponse;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _defaults($RideResponseBuilder b) => b;
+
+  @BuiltValueSerializer(custom: true)
+  static Serializer<$RideResponse> get serializer => _$$RideResponseSerializer();
+}
+
+class _$$RideResponseSerializer implements PrimitiveSerializer<$RideResponse> {
+  @override
+  final Iterable<Type> types = const [$RideResponse, _$$RideResponse];
+
+  @override
+  final String wireName = r'$RideResponse';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    $RideResponse object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    return serializers.serialize(object, specifiedType: FullType(RideResponse))!;
   }
 
   void _deserializeProperties(
@@ -205,7 +275,7 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
             value,
             specifiedType: const FullType(UserProfile),
           ) as UserProfile;
-          result.passenger.replace(valueDes);
+          result.passenger = valueDes;
           break;
         case r'driver':
           final valueDes = serializers.deserialize(
@@ -253,6 +323,28 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
           if (valueDes == null) continue;
           result.notes = valueDes;
           break;
+        case r'fare':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(double),
+          ) as double?;
+          if (valueDes == null) continue;
+          result.fare = valueDes;
+          break;
+        case r'estimated_fare':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(double),
+          ) as double;
+          result.estimatedFare = valueDes;
+          break;
+        case r'payment_method':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(RideResponsePaymentMethodEnum),
+          ) as RideResponsePaymentMethodEnum;
+          result.paymentMethod = valueDes;
+          break;
         case r'cancelled_by':
           final valueDes = serializers.deserialize(
             value,
@@ -284,12 +376,12 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
   }
 
   @override
-  RideResponse deserialize(
+  $RideResponse deserialize(
     Serializers serializers,
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = RideResponseBuilder();
+    final result = $RideResponseBuilder();
     final serializedList = (serialized as Iterable<Object?>).toList();
     final unhandled = <Object?>[];
     _deserializeProperties(
@@ -302,6 +394,23 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
     );
     return result.build();
   }
+}
+
+class RideResponsePaymentMethodEnum extends EnumClass {
+
+  /// Payment method used for ride
+  @BuiltValueEnumConst(wireName: r'cash')
+  static const RideResponsePaymentMethodEnum cash = _$rideResponsePaymentMethodEnum_cash;
+  /// Payment method used for ride
+  @BuiltValueEnumConst(wireName: r'card')
+  static const RideResponsePaymentMethodEnum card = _$rideResponsePaymentMethodEnum_card;
+
+  static Serializer<RideResponsePaymentMethodEnum> get serializer => _$rideResponsePaymentMethodEnumSerializer;
+
+  const RideResponsePaymentMethodEnum._(String name): super(name);
+
+  static BuiltSet<RideResponsePaymentMethodEnum> get values => _$rideResponsePaymentMethodEnumValues;
+  static RideResponsePaymentMethodEnum valueOf(String name) => _$rideResponsePaymentMethodEnumValueOf(name);
 }
 
 class RideResponseCancelledByEnum extends EnumClass {
