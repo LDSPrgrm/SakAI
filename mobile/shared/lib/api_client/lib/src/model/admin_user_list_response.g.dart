@@ -12,15 +12,15 @@ class _$AdminUserListResponse extends AdminUserListResponse {
   @override
   final PaginationMeta? meta;
 
-  factory _$AdminUserListResponse([
-    void Function(AdminUserListResponseBuilder)? updates,
-  ]) => (AdminUserListResponseBuilder()..update(updates))._build();
+  factory _$AdminUserListResponse(
+          [void Function(AdminUserListResponseBuilder)? updates]) =>
+      (AdminUserListResponseBuilder()..update(updates))._build();
 
   _$AdminUserListResponse._({this.items, this.meta}) : super._();
   @override
   AdminUserListResponse rebuild(
-    void Function(AdminUserListResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(AdminUserListResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   AdminUserListResponseBuilder toBuilder() =>
@@ -95,8 +95,7 @@ class AdminUserListResponseBuilder
   _$AdminUserListResponse _build() {
     _$AdminUserListResponse _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$AdminUserListResponse._(
             items: _items?.build(),
             meta: _meta?.build(),
@@ -110,10 +109,7 @@ class AdminUserListResponseBuilder
         _meta?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'AdminUserListResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'AdminUserListResponse', _$failedField, e.toString());
       }
       rethrow;
     }

@@ -19,12 +19,12 @@ class _$PaymentSummary extends PaymentSummary {
   factory _$PaymentSummary([void Function(PaymentSummaryBuilder)? updates]) =>
       (PaymentSummaryBuilder()..update(updates))._build();
 
-  _$PaymentSummary._({
-    this.totalRevenue,
-    this.payouts,
-    this.commission,
-    this.pendingSettlements,
-  }) : super._();
+  _$PaymentSummary._(
+      {this.totalRevenue,
+      this.payouts,
+      this.commission,
+      this.pendingSettlements})
+      : super._();
   @override
   PaymentSummary rebuild(void Function(PaymentSummaryBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -115,8 +115,7 @@ class PaymentSummaryBuilder
   PaymentSummary build() => _build();
 
   _$PaymentSummary _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$PaymentSummary._(
           totalRevenue: totalRevenue,
           payouts: payouts,

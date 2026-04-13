@@ -28,10 +28,10 @@ IncidentTypeEnum _$incidentTypeEnumValueOf(String name) {
 
 final BuiltSet<IncidentTypeEnum> _$incidentTypeEnumValues =
     BuiltSet<IncidentTypeEnum>(const <IncidentTypeEnum>[
-      _$incidentTypeEnum_sosTriggered,
-      _$incidentTypeEnum_reportedIncident,
-      _$incidentTypeEnum_safetyComplaint,
-    ]);
+  _$incidentTypeEnum_sosTriggered,
+  _$incidentTypeEnum_reportedIncident,
+  _$incidentTypeEnum_safetyComplaint,
+]);
 
 const IncidentSeverityEnum _$incidentSeverityEnum_low =
     const IncidentSeverityEnum._('low');
@@ -55,14 +55,13 @@ IncidentSeverityEnum _$incidentSeverityEnumValueOf(String name) {
 
 final BuiltSet<IncidentSeverityEnum> _$incidentSeverityEnumValues =
     BuiltSet<IncidentSeverityEnum>(const <IncidentSeverityEnum>[
-      _$incidentSeverityEnum_low,
-      _$incidentSeverityEnum_medium,
-      _$incidentSeverityEnum_high,
-    ]);
+  _$incidentSeverityEnum_low,
+  _$incidentSeverityEnum_medium,
+  _$incidentSeverityEnum_high,
+]);
 
-const IncidentStatusEnum _$incidentStatusEnum_open = const IncidentStatusEnum._(
-  'open',
-);
+const IncidentStatusEnum _$incidentStatusEnum_open =
+    const IncidentStatusEnum._('open');
 const IncidentStatusEnum _$incidentStatusEnum_investigating =
     const IncidentStatusEnum._('investigating');
 const IncidentStatusEnum _$incidentStatusEnum_resolved =
@@ -87,11 +86,11 @@ IncidentStatusEnum _$incidentStatusEnumValueOf(String name) {
 
 final BuiltSet<IncidentStatusEnum> _$incidentStatusEnumValues =
     BuiltSet<IncidentStatusEnum>(const <IncidentStatusEnum>[
-      _$incidentStatusEnum_open,
-      _$incidentStatusEnum_investigating,
-      _$incidentStatusEnum_resolved,
-      _$incidentStatusEnum_escalated,
-    ]);
+  _$incidentStatusEnum_open,
+  _$incidentStatusEnum_investigating,
+  _$incidentStatusEnum_resolved,
+  _$incidentStatusEnum_escalated,
+]);
 
 const IncidentTriggeredByEnum _$incidentTriggeredByEnum_rider =
     const IncidentTriggeredByEnum._('rider');
@@ -111,9 +110,9 @@ IncidentTriggeredByEnum _$incidentTriggeredByEnumValueOf(String name) {
 
 final BuiltSet<IncidentTriggeredByEnum> _$incidentTriggeredByEnumValues =
     BuiltSet<IncidentTriggeredByEnum>(const <IncidentTriggeredByEnum>[
-      _$incidentTriggeredByEnum_rider,
-      _$incidentTriggeredByEnum_driver,
-    ]);
+  _$incidentTriggeredByEnum_rider,
+  _$incidentTriggeredByEnum_driver,
+]);
 
 Serializer<IncidentTypeEnum> _$incidentTypeEnumSerializer =
     _$IncidentTypeEnumSerializer();
@@ -143,20 +142,15 @@ class _$IncidentTypeEnumSerializer
   final String wireName = 'IncidentTypeEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    IncidentTypeEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, IncidentTypeEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  IncidentTypeEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IncidentTypeEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  IncidentTypeEnum deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      IncidentTypeEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$IncidentSeverityEnumSerializer
@@ -178,20 +172,15 @@ class _$IncidentSeverityEnumSerializer
   final String wireName = 'IncidentSeverityEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    IncidentSeverityEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, IncidentSeverityEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  IncidentSeverityEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IncidentSeverityEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  IncidentSeverityEnum deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      IncidentSeverityEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$IncidentStatusEnumSerializer
@@ -215,20 +204,15 @@ class _$IncidentStatusEnumSerializer
   final String wireName = 'IncidentStatusEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    IncidentStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, IncidentStatusEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  IncidentStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IncidentStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  IncidentStatusEnum deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      IncidentStatusEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$IncidentTriggeredByEnumSerializer
@@ -248,20 +232,16 @@ class _$IncidentTriggeredByEnumSerializer
   final String wireName = 'IncidentTriggeredByEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    IncidentTriggeredByEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, IncidentTriggeredByEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   IncidentTriggeredByEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IncidentTriggeredByEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      IncidentTriggeredByEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$Incident extends Incident {
@@ -297,22 +277,22 @@ class _$Incident extends Incident {
   factory _$Incident([void Function(IncidentBuilder)? updates]) =>
       (IncidentBuilder()..update(updates))._build();
 
-  _$Incident._({
-    this.id,
-    this.rideId,
-    this.type,
-    this.severity,
-    this.status,
-    this.triggeredBy,
-    this.riderId,
-    this.riderName,
-    this.driverId,
-    this.driverName,
-    this.assignedTo,
-    this.createdAt,
-    this.resolvedAt,
-    this.resolutionNotes,
-  }) : super._();
+  _$Incident._(
+      {this.id,
+      this.rideId,
+      this.type,
+      this.severity,
+      this.status,
+      this.triggeredBy,
+      this.riderId,
+      this.riderName,
+      this.driverId,
+      this.driverName,
+      this.assignedTo,
+      this.createdAt,
+      this.resolvedAt,
+      this.resolutionNotes})
+      : super._();
   @override
   Incident rebuild(void Function(IncidentBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -483,8 +463,7 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
   Incident build() => _build();
 
   _$Incident _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$Incident._(
           id: id,
           rideId: rideId,

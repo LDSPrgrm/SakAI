@@ -2,6 +2,9 @@ package domain
 
 import "math"
 
+// JSONMap is a generic map type used for flexible JSON fields (e.g., fare_breakdown, config blobs).
+type JSONMap map[string]interface{}
+
 // LatLng represents a geographic coordinate pair.
 type LatLng struct {
 	Lat float64 `json:"lat" binding:"min=-90,max=90"`

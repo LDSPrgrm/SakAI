@@ -40,4 +40,8 @@ var (
 	ErrPaymentGatewayError      = errors.New("payment gateway error")
 	ErrPaymentMethodNotFound    = errors.New("payment method not found")
 	ErrPaymentMethodLastMethod  = errors.New("cannot remove last payment method")
+	// Ride type errors
+	ErrInvalidRideType = errors.New("invalid ride type: must be motorcycle, car, or tricycle")
+	// Tip errors (additional)
+	ErrTipExceedsLimit = errors.New("tip exceeds 50% of base fare")
 )

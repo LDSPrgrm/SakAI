@@ -12,15 +12,15 @@ class _$SubmitRatingRequest extends SubmitRatingRequest {
   @override
   final String? feedback;
 
-  factory _$SubmitRatingRequest([
-    void Function(SubmitRatingRequestBuilder)? updates,
-  ]) => (SubmitRatingRequestBuilder()..update(updates))._build();
+  factory _$SubmitRatingRequest(
+          [void Function(SubmitRatingRequestBuilder)? updates]) =>
+      (SubmitRatingRequestBuilder()..update(updates))._build();
 
   _$SubmitRatingRequest._({required this.stars, this.feedback}) : super._();
   @override
   SubmitRatingRequest rebuild(
-    void Function(SubmitRatingRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(SubmitRatingRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   SubmitRatingRequestBuilder toBuilder() =>
@@ -92,14 +92,10 @@ class SubmitRatingRequestBuilder
   SubmitRatingRequest build() => _build();
 
   _$SubmitRatingRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$SubmitRatingRequest._(
           stars: BuiltValueNullFieldError.checkNotNull(
-            stars,
-            r'SubmitRatingRequest',
-            'stars',
-          ),
+              stars, r'SubmitRatingRequest', 'stars'),
           feedback: feedback,
         );
     replace(_$result);

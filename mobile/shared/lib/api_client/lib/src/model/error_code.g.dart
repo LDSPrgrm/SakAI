@@ -6,70 +6,59 @@ part of 'error_code.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const ErrorCode _$EMAIL_ALREADY_REGISTERED = const ErrorCode._(
-  'EMAIL_ALREADY_REGISTERED',
-);
-const ErrorCode _$INVALID_CREDENTIALS = const ErrorCode._(
-  'INVALID_CREDENTIALS',
-);
+const ErrorCode _$EMAIL_ALREADY_REGISTERED =
+    const ErrorCode._('EMAIL_ALREADY_REGISTERED');
+const ErrorCode _$INVALID_CREDENTIALS =
+    const ErrorCode._('INVALID_CREDENTIALS');
 const ErrorCode _$TOKEN_INVALID = const ErrorCode._('TOKEN_INVALID');
 const ErrorCode _$TOKEN_EXPIRED = const ErrorCode._('TOKEN_EXPIRED');
-const ErrorCode _$REFRESH_TOKEN_INVALID = const ErrorCode._(
-  'REFRESH_TOKEN_INVALID',
-);
+const ErrorCode _$REFRESH_TOKEN_INVALID =
+    const ErrorCode._('REFRESH_TOKEN_INVALID');
 const ErrorCode _$VALIDATION_ERROR = const ErrorCode._('VALIDATION_ERROR');
 const ErrorCode _$FORBIDDEN = const ErrorCode._('FORBIDDEN');
 const ErrorCode _$RIDE_NOT_FOUND = const ErrorCode._('RIDE_NOT_FOUND');
 const ErrorCode _$USER_NOT_FOUND = const ErrorCode._('USER_NOT_FOUND');
 const ErrorCode _$DOCUMENT_NOT_FOUND = const ErrorCode._('DOCUMENT_NOT_FOUND');
-const ErrorCode _$RIDE_INVALID_STATE_TRANSITION = const ErrorCode._(
-  'RIDE_INVALID_STATE_TRANSITION',
-);
-const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE = const ErrorCode._(
-  'PASSENGER_HAS_ACTIVE_RIDE',
-);
-const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE = const ErrorCode._(
-  'DRIVER_HAS_ACTIVE_RIDE',
-);
+const ErrorCode _$RIDE_INVALID_STATE_TRANSITION =
+    const ErrorCode._('RIDE_INVALID_STATE_TRANSITION');
+const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE =
+    const ErrorCode._('PASSENGER_HAS_ACTIVE_RIDE');
+const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE =
+    const ErrorCode._('DRIVER_HAS_ACTIVE_RIDE');
 const ErrorCode _$RIDE_NOT_COMPLETED = const ErrorCode._('RIDE_NOT_COMPLETED');
-const ErrorCode _$NO_DRIVERS_AVAILABLE = const ErrorCode._(
-  'NO_DRIVERS_AVAILABLE',
-);
+const ErrorCode _$NO_DRIVERS_AVAILABLE =
+    const ErrorCode._('NO_DRIVERS_AVAILABLE');
+const ErrorCode _$INVALID_RIDE_TYPE = const ErrorCode._('INVALID_RIDE_TYPE');
+const ErrorCode _$DRIVER_REMATCH_IN_PROGRESS =
+    const ErrorCode._('DRIVER_REMATCH_IN_PROGRESS');
+const ErrorCode _$CANCELLATION_FEE_APPLIED =
+    const ErrorCode._('CANCELLATION_FEE_APPLIED');
 const ErrorCode _$PAYMENT_FAILED = const ErrorCode._('PAYMENT_FAILED');
-const ErrorCode _$INVALID_PAYMENT_TOKEN = const ErrorCode._(
-  'INVALID_PAYMENT_TOKEN',
-);
+const ErrorCode _$INVALID_PAYMENT_TOKEN =
+    const ErrorCode._('INVALID_PAYMENT_TOKEN');
 const ErrorCode _$DUPLICATE_PAYMENT = const ErrorCode._('DUPLICATE_PAYMENT');
-const ErrorCode _$PAYMENT_METHOD_UNSUPPORTED = const ErrorCode._(
-  'PAYMENT_METHOD_UNSUPPORTED',
-);
-const ErrorCode _$PAYMENT_METHOD_DUPLICATE = const ErrorCode._(
-  'PAYMENT_METHOD_DUPLICATE',
-);
-const ErrorCode _$PAYMENT_GATEWAY_ERROR = const ErrorCode._(
-  'PAYMENT_GATEWAY_ERROR',
-);
-const ErrorCode _$PAYMENT_METHOD_NOT_FOUND = const ErrorCode._(
-  'PAYMENT_METHOD_NOT_FOUND',
-);
-const ErrorCode _$PAYMENT_METHOD_LAST_METHOD = const ErrorCode._(
-  'PAYMENT_METHOD_LAST_METHOD',
-);
+const ErrorCode _$PAYMENT_METHOD_UNSUPPORTED =
+    const ErrorCode._('PAYMENT_METHOD_UNSUPPORTED');
+const ErrorCode _$PAYMENT_METHOD_DUPLICATE =
+    const ErrorCode._('PAYMENT_METHOD_DUPLICATE');
+const ErrorCode _$PAYMENT_GATEWAY_ERROR =
+    const ErrorCode._('PAYMENT_GATEWAY_ERROR');
+const ErrorCode _$PAYMENT_METHOD_NOT_FOUND =
+    const ErrorCode._('PAYMENT_METHOD_NOT_FOUND');
+const ErrorCode _$PAYMENT_METHOD_LAST_METHOD =
+    const ErrorCode._('PAYMENT_METHOD_LAST_METHOD');
 const ErrorCode _$INVALID_TIP_AMOUNT = const ErrorCode._('INVALID_TIP_AMOUNT');
 const ErrorCode _$TIP_ALREADY_ADDED = const ErrorCode._('TIP_ALREADY_ADDED');
 const ErrorCode _$INVALID_RATING = const ErrorCode._('INVALID_RATING');
 const ErrorCode _$FEEDBACK_TOO_LONG = const ErrorCode._('FEEDBACK_TOO_LONG');
 const ErrorCode _$ALREADY_RATED = const ErrorCode._('ALREADY_RATED');
 const ErrorCode _$FILE_TOO_LARGE = const ErrorCode._('FILE_TOO_LARGE');
-const ErrorCode _$INVALID_FILE_FORMAT = const ErrorCode._(
-  'INVALID_FILE_FORMAT',
-);
-const ErrorCode _$RATE_LIMIT_EXCEEDED = const ErrorCode._(
-  'RATE_LIMIT_EXCEEDED',
-);
-const ErrorCode _$INTERNAL_SERVER_ERROR = const ErrorCode._(
-  'INTERNAL_SERVER_ERROR',
-);
+const ErrorCode _$INVALID_FILE_FORMAT =
+    const ErrorCode._('INVALID_FILE_FORMAT');
+const ErrorCode _$RATE_LIMIT_EXCEEDED =
+    const ErrorCode._('RATE_LIMIT_EXCEEDED');
+const ErrorCode _$INTERNAL_SERVER_ERROR =
+    const ErrorCode._('INTERNAL_SERVER_ERROR');
 
 ErrorCode _$valueOf(String name) {
   switch (name) {
@@ -103,6 +92,12 @@ ErrorCode _$valueOf(String name) {
       return _$RIDE_NOT_COMPLETED;
     case 'NO_DRIVERS_AVAILABLE':
       return _$NO_DRIVERS_AVAILABLE;
+    case 'INVALID_RIDE_TYPE':
+      return _$INVALID_RIDE_TYPE;
+    case 'DRIVER_REMATCH_IN_PROGRESS':
+      return _$DRIVER_REMATCH_IN_PROGRESS;
+    case 'CANCELLATION_FEE_APPLIED':
+      return _$CANCELLATION_FEE_APPLIED;
     case 'PAYMENT_FAILED':
       return _$PAYMENT_FAILED;
     case 'INVALID_PAYMENT_TOKEN':
@@ -158,6 +153,9 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$DRIVER_HAS_ACTIVE_RIDE,
   _$RIDE_NOT_COMPLETED,
   _$NO_DRIVERS_AVAILABLE,
+  _$INVALID_RIDE_TYPE,
+  _$DRIVER_REMATCH_IN_PROGRESS,
+  _$CANCELLATION_FEE_APPLIED,
   _$PAYMENT_FAILED,
   _$INVALID_PAYMENT_TOKEN,
   _$DUPLICATE_PAYMENT,
@@ -195,6 +193,9 @@ class _$ErrorCodeMeta {
   ErrorCode get DRIVER_HAS_ACTIVE_RIDE => _$DRIVER_HAS_ACTIVE_RIDE;
   ErrorCode get RIDE_NOT_COMPLETED => _$RIDE_NOT_COMPLETED;
   ErrorCode get NO_DRIVERS_AVAILABLE => _$NO_DRIVERS_AVAILABLE;
+  ErrorCode get INVALID_RIDE_TYPE => _$INVALID_RIDE_TYPE;
+  ErrorCode get DRIVER_REMATCH_IN_PROGRESS => _$DRIVER_REMATCH_IN_PROGRESS;
+  ErrorCode get CANCELLATION_FEE_APPLIED => _$CANCELLATION_FEE_APPLIED;
   ErrorCode get PAYMENT_FAILED => _$PAYMENT_FAILED;
   ErrorCode get INVALID_PAYMENT_TOKEN => _$INVALID_PAYMENT_TOKEN;
   ErrorCode get DUPLICATE_PAYMENT => _$DUPLICATE_PAYMENT;
@@ -216,7 +217,7 @@ class _$ErrorCodeMeta {
   BuiltSet<ErrorCode> get values => _$values;
 }
 
-mixin _$ErrorCodeMixin {
+abstract class _$ErrorCodeMixin {
   // ignore: non_constant_identifier_names
   _$ErrorCodeMeta get ErrorCode => const _$ErrorCodeMeta();
 }
@@ -240,6 +241,9 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'DRIVER_HAS_ACTIVE_RIDE': 'DRIVER_HAS_ACTIVE_RIDE',
     'RIDE_NOT_COMPLETED': 'RIDE_NOT_COMPLETED',
     'NO_DRIVERS_AVAILABLE': 'NO_DRIVERS_AVAILABLE',
+    'INVALID_RIDE_TYPE': 'INVALID_RIDE_TYPE',
+    'DRIVER_REMATCH_IN_PROGRESS': 'DRIVER_REMATCH_IN_PROGRESS',
+    'CANCELLATION_FEE_APPLIED': 'CANCELLATION_FEE_APPLIED',
     'PAYMENT_FAILED': 'PAYMENT_FAILED',
     'INVALID_PAYMENT_TOKEN': 'INVALID_PAYMENT_TOKEN',
     'DUPLICATE_PAYMENT': 'DUPLICATE_PAYMENT',
@@ -274,6 +278,9 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'DRIVER_HAS_ACTIVE_RIDE': 'DRIVER_HAS_ACTIVE_RIDE',
     'RIDE_NOT_COMPLETED': 'RIDE_NOT_COMPLETED',
     'NO_DRIVERS_AVAILABLE': 'NO_DRIVERS_AVAILABLE',
+    'INVALID_RIDE_TYPE': 'INVALID_RIDE_TYPE',
+    'DRIVER_REMATCH_IN_PROGRESS': 'DRIVER_REMATCH_IN_PROGRESS',
+    'CANCELLATION_FEE_APPLIED': 'CANCELLATION_FEE_APPLIED',
     'PAYMENT_FAILED': 'PAYMENT_FAILED',
     'INVALID_PAYMENT_TOKEN': 'INVALID_PAYMENT_TOKEN',
     'DUPLICATE_PAYMENT': 'DUPLICATE_PAYMENT',
@@ -299,20 +306,15 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
   final String wireName = 'ErrorCode';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    ErrorCode object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, ErrorCode object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  ErrorCode deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => ErrorCode.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  ErrorCode deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      ErrorCode.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

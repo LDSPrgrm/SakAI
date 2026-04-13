@@ -13,19 +13,28 @@ import '../features/cancelled_ride/repositories/cancelled_ride_repository.dart';
 import '../features/cancelled_ride/repositories/cancelled_ride_repository_impl.dart';
 import '../features/receipt/repositories/receipt_repository.dart';
 import '../features/receipt/repositories/receipt_repository_impl.dart';
+import '../features/active_ride/models/active_ride_state.dart';
+import '../features/active_ride/view_models/active_ride_notifier.dart';
+export '../features/active_ride/view_models/active_ride_notifier.dart'
+    show ActiveRideController;
 
 /// Shared HTTP client - single instance per app lifetime.
 final apiClientProvider = Provider<SakaiApiClient>((ref) {
-  final tokenStorage = ref.watch(tokenStorageProvider);
   return SakaiApiSupport.createClient(
-    authInterceptor: AuthInterceptor(
-      tokenStorage,
-      onSessionInvalidated: () {
-        ref
-            .read(authStateProvider.notifier)
-            .markUnauthenticated(forceLogin: true);
-      },
-    ),
+    authInterceptor: ref.watch(authInterceptorProvider),
+  );
+});
+
+/// Auth interceptor - reusable for any repo that needs its own client.
+final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return AuthInterceptor(
+    tokenStorage,
+    onSessionInvalidated: () {
+      ref
+          .read(authStateProvider.notifier)
+          .markUnauthenticated(forceLogin: true);
+    },
   );
 });
 
@@ -153,3 +162,29 @@ final cancelledRideRepositoryProvider = Provider<CancelledRideRepository>((
 final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
   return ReceiptRepositoryImpl(ref.watch(apiClientProvider));
 });
+
+/// Active ride controller provider — keyed by ride ID.
+///
+/// Usage: `ref.watch(activeRideProvider(rideId))` returns an
+/// `ActiveRideController` with a `stateStream` and `state` property.
+final activeRideProvider = Provider.family<ActiveRideController, String>((
+  ref,
+  rideId,
+) {
+  final client = ref.watch(apiClientProvider);
+  final wsClient = ref.watch(wsClientProvider);
+  final controller = ActiveRideController(
+    rideId: rideId,
+    client: client,
+    wsClient: wsClient,
+  );
+  ref.onDispose(() => controller.dispose());
+  return controller;
+});
+
+/// Exposes the current async state from the controller as a provider.
+final activeRideStateProvider =
+    Provider.family<AsyncValue<ActiveRideState>, String>((ref, rideId) {
+      final controller = ref.watch(activeRideProvider(rideId));
+      return controller.state;
+    });

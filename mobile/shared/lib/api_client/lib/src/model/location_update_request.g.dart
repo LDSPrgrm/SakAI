@@ -12,15 +12,15 @@ class _$LocationUpdateRequest extends LocationUpdateRequest {
   @override
   final double? heading;
 
-  factory _$LocationUpdateRequest([
-    void Function(LocationUpdateRequestBuilder)? updates,
-  ]) => (LocationUpdateRequestBuilder()..update(updates))._build();
+  factory _$LocationUpdateRequest(
+          [void Function(LocationUpdateRequestBuilder)? updates]) =>
+      (LocationUpdateRequestBuilder()..update(updates))._build();
 
   _$LocationUpdateRequest._({required this.location, this.heading}) : super._();
   @override
   LocationUpdateRequest rebuild(
-    void Function(LocationUpdateRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(LocationUpdateRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LocationUpdateRequestBuilder toBuilder() =>
@@ -94,8 +94,7 @@ class LocationUpdateRequestBuilder
   _$LocationUpdateRequest _build() {
     _$LocationUpdateRequest _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$LocationUpdateRequest._(
             location: location.build(),
             heading: heading,
@@ -107,10 +106,7 @@ class LocationUpdateRequestBuilder
         location.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'LocationUpdateRequest',
-          _$failedField,
-          e.toString(),
-        );
+            r'LocationUpdateRequest', _$failedField, e.toString());
       }
       rethrow;
     }

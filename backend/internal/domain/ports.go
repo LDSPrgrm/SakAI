@@ -4,6 +4,7 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,13 @@ type AuthOutput struct {
 	RefreshToken         string
 	AccessTokenExpiresAt time.Time
 	User                 *User
+}
+
+// DeclineResult carries the outcome of a ride decline, including any re-matched driver.
+type DeclineResult struct {
+	Ride           *Ride
+	NewDriverID    *uuid.UUID // set when a new driver was found
+	NewDriverFound bool
 }
 
 // ─── Repository Ports ────────────────────────────────────────────────────────
@@ -87,8 +95,9 @@ type RideRepository interface {
 	// ClearDriver sets driver_id to NULL, used when a driver declines a ride.
 	ClearDriver(ctx context.Context, rideID uuid.UUID) error
 
-	// SetCancelled transitions a ride to cancelled and records who cancelled.
-	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy) error
+	// SetCancelled transitions a ride to cancelled and records who cancelled,
+	// along with optional reason code and text, and any cancellation fee.
+	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error
 
 	// CancelExpiredOffers cancels all rides that have been in "requested" status
 	// for longer than timeout. Returns the identity of the cancelled rides.
@@ -100,12 +109,52 @@ type RideRepository interface {
 
 	// ListByPassengerID returns a paginated list of rides for a specific passenger.
 	ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter UserRideFilter) ([]*Ride, int, error)
+
+	// UpdateRideFare updates the actual fare and breakdown for a ride.
+	UpdateRideFare(ctx context.Context, rideID uuid.UUID, actualFare float64, breakdown JSONMap) error
+
+	// IncrementDeclineCount increments the decline count for a ride.
+	IncrementDeclineCount(ctx context.Context, rideID uuid.UUID) error
 }
 
 // ExpiredOffer contains the identity of a ride canceled due to dispatch timeout.
 type ExpiredOffer struct {
 	RideID      uuid.UUID
 	PassengerID uuid.UUID
+}
+
+// NearbyDriver contains enriched details of a driver available for dispatch.
+type NearbyDriver struct {
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	VehicleMake  string  `json:"vehicle_make"`
+	VehicleModel string  `json:"vehicle_model"`
+	VehiclePlate string  `json:"vehicle_plate"`
+	VehicleType  string  `json:"vehicle_type"`
+	Rating       *float64 `json:"rating,omitempty"`
+	DistanceM    float64 `json:"distance_m"`
+	Lat          float64 `json:"-"` // not serialized directly
+	Lng          float64 `json:"-"` // not serialized directly
+}
+
+// Location returns the nested location object expected by the mobile API client.
+func (n NearbyDriver) Location() map[string]float64 {
+	return map[string]float64{
+		"lat": n.Lat,
+		"lng": n.Lng,
+	}
+}
+
+// MarshalJSON ensures the location is serialized as a nested object.
+func (n NearbyDriver) MarshalJSON() ([]byte, error) {
+	type Alias NearbyDriver
+	return json.Marshal(&struct {
+		Alias
+		Location map[string]float64 `json:"location"`
+	}{
+		Alias:    Alias(n),
+		Location: n.Location(),
+	})
 }
 
 // DriverRepository manages driver operational state and location.
@@ -126,6 +175,10 @@ type DriverRepository interface {
 	// FindNearbyOnline returns online drivers within radiusMeters of origin,
 	// ordered by distance ascending. Uses PostGIS ST_DWithin for efficiency.
 	FindNearbyOnline(ctx context.Context, origin LatLng, radiusMeters float64) ([]*Driver, error)
+
+	// FindNearbyOnlineByType returns online drivers of a specific vehicle type
+	// within radiusMeters of origin, ordered by distance ascending.
+	FindNearbyOnlineByType(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
 }
 
 // AdminRepository defines management of admin accounts and system settings.
@@ -257,15 +310,15 @@ type AuthUseCase interface {
 
 // RideUseCase defines the ride lifecycle contract.
 type RideUseCase interface {
-	RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination LatLng, originAddr, destAddr, notes, idempotencyKey string) (*Ride, error)
+	RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType RideType, paymentMethod PaymentMethod) (*Ride, error)
 	GetActive(ctx context.Context, userID uuid.UUID, role UserRole) (*Ride, error)
 	GetByID(ctx context.Context, userID uuid.UUID, rideID uuid.UUID) (*Ride, error)
 	Accept(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
-	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
+	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*DeclineResult, error)
 	Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Complete(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
-	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID) (*Ride, error)
+	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)
 }
 
 // DriverUseCase defines driver operational actions.
@@ -276,6 +329,8 @@ type DriverUseCase interface {
 	// GetActiveRide returns the driver's current active ride regardless of state.
 	// Used by the HTTP handler to forward location updates to the passenger.
 	GetActiveRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
+	// GetNearbyDrivers returns online drivers of a specific vehicle type within a radius.
+	GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.

@@ -4,7 +4,7 @@ import 'package:sakai_shared/sakai_shared.dart';
 import '../repositories/active_ride_repository.dart';
 import '../models/active_ride_step.dart';
 
-typedef OnRideCompleted = void Function();
+typedef OnRideCompleted = void Function(RideResponse ride);
 typedef OnRideCancelled = void Function();
 
 class ActiveRideState {
@@ -114,7 +114,10 @@ class ActiveRideManager extends ChangeNotifier {
       await _repo.completeRide(_state.ride!.id);
       _state = _state.copyWith(isTransitioning: false);
       notifyListeners();
-      onCompleted?.call();
+      final completedRide = _state.ride;
+      if (completedRide != null) {
+        onCompleted?.call(completedRide);
+      }
     } catch (e) {
       _state = _state.copyWith(
         isTransitioning: false,
@@ -151,7 +154,10 @@ class ActiveRideManager extends ChangeNotifier {
       errorMessage: null,
     );
     notifyListeners();
-    if (newStatus == RideStatus.completed) onCompleted?.call();
+    final ride = _state.ride;
+    if (newStatus == RideStatus.completed && ride != null) {
+      onCompleted?.call(ride);
+    }
     if (newStatus == RideStatus.cancelled) onCancelled?.call();
   }
 

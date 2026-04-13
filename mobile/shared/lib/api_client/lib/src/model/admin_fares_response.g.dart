@@ -12,15 +12,15 @@ class _$AdminFaresResponse extends AdminFaresResponse {
   @override
   final SurgeConfig? surge;
 
-  factory _$AdminFaresResponse([
-    void Function(AdminFaresResponseBuilder)? updates,
-  ]) => (AdminFaresResponseBuilder()..update(updates))._build();
+  factory _$AdminFaresResponse(
+          [void Function(AdminFaresResponseBuilder)? updates]) =>
+      (AdminFaresResponseBuilder()..update(updates))._build();
 
   _$AdminFaresResponse._({this.fares, this.surge}) : super._();
   @override
   AdminFaresResponse rebuild(
-    void Function(AdminFaresResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(AdminFaresResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   AdminFaresResponseBuilder toBuilder() =>
@@ -95,8 +95,7 @@ class AdminFaresResponseBuilder
   _$AdminFaresResponse _build() {
     _$AdminFaresResponse _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$AdminFaresResponse._(
             fares: _fares?.build(),
             surge: _surge?.build(),
@@ -110,10 +109,7 @@ class AdminFaresResponseBuilder
         _surge?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'AdminFaresResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'AdminFaresResponse', _$failedField, e.toString());
       }
       rethrow;
     }

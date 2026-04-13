@@ -10,15 +10,15 @@ class _$AdminBatchKyc200Response extends AdminBatchKyc200Response {
   @override
   final int? processed;
 
-  factory _$AdminBatchKyc200Response([
-    void Function(AdminBatchKyc200ResponseBuilder)? updates,
-  ]) => (AdminBatchKyc200ResponseBuilder()..update(updates))._build();
+  factory _$AdminBatchKyc200Response(
+          [void Function(AdminBatchKyc200ResponseBuilder)? updates]) =>
+      (AdminBatchKyc200ResponseBuilder()..update(updates))._build();
 
   _$AdminBatchKyc200Response._({this.processed}) : super._();
   @override
   AdminBatchKyc200Response rebuild(
-    void Function(AdminBatchKyc200ResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(AdminBatchKyc200ResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   AdminBatchKyc200ResponseBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$AdminBatchKyc200Response extends AdminBatchKyc200Response {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'AdminBatchKyc200Response',
-    )..add('processed', processed)).toString();
+    return (newBuiltValueToStringHelper(r'AdminBatchKyc200Response')
+          ..add('processed', processed))
+        .toString();
   }
 }
 
@@ -82,7 +82,10 @@ class AdminBatchKyc200ResponseBuilder
   AdminBatchKyc200Response build() => _build();
 
   _$AdminBatchKyc200Response _build() {
-    final _$result = _$v ?? _$AdminBatchKyc200Response._(processed: processed);
+    final _$result = _$v ??
+        _$AdminBatchKyc200Response._(
+          processed: processed,
+        );
     replace(_$result);
     return _$result;
   }

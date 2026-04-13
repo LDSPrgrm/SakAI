@@ -15,7 +15,7 @@ Method | HTTP request | Description
 [**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
 [**driverUploadDocument**](DriverApi.md#driveruploaddocument) | **POST** /drivers/documents | Upload a driver verification document
-[**getNearbyDrivers**](DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers
+[**getNearbyDrivers**](DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers by ride type
 
 
 # **driverGetDocumentStatus**
@@ -274,23 +274,24 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **getNearbyDrivers**
-> NearbyDriversResponse getNearbyDrivers(lat, lng, radius)
+> GetNearbyDrivers200Response getNearbyDrivers(lat, lng, rideType, radiusM)
 
-Get nearby available drivers
+Get nearby available drivers by ride type
 
-Returns a list of online drivers currently available for matching within a given radius of a location. Used to show markers on the map. 
+Returns a list of online drivers within the specified radius and vehicle type. Used by the passenger app to show available ride options with driver counts. 
 
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getDriverApi();
-final double lat = 3.4; // double | 
-final double lng = 3.4; // double | 
-final double radius = 3.4; // double | 
+final double lat = 1.2; // double | 
+final double lng = 1.2; // double | 
+final String rideType = rideType_example; // String | 
+final double radiusM = 1.2; // double | 
 
 try {
-    final response = api.getNearbyDrivers(lat, lng, radius);
+    final response = api.getNearbyDrivers(lat, lng, rideType, radiusM);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling DriverApi->getNearbyDrivers: $e\n');
@@ -303,15 +304,16 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **lat** | **double**|  | 
  **lng** | **double**|  | 
- **radius** | **double**|  | [optional] [default to 5000.0]
+ **rideType** | **String**|  | 
+ **radiusM** | **double**|  | [optional] [default to 5000]
 
 ### Return type
 
-[**NearbyDriversResponse**](NearbyDriversResponse.md)
+[**GetNearbyDrivers200Response**](GetNearbyDrivers200Response.md)
 
 ### Authorization
 
-No authorization required
+[BearerAuth](../README.md#BearerAuth)
 
 ### HTTP request headers
 

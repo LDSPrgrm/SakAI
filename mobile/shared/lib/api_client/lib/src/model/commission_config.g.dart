@@ -14,15 +14,13 @@ class _$CommissionConfig extends CommissionConfig {
   @override
   final num? promotionalOverride;
 
-  factory _$CommissionConfig([
-    void Function(CommissionConfigBuilder)? updates,
-  ]) => (CommissionConfigBuilder()..update(updates))._build();
+  factory _$CommissionConfig(
+          [void Function(CommissionConfigBuilder)? updates]) =>
+      (CommissionConfigBuilder()..update(updates))._build();
 
-  _$CommissionConfig._({
-    this.rates,
-    this.minimumCommission,
-    this.promotionalOverride,
-  }) : super._();
+  _$CommissionConfig._(
+      {this.rates, this.minimumCommission, this.promotionalOverride})
+      : super._();
   @override
   CommissionConfig rebuild(void Function(CommissionConfigBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -110,8 +108,7 @@ class CommissionConfigBuilder
   _$CommissionConfig _build() {
     _$CommissionConfig _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$CommissionConfig._(
             rates: _rates?.build(),
             minimumCommission: minimumCommission,
@@ -124,10 +121,7 @@ class CommissionConfigBuilder
         _rates?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'CommissionConfig',
-          _$failedField,
-          e.toString(),
-        );
+            r'CommissionConfig', _$failedField, e.toString());
       }
       rethrow;
     }

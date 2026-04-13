@@ -23,6 +23,10 @@ class SplashScreen extends ConsumerWidget {
             context.go(Routes.login);
           case SplashState.home:
             context.go(Routes.home);
+          case SplashState.activeRide:
+            break; // Driver doesn't auto-resume active rides like passengers
+          case SplashState.transientError:
+            break;
           case SplashState.loading:
             break;
         }
@@ -32,7 +36,9 @@ class SplashScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return splashAsync.when(
-      data: (_) => _SplashBody(scheme: scheme),
+      data: (state) => state == SplashState.transientError
+          ? _ErrorBody(onRetry: () => ref.invalidate(splashProvider))
+          : _SplashBody(scheme: scheme),
       loading: () => _SplashBody(scheme: scheme),
       error: (err, stack) =>
           _ErrorBody(onRetry: () => ref.invalidate(splashProvider)),
@@ -62,7 +68,7 @@ class _SplashBody extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
-                  Icons.drive_eta,
+                  Icons.drive_eta_rounded,
                   color: scheme.onPrimaryContainer,
                   size: 36,
                 ),

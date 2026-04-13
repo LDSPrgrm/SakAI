@@ -23,14 +23,14 @@ func NewRideRepo(db *pgxpool.Pool) domain.RideRepository {
 func (r *rideRepo) Create(ctx context.Context, ride *domain.Ride) error {
 	const q = `
 		INSERT INTO rides (
-			id, passenger_id, status,
+			id, passenger_id, driver_id, status,
 			origin_lat, origin_lng,
 			destination_lat, destination_lng,
 			origin_address, destination_address,
 			notes, idempotency_key, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`
 	_, err := r.db.Exec(ctx, q,
-		ride.ID, ride.PassengerID, ride.Status,
+		ride.ID, ride.PassengerID, ride.DriverID, ride.Status,
 		ride.Origin.Lat, ride.Origin.Lng,
 		ride.Destination.Lat, ride.Destination.Lng,
 		ride.OriginAddress, ride.DestinationAddress,
@@ -103,9 +103,9 @@ func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID) error {
 	return err
 }
 
-func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy) error {
-	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, updated_at = NOW() WHERE id = $2`
-	_, err := r.db.Exec(ctx, q, by, id)
+func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error {
+	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, fare = COALESCE($4, fare), updated_at = NOW() WHERE id = $5`
+	_, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id)
 	return err
 }
 
@@ -283,4 +283,16 @@ func (r *rideRepo) ListByPassengerID(ctx context.Context, passengerID uuid.UUID,
 		rides = append(rides, ride)
 	}
 	return rides, total, rows.Err()
+}
+
+func (r *rideRepo) UpdateRideFare(ctx context.Context, rideID uuid.UUID, actualFare float64, breakdown domain.JSONMap) error {
+	const q = `UPDATE rides SET actual_fare = $1, fare_breakdown = $2, updated_at = NOW() WHERE id = $3`
+	_, err := r.db.Exec(ctx, q, actualFare, breakdown, rideID)
+	return err
+}
+
+func (r *rideRepo) IncrementDeclineCount(ctx context.Context, rideID uuid.UUID) error {
+	const q = `UPDATE rides SET decline_count = decline_count + 1, updated_at = NOW() WHERE id = $1`
+	_, err := r.db.Exec(ctx, q, rideID)
+	return err
 }

@@ -1,6 +1,5 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-enum VehicleType { motorcycle, car, tricycle }
+import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
 class NearbyDriver {
   final String id;
@@ -40,7 +39,7 @@ class NearbyDriver {
       case 'tricycle':
         return VehicleType.tricycle;
       default:
-        return VehicleType.motorcycle;
+        return VehicleType.car;
     }
   }
 }

@@ -27,16 +27,16 @@ class _$TipResponse extends TipResponse {
   factory _$TipResponse([void Function(TipResponseBuilder)? updates]) =>
       (TipResponseBuilder()..update(updates))._build();
 
-  _$TipResponse._({
-    required this.rideId,
-    required this.baseFare,
-    required this.tipAmount,
-    required this.finalTotal,
-    required this.currency,
-    required this.paymentMethod,
-    required this.transactionId,
-    this.processedAt,
-  }) : super._();
+  _$TipResponse._(
+      {required this.rideId,
+      required this.baseFare,
+      required this.tipAmount,
+      required this.finalTotal,
+      required this.currency,
+      required this.paymentMethod,
+      required this.transactionId,
+      this.processedAt})
+      : super._();
   @override
   TipResponse rebuild(void Function(TipResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -159,44 +159,22 @@ class TipResponseBuilder implements Builder<TipResponse, TipResponseBuilder> {
   TipResponse build() => _build();
 
   _$TipResponse _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$TipResponse._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'TipResponse',
-            'rideId',
-          ),
+              rideId, r'TipResponse', 'rideId'),
           baseFare: BuiltValueNullFieldError.checkNotNull(
-            baseFare,
-            r'TipResponse',
-            'baseFare',
-          ),
+              baseFare, r'TipResponse', 'baseFare'),
           tipAmount: BuiltValueNullFieldError.checkNotNull(
-            tipAmount,
-            r'TipResponse',
-            'tipAmount',
-          ),
+              tipAmount, r'TipResponse', 'tipAmount'),
           finalTotal: BuiltValueNullFieldError.checkNotNull(
-            finalTotal,
-            r'TipResponse',
-            'finalTotal',
-          ),
+              finalTotal, r'TipResponse', 'finalTotal'),
           currency: BuiltValueNullFieldError.checkNotNull(
-            currency,
-            r'TipResponse',
-            'currency',
-          ),
+              currency, r'TipResponse', 'currency'),
           paymentMethod: BuiltValueNullFieldError.checkNotNull(
-            paymentMethod,
-            r'TipResponse',
-            'paymentMethod',
-          ),
+              paymentMethod, r'TipResponse', 'paymentMethod'),
           transactionId: BuiltValueNullFieldError.checkNotNull(
-            transactionId,
-            r'TipResponse',
-            'transactionId',
-          ),
+              transactionId, r'TipResponse', 'transactionId'),
           processedAt: processedAt,
         );
     replace(_$result);

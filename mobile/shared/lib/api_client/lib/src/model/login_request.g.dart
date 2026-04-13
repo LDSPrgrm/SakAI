@@ -89,19 +89,12 @@ class LoginRequestBuilder
   LoginRequest build() => _build();
 
   _$LoginRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$LoginRequest._(
           email: BuiltValueNullFieldError.checkNotNull(
-            email,
-            r'LoginRequest',
-            'email',
-          ),
+              email, r'LoginRequest', 'email'),
           password: BuiltValueNullFieldError.checkNotNull(
-            password,
-            r'LoginRequest',
-            'password',
-          ),
+              password, r'LoginRequest', 'password'),
         );
     replace(_$result);
     return _$result;

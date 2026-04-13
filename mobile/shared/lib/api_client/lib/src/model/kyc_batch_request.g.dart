@@ -24,9 +24,9 @@ KycBatchRequestStatusEnum _$kycBatchRequestStatusEnumValueOf(String name) {
 
 final BuiltSet<KycBatchRequestStatusEnum> _$kycBatchRequestStatusEnumValues =
     BuiltSet<KycBatchRequestStatusEnum>(const <KycBatchRequestStatusEnum>[
-      _$kycBatchRequestStatusEnum_approved,
-      _$kycBatchRequestStatusEnum_rejected,
-    ]);
+  _$kycBatchRequestStatusEnum_approved,
+  _$kycBatchRequestStatusEnum_rejected,
+]);
 
 Serializer<KycBatchRequestStatusEnum> _$kycBatchRequestStatusEnumSerializer =
     _$KycBatchRequestStatusEnumSerializer();
@@ -48,20 +48,16 @@ class _$KycBatchRequestStatusEnumSerializer
   final String wireName = 'KycBatchRequestStatusEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    KycBatchRequestStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, KycBatchRequestStatusEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   KycBatchRequestStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => KycBatchRequestStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      KycBatchRequestStatusEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$KycBatchRequest extends KycBatchRequest {
@@ -149,15 +145,11 @@ class KycBatchRequestBuilder
   _$KycBatchRequest _build() {
     _$KycBatchRequest _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$KycBatchRequest._(
             ids: ids.build(),
             status: BuiltValueNullFieldError.checkNotNull(
-              status,
-              r'KycBatchRequest',
-              'status',
-            ),
+                status, r'KycBatchRequest', 'status'),
           );
     } catch (_) {
       late String _$failedField;
@@ -166,10 +158,7 @@ class KycBatchRequestBuilder
         ids.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'KycBatchRequest',
-          _$failedField,
-          e.toString(),
-        );
+            r'KycBatchRequest', _$failedField, e.toString());
       }
       rethrow;
     }

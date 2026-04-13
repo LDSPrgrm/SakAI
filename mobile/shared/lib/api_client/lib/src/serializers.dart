@@ -58,6 +58,7 @@ import 'package:sakai_api_client/src/model/feature_flag.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection_features_inner.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection_features_inner_geometry.dart';
+import 'package:sakai_api_client/src/model/get_nearby_drivers200_response.dart';
 import 'package:sakai_api_client/src/model/health_response.dart';
 import 'package:sakai_api_client/src/model/health_response_dependencies.dart';
 import 'package:sakai_api_client/src/model/incident.dart';
@@ -90,6 +91,7 @@ import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/refresh_request.dart';
 import 'package:sakai_api_client/src/model/register_request.dart';
 import 'package:sakai_api_client/src/model/report_definition.dart';
+import 'package:sakai_api_client/src/model/ride_event_payload.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 import 'package:sakai_api_client/src/model/ride_status.dart';
@@ -168,6 +170,7 @@ part 'serializers.g.dart';
   GeoJSONFeatureCollection,
   GeoJSONFeatureCollectionFeaturesInner,
   GeoJSONFeatureCollectionFeaturesInnerGeometry,
+  GetNearbyDrivers200Response,
   HealthResponse,
   HealthResponseDependencies,
   Incident,
@@ -200,6 +203,7 @@ part 'serializers.g.dart';
   RefreshRequest,
   RegisterRequest,
   ReportDefinition,
+  RideEventPayload,
   RideRequestBody,
   RideResponse,$RideResponse,
   RideStatus,

@@ -6,14 +6,40 @@ part of 'ride_response.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const RideResponseRideTypeEnum _$rideResponseRideTypeEnum_motorcycle =
+    const RideResponseRideTypeEnum._('motorcycle');
+const RideResponseRideTypeEnum _$rideResponseRideTypeEnum_car =
+    const RideResponseRideTypeEnum._('car');
+const RideResponseRideTypeEnum _$rideResponseRideTypeEnum_tricycle =
+    const RideResponseRideTypeEnum._('tricycle');
+
+RideResponseRideTypeEnum _$rideResponseRideTypeEnumValueOf(String name) {
+  switch (name) {
+    case 'motorcycle':
+      return _$rideResponseRideTypeEnum_motorcycle;
+    case 'car':
+      return _$rideResponseRideTypeEnum_car;
+    case 'tricycle':
+      return _$rideResponseRideTypeEnum_tricycle;
+    default:
+      throw ArgumentError(name);
+  }
+}
+
+final BuiltSet<RideResponseRideTypeEnum> _$rideResponseRideTypeEnumValues =
+    BuiltSet<RideResponseRideTypeEnum>(const <RideResponseRideTypeEnum>[
+  _$rideResponseRideTypeEnum_motorcycle,
+  _$rideResponseRideTypeEnum_car,
+  _$rideResponseRideTypeEnum_tricycle,
+]);
+
 const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_cash =
     const RideResponsePaymentMethodEnum._('cash');
 const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_card =
     const RideResponsePaymentMethodEnum._('card');
 
 RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'cash':
       return _$rideResponsePaymentMethodEnum_cash;
@@ -25,12 +51,11 @@ RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnumValueOf(
 }
 
 final BuiltSet<RideResponsePaymentMethodEnum>
-_$rideResponsePaymentMethodEnumValues = BuiltSet<RideResponsePaymentMethodEnum>(
-  const <RideResponsePaymentMethodEnum>[
-    _$rideResponsePaymentMethodEnum_cash,
-    _$rideResponsePaymentMethodEnum_card,
-  ],
-);
+    _$rideResponsePaymentMethodEnumValues = BuiltSet<
+        RideResponsePaymentMethodEnum>(const <RideResponsePaymentMethodEnum>[
+  _$rideResponsePaymentMethodEnum_cash,
+  _$rideResponsePaymentMethodEnum_card,
+]);
 
 const RideResponseCancelledByEnum _$rideResponseCancelledByEnum_passenger =
     const RideResponseCancelledByEnum._('passenger');
@@ -49,19 +74,51 @@ RideResponseCancelledByEnum _$rideResponseCancelledByEnumValueOf(String name) {
 }
 
 final BuiltSet<RideResponseCancelledByEnum>
-_$rideResponseCancelledByEnumValues = BuiltSet<RideResponseCancelledByEnum>(
-  const <RideResponseCancelledByEnum>[
-    _$rideResponseCancelledByEnum_passenger,
-    _$rideResponseCancelledByEnum_driver,
-  ],
-);
+    _$rideResponseCancelledByEnumValues =
+    BuiltSet<RideResponseCancelledByEnum>(const <RideResponseCancelledByEnum>[
+  _$rideResponseCancelledByEnum_passenger,
+  _$rideResponseCancelledByEnum_driver,
+]);
 
+Serializer<RideResponseRideTypeEnum> _$rideResponseRideTypeEnumSerializer =
+    _$RideResponseRideTypeEnumSerializer();
 Serializer<RideResponsePaymentMethodEnum>
-_$rideResponsePaymentMethodEnumSerializer =
+    _$rideResponsePaymentMethodEnumSerializer =
     _$RideResponsePaymentMethodEnumSerializer();
 Serializer<RideResponseCancelledByEnum>
-_$rideResponseCancelledByEnumSerializer =
+    _$rideResponseCancelledByEnumSerializer =
     _$RideResponseCancelledByEnumSerializer();
+
+class _$RideResponseRideTypeEnumSerializer
+    implements PrimitiveSerializer<RideResponseRideTypeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'motorcycle': 'motorcycle',
+    'car': 'car',
+    'tricycle': 'tricycle',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'motorcycle': 'motorcycle',
+    'car': 'car',
+    'tricycle': 'tricycle',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[RideResponseRideTypeEnum];
+  @override
+  final String wireName = 'RideResponseRideTypeEnum';
+
+  @override
+  Object serialize(Serializers serializers, RideResponseRideTypeEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
+
+  @override
+  RideResponseRideTypeEnum deserialize(
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      RideResponseRideTypeEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+}
 
 class _$RideResponsePaymentMethodEnumSerializer
     implements PrimitiveSerializer<RideResponsePaymentMethodEnum> {
@@ -81,19 +138,16 @@ class _$RideResponsePaymentMethodEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    RideResponsePaymentMethodEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, RideResponsePaymentMethodEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   RideResponsePaymentMethodEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RideResponsePaymentMethodEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      RideResponsePaymentMethodEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$RideResponseCancelledByEnumSerializer
@@ -113,23 +167,19 @@ class _$RideResponseCancelledByEnumSerializer
   final String wireName = 'RideResponseCancelledByEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    RideResponseCancelledByEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, RideResponseCancelledByEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   RideResponseCancelledByEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RideResponseCancelledByEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      RideResponseCancelledByEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
-abstract mixin class RideResponseBuilder {
+abstract class RideResponseBuilder {
   void replace(RideResponse other);
   void update(void Function(RideResponseBuilder) updates);
   String? get id;
@@ -165,11 +215,26 @@ abstract mixin class RideResponseBuilder {
   double? get estimatedFare;
   set estimatedFare(double? estimatedFare);
 
+  double? get actualFare;
+  set actualFare(double? actualFare);
+
+  MapBuilder<String, JsonObject?> get fareBreakdown;
+  set fareBreakdown(MapBuilder<String, JsonObject?>? fareBreakdown);
+
+  RideResponseRideTypeEnum? get rideType;
+  set rideType(RideResponseRideTypeEnum? rideType);
+
   RideResponsePaymentMethodEnum? get paymentMethod;
   set paymentMethod(RideResponsePaymentMethodEnum? paymentMethod);
 
   RideResponseCancelledByEnum? get cancelledBy;
   set cancelledBy(RideResponseCancelledByEnum? cancelledBy);
+
+  String? get cancellationReason;
+  set cancellationReason(String? cancellationReason);
+
+  String? get cancellationReasonText;
+  set cancellationReasonText(String? cancellationReasonText);
 
   DateTime? get createdAt;
   set createdAt(DateTime? createdAt);
@@ -202,9 +267,19 @@ class _$$RideResponse extends $RideResponse {
   @override
   final double? estimatedFare;
   @override
+  final double? actualFare;
+  @override
+  final BuiltMap<String, JsonObject?>? fareBreakdown;
+  @override
+  final RideResponseRideTypeEnum? rideType;
+  @override
   final RideResponsePaymentMethodEnum? paymentMethod;
   @override
   final RideResponseCancelledByEnum? cancelledBy;
+  @override
+  final String? cancellationReason;
+  @override
+  final String? cancellationReasonText;
   @override
   final DateTime createdAt;
   @override
@@ -213,23 +288,28 @@ class _$$RideResponse extends $RideResponse {
   factory _$$RideResponse([void Function($RideResponseBuilder)? updates]) =>
       ($RideResponseBuilder()..update(updates))._build();
 
-  _$$RideResponse._({
-    required this.id,
-    required this.status,
-    required this.passenger,
-    this.driver,
-    required this.origin,
-    required this.destination,
-    this.originAddress,
-    this.destinationAddress,
-    this.notes,
-    this.fare,
-    this.estimatedFare,
-    this.paymentMethod,
-    this.cancelledBy,
-    required this.createdAt,
-    required this.updatedAt,
-  }) : super._();
+  _$$RideResponse._(
+      {required this.id,
+      required this.status,
+      required this.passenger,
+      this.driver,
+      required this.origin,
+      required this.destination,
+      this.originAddress,
+      this.destinationAddress,
+      this.notes,
+      this.fare,
+      this.estimatedFare,
+      this.actualFare,
+      this.fareBreakdown,
+      this.rideType,
+      this.paymentMethod,
+      this.cancelledBy,
+      this.cancellationReason,
+      this.cancellationReasonText,
+      required this.createdAt,
+      required this.updatedAt})
+      : super._();
   @override
   $RideResponse rebuild(void Function($RideResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -252,8 +332,13 @@ class _$$RideResponse extends $RideResponse {
         notes == other.notes &&
         fare == other.fare &&
         estimatedFare == other.estimatedFare &&
+        actualFare == other.actualFare &&
+        fareBreakdown == other.fareBreakdown &&
+        rideType == other.rideType &&
         paymentMethod == other.paymentMethod &&
         cancelledBy == other.cancelledBy &&
+        cancellationReason == other.cancellationReason &&
+        cancellationReasonText == other.cancellationReasonText &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -272,8 +357,13 @@ class _$$RideResponse extends $RideResponse {
     _$hash = $jc(_$hash, notes.hashCode);
     _$hash = $jc(_$hash, fare.hashCode);
     _$hash = $jc(_$hash, estimatedFare.hashCode);
+    _$hash = $jc(_$hash, actualFare.hashCode);
+    _$hash = $jc(_$hash, fareBreakdown.hashCode);
+    _$hash = $jc(_$hash, rideType.hashCode);
     _$hash = $jc(_$hash, paymentMethod.hashCode);
     _$hash = $jc(_$hash, cancelledBy.hashCode);
+    _$hash = $jc(_$hash, cancellationReason.hashCode);
+    _$hash = $jc(_$hash, cancellationReasonText.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -294,8 +384,13 @@ class _$$RideResponse extends $RideResponse {
           ..add('notes', notes)
           ..add('fare', fare)
           ..add('estimatedFare', estimatedFare)
+          ..add('actualFare', actualFare)
+          ..add('fareBreakdown', fareBreakdown)
+          ..add('rideType', rideType)
           ..add('paymentMethod', paymentMethod)
           ..add('cancelledBy', cancelledBy)
+          ..add('cancellationReason', cancellationReason)
+          ..add('cancellationReasonText', cancellationReasonText)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -357,6 +452,22 @@ class $RideResponseBuilder
   set estimatedFare(covariant double? estimatedFare) =>
       _$this._estimatedFare = estimatedFare;
 
+  double? _actualFare;
+  double? get actualFare => _$this._actualFare;
+  set actualFare(covariant double? actualFare) =>
+      _$this._actualFare = actualFare;
+
+  MapBuilder<String, JsonObject?>? _fareBreakdown;
+  MapBuilder<String, JsonObject?> get fareBreakdown =>
+      _$this._fareBreakdown ??= MapBuilder<String, JsonObject?>();
+  set fareBreakdown(covariant MapBuilder<String, JsonObject?>? fareBreakdown) =>
+      _$this._fareBreakdown = fareBreakdown;
+
+  RideResponseRideTypeEnum? _rideType;
+  RideResponseRideTypeEnum? get rideType => _$this._rideType;
+  set rideType(covariant RideResponseRideTypeEnum? rideType) =>
+      _$this._rideType = rideType;
+
   RideResponsePaymentMethodEnum? _paymentMethod;
   RideResponsePaymentMethodEnum? get paymentMethod => _$this._paymentMethod;
   set paymentMethod(covariant RideResponsePaymentMethodEnum? paymentMethod) =>
@@ -366,6 +477,16 @@ class $RideResponseBuilder
   RideResponseCancelledByEnum? get cancelledBy => _$this._cancelledBy;
   set cancelledBy(covariant RideResponseCancelledByEnum? cancelledBy) =>
       _$this._cancelledBy = cancelledBy;
+
+  String? _cancellationReason;
+  String? get cancellationReason => _$this._cancellationReason;
+  set cancellationReason(covariant String? cancellationReason) =>
+      _$this._cancellationReason = cancellationReason;
+
+  String? _cancellationReasonText;
+  String? get cancellationReasonText => _$this._cancellationReasonText;
+  set cancellationReasonText(covariant String? cancellationReasonText) =>
+      _$this._cancellationReasonText = cancellationReasonText;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -393,8 +514,13 @@ class $RideResponseBuilder
       _notes = $v.notes;
       _fare = $v.fare;
       _estimatedFare = $v.estimatedFare;
+      _actualFare = $v.actualFare;
+      _fareBreakdown = $v.fareBreakdown?.toBuilder();
+      _rideType = $v.rideType;
       _paymentMethod = $v.paymentMethod;
       _cancelledBy = $v.cancelledBy;
+      _cancellationReason = $v.cancellationReason;
+      _cancellationReasonText = $v.cancellationReasonText;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -418,24 +544,14 @@ class $RideResponseBuilder
   _$$RideResponse _build() {
     _$$RideResponse _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$$RideResponse._(
             id: BuiltValueNullFieldError.checkNotNull(
-              id,
-              r'$RideResponse',
-              'id',
-            ),
+                id, r'$RideResponse', 'id'),
             status: BuiltValueNullFieldError.checkNotNull(
-              status,
-              r'$RideResponse',
-              'status',
-            ),
+                status, r'$RideResponse', 'status'),
             passenger: BuiltValueNullFieldError.checkNotNull(
-              passenger,
-              r'$RideResponse',
-              'passenger',
-            ),
+                passenger, r'$RideResponse', 'passenger'),
             driver: _driver?.build(),
             origin: origin.build(),
             destination: destination.build(),
@@ -444,18 +560,17 @@ class $RideResponseBuilder
             notes: notes,
             fare: fare,
             estimatedFare: estimatedFare,
+            actualFare: actualFare,
+            fareBreakdown: _fareBreakdown?.build(),
+            rideType: rideType,
             paymentMethod: paymentMethod,
             cancelledBy: cancelledBy,
+            cancellationReason: cancellationReason,
+            cancellationReasonText: cancellationReasonText,
             createdAt: BuiltValueNullFieldError.checkNotNull(
-              createdAt,
-              r'$RideResponse',
-              'createdAt',
-            ),
+                createdAt, r'$RideResponse', 'createdAt'),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
-              updatedAt,
-              r'$RideResponse',
-              'updatedAt',
-            ),
+                updatedAt, r'$RideResponse', 'updatedAt'),
           );
     } catch (_) {
       late String _$failedField;
@@ -466,12 +581,12 @@ class $RideResponseBuilder
         origin.build();
         _$failedField = 'destination';
         destination.build();
+
+        _$failedField = 'fareBreakdown';
+        _fareBreakdown?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'$RideResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'$RideResponse', _$failedField, e.toString());
       }
       rethrow;
     }

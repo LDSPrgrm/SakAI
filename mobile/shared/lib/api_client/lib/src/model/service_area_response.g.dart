@@ -10,15 +10,15 @@ class _$ServiceAreaResponse extends ServiceAreaResponse {
   @override
   final BuiltList<ServiceArea>? areas;
 
-  factory _$ServiceAreaResponse([
-    void Function(ServiceAreaResponseBuilder)? updates,
-  ]) => (ServiceAreaResponseBuilder()..update(updates))._build();
+  factory _$ServiceAreaResponse(
+          [void Function(ServiceAreaResponseBuilder)? updates]) =>
+      (ServiceAreaResponseBuilder()..update(updates))._build();
 
   _$ServiceAreaResponse._({this.areas}) : super._();
   @override
   ServiceAreaResponse rebuild(
-    void Function(ServiceAreaResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(ServiceAreaResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   ServiceAreaResponseBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$ServiceAreaResponse extends ServiceAreaResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'ServiceAreaResponse',
-    )..add('areas', areas)).toString();
+    return (newBuiltValueToStringHelper(r'ServiceAreaResponse')
+          ..add('areas', areas))
+        .toString();
   }
 }
 
@@ -84,7 +84,10 @@ class ServiceAreaResponseBuilder
   _$ServiceAreaResponse _build() {
     _$ServiceAreaResponse _$result;
     try {
-      _$result = _$v ?? _$ServiceAreaResponse._(areas: _areas?.build());
+      _$result = _$v ??
+          _$ServiceAreaResponse._(
+            areas: _areas?.build(),
+          );
     } catch (_) {
       late String _$failedField;
       try {
@@ -92,10 +95,7 @@ class ServiceAreaResponseBuilder
         _areas?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'ServiceAreaResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'ServiceAreaResponse', _$failedField, e.toString());
       }
       rethrow;
     }

@@ -15,8 +15,8 @@ import 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
 import 'package:sakai_api_client/src/model/driver_status_request.dart';
 import 'package:sakai_api_client/src/model/driver_status_response.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
+import 'package:sakai_api_client/src/model/get_nearby_drivers200_response.dart';
 import 'package:sakai_api_client/src/model/location_update_request.dart';
-import 'package:sakai_api_client/src/model/nearby_drivers_response.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 
 class DriverApi {
@@ -551,13 +551,14 @@ class DriverApi {
     );
   }
 
-  /// Get nearby available drivers
-  /// Returns a list of online drivers currently available for matching within a given radius of a location. Used to show markers on the map. 
+  /// Get nearby available drivers by ride type
+  /// Returns a list of online drivers within the specified radius and vehicle type. Used by the passenger app to show available ride options with driver counts. 
   ///
   /// Parameters:
   /// * [lat] 
   /// * [lng] 
-  /// * [radius] 
+  /// * [rideType] 
+  /// * [radiusM] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -565,12 +566,13 @@ class DriverApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [NearbyDriversResponse] as data
+  /// Returns a [Future] containing a [Response] with a [GetNearbyDrivers200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<NearbyDriversResponse>> getNearbyDrivers({ 
+  Future<Response<GetNearbyDrivers200Response>> getNearbyDrivers({ 
     required double lat,
     required double lng,
-    double? radius = 5000.0,
+    required String rideType,
+    double? radiusM = 5000,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -585,7 +587,13 @@ class DriverApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -594,7 +602,8 @@ class DriverApi {
     final _queryParameters = <String, dynamic>{
       r'lat': encodeQueryParameter(_serializers, lat, const FullType(double)),
       r'lng': encodeQueryParameter(_serializers, lng, const FullType(double)),
-      if (radius != null) r'radius': encodeQueryParameter(_serializers, radius, const FullType(double)),
+      if (radiusM != null) r'radius_m': encodeQueryParameter(_serializers, radiusM, const FullType(double)),
+      r'ride_type': encodeQueryParameter(_serializers, rideType, const FullType(String)),
     };
 
     final _response = await _dio.request<Object>(
@@ -606,14 +615,14 @@ class DriverApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    NearbyDriversResponse? _responseData;
+    GetNearbyDrivers200Response? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null ? null : _serializers.deserialize(
         rawResponse,
-        specifiedType: const FullType(NearbyDriversResponse),
-      ) as NearbyDriversResponse;
+        specifiedType: const FullType(GetNearbyDrivers200Response),
+      ) as GetNearbyDrivers200Response;
 
     } catch (error, stackTrace) {
       throw DioException(
@@ -625,7 +634,7 @@ class DriverApi {
       );
     }
 
-    return Response<NearbyDriversResponse>(
+    return Response<GetNearbyDrivers200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

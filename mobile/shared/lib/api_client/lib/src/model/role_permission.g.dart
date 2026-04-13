@@ -7,51 +7,50 @@ part of 'role_permission.dart';
 // **************************************************************************
 
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_dashboard =
+    _$rolePermissionPermissionKeyEnum_dashboard =
     const RolePermissionPermissionKeyEnum._('dashboard');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_adminManagement =
+    _$rolePermissionPermissionKeyEnum_adminManagement =
     const RolePermissionPermissionKeyEnum._('adminManagement');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_roleManagement =
+    _$rolePermissionPermissionKeyEnum_roleManagement =
     const RolePermissionPermissionKeyEnum._('roleManagement');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_fareConfig =
+    _$rolePermissionPermissionKeyEnum_fareConfig =
     const RolePermissionPermissionKeyEnum._('fareConfig');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_payments =
+    _$rolePermissionPermissionKeyEnum_payments =
     const RolePermissionPermissionKeyEnum._('payments');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_payouts =
+    _$rolePermissionPermissionKeyEnum_payouts =
     const RolePermissionPermissionKeyEnum._('payouts');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_userManagement =
+    _$rolePermissionPermissionKeyEnum_userManagement =
     const RolePermissionPermissionKeyEnum._('userManagement');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_kycVerification =
+    _$rolePermissionPermissionKeyEnum_kycVerification =
     const RolePermissionPermissionKeyEnum._('kycVerification');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_safetyIncidents =
+    _$rolePermissionPermissionKeyEnum_safetyIncidents =
     const RolePermissionPermissionKeyEnum._('safetyIncidents');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_reports =
+    _$rolePermissionPermissionKeyEnum_reports =
     const RolePermissionPermissionKeyEnum._('reports');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_systemConfig =
+    _$rolePermissionPermissionKeyEnum_systemConfig =
     const RolePermissionPermissionKeyEnum._('systemConfig');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_systemHealth =
+    _$rolePermissionPermissionKeyEnum_systemHealth =
     const RolePermissionPermissionKeyEnum._('systemHealth');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_auditLog =
+    _$rolePermissionPermissionKeyEnum_auditLog =
     const RolePermissionPermissionKeyEnum._('auditLog');
 const RolePermissionPermissionKeyEnum
-_$rolePermissionPermissionKeyEnum_ltfrbCompliance =
+    _$rolePermissionPermissionKeyEnum_ltfrbCompliance =
     const RolePermissionPermissionKeyEnum._('ltfrbCompliance');
 
 RolePermissionPermissionKeyEnum _$rolePermissionPermissionKeyEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'dashboard':
       return _$rolePermissionPermissionKeyEnum_dashboard;
@@ -87,28 +86,26 @@ RolePermissionPermissionKeyEnum _$rolePermissionPermissionKeyEnumValueOf(
 }
 
 final BuiltSet<RolePermissionPermissionKeyEnum>
-_$rolePermissionPermissionKeyEnumValues =
-    BuiltSet<RolePermissionPermissionKeyEnum>(
-      const <RolePermissionPermissionKeyEnum>[
-        _$rolePermissionPermissionKeyEnum_dashboard,
-        _$rolePermissionPermissionKeyEnum_adminManagement,
-        _$rolePermissionPermissionKeyEnum_roleManagement,
-        _$rolePermissionPermissionKeyEnum_fareConfig,
-        _$rolePermissionPermissionKeyEnum_payments,
-        _$rolePermissionPermissionKeyEnum_payouts,
-        _$rolePermissionPermissionKeyEnum_userManagement,
-        _$rolePermissionPermissionKeyEnum_kycVerification,
-        _$rolePermissionPermissionKeyEnum_safetyIncidents,
-        _$rolePermissionPermissionKeyEnum_reports,
-        _$rolePermissionPermissionKeyEnum_systemConfig,
-        _$rolePermissionPermissionKeyEnum_systemHealth,
-        _$rolePermissionPermissionKeyEnum_auditLog,
-        _$rolePermissionPermissionKeyEnum_ltfrbCompliance,
-      ],
-    );
+    _$rolePermissionPermissionKeyEnumValues = BuiltSet<
+        RolePermissionPermissionKeyEnum>(const <RolePermissionPermissionKeyEnum>[
+  _$rolePermissionPermissionKeyEnum_dashboard,
+  _$rolePermissionPermissionKeyEnum_adminManagement,
+  _$rolePermissionPermissionKeyEnum_roleManagement,
+  _$rolePermissionPermissionKeyEnum_fareConfig,
+  _$rolePermissionPermissionKeyEnum_payments,
+  _$rolePermissionPermissionKeyEnum_payouts,
+  _$rolePermissionPermissionKeyEnum_userManagement,
+  _$rolePermissionPermissionKeyEnum_kycVerification,
+  _$rolePermissionPermissionKeyEnum_safetyIncidents,
+  _$rolePermissionPermissionKeyEnum_reports,
+  _$rolePermissionPermissionKeyEnum_systemConfig,
+  _$rolePermissionPermissionKeyEnum_systemHealth,
+  _$rolePermissionPermissionKeyEnum_auditLog,
+  _$rolePermissionPermissionKeyEnum_ltfrbCompliance,
+]);
 
 Serializer<RolePermissionPermissionKeyEnum>
-_$rolePermissionPermissionKeyEnumSerializer =
+    _$rolePermissionPermissionKeyEnumSerializer =
     _$RolePermissionPermissionKeyEnumSerializer();
 
 class _$RolePermissionPermissionKeyEnumSerializer
@@ -153,19 +150,16 @@ class _$RolePermissionPermissionKeyEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    RolePermissionPermissionKeyEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, RolePermissionPermissionKeyEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   RolePermissionPermissionKeyEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RolePermissionPermissionKeyEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      RolePermissionPermissionKeyEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$RolePermission extends RolePermission {
@@ -262,8 +256,7 @@ class RolePermissionBuilder
   RolePermission build() => _build();
 
   _$RolePermission _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$RolePermission._(
           permissionKey: permissionKey,
           read: read,

@@ -12,16 +12,16 @@ class _$UpdatePaymentConfigRequest extends UpdatePaymentConfigRequest {
   @override
   final bool? isActive;
 
-  factory _$UpdatePaymentConfigRequest([
-    void Function(UpdatePaymentConfigRequestBuilder)? updates,
-  ]) => (UpdatePaymentConfigRequestBuilder()..update(updates))._build();
+  factory _$UpdatePaymentConfigRequest(
+          [void Function(UpdatePaymentConfigRequestBuilder)? updates]) =>
+      (UpdatePaymentConfigRequestBuilder()..update(updates))._build();
 
   _$UpdatePaymentConfigRequest._({this.configFields, this.isActive})
-    : super._();
+      : super._();
   @override
   UpdatePaymentConfigRequest rebuild(
-    void Function(UpdatePaymentConfigRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(UpdatePaymentConfigRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   UpdatePaymentConfigRequestBuilder toBuilder() =>
@@ -98,8 +98,7 @@ class UpdatePaymentConfigRequestBuilder
   _$UpdatePaymentConfigRequest _build() {
     _$UpdatePaymentConfigRequest _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$UpdatePaymentConfigRequest._(
             configFields: _configFields?.build(),
             isActive: isActive,
@@ -111,10 +110,7 @@ class UpdatePaymentConfigRequestBuilder
         _configFields?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'UpdatePaymentConfigRequest',
-          _$failedField,
-          e.toString(),
-        );
+            r'UpdatePaymentConfigRequest', _$failedField, e.toString());
       }
       rethrow;
     }

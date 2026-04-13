@@ -15,7 +15,8 @@ export 'ws/ws_events.dart';
 export 'ws/ws_client.dart';
 
 // API client (generated — do not hand-edit)
-export 'package:sakai_api_client/sakai_api_client.dart';
+// Hide PaymentMethod to avoid conflict with domain-level PaymentMethod in ride_entity.dart
+export 'package:sakai_api_client/sakai_api_client.dart' hide PaymentMethod;
 
 // Theme
 export 'theme/sakai_design_tokens.dart';

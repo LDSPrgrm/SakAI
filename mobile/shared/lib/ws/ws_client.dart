@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
 import '../api/sakai_api_support.dart';
@@ -30,6 +31,8 @@ class WsClient {
       accessToken ?? '',
     );
 
+    debugPrint('[WS] Connecting to $uri');
+
     try {
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
@@ -44,11 +47,18 @@ class WsClient {
             // Ignore malformed messages.
           }
         },
-        onError: (_) => _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken),
-        onDone: () => _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken),
+        onError: (error) {
+          debugPrint('[WS] Stream error: $error');
+          _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken);
+        },
+        onDone: () {
+          debugPrint('[WS] Connection closed');
+          _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken);
+        },
         cancelOnError: false,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[WS] Connect failed: $e');
       _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken);
     }
   }
@@ -79,7 +89,10 @@ class WsClient {
     final base = min(1 << _reconnectAttempts, 30);
     final jitter = base * 0.25;
     _reconnectAttempts++;
-    return (base + (Random().nextDouble() * 2 - 1) * jitter).round().clamp(1, 30);
+    return (base + (Random().nextDouble() * 2 - 1) * jitter).round().clamp(
+      1,
+      30,
+    );
   }
 }
 

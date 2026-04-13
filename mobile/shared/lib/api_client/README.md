@@ -163,7 +163,7 @@ Class | Method | HTTP request | Description
 [*DriverApi*](doc/DriverApi.md) | [**driverSetStatus**](doc/DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [*DriverApi*](doc/DriverApi.md) | [**driverUpdateLocation**](doc/DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
 [*DriverApi*](doc/DriverApi.md) | [**driverUploadDocument**](doc/DriverApi.md#driveruploaddocument) | **POST** /drivers/documents | Upload a driver verification document
-[*DriverApi*](doc/DriverApi.md) | [**getNearbyDrivers**](doc/DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers
+[*DriverApi*](doc/DriverApi.md) | [**getNearbyDrivers**](doc/DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers by ride type
 [*RidesApi*](doc/RidesApi.md) | [**addRideTip**](doc/RidesApi.md#addridetip) | **POST** /rides/{rideId}/tip | Add a tip to a completed ride
 [*RidesApi*](doc/RidesApi.md) | [**getRideReceipt**](doc/RidesApi.md#getridereceipt) | **GET** /rides/{rideId}/receipt | Get payment receipt for a completed ride
 [*RidesApi*](doc/RidesApi.md) | [**paymentProcess**](doc/RidesApi.md#paymentprocess) | **POST** /payments/process | Process a card payment for a completed ride
@@ -234,6 +234,7 @@ Class | Method | HTTP request | Description
  - [GeoJSONFeatureCollection](doc/GeoJSONFeatureCollection.md)
  - [GeoJSONFeatureCollectionFeaturesInner](doc/GeoJSONFeatureCollectionFeaturesInner.md)
  - [GeoJSONFeatureCollectionFeaturesInnerGeometry](doc/GeoJSONFeatureCollectionFeaturesInnerGeometry.md)
+ - [GetNearbyDrivers200Response](doc/GetNearbyDrivers200Response.md)
  - [HealthResponse](doc/HealthResponse.md)
  - [HealthResponseDependencies](doc/HealthResponseDependencies.md)
  - [Incident](doc/Incident.md)
@@ -266,6 +267,7 @@ Class | Method | HTTP request | Description
  - [RefreshRequest](doc/RefreshRequest.md)
  - [RegisterRequest](doc/RegisterRequest.md)
  - [ReportDefinition](doc/ReportDefinition.md)
+ - [RideEventPayload](doc/RideEventPayload.md)
  - [RideRequestBody](doc/RideRequestBody.md)
  - [RideResponse](doc/RideResponse.md)
  - [RideStatus](doc/RideStatus.md)

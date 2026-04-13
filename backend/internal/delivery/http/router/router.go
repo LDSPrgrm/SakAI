@@ -192,6 +192,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			rides.POST("/:rideId/tip", middleware.RequireRole(domain.RolePassenger), d.Tip.AddTip)
 		}
 
+		// Nearby drivers (passenger only)
+		authed.GET("/drivers/nearby", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDrivers)
+
 		// Payment method routes (passenger only)
 		paymentMethods := authed.Group("/users/me/payment-methods")
 		paymentMethods.Use(middleware.RequireRole(domain.RolePassenger))

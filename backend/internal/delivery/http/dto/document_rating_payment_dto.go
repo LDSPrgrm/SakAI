@@ -160,17 +160,20 @@ func NewPaymentResponse(p *domain.Payment) PaymentResponse {
 
 // ReceiptResponse is the public API shape for a ride payment receipt.
 type ReceiptResponse struct {
-	RideID           string               `json:"ride_id"`
-	PassengerName    string               `json:"passenger_name"`
-	DriverName       string               `json:"driver_name"`
-	PickupAddress    string               `json:"pickup_address"`
-	DestinationAddress string             `json:"destination_address"`
-	Amount           float64              `json:"amount"`
-	Currency         string               `json:"currency"`
-	PaymentMethod    domain.PaymentMethod `json:"payment_method"`
-	PaymentStatus    domain.PaymentStatus `json:"payment_status"`
-	CompletedAt      time.Time            `json:"completed_at"`
-	ProcessedAt      *time.Time           `json:"processed_at,omitempty"`
+	RideID             string               `json:"ride_id"`
+	PassengerName      string               `json:"passenger_name"`
+	DriverName         string               `json:"driver_name"`
+	PickupAddress      string               `json:"pickup_address"`
+	DestinationAddress string               `json:"destination_address"`
+	Amount             float64              `json:"amount"`
+	Currency           string               `json:"currency"`
+	PaymentMethod      domain.PaymentMethod `json:"payment_method"`
+	PaymentStatus      domain.PaymentStatus `json:"payment_status"`
+	CompletedAt        time.Time            `json:"completed_at"`
+	ProcessedAt        *time.Time           `json:"processed_at,omitempty"`
+	EstimatedFare      *float64             `json:"estimated_fare,omitempty"`
+	ActualFare         *float64             `json:"actual_fare,omitempty"`
+	FareBreakdown      *domain.JSONMap      `json:"fare_breakdown,omitempty"`
 }
 
 // ─── Tip DTOs ────────────────────────────────────────────────────────────────

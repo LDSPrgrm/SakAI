@@ -24,24 +24,24 @@ class _$WsEventRideRequested extends WsEventRideRequested {
   @override
   final DateTime expiresAt;
 
-  factory _$WsEventRideRequested([
-    void Function(WsEventRideRequestedBuilder)? updates,
-  ]) => (WsEventRideRequestedBuilder()..update(updates))._build();
+  factory _$WsEventRideRequested(
+          [void Function(WsEventRideRequestedBuilder)? updates]) =>
+      (WsEventRideRequestedBuilder()..update(updates))._build();
 
-  _$WsEventRideRequested._({
-    required this.rideId,
-    required this.passenger,
-    required this.origin,
-    required this.destination,
-    this.originAddress,
-    this.destinationAddress,
-    this.notes,
-    required this.expiresAt,
-  }) : super._();
+  _$WsEventRideRequested._(
+      {required this.rideId,
+      required this.passenger,
+      required this.origin,
+      required this.destination,
+      this.originAddress,
+      this.destinationAddress,
+      this.notes,
+      required this.expiresAt})
+      : super._();
   @override
   WsEventRideRequested rebuild(
-    void Function(WsEventRideRequestedBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(WsEventRideRequestedBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideRequestedBuilder toBuilder() =>
@@ -166,29 +166,19 @@ class WsEventRideRequestedBuilder
   _$WsEventRideRequested _build() {
     _$WsEventRideRequested _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$WsEventRideRequested._(
             rideId: BuiltValueNullFieldError.checkNotNull(
-              rideId,
-              r'WsEventRideRequested',
-              'rideId',
-            ),
+                rideId, r'WsEventRideRequested', 'rideId'),
             passenger: BuiltValueNullFieldError.checkNotNull(
-              passenger,
-              r'WsEventRideRequested',
-              'passenger',
-            ),
+                passenger, r'WsEventRideRequested', 'passenger'),
             origin: origin.build(),
             destination: destination.build(),
             originAddress: originAddress,
             destinationAddress: destinationAddress,
             notes: notes,
             expiresAt: BuiltValueNullFieldError.checkNotNull(
-              expiresAt,
-              r'WsEventRideRequested',
-              'expiresAt',
-            ),
+                expiresAt, r'WsEventRideRequested', 'expiresAt'),
           );
     } catch (_) {
       late String _$failedField;
@@ -199,10 +189,7 @@ class WsEventRideRequestedBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'WsEventRideRequested',
-          _$failedField,
-          e.toString(),
-        );
+            r'WsEventRideRequested', _$failedField, e.toString());
       }
       rethrow;
     }

@@ -10,15 +10,15 @@ class _$PaymentMethodListResponse extends PaymentMethodListResponse {
   @override
   final BuiltList<PaymentMethodDetails> data;
 
-  factory _$PaymentMethodListResponse([
-    void Function(PaymentMethodListResponseBuilder)? updates,
-  ]) => (PaymentMethodListResponseBuilder()..update(updates))._build();
+  factory _$PaymentMethodListResponse(
+          [void Function(PaymentMethodListResponseBuilder)? updates]) =>
+      (PaymentMethodListResponseBuilder()..update(updates))._build();
 
   _$PaymentMethodListResponse._({required this.data}) : super._();
   @override
   PaymentMethodListResponse rebuild(
-    void Function(PaymentMethodListResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(PaymentMethodListResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   PaymentMethodListResponseBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$PaymentMethodListResponse extends PaymentMethodListResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'PaymentMethodListResponse',
-    )..add('data', data)).toString();
+    return (newBuiltValueToStringHelper(r'PaymentMethodListResponse')
+          ..add('data', data))
+        .toString();
   }
 }
 
@@ -85,7 +85,10 @@ class PaymentMethodListResponseBuilder
   _$PaymentMethodListResponse _build() {
     _$PaymentMethodListResponse _$result;
     try {
-      _$result = _$v ?? _$PaymentMethodListResponse._(data: data.build());
+      _$result = _$v ??
+          _$PaymentMethodListResponse._(
+            data: data.build(),
+          );
     } catch (_) {
       late String _$failedField;
       try {
@@ -93,10 +96,7 @@ class PaymentMethodListResponseBuilder
         data.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'PaymentMethodListResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'PaymentMethodListResponse', _$failedField, e.toString());
       }
       rethrow;
     }

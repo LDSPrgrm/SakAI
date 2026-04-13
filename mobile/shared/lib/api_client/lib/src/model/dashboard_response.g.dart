@@ -38,27 +38,27 @@ class _$DashboardResponse extends DashboardResponse {
   @override
   final num? platformUptime;
 
-  factory _$DashboardResponse([
-    void Function(DashboardResponseBuilder)? updates,
-  ]) => (DashboardResponseBuilder()..update(updates))._build();
+  factory _$DashboardResponse(
+          [void Function(DashboardResponseBuilder)? updates]) =>
+      (DashboardResponseBuilder()..update(updates))._build();
 
-  _$DashboardResponse._({
-    this.activeRiders,
-    this.totalRiders,
-    this.ridersTrend,
-    this.activeDrivers,
-    this.totalDrivers,
-    this.driversTrend,
-    this.ridesToday,
-    this.ridesTrend,
-    this.revenueToday,
-    this.revenueTrend,
-    this.avgWaitTimeSeconds,
-    this.avgWaitMinutes,
-    this.waitTrend,
-    this.systemUptime,
-    this.platformUptime,
-  }) : super._();
+  _$DashboardResponse._(
+      {this.activeRiders,
+      this.totalRiders,
+      this.ridersTrend,
+      this.activeDrivers,
+      this.totalDrivers,
+      this.driversTrend,
+      this.ridesToday,
+      this.ridesTrend,
+      this.revenueToday,
+      this.revenueTrend,
+      this.avgWaitTimeSeconds,
+      this.avgWaitMinutes,
+      this.waitTrend,
+      this.systemUptime,
+      this.platformUptime})
+      : super._();
   @override
   DashboardResponse rebuild(void Function(DashboardResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -241,8 +241,7 @@ class DashboardResponseBuilder
   DashboardResponse build() => _build();
 
   _$DashboardResponse _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$DashboardResponse._(
           activeRiders: activeRiders,
           totalRiders: totalRiders,

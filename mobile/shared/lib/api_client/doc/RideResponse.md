@@ -19,8 +19,13 @@ Name | Type | Description | Notes
 **notes** | **String** |  | [optional] 
 **fare** | **double** | Final fare amount (null if ride not completed) | [optional] 
 **estimatedFare** | **double** | Estimated fare at request time | [optional] 
+**actualFare** | **double** | Actual fare after completion | [optional] 
+**fareBreakdown** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md) | JSONB breakdown of fare components | [optional] 
+**rideType** | **String** | Vehicle type for this ride | [optional] 
 **paymentMethod** | **String** | Payment method used for ride | [optional] 
 **cancelledBy** | **String** | Set only when status is `cancelled` | [optional] 
+**cancellationReason** | **String** | Predefined cancellation reason code | [optional] 
+**cancellationReasonText** | **String** | Free-text cancellation reason | [optional] 
 **createdAt** | [**DateTime**](DateTime.md) |  | 
 **updatedAt** | [**DateTime**](DateTime.md) |  | 
 

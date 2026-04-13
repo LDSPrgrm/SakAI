@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -52,16 +53,19 @@ func (r *driverRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*domain
 }
 
 func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status domain.DriverStatus) error {
-	const q = `UPDATE drivers SET status = $1, updated_at = NOW() WHERE user_id = $2`
-	_, err := r.db.Exec(ctx, q, status, userID)
+	const q = `
+		INSERT INTO drivers (user_id, status, updated_at)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT (user_id) DO UPDATE SET status = $2, updated_at = NOW()`
+	_, err := r.db.Exec(ctx, q, userID, status)
 	return err
 }
 
 func (r *driverRepo) UpdateLocation(ctx context.Context, userID uuid.UUID, loc domain.DriverLocation) error {
-	// ST_SetSRID(ST_MakePoint(lng, lat), 4326) stores as PostGIS geography point.
+	// ST_SetSRID(ST_MakePoint(lng, lat), 4326) stores as PostGIS geometry point.
 	const q = `
 		UPDATE drivers
-		SET location  = ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography,
+		SET location  = ST_SetSRID(ST_MakePoint($2, $3), 4326),
 		    updated_at = NOW()
 		WHERE user_id = $1`
 	_, err := r.db.Exec(ctx, q, userID, loc.Lng, loc.Lat)
@@ -74,23 +78,25 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 	}
 	const q = `
 		SELECT user_id, status,
-		       ST_Y(location::geometry) AS lat,
-		       ST_X(location::geometry) AS lng,
+		       ST_Y(location) AS lat,
+		       ST_X(location) AS lng,
 		       updated_at
 		FROM drivers
 		WHERE status = 'online'
 		  AND NOT EXISTS (
-		        SELECT 1 FROM rides 
-		        WHERE driver_id = drivers.user_id 
+		        SELECT 1 FROM rides
+		        WHERE driver_id = drivers.user_id
 		          AND status NOT IN ('completed', 'cancelled')
 		      )
 		  AND ST_DWithin(
 		        location,
-		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
 		        $3
 		      )
-		ORDER BY ST_Distance(location, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
+		ORDER BY ST_Distance(location, ST_SetSRID(ST_MakePoint($2, $1), 4326))
 		LIMIT 1`
+
+	log.Printf("[DRIVER_REPO] FindNearbyOnline: origin=(%.5f, %.5f), radius=%.0fm", origin.Lat, origin.Lng, radiusMeters)
 
 	rows, err := r.db.Query(ctx, q, origin.Lat, origin.Lng, radiusMeters)
 	if err != nil {
@@ -107,6 +113,79 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		}
 		d.Location = &domain.DriverLocation{LatLng: domain.LatLng{Lat: lat, Lng: lng}}
 		drivers = append(drivers, d)
+		log.Printf("[DRIVER_REPO] Found driver: userID=%s, loc=(%.5f, %.5f)", d.UserID, lat, lng)
+	}
+	if len(drivers) == 0 {
+		log.Printf("[DRIVER_REPO] No online drivers found near (%.5f, %.5f)", origin.Lat, origin.Lng)
 	}
 	return drivers, rows.Err()
+}
+
+func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float64, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
+	if radiusM <= 0 {
+		radiusM = defaultSearchRadiusMeters
+	}
+	// Query joins drivers with vehicles to filter by vehicle_type and enrich response.
+	const q = `
+		SELECT d.user_id, d.status,
+		       ST_Y(d.location) AS lat,
+		       ST_X(d.location) AS lng,
+		       v.make, v.model, v.plate, v.vehicle_type,
+		       COALESCE(AVG(rt.stars), 0) AS rating,
+		       ST_Distance(d.location, ST_SetSRID(ST_MakePoint($2, $1), 4326)) AS distance_m
+		FROM drivers d
+		INNER JOIN vehicles v ON v.user_id = d.user_id
+		LEFT JOIN ratings rt ON rt.ratee_id = d.user_id
+		WHERE d.status = 'online'
+		  AND NOT EXISTS (
+		        SELECT 1 FROM rides
+		        WHERE driver_id = d.user_id
+		          AND status NOT IN ('completed', 'cancelled')
+		      )
+		  AND v.vehicle_type = $4
+		  AND ST_DWithin(
+		        d.location,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
+		        $3
+		      )
+		GROUP BY d.user_id, d.status, d.location, v.make, v.model, v.plate, v.vehicle_type
+		ORDER BY distance_m
+		LIMIT 20`
+
+	rows, err := r.db.Query(ctx, q, lat, lng, radiusM, rideType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.NearbyDriver
+	for rows.Next() {
+		var nd domain.NearbyDriver
+		var userID uuid.UUID
+		var status string
+		var make, model, plate, vehicleType *string
+		var rating *float64
+		if err := rows.Scan(&userID, &status, &nd.Lat, &nd.Lng, &make, &model, &plate, &vehicleType, &rating, &nd.DistanceM); err != nil {
+			return nil, err
+		}
+		nd.ID = userID.String()
+		if make != nil {
+			nd.VehicleMake = *make
+		}
+		if model != nil {
+			nd.VehicleModel = *model
+		}
+		if plate != nil {
+			nd.VehiclePlate = *plate
+		}
+		if vehicleType != nil {
+			nd.VehicleType = *vehicleType
+		}
+		if rating != nil && *rating > 0 {
+			nd.Rating = rating
+		}
+		results = append(results, nd)
+	}
+	log.Printf("[DRIVER_REPO] FindNearbyOnlineByType: lat=%.5f lng=%.5f radius=%.0f type=%s → found %d drivers", lat, lng, radiusM, rideType, len(results))
+	return results, rows.Err()
 }

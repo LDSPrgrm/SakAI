@@ -27,16 +27,16 @@ class _$PaymentResponse extends PaymentResponse {
   factory _$PaymentResponse([void Function(PaymentResponseBuilder)? updates]) =>
       (PaymentResponseBuilder()..update(updates))._build();
 
-  _$PaymentResponse._({
-    required this.id,
-    required this.rideId,
-    required this.amount,
-    required this.currency,
-    required this.method,
-    required this.status,
-    this.gatewayTransactionId,
-    required this.processedAt,
-  }) : super._();
+  _$PaymentResponse._(
+      {required this.id,
+      required this.rideId,
+      required this.amount,
+      required this.currency,
+      required this.method,
+      required this.status,
+      this.gatewayTransactionId,
+      required this.processedAt})
+      : super._();
   @override
   PaymentResponse rebuild(void Function(PaymentResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -159,45 +159,23 @@ class PaymentResponseBuilder
   PaymentResponse build() => _build();
 
   _$PaymentResponse _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$PaymentResponse._(
           id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'PaymentResponse',
-            'id',
-          ),
+              id, r'PaymentResponse', 'id'),
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'PaymentResponse',
-            'rideId',
-          ),
+              rideId, r'PaymentResponse', 'rideId'),
           amount: BuiltValueNullFieldError.checkNotNull(
-            amount,
-            r'PaymentResponse',
-            'amount',
-          ),
+              amount, r'PaymentResponse', 'amount'),
           currency: BuiltValueNullFieldError.checkNotNull(
-            currency,
-            r'PaymentResponse',
-            'currency',
-          ),
+              currency, r'PaymentResponse', 'currency'),
           method: BuiltValueNullFieldError.checkNotNull(
-            method,
-            r'PaymentResponse',
-            'method',
-          ),
+              method, r'PaymentResponse', 'method'),
           status: BuiltValueNullFieldError.checkNotNull(
-            status,
-            r'PaymentResponse',
-            'status',
-          ),
+              status, r'PaymentResponse', 'status'),
           gatewayTransactionId: gatewayTransactionId,
           processedAt: BuiltValueNullFieldError.checkNotNull(
-            processedAt,
-            r'PaymentResponse',
-            'processedAt',
-          ),
+              processedAt, r'PaymentResponse', 'processedAt'),
         );
     replace(_$result);
     return _$result;

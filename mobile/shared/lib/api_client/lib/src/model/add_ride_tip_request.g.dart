@@ -10,9 +10,9 @@ class _$AddRideTipRequest extends AddRideTipRequest {
   @override
   final double tipAmount;
 
-  factory _$AddRideTipRequest([
-    void Function(AddRideTipRequestBuilder)? updates,
-  ]) => (AddRideTipRequestBuilder()..update(updates))._build();
+  factory _$AddRideTipRequest(
+          [void Function(AddRideTipRequestBuilder)? updates]) =>
+      (AddRideTipRequestBuilder()..update(updates))._build();
 
   _$AddRideTipRequest._({required this.tipAmount}) : super._();
   @override
@@ -39,9 +39,9 @@ class _$AddRideTipRequest extends AddRideTipRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'AddRideTipRequest',
-    )..add('tipAmount', tipAmount)).toString();
+    return (newBuiltValueToStringHelper(r'AddRideTipRequest')
+          ..add('tipAmount', tipAmount))
+        .toString();
   }
 }
 
@@ -80,14 +80,10 @@ class AddRideTipRequestBuilder
   AddRideTipRequest build() => _build();
 
   _$AddRideTipRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$AddRideTipRequest._(
           tipAmount: BuiltValueNullFieldError.checkNotNull(
-            tipAmount,
-            r'AddRideTipRequest',
-            'tipAmount',
-          ),
+              tipAmount, r'AddRideTipRequest', 'tipAmount'),
         );
     replace(_$result);
     return _$result;

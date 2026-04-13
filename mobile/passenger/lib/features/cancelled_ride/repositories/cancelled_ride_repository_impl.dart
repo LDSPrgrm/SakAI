@@ -1,5 +1,6 @@
 import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/cancellation_details.dart';
@@ -25,6 +26,44 @@ class CancelledRideRepositoryImpl implements CancelledRideRepository {
       return CancellationDetails.fromRideResponse(data);
     } on DioException catch (e) {
       throw _fromDio(e);
+    }
+  }
+
+  @override
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  }) async {
+    debugPrint(
+      '[CANCELLED_RIDE_REPO] Cancelling ride: $rideId, reasonCode: $reasonCode',
+    );
+    try {
+      // Send cancellation request with reason_code and reason_text directly
+      // using Dio to bypass stale generated CancelRequest model
+      final dio = _client.dio;
+      final response = await dio.post(
+        '/rides/$rideId/cancel',
+        data: <String, dynamic>{
+          'reason_code': reasonCode,
+          if (reasonText != null) 'reason_text': reasonText,
+        },
+      );
+      debugPrint(
+        '[CANCELLED_RIDE_REPO] Cancel ride succeeded (HTTP ${response.statusCode})',
+      );
+    } on DioException catch (e) {
+      debugPrint(
+        '[CANCELLED_RIDE_REPO] Cancel ride failed (Dio): ${e.response?.statusCode} ${e.message}',
+      );
+      if (e.response?.data != null) {
+        debugPrint('[CANCELLED_RIDE_REPO] Error body: ${e.response?.data}');
+      }
+      throw _fromDio(e);
+    } catch (e, st) {
+      debugPrint('[CANCELLED_RIDE_REPO] Cancel ride failed (Unexpected): $e');
+      debugPrint('[CANCELLED_RIDE_REPO] Stack: $st');
+      rethrow;
     }
   }
 

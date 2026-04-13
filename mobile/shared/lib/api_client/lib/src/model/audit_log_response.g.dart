@@ -12,9 +12,9 @@ class _$AuditLogResponse extends AuditLogResponse {
   @override
   final int? total;
 
-  factory _$AuditLogResponse([
-    void Function(AuditLogResponseBuilder)? updates,
-  ]) => (AuditLogResponseBuilder()..update(updates))._build();
+  factory _$AuditLogResponse(
+          [void Function(AuditLogResponseBuilder)? updates]) =>
+      (AuditLogResponseBuilder()..update(updates))._build();
 
   _$AuditLogResponse._({this.logs, this.total}) : super._();
   @override
@@ -93,8 +93,11 @@ class AuditLogResponseBuilder
   _$AuditLogResponse _build() {
     _$AuditLogResponse _$result;
     try {
-      _$result =
-          _$v ?? _$AuditLogResponse._(logs: _logs?.build(), total: total);
+      _$result = _$v ??
+          _$AuditLogResponse._(
+            logs: _logs?.build(),
+            total: total,
+          );
     } catch (_) {
       late String _$failedField;
       try {
@@ -102,10 +105,7 @@ class AuditLogResponseBuilder
         _logs?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'AuditLogResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'AuditLogResponse', _$failedField, e.toString());
       }
       rethrow;
     }
