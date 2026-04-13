@@ -12,8 +12,7 @@ const IntegrationTestResultStatusEnum _$integrationTestResultStatusEnum_failed =
     const IntegrationTestResultStatusEnum._('failed');
 
 IntegrationTestResultStatusEnum _$integrationTestResultStatusEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'ok':
       return _$integrationTestResultStatusEnum_ok;
@@ -25,16 +24,14 @@ IntegrationTestResultStatusEnum _$integrationTestResultStatusEnumValueOf(
 }
 
 final BuiltSet<IntegrationTestResultStatusEnum>
-_$integrationTestResultStatusEnumValues =
-    BuiltSet<IntegrationTestResultStatusEnum>(
-      const <IntegrationTestResultStatusEnum>[
-        _$integrationTestResultStatusEnum_ok,
-        _$integrationTestResultStatusEnum_failed,
-      ],
-    );
+    _$integrationTestResultStatusEnumValues = BuiltSet<
+        IntegrationTestResultStatusEnum>(const <IntegrationTestResultStatusEnum>[
+  _$integrationTestResultStatusEnum_ok,
+  _$integrationTestResultStatusEnum_failed,
+]);
 
 Serializer<IntegrationTestResultStatusEnum>
-_$integrationTestResultStatusEnumSerializer =
+    _$integrationTestResultStatusEnumSerializer =
     _$IntegrationTestResultStatusEnumSerializer();
 
 class _$IntegrationTestResultStatusEnumSerializer
@@ -55,19 +52,16 @@ class _$IntegrationTestResultStatusEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    IntegrationTestResultStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, IntegrationTestResultStatusEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   IntegrationTestResultStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => IntegrationTestResultStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      IntegrationTestResultStatusEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$IntegrationTestResult extends IntegrationTestResult {
@@ -80,20 +74,17 @@ class _$IntegrationTestResult extends IntegrationTestResult {
   @override
   final String? message;
 
-  factory _$IntegrationTestResult([
-    void Function(IntegrationTestResultBuilder)? updates,
-  ]) => (IntegrationTestResultBuilder()..update(updates))._build();
+  factory _$IntegrationTestResult(
+          [void Function(IntegrationTestResultBuilder)? updates]) =>
+      (IntegrationTestResultBuilder()..update(updates))._build();
 
-  _$IntegrationTestResult._({
-    this.service,
-    this.status,
-    this.latencyMs,
-    this.message,
-  }) : super._();
+  _$IntegrationTestResult._(
+      {this.service, this.status, this.latencyMs, this.message})
+      : super._();
   @override
   IntegrationTestResult rebuild(
-    void Function(IntegrationTestResultBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(IntegrationTestResultBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   IntegrationTestResultBuilder toBuilder() =>
@@ -182,8 +173,7 @@ class IntegrationTestResultBuilder
   IntegrationTestResult build() => _build();
 
   _$IntegrationTestResult _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$IntegrationTestResult._(
           service: service,
           status: status,

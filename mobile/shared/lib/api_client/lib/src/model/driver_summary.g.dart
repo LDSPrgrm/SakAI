@@ -19,12 +19,12 @@ class _$DriverSummary extends DriverSummary {
   factory _$DriverSummary([void Function(DriverSummaryBuilder)? updates]) =>
       (DriverSummaryBuilder()..update(updates))._build();
 
-  _$DriverSummary._({
-    required this.id,
-    required this.name,
-    required this.vehicle,
-    this.currentLocation,
-  }) : super._();
+  _$DriverSummary._(
+      {required this.id,
+      required this.name,
+      required this.vehicle,
+      this.currentLocation})
+      : super._();
   @override
   DriverSummary rebuild(void Function(DriverSummaryBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -118,19 +118,12 @@ class DriverSummaryBuilder
   _$DriverSummary _build() {
     _$DriverSummary _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$DriverSummary._(
             id: BuiltValueNullFieldError.checkNotNull(
-              id,
-              r'DriverSummary',
-              'id',
-            ),
+                id, r'DriverSummary', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(
-              name,
-              r'DriverSummary',
-              'name',
-            ),
+                name, r'DriverSummary', 'name'),
             vehicle: vehicle.build(),
             currentLocation: _currentLocation?.build(),
           );
@@ -143,10 +136,7 @@ class DriverSummaryBuilder
         _currentLocation?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'DriverSummary',
-          _$failedField,
-          e.toString(),
-        );
+            r'DriverSummary', _$failedField, e.toString());
       }
       rethrow;
     }

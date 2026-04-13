@@ -12,15 +12,15 @@ class _$WsEventRideDeclined extends WsEventRideDeclined {
   @override
   final String? message;
 
-  factory _$WsEventRideDeclined([
-    void Function(WsEventRideDeclinedBuilder)? updates,
-  ]) => (WsEventRideDeclinedBuilder()..update(updates))._build();
+  factory _$WsEventRideDeclined(
+          [void Function(WsEventRideDeclinedBuilder)? updates]) =>
+      (WsEventRideDeclinedBuilder()..update(updates))._build();
 
   _$WsEventRideDeclined._({required this.rideId, this.message}) : super._();
   @override
   WsEventRideDeclined rebuild(
-    void Function(WsEventRideDeclinedBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(WsEventRideDeclinedBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideDeclinedBuilder toBuilder() =>
@@ -92,14 +92,10 @@ class WsEventRideDeclinedBuilder
   WsEventRideDeclined build() => _build();
 
   _$WsEventRideDeclined _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$WsEventRideDeclined._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'WsEventRideDeclined',
-            'rideId',
-          ),
+              rideId, r'WsEventRideDeclined', 'rideId'),
           message: message,
         );
     replace(_$result);

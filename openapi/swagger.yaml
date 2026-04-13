@@ -107,31 +107,58 @@ paths:
   /drivers/nearby:
     get:
       tags: [Driver]
-      summary: Get nearby available drivers
+      summary: Get nearby available drivers by ride type
       description: |
-        Returns a list of online drivers currently available for matching
-        within a given radius of a location. Used to show markers on the map.
+        Returns a list of online drivers within the specified radius and vehicle type.
+        Used by the passenger app to show available ride options with driver counts.
       operationId: getNearbyDrivers
+      security:
+        - BearerAuth: []
       parameters:
         - name: lat
           in: query
           required: true
-          schema: { type: number, format: float }
+          schema: { type: number, format: double }
         - name: lng
           in: query
           required: true
-          schema: { type: number, format: float }
-        - name: radius
+          schema: { type: number, format: double }
+        - name: radius_m
           in: query
-          required: false
-          schema: { type: number, format: float, default: 5000.0 }
+          schema: { type: number, format: double, default: 5000 }
+        - name: ride_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [motorcycle, car, tricycle]
       responses:
         "200":
           description: List of nearby drivers
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NearbyDriversResponse"
+                type: object
+                properties:
+                  drivers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NearbyDriver"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: No drivers available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: NO_DRIVERS_AVAILABLE
+                message: "No drivers of requested type within range"
 
   # ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -2851,6 +2878,10 @@ components:
         - RIDE_NOT_COMPLETED
         # Matching
         - NO_DRIVERS_AVAILABLE
+        # Ride type validation
+        - INVALID_RIDE_TYPE
+        - DRIVER_REMATCH_IN_PROGRESS
+        - CANCELLATION_FEE_APPLIED
         # Payments
         - PAYMENT_FAILED
         - INVALID_PAYMENT_TOKEN
@@ -2962,7 +2993,30 @@ components:
         role:
           type: string
           enum: [passenger, driver]
-          example: "passenger"
+          example: "driver"
+        vehicle:
+          $ref: "#/components/schemas/VehicleInput"
+
+    VehicleInput:
+      type: object
+      required: [make, model, color, plate, vehicle_type]
+      properties:
+        make:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios"
+        color:
+          type: string
+          example: "Silver"
+        plate:
+          type: string
+          example: "ABC 1234"
+        vehicle_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          example: "car"
 
     LoginRequest:
       type: object
@@ -3288,7 +3342,7 @@ components:
 
     RideRequestBody:
       type: object
-      required: [origin, destination]
+      required: [origin, destination, ride_type]
       properties:
         origin:
           $ref: "#/components/schemas/LatLng"
@@ -3307,6 +3361,16 @@ components:
           maxLength: 500
           description: Optional instructions for the driver
           example: "I'll be waiting at the lobby entrance."
+        ride_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          default: car
+          description: Passenger's selected vehicle type
+        payment_method:
+          type: string
+          enum: [cash, card]
+          default: cash
+          description: Payment method for this ride
 
     RideResponse:
       type: object
@@ -3352,6 +3416,28 @@ components:
           format: double
           description: Estimated fare at request time
           example: 230.00
+        actual_fare:
+          type: number
+          format: double
+          nullable: true
+          description: Actual fare after completion
+          example: 250.00
+        fare_breakdown:
+          type: object
+          nullable: true
+          description: JSONB breakdown of fare components
+          additionalProperties: true
+          example:
+            {
+              "base_fare": 40.0,
+              "distance_charge": 150.0,
+              "time_charge": 40.0,
+              "booking_fee": 20.0,
+            }
+        ride_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          description: Vehicle type for this ride
         payment_method:
           type: string
           enum: [cash, card]
@@ -3361,6 +3447,16 @@ components:
           enum: [passenger, driver]
           nullable: true
           description: Set only when status is `cancelled`
+        cancellation_reason:
+          type: string
+          nullable: true
+          description: Predefined cancellation reason code
+          example: "driver_too_far"
+        cancellation_reason_text:
+          type: string
+          nullable: true
+          description: Free-text cancellation reason
+          example: "Driver was too far away"
         created_at:
           type: string
           format: date-time
@@ -3384,14 +3480,45 @@ components:
         current_location:
           $ref: "#/components/schemas/LatLng"
 
+    RideEventPayload:
+      type: object
+      description: Consistent payload for ride WebSocket events
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            [requested, accepted, arrived, in_progress, completed, cancelled]
+        driver_id:
+          type: string
+          format: uuid
+          nullable: true
+        passenger_id:
+          type: string
+          format: uuid
+          nullable: true
+
     CancelRequest:
       type: object
+      required: [reason_code]
       properties:
-        reason:
+        reason_code:
           type: string
-          maxLength: 255
-          description: Optional cancellation reason
-          example: "Change of plans"
+          enum:
+            - driver_too_far
+            - changed_plans
+            - wrong_pickup
+            - driver_not_moving
+            - safety_concern
+            - other
+          description: Predefined cancellation reason
+        reason_text:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Free-text explanation when reason_code is "other"
 
     # ==================================================================    # WebSocket Event Schemas
     # ==================================================================    # Connection: ws://{host}/ws?token={access_token}
@@ -4226,17 +4353,17 @@ components:
             $ref: "#/components/schemas/NearbyDriver"
       example:
         drivers:
-          - id: "driver-1"
+          - id: "550e8400-e29b-41d4-a716-446655440001"
             name: "Juan"
             location: { lat: 16.608, lng: 120.269 }
             heading: 45.0
             vehicle_type: "motorcycle"
-          - id: "driver-2"
+          - id: "550e8400-e29b-41d4-a716-446655440002"
             name: "Pedro"
             location: { lat: 16.612, lng: 120.272 }
             heading: 180.0
             vehicle_type: "car"
-          - id: "driver-3"
+          - id: "550e8400-e29b-41d4-a716-446655440003"
             name: "Maria"
             location: { lat: 16.605, lng: 120.262 }
             heading: 270.0
@@ -4249,19 +4376,34 @@ components:
         id:
           type: string
           format: uuid
-        provider:
+        name:
           type: string
-          enum: [gcash, paymaya, card, cash]
-        config_fields:
-          type: object
-          additionalProperties:
-            type: string
-          description: API keys and settings — sensitive fields shown masked (last 4 chars)
-        is_active:
-          type: boolean
-        updated_at:
+        vehicle_make:
           type: string
-          format: date-time
+        vehicle_model:
+          type: string
+        vehicle_plate:
+          type: string
+        vehicle_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 5
+          nullable: true
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        location:
+          $ref: "#/components/schemas/LatLng"
+        heading:
+          type: number
+          format: double
+          nullable: true
+          description: Compass bearing in degrees
 
     UpdatePaymentConfigRequest:
       type: object

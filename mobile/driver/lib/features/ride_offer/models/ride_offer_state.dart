@@ -15,12 +15,16 @@ class RideOfferState {
     required this.expiresAt,
     this.distanceToPickupMeters,
     this.countdownSeconds = 30,
+    this.estimatedFare,
+    this.rideType,
   });
 
   factory RideOfferState.fromEvent(
     WsEventRideRequested event, {
     double? currentLat,
     double? currentLng,
+    double? estimatedFare,
+    String? rideType,
   }) {
     double? distance;
     if (currentLat != null && currentLng != null) {
@@ -41,6 +45,8 @@ class RideOfferState {
       notes: event.notes,
       expiresAt: event.expiresAt,
       distanceToPickupMeters: distance,
+      estimatedFare: estimatedFare,
+      rideType: rideType,
     );
   }
 
@@ -54,10 +60,14 @@ class RideOfferState {
   final DateTime expiresAt;
   final double? distanceToPickupMeters;
   final int countdownSeconds;
+  final double? estimatedFare;
+  final String? rideType;
 
   RideOfferState copyWith({
     int? countdownSeconds,
     double? distanceToPickupMeters,
+    double? estimatedFare,
+    String? rideType,
   }) {
     return RideOfferState(
       rideId: rideId,
@@ -71,6 +81,8 @@ class RideOfferState {
       distanceToPickupMeters:
           distanceToPickupMeters ?? this.distanceToPickupMeters,
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
+      rideType: rideType ?? this.rideType,
     );
   }
 

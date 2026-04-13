@@ -10,15 +10,15 @@ class _$WsEventRideOfferExpired extends WsEventRideOfferExpired {
   @override
   final String rideId;
 
-  factory _$WsEventRideOfferExpired([
-    void Function(WsEventRideOfferExpiredBuilder)? updates,
-  ]) => (WsEventRideOfferExpiredBuilder()..update(updates))._build();
+  factory _$WsEventRideOfferExpired(
+          [void Function(WsEventRideOfferExpiredBuilder)? updates]) =>
+      (WsEventRideOfferExpiredBuilder()..update(updates))._build();
 
   _$WsEventRideOfferExpired._({required this.rideId}) : super._();
   @override
   WsEventRideOfferExpired rebuild(
-    void Function(WsEventRideOfferExpiredBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(WsEventRideOfferExpiredBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideOfferExpiredBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$WsEventRideOfferExpired extends WsEventRideOfferExpired {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'WsEventRideOfferExpired',
-    )..add('rideId', rideId)).toString();
+    return (newBuiltValueToStringHelper(r'WsEventRideOfferExpired')
+          ..add('rideId', rideId))
+        .toString();
   }
 }
 
@@ -82,14 +82,10 @@ class WsEventRideOfferExpiredBuilder
   WsEventRideOfferExpired build() => _build();
 
   _$WsEventRideOfferExpired _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$WsEventRideOfferExpired._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'WsEventRideOfferExpired',
-            'rideId',
-          ),
+              rideId, r'WsEventRideOfferExpired', 'rideId'),
         );
     replace(_$result);
     return _$result;

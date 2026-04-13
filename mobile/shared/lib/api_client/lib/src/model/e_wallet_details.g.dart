@@ -16,7 +16,7 @@ class _$EWalletDetails extends EWalletDetails {
       (EWalletDetailsBuilder()..update(updates))._build();
 
   _$EWalletDetails._({required this.provider, required this.accountId})
-    : super._();
+      : super._();
   @override
   EWalletDetails rebuild(void Function(EWalletDetailsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -90,19 +90,12 @@ class EWalletDetailsBuilder
   EWalletDetails build() => _build();
 
   _$EWalletDetails _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$EWalletDetails._(
           provider: BuiltValueNullFieldError.checkNotNull(
-            provider,
-            r'EWalletDetails',
-            'provider',
-          ),
+              provider, r'EWalletDetails', 'provider'),
           accountId: BuiltValueNullFieldError.checkNotNull(
-            accountId,
-            r'EWalletDetails',
-            'accountId',
-          ),
+              accountId, r'EWalletDetails', 'accountId'),
         );
     replace(_$result);
     return _$result;

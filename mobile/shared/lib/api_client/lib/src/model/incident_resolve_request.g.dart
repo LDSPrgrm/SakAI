@@ -10,15 +10,15 @@ class _$IncidentResolveRequest extends IncidentResolveRequest {
   @override
   final String notes;
 
-  factory _$IncidentResolveRequest([
-    void Function(IncidentResolveRequestBuilder)? updates,
-  ]) => (IncidentResolveRequestBuilder()..update(updates))._build();
+  factory _$IncidentResolveRequest(
+          [void Function(IncidentResolveRequestBuilder)? updates]) =>
+      (IncidentResolveRequestBuilder()..update(updates))._build();
 
   _$IncidentResolveRequest._({required this.notes}) : super._();
   @override
   IncidentResolveRequest rebuild(
-    void Function(IncidentResolveRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(IncidentResolveRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   IncidentResolveRequestBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$IncidentResolveRequest extends IncidentResolveRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'IncidentResolveRequest',
-    )..add('notes', notes)).toString();
+    return (newBuiltValueToStringHelper(r'IncidentResolveRequest')
+          ..add('notes', notes))
+        .toString();
   }
 }
 
@@ -81,14 +81,10 @@ class IncidentResolveRequestBuilder
   IncidentResolveRequest build() => _build();
 
   _$IncidentResolveRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$IncidentResolveRequest._(
           notes: BuiltValueNullFieldError.checkNotNull(
-            notes,
-            r'IncidentResolveRequest',
-            'notes',
-          ),
+              notes, r'IncidentResolveRequest', 'notes'),
         );
     replace(_$result);
     return _$result;

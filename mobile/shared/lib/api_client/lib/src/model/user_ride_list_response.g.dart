@@ -12,16 +12,16 @@ class _$UserRideListResponse extends UserRideListResponse {
   @override
   final PaginationMeta pagination;
 
-  factory _$UserRideListResponse([
-    void Function(UserRideListResponseBuilder)? updates,
-  ]) => (UserRideListResponseBuilder()..update(updates))._build();
+  factory _$UserRideListResponse(
+          [void Function(UserRideListResponseBuilder)? updates]) =>
+      (UserRideListResponseBuilder()..update(updates))._build();
 
   _$UserRideListResponse._({required this.data, required this.pagination})
-    : super._();
+      : super._();
   @override
   UserRideListResponse rebuild(
-    void Function(UserRideListResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(UserRideListResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   UserRideListResponseBuilder toBuilder() =>
@@ -98,8 +98,7 @@ class UserRideListResponseBuilder
   _$UserRideListResponse _build() {
     _$UserRideListResponse _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$UserRideListResponse._(
             data: data.build(),
             pagination: pagination.build(),
@@ -113,10 +112,7 @@ class UserRideListResponseBuilder
         pagination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'UserRideListResponse',
-          _$failedField,
-          e.toString(),
-        );
+            r'UserRideListResponse', _$failedField, e.toString());
       }
       rethrow;
     }

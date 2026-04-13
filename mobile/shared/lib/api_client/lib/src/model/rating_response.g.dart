@@ -25,15 +25,15 @@ class _$RatingResponse extends RatingResponse {
   factory _$RatingResponse([void Function(RatingResponseBuilder)? updates]) =>
       (RatingResponseBuilder()..update(updates))._build();
 
-  _$RatingResponse._({
-    required this.id,
-    required this.rideId,
-    required this.raterId,
-    required this.rateeId,
-    required this.stars,
-    this.feedback,
-    required this.createdAt,
-  }) : super._();
+  _$RatingResponse._(
+      {required this.id,
+      required this.rideId,
+      required this.raterId,
+      required this.rateeId,
+      required this.stars,
+      this.feedback,
+      required this.createdAt})
+      : super._();
   @override
   RatingResponse rebuild(void Function(RatingResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -147,40 +147,21 @@ class RatingResponseBuilder
   RatingResponse build() => _build();
 
   _$RatingResponse _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$RatingResponse._(
           id: BuiltValueNullFieldError.checkNotNull(
-            id,
-            r'RatingResponse',
-            'id',
-          ),
+              id, r'RatingResponse', 'id'),
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'RatingResponse',
-            'rideId',
-          ),
+              rideId, r'RatingResponse', 'rideId'),
           raterId: BuiltValueNullFieldError.checkNotNull(
-            raterId,
-            r'RatingResponse',
-            'raterId',
-          ),
+              raterId, r'RatingResponse', 'raterId'),
           rateeId: BuiltValueNullFieldError.checkNotNull(
-            rateeId,
-            r'RatingResponse',
-            'rateeId',
-          ),
+              rateeId, r'RatingResponse', 'rateeId'),
           stars: BuiltValueNullFieldError.checkNotNull(
-            stars,
-            r'RatingResponse',
-            'stars',
-          ),
+              stars, r'RatingResponse', 'stars'),
           feedback: feedback,
           createdAt: BuiltValueNullFieldError.checkNotNull(
-            createdAt,
-            r'RatingResponse',
-            'createdAt',
-          ),
+              createdAt, r'RatingResponse', 'createdAt'),
         );
     replace(_$result);
     return _$result;

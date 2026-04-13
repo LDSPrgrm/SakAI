@@ -8,12 +8,14 @@ import 'package:sakai_shared/sakai_shared.dart'
 
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
+import 'destination_sheet.dart';
 
 import '../repositories/geocoding_service.dart';
 import '../repositories/service_area_repository.dart';
 import '../repositories/driver_repository.dart';
 import '../models/service_area.dart';
 import '../models/nearby_driver.dart';
+import '../models/ride_type_option.dart';
 import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
 import '../../../app/providers.dart';
@@ -36,6 +38,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   final _searchFocus = FocusNode();
   bool _isSearching = false;
   bool _isLoadingSuggestions = false;
+  LocationSearchMode? _searchMode;
   List<String> _suggestions = [];
   List<NearbyDriver> _nearbyDrivers = [];
   Timer? _debounce;
@@ -45,7 +48,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // Map & Ride Logic State
   GoogleMapController? _mapController;
   List<ServiceArea> _serviceAreas = [];
-  static const _defaultLatLng = LatLng(14.5995, 120.9842); // Manila fallback
+  static const _defaultLatLng = LatLng(
+    0.0,
+    0.0,
+  ); // Uses GPS location at runtime
 
   @override
   void initState() {
@@ -74,14 +80,20 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         (_serviceAreas.isNotEmpty ? _serviceAreas.first.center : null);
     if (currentPos == null) return;
 
-    final drivers = await DriverRepository().fetchNearbyDrivers(currentPos);
+    final authInterceptor = ref.read(authInterceptorProvider);
+    final drivers = await DriverRepository(
+      authInterceptor: authInterceptor,
+    ).fetchNearbyDrivers(currentPos);
     if (mounted) {
       setState(() => _nearbyDrivers = drivers);
     }
   }
 
   Future<void> _fetchServiceAreas() async {
-    final areas = await ServiceAreaRepository().fetchServiceAreas();
+    final authInterceptor = ref.read(authInterceptorProvider);
+    final areas = await ServiceAreaRepository(
+      authInterceptor: authInterceptor,
+    ).fetchServiceAreas();
     if (mounted) {
       setState(() => _serviceAreas = areas);
 
@@ -120,17 +132,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
       setState(() => _isLoadingSuggestions = true);
       try {
-        final currentPos = ref.read(homeNotifierProvider).currentLatLng;
-        final bias = _getNearestAreaBias(currentPos);
-
-        final results = await GeocodingService().getSuggestions(
-          val,
-          location: bias != null
-              ? '${bias.center.latitude},${bias.center.longitude}'
-              : null,
-          radius: bias?.radius,
-          strictBounds: bias != null && _isInsideArea(currentPos, bias),
-        );
+        // No service area biasing — search globally
+        final results = await GeocodingService().getSuggestions(val);
         if (mounted) {
           setState(() {
             _suggestions = results;
@@ -145,6 +148,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     });
   }
 
+  // ignore: unused_element
   ServiceArea? _getNearestAreaBias(LatLng? currentLoc) {
     if (_serviceAreas.isEmpty) return null;
     if (currentLoc == null) return _serviceAreas.first;
@@ -162,6 +166,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return nearest;
   }
 
+  // ignore: unused_element
   bool _isInsideArea(LatLng? loc, ServiceArea area) {
     if (loc == null) return false;
     return _calculateDistance(loc, area.center) <= area.radius;
@@ -524,6 +529,25 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              Text(
+                _searchMode == LocationSearchMode.pickup
+                    ? 'Where from?'
+                    : 'Where to?',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _closeLocationSearch,
+                icon: const Icon(Icons.close, size: 18),
+                label: const Text('Cancel'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           _buildSearchField(context, scheme, tokens),
           if (_isLoadingSuggestions)
             const Padding(
@@ -554,32 +578,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 dense: true,
                 onTap: () => _handleSuggestionTapped(s),
               ),
-            ),
-          ] else if (_searchController.text.isEmpty) ...[
-            // Show shortcuts even in search mode if query is empty
-            const SizedBox(height: 16),
-            Text(
-              'Recent Destinations',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 12),
-            _buildRecentItem(
-              Icons.home,
-              'Home',
-              'San Lorenzo, Makati',
-              scheme,
-              tokens,
-              onTap: () => _handleSuggestionTapped('San Lorenzo, Makati'),
-            ),
-            _buildRecentItem(
-              Icons.work,
-              'Work',
-              'Ayala Avenue, Makati',
-              scheme,
-              tokens,
-              onTap: () => _handleSuggestionTapped('Ayala Avenue, Makati'),
             ),
           ] else if (!_isLoadingSuggestions) ...[
             // No results found
@@ -633,51 +631,142 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
     return Column(
       children: [
-        // Recent Destinations Mockup on TOP
-        Text(
-          'Shortcuts',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
+        // Pickup and destination display
+        _buildLocationRow(context, scheme, tokens),
+        const SizedBox(height: 16),
+        const Divider(),
+        // Inline search with suggestions
+        _buildSearchField(context, scheme, tokens),
+        if (_isLoadingSuggestions)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LinearProgressIndicator(minHeight: 2),
+          )
+        else
+          const SizedBox(height: 16),
+        if (_suggestions.isNotEmpty) ...[
+          Text(
+            'Suggestions',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
+          const SizedBox(height: 8),
+          ..._suggestions.map(
+            (s) => ListTile(
+              leading: Icon(
+                Icons.place_outlined,
+                size: 20,
+                color: scheme.outline,
+              ),
+              title: Text(s, style: const TextStyle(fontSize: 14)),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              onTap: () => _handleSuggestionTapped(s),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildLocationRow(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    final pickup = ref.watch(homeNotifierProvider).pickup;
+    final destination = ref.watch(homeNotifierProvider).destination;
+
+    return Column(
+      children: [
+        // Pickup field
+        _buildLocationTile(
+          icon: Icons.my_location,
+          label: pickup?.address ?? 'Tap to set pickup',
+          onTap: () => _openLocationSearch(LocationSearchMode.pickup),
+          scheme: scheme,
         ),
         const SizedBox(height: 12),
-        _buildRecentItem(
-          Icons.home,
-          'Home',
-          'San Lorenzo, Makati',
-          scheme,
-          tokens,
-          onTap: () => _handleSuggestionTapped('San Lorenzo, Makati'),
+        // Destination field
+        _buildLocationTile(
+          icon: Icons.place,
+          label: destination?.address ?? 'Where to?',
+          onTap: () => _openLocationSearch(LocationSearchMode.destination),
+          scheme: scheme,
         ),
-        _buildRecentItem(
-          Icons.work,
-          'Work',
-          'Ayala Avenue, Makati',
-          scheme,
-          tokens,
-          onTap: () => _handleSuggestionTapped('Ayala Avenue, Makati'),
-        ),
-        const Divider(height: 32),
-        // Search field at the BOTTOM
-        _buildSearchField(context, scheme, tokens),
-        const SizedBox(height: 48), // Padding at bottom for scrollability
       ],
+    );
+  }
+
+  Widget _buildLocationTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme scheme,
+  }) {
+    final isPlaceholder = label.contains('Tap') || label.contains('Where');
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: scheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isPlaceholder
+                      ? scheme.onSurfaceVariant
+                      : scheme.onSurface,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: scheme.outline, size: 20),
+          ],
+        ),
+      ),
     );
   }
 
   void _handleSuggestionTapped(String address) async {
     final notifier = ref.read(homeNotifierProvider.notifier);
+    final mode = _searchMode; // Save before clearing
     setState(() {
       _isSearching = false;
       _suggestions = [];
+      _searchMode = null;
       _searchController.text = address;
     });
     _searchFocus.unfocus();
+    _sheetController.animateTo(
+      0.35,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
 
     try {
       final loc = await GeocodingService().geocode(address);
-      notifier.setDestination(loc);
+      if (mounted) {
+        if (mode == LocationSearchMode.pickup) {
+          notifier.setPickup(loc);
+        } else {
+          notifier.setDestination(loc);
+          // setDestination() auto-starts ride type polling
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -685,6 +774,36 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         );
       }
     }
+  }
+
+  void _openLocationSearch(LocationSearchMode mode) {
+    setState(() {
+      _searchMode = mode;
+      _isSearching = true;
+      _searchController.clear();
+      _suggestions = [];
+    });
+    _sheetController.animateTo(
+      0.9,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+    _searchFocus.requestFocus();
+  }
+
+  void _closeLocationSearch() {
+    setState(() {
+      _searchMode = null;
+      _isSearching = false;
+      _suggestions = [];
+      _searchController.clear();
+    });
+    _searchFocus.unfocus();
+    _sheetController.animateTo(
+      0.35,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   Widget _buildSearchField(
@@ -714,6 +833,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildRecentItem(
     IconData icon,
     String title,
@@ -771,7 +891,14 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           children: [
             Column(
               children: [
-                Icon(Icons.my_location, size: 16, color: scheme.primary),
+                GestureDetector(
+                  onTap: () => _openLocationSearch(LocationSearchMode.pickup),
+                  child: Icon(
+                    Icons.my_location,
+                    size: 16,
+                    color: scheme.primary,
+                  ),
+                ),
                 Container(width: 1, height: 24, color: scheme.outlineVariant),
                 Icon(Icons.place, size: 16, color: scheme.error),
               ],
@@ -781,12 +908,20 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ref.watch(homeNotifierProvider).pickup?.address ??
-                        "Locating...",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14),
+                  GestureDetector(
+                    onTap: () => _openLocationSearch(LocationSearchMode.pickup),
+                    child: Text(
+                      ref.watch(homeNotifierProvider).pickup?.address ??
+                          "Tap to set pickup",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: ref.watch(homeNotifierProvider).pickup == null
+                            ? scheme.primary
+                            : null,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -810,46 +945,186 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           ],
         ),
         const Divider(height: 32),
-        Text('Available Rides', style: Theme.of(context).textTheme.titleMedium),
+        // Real-time ride type cards with live driver counts
+        _buildRideTypeCards(context, scheme, tokens),
         const SizedBox(height: 16),
-        // Ride Options Mockup
-        _buildRideOption(
-          'SakAI Eco',
-          '4-seat economy',
-          '₱120.00',
-          Icons.directions_car,
-          scheme,
-          tokens,
-          selected: true,
-        ),
-        _buildRideOption(
-          'SakAI Premium',
-          'Luxury sedan',
-          '₱250.00',
-          Icons.directions_car_filled,
-          scheme,
-          tokens,
-        ),
-        _buildRideOption(
-          'SakAI Moto',
-          'Fastest through traffic',
-          '₱65.00',
-          Icons.motorcycle,
-          scheme,
-          tokens,
-        ),
-        const SizedBox(height: 24),
+        // Single-tap Request Ride button
         SakaiPrimaryButton(
-          label: 'I-request ang SakAI Eco',
-          onPressed: ref.watch(homeNotifierProvider).canRequest
-              ? () => ref.read(homeNotifierProvider.notifier).requestRide()
-              : null,
+          label: _buildRequestButtonLabel(),
+          onPressed: _canRequestRide() ? _handleRequestRide : null,
         ),
         const SizedBox(height: 16),
       ],
     );
   }
 
+  /// Builds inline ride type cards with live driver counts.
+  Widget _buildRideTypeCards(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    final options = ref.watch(homeNotifierProvider).rideTypeOptions;
+    final selectedType = ref.watch(homeNotifierProvider).selectedRideType;
+    final notifier = ref.read(homeNotifierProvider.notifier);
+
+    if (options.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            'Checking nearby drivers…',
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Choose your ride',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        ...options.map(
+          (opt) => _buildRideTypeCard(
+            opt,
+            selectedType == opt.type,
+            scheme,
+            tokens,
+            () => notifier.setSelectedRideType(opt.type),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRideTypeCard(
+    RideTypeOption option,
+    bool selected,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+    VoidCallback onTap,
+  ) {
+    final typeLabels = {
+      VehicleType.motorcycle: 'Moto',
+      VehicleType.car: 'Car',
+      VehicleType.tricycle: 'Tricycle',
+    };
+    final typeDesc = {
+      VehicleType.motorcycle: 'Fastest through traffic',
+      VehicleType.car: 'Comfortable, up to 4 seats',
+      VehicleType.tricycle: 'Budget-friendly local rides',
+    };
+
+    return InkWell(
+      onTap: option.isAvailable ? onTap : null,
+      borderRadius: BorderRadius.circular(tokens.radiusMd),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selected
+              ? scheme.primaryContainer.withValues(alpha: 0.3)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              option.type.icon,
+              size: 28,
+              color: selected ? scheme.primary : scheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    typeLabels[option.type] ?? option.type.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    typeDesc[option.type] ?? '',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₱${option.estimatedFare.toStringAsFixed(0)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  option.isAvailable
+                      ? '${option.availableDrivers} nearby'
+                      : 'None available',
+                  style: TextStyle(
+                    color: option.isAvailable
+                        ? scheme.onSurfaceVariant
+                        : scheme.error,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _buildRequestButtonLabel() {
+    final state = ref.watch(homeNotifierProvider);
+    if (state.status == HomeStatus.requesting) return 'Requesting…';
+    if (state.selectedRideType != null) {
+      return 'Request ${state.selectedRideType!.displayName}';
+    }
+    return 'Request Ride';
+  }
+
+  bool _canRequestRide() {
+    return ref.watch(homeNotifierProvider).canRequest ||
+        (ref.watch(homeNotifierProvider).destination != null &&
+            ref.watch(homeNotifierProvider).rideTypeOptions.isNotEmpty);
+  }
+
+  void _handleRequestRide() {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    final state = ref.read(homeNotifierProvider);
+
+    // If no type selected yet, pick the one with most drivers
+    if (state.selectedRideType == null && state.rideTypeOptions.isNotEmpty) {
+      final best = state.rideTypeOptions
+          .where((o) => o.isAvailable)
+          .fold<RideTypeOption?>(
+            null,
+            (prev, opt) =>
+                prev == null || opt.availableDrivers > prev.availableDrivers
+                ? opt
+                : prev,
+          );
+      if (best != null) {
+        notifier.setSelectedRideType(best.type);
+      }
+    }
+
+    notifier.requestRide();
+  }
+
+  // ignore: unused_element
   Widget _buildRideOption(
     String name,
     String type,

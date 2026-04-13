@@ -13,3 +13,5 @@ export 'error_response.dart';
 // Core shared entities used across passenger and driver apps.
 export 'ride_location.dart';
 export 'ride_entity.dart';
+export 'ride_type_selection.dart';
+export 'driver_rating_state.dart';

@@ -63,6 +63,11 @@ class RideCompleteNotifier extends Notifier<RideCompleteState> {
   @override
   RideCompleteState build() => const RideCompleteState();
 
+  /// Initialize the notifier with the ride ID (called by the screen).
+  void init(String rideId) {
+    // Called from initState of the screen; loadRide is called separately.
+  }
+
   RideCompleteRepository get _repo => ref.read(rideCompleteRepositoryProvider);
 
   /// Load ride details when screen initializes.

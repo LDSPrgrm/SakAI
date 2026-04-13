@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
+import '../../earnings/view_models/earnings_notifier.dart';
 import '../models/active_ride_step.dart';
 import '../view_models/active_ride_notifier.dart';
 
@@ -26,12 +27,28 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     super.initState();
     final repo = ref.read(activeRideRepositoryProvider);
     _manager = ActiveRideManager(repo: repo, initialRide: widget.initialRide);
-    _manager.onCompleted = () {
+    _manager.onCompleted = (ride) {
+      // Wire earnings: extract actual fare and record the ride.
+      final actualFare = ride.fare ?? 0.0;
+      ref
+          .read(earningsNotifierProvider.notifier)
+          .addRide(
+            rideId: ride.id,
+            fare: actualFare,
+            completedAt: DateTime.now(),
+          );
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Ride completed')));
-        context.go(Routes.home);
+        // Navigate to rating screen instead of going directly home.
+        context.push(
+          Routes.rideRating,
+          extra: <String, String>{
+            'rideId': ride.id,
+            'passengerName': ride.passenger.name,
+          },
+        );
       }
     };
     _manager.onCancelled = () {

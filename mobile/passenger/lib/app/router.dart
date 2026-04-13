@@ -60,7 +60,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (authState.forceLogin) {
-        return isLogin ? null : Routes.login;
+        if (isLogin || isRegister) return null;
+        return Routes.login;
       }
 
       final unauthLanding = hasSeenWelcome ? Routes.login : Routes.welcome;

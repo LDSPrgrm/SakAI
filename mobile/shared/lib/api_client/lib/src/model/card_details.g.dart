@@ -19,12 +19,12 @@ class _$CardDetails extends CardDetails {
   factory _$CardDetails([void Function(CardDetailsBuilder)? updates]) =>
       (CardDetailsBuilder()..update(updates))._build();
 
-  _$CardDetails._({
-    required this.last4,
-    required this.expiryMonth,
-    required this.expiryYear,
-    required this.brand,
-  }) : super._();
+  _$CardDetails._(
+      {required this.last4,
+      required this.expiryMonth,
+      required this.expiryYear,
+      required this.brand})
+      : super._();
   @override
   CardDetails rebuild(void Function(CardDetailsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -113,29 +113,16 @@ class CardDetailsBuilder implements Builder<CardDetails, CardDetailsBuilder> {
   CardDetails build() => _build();
 
   _$CardDetails _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$CardDetails._(
           last4: BuiltValueNullFieldError.checkNotNull(
-            last4,
-            r'CardDetails',
-            'last4',
-          ),
+              last4, r'CardDetails', 'last4'),
           expiryMonth: BuiltValueNullFieldError.checkNotNull(
-            expiryMonth,
-            r'CardDetails',
-            'expiryMonth',
-          ),
+              expiryMonth, r'CardDetails', 'expiryMonth'),
           expiryYear: BuiltValueNullFieldError.checkNotNull(
-            expiryYear,
-            r'CardDetails',
-            'expiryYear',
-          ),
+              expiryYear, r'CardDetails', 'expiryYear'),
           brand: BuiltValueNullFieldError.checkNotNull(
-            brand,
-            r'CardDetails',
-            'brand',
-          ),
+              brand, r'CardDetails', 'brand'),
         );
     replace(_$result);
     return _$result;

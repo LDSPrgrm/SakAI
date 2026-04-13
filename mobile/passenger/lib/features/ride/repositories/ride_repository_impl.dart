@@ -1,5 +1,6 @@
 import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/ride_exception.dart';
@@ -20,31 +21,135 @@ class RideRepositoryImpl implements RideRepository {
     required RideLocation destination,
     String? notes,
     required String idempotencyKey,
+    VehicleType? rideType,
+    String? paymentMethod,
   }) async {
     try {
-      final body = RideRequestBody((b) => b
-        ..origin.lat = origin.lat
-        ..origin.lng = origin.lng
-        ..destination.lat = destination.lat
-        ..destination.lng = destination.lng
-        ..originAddress = origin.address.isEmpty ? null : origin.address
-        ..destinationAddress =
-            destination.address.isEmpty ? null : destination.address
-        ..notes = notes);
+      debugPrint(
+        '[RIDE_REPO] Requesting ride: origin=$origin, destination=$destination, rideType=$rideType',
+      );
+
+      // Map VehicleType domain enum to generated API enum
+      RideRequestBodyRideTypeEnum? rideTypeEnum;
+      if (rideType != null) {
+        try {
+          rideTypeEnum = RideRequestBodyRideTypeEnum.valueOf(rideType.name);
+        } catch (_) {
+          rideTypeEnum = RideRequestBodyRideTypeEnum.car;
+        }
+      }
+
+      // Map string paymentMethod to generated enum
+      RideRequestBodyPaymentMethodEnum? paymentMethodEnum;
+      if (paymentMethod != null) {
+        try {
+          paymentMethodEnum = RideRequestBodyPaymentMethodEnum.valueOf(
+            paymentMethod,
+          );
+        } catch (_) {
+          paymentMethodEnum = RideRequestBodyPaymentMethodEnum.cash;
+        }
+      }
+
+      final body = RideRequestBody(
+        (b) => b
+          ..origin.lat = origin.lat
+          ..origin.lng = origin.lng
+          ..destination.lat = destination.lat
+          ..destination.lng = destination.lng
+          ..originAddress = origin.address.isEmpty ? null : origin.address
+          ..destinationAddress = destination.address.isEmpty
+              ? null
+              : destination.address
+          ..notes = notes
+          ..rideType = rideTypeEnum
+          ..paymentMethod = paymentMethodEnum,
+      );
+
+      debugPrint(
+        '[RIDE_REPO] Body: originAddress=${body.originAddress}, destinationAddress=${body.destinationAddress}',
+      );
 
       final response = await _client.getRidesApi().rideRequest(
-            idempotencyKey: idempotencyKey,
-            rideRequestBody: body,
-          );
+        idempotencyKey: idempotencyKey,
+        rideRequestBody: body,
+      );
 
       final data = response.data;
       if (data == null) {
         throw const RideException(userMessage: 'Empty response from server.');
       }
+      debugPrint(
+        '[RIDE_REPO] Ride created: ${data.id}, status=${data.status.name}',
+      );
       return _toEntity(data);
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails (generated client bug).
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        final data = e.response?.data;
+        if (data is RideResponse) {
+          debugPrint('[RIDE_REPO] Ride created (2xx): ${data.id}');
+          return _toEntity(data);
+        }
+        // If data is a map, parse directly into RideEntity.
+        if (data is Map<String, dynamic>) {
+          try {
+            final entity = _entityFromMap(data);
+            debugPrint('[RIDE_REPO] Ride created (2xx, parsed): ${entity.id}');
+            return entity;
+          } catch (e2, st) {
+            debugPrint('[RIDE_REPO] Failed to parse 2xx response: $e2\n$st');
+          }
+        }
+        throw const RideException(
+          userMessage: 'Ride request succeeded but response parsing failed.',
+        );
+      }
+      debugPrint(
+        '[RIDE_REPO] DioException: ${e.response?.statusCode} ${e.message}',
+      );
+      debugPrint('[RIDE_REPO] Response data: ${e.response?.data}');
       throw _fromDio(e);
     }
+  }
+
+  /// Parses a raw JSON map directly into a [RideEntity] (bypassing
+  /// the generated RideResponse which fails to deserialize 2xx responses).
+  RideEntity _entityFromMap(Map<String, dynamic> json) {
+    final originData = json['origin'] as Map<String, dynamic>;
+    final destData = json['destination'] as Map<String, dynamic>;
+    final driverData = json['driver'] as Map<String, dynamic>?;
+
+    String? driverVehicle;
+    if (driverData != null) {
+      final v = driverData['vehicle'] as Map<String, dynamic>?;
+      if (v != null) {
+        driverVehicle =
+            '${v['make']} ${v['model']} · ${v['plate']} · ${v['color']}';
+      }
+    }
+
+    return RideEntity(
+      id: json['id'] as String,
+      status: RideState.fromString(json['status'] as String),
+      origin: RideLocation(
+        lat: (originData['lat'] as num).toDouble(),
+        lng: (originData['lng'] as num).toDouble(),
+        address: json['origin_address'] as String? ?? '',
+      ),
+      destination: RideLocation(
+        lat: (destData['lat'] as num).toDouble(),
+        lng: (destData['lng'] as num).toDouble(),
+        address: json['destination_address'] as String? ?? '',
+      ),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      driverName: driverData?['name'] as String?,
+      driverVehicle: driverVehicle,
+      cancelledBy: null,
+    );
   }
 
   @override
@@ -62,17 +167,97 @@ class RideRepositoryImpl implements RideRepository {
   }
 
   @override
-  Future<void> cancelRide(String rideId) async {
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  }) async {
+    debugPrint('[RIDE_REPO] Cancelling ride: $rideId, reasonCode: $reasonCode');
     try {
-      await _client.getRidesApi().rideCancel(rideId: rideId);
+      // Send cancellation request with reason_code and reason_text directly
+      // using Dio to bypass stale generated CancelRequest model
+      final dio = _client.dio;
+      final response = await dio.post(
+        '/rides/$rideId/cancel',
+        data: <String, dynamic>{
+          'reason_code': reasonCode,
+          // ignore: use_null_aware_elements
+          if (reasonText != null) 'reason_text': reasonText,
+        },
+      );
+      debugPrint(
+        '[RIDE_REPO] Cancel ride succeeded (HTTP ${response.statusCode})',
+      );
+      if (response.data != null) {
+        debugPrint(
+          '[RIDE_REPO] Cancelled ride status: ${response.data['status']}',
+        );
+      }
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails (generated client bug).
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        debugPrint(
+          '[RIDE_REPO] Cancel ride succeeded (2xx, parsing error ignored)',
+        );
+        return;
+      }
+      debugPrint(
+        '[RIDE_REPO] Cancel ride failed (Dio): ${e.response?.statusCode} ${e.message}',
+      );
+      if (e.response?.data != null) {
+        debugPrint('[RIDE_REPO] Error body: ${e.response?.data}');
+      }
       throw _fromDio(e);
+    } catch (e, st) {
+      debugPrint('[RIDE_REPO] Cancel ride failed (Unexpected): $e');
+      debugPrint('[RIDE_REPO] Stack: $st');
+      rethrow;
     }
   }
 
   // -------------------------------------------------------------------------
   // Mapping helpers
   // -------------------------------------------------------------------------
+
+  /// Manually parses a raw JSON map into a [RideResponse] when the
+  /// generated client fails to deserialize 2xx responses.
+  // ignore: unused_element
+  RideResponse _parseRideResponse(Map<String, dynamic> json) {
+    return $RideResponse((b) {
+      b.id = json['id'] as String;
+
+      final statusStr = json['status'] as String;
+      try {
+        b.status = RideStatus.valueOf(statusStr);
+      } catch (_) {
+        b.status = RideStatus.requested;
+      }
+
+      final originData = json['origin'] as Map<String, dynamic>;
+      b.origin.lat = (originData['lat'] as num).toDouble();
+      b.origin.lng = (originData['lng'] as num).toDouble();
+
+      final destData = json['destination'] as Map<String, dynamic>;
+      b.destination.lat = (destData['lat'] as num).toDouble();
+      b.destination.lng = (destData['lng'] as num).toDouble();
+
+      b.originAddress = json['origin_address'] as String?;
+      b.destinationAddress = json['destination_address'] as String?;
+      b.createdAt = DateTime.parse(json['created_at'] as String);
+      b.updatedAt = DateTime.parse(json['updated_at'] as String);
+
+      // Passenger is required by the schema but may be missing in 2xx responses
+      final passengerData = json['passenger'] as Map<String, dynamic>?;
+      b.passenger = $UserProfile((pb) {
+        pb.id = passengerData != null ? passengerData['id'] as String : '';
+        pb.name = passengerData != null
+            ? (passengerData['name'] as String? ?? '')
+            : '';
+      });
+    });
+  }
 
   RideEntity _toEntity(RideResponse r) {
     final driver = r.driver;
@@ -107,10 +292,12 @@ class RideRepositoryImpl implements RideRepository {
     final data = e.response?.data;
     if (data != null) {
       try {
-        final err = standardSerializers.deserialize(
-          data,
-          specifiedType: const FullType(ErrorResponse),
-        ) as ErrorResponse;
+        final err =
+            standardSerializers.deserialize(
+                  data,
+                  specifiedType: const FullType(ErrorResponse),
+                )
+                as ErrorResponse;
         return RideException(
           machineCode: err.code.name,
           userMessage: _friendlyMessage(err.code),
@@ -121,7 +308,9 @@ class RideRepositoryImpl implements RideRepository {
     }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return const RideException(userMessage: 'Connection timed out. Try again.');
+      return const RideException(
+        userMessage: 'Connection timed out. Try again.',
+      );
     }
     if (e.type == DioExceptionType.connectionError) {
       return const RideException(
@@ -141,6 +330,8 @@ class RideRepositoryImpl implements RideRepository {
         return 'You already have an active ride.';
       case ErrorCode.RATE_LIMIT_EXCEEDED:
         return 'Too many requests. Please wait a moment.';
+      case ErrorCode.RIDE_INVALID_STATE_TRANSITION:
+        return 'This ride cannot be cancelled. It may already be completed or cancelled.';
       default:
         return 'Ride request failed. Please try again.';
     }

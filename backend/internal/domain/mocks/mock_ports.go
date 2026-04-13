@@ -353,6 +353,20 @@ func (mr *MockRideRepositoryMockRecorder) GetByIdempotencyKey(ctx, key any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIdempotencyKey", reflect.TypeOf((*MockRideRepository)(nil).GetByIdempotencyKey), ctx, key)
 }
 
+// IncrementDeclineCount mocks base method.
+func (m *MockRideRepository) IncrementDeclineCount(ctx context.Context, rideID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementDeclineCount", ctx, rideID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementDeclineCount indicates an expected call of IncrementDeclineCount.
+func (mr *MockRideRepositoryMockRecorder) IncrementDeclineCount(ctx, rideID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementDeclineCount", reflect.TypeOf((*MockRideRepository)(nil).IncrementDeclineCount), ctx, rideID)
+}
+
 // ListAll mocks base method.
 func (m *MockRideRepository) ListAll(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.Ride, int, error) {
 	m.ctrl.T.Helper()
@@ -386,17 +400,31 @@ func (mr *MockRideRepositoryMockRecorder) ListByPassengerID(ctx, passengerID, fi
 }
 
 // SetCancelled mocks base method.
-func (m *MockRideRepository) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy) error {
+func (m *MockRideRepository) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode, reasonText *string, cancellationFee *float64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetCancelled", ctx, id, by)
+	ret := m.ctrl.Call(m, "SetCancelled", ctx, id, by, reasonCode, reasonText, cancellationFee)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetCancelled indicates an expected call of SetCancelled.
-func (mr *MockRideRepositoryMockRecorder) SetCancelled(ctx, id, by any) *gomock.Call {
+func (mr *MockRideRepositoryMockRecorder) SetCancelled(ctx, id, by, reasonCode, reasonText, cancellationFee any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCancelled", reflect.TypeOf((*MockRideRepository)(nil).SetCancelled), ctx, id, by)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCancelled", reflect.TypeOf((*MockRideRepository)(nil).SetCancelled), ctx, id, by, reasonCode, reasonText, cancellationFee)
+}
+
+// UpdateRideFare mocks base method.
+func (m *MockRideRepository) UpdateRideFare(ctx context.Context, rideID uuid.UUID, actualFare float64, breakdown domain.JSONMap) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRideFare", ctx, rideID, actualFare, breakdown)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRideFare indicates an expected call of UpdateRideFare.
+func (mr *MockRideRepositoryMockRecorder) UpdateRideFare(ctx, rideID, actualFare, breakdown any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRideFare", reflect.TypeOf((*MockRideRepository)(nil).UpdateRideFare), ctx, rideID, actualFare, breakdown)
 }
 
 // UpdateStatus mocks base method.
@@ -464,6 +492,21 @@ func (m *MockDriverRepository) FindNearbyOnline(ctx context.Context, origin doma
 func (mr *MockDriverRepositoryMockRecorder) FindNearbyOnline(ctx, origin, radiusMeters any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindNearbyOnline", reflect.TypeOf((*MockDriverRepository)(nil).FindNearbyOnline), ctx, origin, radiusMeters)
+}
+
+// FindNearbyOnlineByType mocks base method.
+func (m *MockDriverRepository) FindNearbyOnlineByType(ctx context.Context, lat, lng, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindNearbyOnlineByType", ctx, lat, lng, radiusM, rideType)
+	ret0, _ := ret[0].([]domain.NearbyDriver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindNearbyOnlineByType indicates an expected call of FindNearbyOnlineByType.
+func (mr *MockDriverRepositoryMockRecorder) FindNearbyOnlineByType(ctx, lat, lng, radiusM, rideType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindNearbyOnlineByType", reflect.TypeOf((*MockDriverRepository)(nil).FindNearbyOnlineByType), ctx, lat, lng, radiusM, rideType)
 }
 
 // GetByUserID mocks base method.
@@ -1891,18 +1934,18 @@ func (mr *MockRideUseCaseMockRecorder) Arrive(ctx, driverID, rideID any) *gomock
 }
 
 // Cancel mocks base method.
-func (m *MockRideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID) (*domain.Ride, error) {
+func (m *MockRideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID, reasonCode, reasonText *string) (*domain.Ride, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Cancel", ctx, userID, role, rideID)
+	ret := m.ctrl.Call(m, "Cancel", ctx, userID, role, rideID, reasonCode, reasonText)
 	ret0, _ := ret[0].(*domain.Ride)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Cancel indicates an expected call of Cancel.
-func (mr *MockRideUseCaseMockRecorder) Cancel(ctx, userID, role, rideID any) *gomock.Call {
+func (mr *MockRideUseCaseMockRecorder) Cancel(ctx, userID, role, rideID, reasonCode, reasonText any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cancel", reflect.TypeOf((*MockRideUseCase)(nil).Cancel), ctx, userID, role, rideID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cancel", reflect.TypeOf((*MockRideUseCase)(nil).Cancel), ctx, userID, role, rideID, reasonCode, reasonText)
 }
 
 // Complete mocks base method.
@@ -1921,10 +1964,10 @@ func (mr *MockRideUseCaseMockRecorder) Complete(ctx, driverID, rideID any) *gomo
 }
 
 // Decline mocks base method.
-func (m *MockRideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
+func (m *MockRideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) (*domain.DeclineResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Decline", ctx, driverID, rideID)
-	ret0, _ := ret[0].(*domain.Ride)
+	ret0, _ := ret[0].(*domain.DeclineResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1966,18 +2009,18 @@ func (mr *MockRideUseCaseMockRecorder) GetByID(ctx, userID, rideID any) *gomock.
 }
 
 // RequestRide mocks base method.
-func (m *MockRideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string) (*domain.Ride, error) {
+func (m *MockRideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType domain.RideType, paymentMethod domain.PaymentMethod) (*domain.Ride, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestRide", ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey)
+	ret := m.ctrl.Call(m, "RequestRide", ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey, rideType, paymentMethod)
 	ret0, _ := ret[0].(*domain.Ride)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestRide indicates an expected call of RequestRide.
-func (mr *MockRideUseCaseMockRecorder) RequestRide(ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey any) *gomock.Call {
+func (mr *MockRideUseCaseMockRecorder) RequestRide(ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey, rideType, paymentMethod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestRide", reflect.TypeOf((*MockRideUseCase)(nil).RequestRide), ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestRide", reflect.TypeOf((*MockRideUseCase)(nil).RequestRide), ctx, passengerID, origin, destination, originAddr, destAddr, notes, idempotencyKey, rideType, paymentMethod)
 }
 
 // Start mocks base method.
@@ -2047,6 +2090,21 @@ func (m *MockDriverUseCase) GetIncomingRide(ctx context.Context, driverID uuid.U
 func (mr *MockDriverUseCaseMockRecorder) GetIncomingRide(ctx, driverID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncomingRide", reflect.TypeOf((*MockDriverUseCase)(nil).GetIncomingRide), ctx, driverID)
+}
+
+// GetNearbyDrivers mocks base method.
+func (m *MockDriverUseCase) GetNearbyDrivers(ctx context.Context, lat, lng, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNearbyDrivers", ctx, lat, lng, radiusM, rideType)
+	ret0, _ := ret[0].([]domain.NearbyDriver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNearbyDrivers indicates an expected call of GetNearbyDrivers.
+func (mr *MockDriverUseCaseMockRecorder) GetNearbyDrivers(ctx, lat, lng, radiusM, rideType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNearbyDrivers", reflect.TypeOf((*MockDriverUseCase)(nil).GetNearbyDrivers), ctx, lat, lng, radiusM, rideType)
 }
 
 // SetStatus mocks base method.

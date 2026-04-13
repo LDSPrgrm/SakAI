@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
@@ -76,6 +77,68 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     _wsSubscription = wsClient.events.listen(_handleWsEvent);
   }
 
+  /// Connects the WebSocket client. Should be called after authentication.
+  Future<void> connectWebSocket(WsClient wsClient) async {
+    try {
+      final tokenStorage = ref.read(tokenStorageProvider);
+      final accessToken = await tokenStorage.getAccessToken();
+      if (accessToken != null && accessToken.isNotEmpty) {
+        await wsClient.connect(
+          baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
+          accessToken: accessToken,
+        );
+        setupWsListener(wsClient);
+        // Missed offer recovery: poll for incoming ride after WS reconnect.
+        await pollIncomingRide(wsClient);
+      }
+    } catch (e) {
+      // WS connection failure is not fatal — will retry on next init.
+      debugPrint('WS connection failed: $e');
+    }
+  }
+
+  /// Polls for any pending incoming ride offer (e.g., after WS reconnection).
+  /// If a pending ride is found, triggers the onRideOffer callback.
+  Future<void> pollIncomingRide(WsClient wsClient) async {
+    try {
+      final repo = ref.read(driverRepositoryProvider);
+      final incomingRide = await repo.getIncomingRide();
+      if (incomingRide == null) return;
+      if (incomingRide.status != RideStatus.requested) return;
+
+      debugPrint(
+        '[DRIVER] Found pending incoming ride: ${incomingRide.id}, triggering offer.',
+      );
+      // Build a WsEventRideRequested from the RideResponse.
+      final passenger = incomingRide.passenger;
+      final origin = incomingRide.origin;
+      final destination = incomingRide.destination;
+      final offer = WsEventRideRequested(
+        (b) => b
+          ..rideId = incomingRide.id
+          ..passenger = $UserProfile(
+            (pb) => pb
+              ..id = passenger.id
+              ..name = passenger.name
+              ..email = passenger.email
+              ..role = passenger.role,
+          )
+          ..origin = (LatLngBuilder()
+            ..lat = origin.lat
+            ..lng = origin.lng)
+          ..destination = (LatLngBuilder()
+            ..lat = destination.lat
+            ..lng = destination.lng)
+          ..originAddress = incomingRide.originAddress ?? ''
+          ..destinationAddress = incomingRide.destinationAddress ?? ''
+          ..expiresAt = DateTime.now().add(const Duration(seconds: 30)),
+      );
+      onRideOffer?.call(offer);
+    } catch (e) {
+      debugPrint('[DRIVER] Poll incoming ride error: $e');
+    }
+  }
+
   void _handleWsEvent(WsEvent event) {
     switch (event.type) {
       case WsEventNames.rideRequested:
@@ -126,11 +189,14 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     final repo = ref.read(driverRepositoryProvider);
     final targetOnline = !state.online;
 
+    debugPrint('[DRIVER] Toggle: targetOnline=$targetOnline');
     state = state.copyWith(loading: true, errorMessage: null);
 
     try {
       if (targetOnline) {
+        debugPrint('[DRIVER] Calling goOnline()...');
         await repo.goOnline();
+        debugPrint('[DRIVER] goOnline() success, starting GPS');
         state = state.copyWith(
           online: true,
           loading: false,
@@ -138,7 +204,9 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
         );
         _startGpsStreaming();
       } else {
+        debugPrint('[DRIVER] Calling goOffline()...');
         await repo.goOffline();
+        debugPrint('[DRIVER] goOffline() success');
         state = state.copyWith(
           online: false,
           loading: false,
@@ -148,8 +216,10 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
       }
     } on Exception catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('[DRIVER] Toggle error: $msg');
       state = state.copyWith(loading: false, errorMessage: msg);
     } catch (e) {
+      debugPrint('[DRIVER] Unexpected error: $e');
       state = state.copyWith(
         loading: false,
         errorMessage: 'An unexpected error occurred.',

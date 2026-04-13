@@ -18,21 +18,21 @@ class _$AddPaymentMethodRequest extends AddPaymentMethodRequest {
   @override
   final bool? setAsDefault;
 
-  factory _$AddPaymentMethodRequest([
-    void Function(AddPaymentMethodRequestBuilder)? updates,
-  ]) => (AddPaymentMethodRequestBuilder()..update(updates))._build();
+  factory _$AddPaymentMethodRequest(
+          [void Function(AddPaymentMethodRequestBuilder)? updates]) =>
+      (AddPaymentMethodRequestBuilder()..update(updates))._build();
 
-  _$AddPaymentMethodRequest._({
-    required this.type,
-    this.cardToken,
-    this.provider,
-    this.accountId,
-    this.setAsDefault,
-  }) : super._();
+  _$AddPaymentMethodRequest._(
+      {required this.type,
+      this.cardToken,
+      this.provider,
+      this.accountId,
+      this.setAsDefault})
+      : super._();
   @override
   AddPaymentMethodRequest rebuild(
-    void Function(AddPaymentMethodRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(AddPaymentMethodRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   AddPaymentMethodRequestBuilder toBuilder() =>
@@ -129,14 +129,10 @@ class AddPaymentMethodRequestBuilder
   AddPaymentMethodRequest build() => _build();
 
   _$AddPaymentMethodRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$AddPaymentMethodRequest._(
           type: BuiltValueNullFieldError.checkNotNull(
-            type,
-            r'AddPaymentMethodRequest',
-            'type',
-          ),
+              type, r'AddPaymentMethodRequest', 'type'),
           cardToken: cardToken,
           provider: provider,
           accountId: accountId,

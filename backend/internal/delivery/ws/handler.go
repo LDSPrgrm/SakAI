@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -33,6 +34,7 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		// upgrader already wrote the HTTP error response.
 		return
 	}
+	log.Printf("[WS] Registered connection for user %s (%s)", userID, c.GetString("role"))
 	h.hub.Register(userID, conn)
 
 	// Hardening: read limit and deadline prevent resource exhaustion.

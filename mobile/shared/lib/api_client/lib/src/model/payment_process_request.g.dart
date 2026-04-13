@@ -12,18 +12,17 @@ class _$PaymentProcessRequest extends PaymentProcessRequest {
   @override
   final String paymentMethodToken;
 
-  factory _$PaymentProcessRequest([
-    void Function(PaymentProcessRequestBuilder)? updates,
-  ]) => (PaymentProcessRequestBuilder()..update(updates))._build();
+  factory _$PaymentProcessRequest(
+          [void Function(PaymentProcessRequestBuilder)? updates]) =>
+      (PaymentProcessRequestBuilder()..update(updates))._build();
 
-  _$PaymentProcessRequest._({
-    required this.rideId,
-    required this.paymentMethodToken,
-  }) : super._();
+  _$PaymentProcessRequest._(
+      {required this.rideId, required this.paymentMethodToken})
+      : super._();
   @override
   PaymentProcessRequest rebuild(
-    void Function(PaymentProcessRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(PaymentProcessRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   PaymentProcessRequestBuilder toBuilder() =>
@@ -96,19 +95,14 @@ class PaymentProcessRequestBuilder
   PaymentProcessRequest build() => _build();
 
   _$PaymentProcessRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$PaymentProcessRequest._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'PaymentProcessRequest',
-            'rideId',
-          ),
+              rideId, r'PaymentProcessRequest', 'rideId'),
           paymentMethodToken: BuiltValueNullFieldError.checkNotNull(
-            paymentMethodToken,
-            r'PaymentProcessRequest',
-            'paymentMethodToken',
-          ),
+              paymentMethodToken,
+              r'PaymentProcessRequest',
+              'paymentMethodToken'),
         );
     replace(_$result);
     return _$result;

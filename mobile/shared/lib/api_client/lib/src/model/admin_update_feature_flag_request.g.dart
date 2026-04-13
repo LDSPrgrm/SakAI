@@ -10,15 +10,15 @@ class _$AdminUpdateFeatureFlagRequest extends AdminUpdateFeatureFlagRequest {
   @override
   final bool enabled;
 
-  factory _$AdminUpdateFeatureFlagRequest([
-    void Function(AdminUpdateFeatureFlagRequestBuilder)? updates,
-  ]) => (AdminUpdateFeatureFlagRequestBuilder()..update(updates))._build();
+  factory _$AdminUpdateFeatureFlagRequest(
+          [void Function(AdminUpdateFeatureFlagRequestBuilder)? updates]) =>
+      (AdminUpdateFeatureFlagRequestBuilder()..update(updates))._build();
 
   _$AdminUpdateFeatureFlagRequest._({required this.enabled}) : super._();
   @override
   AdminUpdateFeatureFlagRequest rebuild(
-    void Function(AdminUpdateFeatureFlagRequestBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(AdminUpdateFeatureFlagRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   AdminUpdateFeatureFlagRequestBuilder toBuilder() =>
@@ -40,18 +40,16 @@ class _$AdminUpdateFeatureFlagRequest extends AdminUpdateFeatureFlagRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'AdminUpdateFeatureFlagRequest',
-    )..add('enabled', enabled)).toString();
+    return (newBuiltValueToStringHelper(r'AdminUpdateFeatureFlagRequest')
+          ..add('enabled', enabled))
+        .toString();
   }
 }
 
 class AdminUpdateFeatureFlagRequestBuilder
     implements
-        Builder<
-          AdminUpdateFeatureFlagRequest,
-          AdminUpdateFeatureFlagRequestBuilder
-        > {
+        Builder<AdminUpdateFeatureFlagRequest,
+            AdminUpdateFeatureFlagRequestBuilder> {
   _$AdminUpdateFeatureFlagRequest? _$v;
 
   bool? _enabled;
@@ -85,14 +83,10 @@ class AdminUpdateFeatureFlagRequestBuilder
   AdminUpdateFeatureFlagRequest build() => _build();
 
   _$AdminUpdateFeatureFlagRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$AdminUpdateFeatureFlagRequest._(
           enabled: BuiltValueNullFieldError.checkNotNull(
-            enabled,
-            r'AdminUpdateFeatureFlagRequest',
-            'enabled',
-          ),
+              enabled, r'AdminUpdateFeatureFlagRequest', 'enabled'),
         );
     replace(_$result);
     return _$result;

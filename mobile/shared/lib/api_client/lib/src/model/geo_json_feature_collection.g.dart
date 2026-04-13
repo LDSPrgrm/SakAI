@@ -7,12 +7,11 @@ part of 'geo_json_feature_collection.dart';
 // **************************************************************************
 
 const GeoJSONFeatureCollectionTypeEnum
-_$geoJSONFeatureCollectionTypeEnum_featureCollection =
+    _$geoJSONFeatureCollectionTypeEnum_featureCollection =
     const GeoJSONFeatureCollectionTypeEnum._('featureCollection');
 
 GeoJSONFeatureCollectionTypeEnum _$geoJSONFeatureCollectionTypeEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'featureCollection':
       return _$geoJSONFeatureCollectionTypeEnum_featureCollection;
@@ -22,15 +21,13 @@ GeoJSONFeatureCollectionTypeEnum _$geoJSONFeatureCollectionTypeEnumValueOf(
 }
 
 final BuiltSet<GeoJSONFeatureCollectionTypeEnum>
-_$geoJSONFeatureCollectionTypeEnumValues =
-    BuiltSet<GeoJSONFeatureCollectionTypeEnum>(
-      const <GeoJSONFeatureCollectionTypeEnum>[
-        _$geoJSONFeatureCollectionTypeEnum_featureCollection,
-      ],
-    );
+    _$geoJSONFeatureCollectionTypeEnumValues = BuiltSet<
+        GeoJSONFeatureCollectionTypeEnum>(const <GeoJSONFeatureCollectionTypeEnum>[
+  _$geoJSONFeatureCollectionTypeEnum_featureCollection,
+]);
 
 Serializer<GeoJSONFeatureCollectionTypeEnum>
-_$geoJSONFeatureCollectionTypeEnumSerializer =
+    _$geoJSONFeatureCollectionTypeEnumSerializer =
     _$GeoJSONFeatureCollectionTypeEnumSerializer();
 
 class _$GeoJSONFeatureCollectionTypeEnumSerializer
@@ -49,19 +46,16 @@ class _$GeoJSONFeatureCollectionTypeEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    GeoJSONFeatureCollectionTypeEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, GeoJSONFeatureCollectionTypeEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   GeoJSONFeatureCollectionTypeEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => GeoJSONFeatureCollectionTypeEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      GeoJSONFeatureCollectionTypeEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$GeoJSONFeatureCollection extends GeoJSONFeatureCollection {
@@ -70,16 +64,16 @@ class _$GeoJSONFeatureCollection extends GeoJSONFeatureCollection {
   @override
   final BuiltList<GeoJSONFeatureCollectionFeaturesInner> features;
 
-  factory _$GeoJSONFeatureCollection([
-    void Function(GeoJSONFeatureCollectionBuilder)? updates,
-  ]) => (GeoJSONFeatureCollectionBuilder()..update(updates))._build();
+  factory _$GeoJSONFeatureCollection(
+          [void Function(GeoJSONFeatureCollectionBuilder)? updates]) =>
+      (GeoJSONFeatureCollectionBuilder()..update(updates))._build();
 
   _$GeoJSONFeatureCollection._({required this.type, required this.features})
-    : super._();
+      : super._();
   @override
   GeoJSONFeatureCollection rebuild(
-    void Function(GeoJSONFeatureCollectionBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(GeoJSONFeatureCollectionBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   GeoJSONFeatureCollectionBuilder toBuilder() =>
@@ -156,14 +150,10 @@ class GeoJSONFeatureCollectionBuilder
   _$GeoJSONFeatureCollection _build() {
     _$GeoJSONFeatureCollection _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$GeoJSONFeatureCollection._(
             type: BuiltValueNullFieldError.checkNotNull(
-              type,
-              r'GeoJSONFeatureCollection',
-              'type',
-            ),
+                type, r'GeoJSONFeatureCollection', 'type'),
             features: features.build(),
           );
     } catch (_) {
@@ -173,10 +163,7 @@ class GeoJSONFeatureCollectionBuilder
         features.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'GeoJSONFeatureCollection',
-          _$failedField,
-          e.toString(),
-        );
+            r'GeoJSONFeatureCollection', _$failedField, e.toString());
       }
       rethrow;
     }

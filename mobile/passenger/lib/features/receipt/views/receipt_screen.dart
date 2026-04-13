@@ -191,7 +191,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
             Text(
               receipt.paymentStatusLabel,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: receipt.paymentStatus.name == 'completed'
+                color: receipt.paymentStatus == 'completed'
                     ? Colors.green
                     : theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
@@ -271,6 +271,22 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     SakaiDesignTokens tokens,
     ThemeData theme,
   ) {
+    final breakdown = receipt.fareBreakdown;
+    final hasBreakdown = breakdown != null && breakdown.isNotEmpty;
+
+    final baseFare = hasBreakdown
+        ? (breakdown['base_fare'] as num?)?.toDouble() ?? 0.0
+        : 0.0;
+    final distanceCharge = hasBreakdown
+        ? (breakdown['distance_charge'] as num?)?.toDouble() ?? 0.0
+        : 0.0;
+    final timeCharge = hasBreakdown
+        ? (breakdown['time_charge'] as num?)?.toDouble() ?? 0.0
+        : 0.0;
+    final bookingFee = hasBreakdown
+        ? (breakdown['booking_fee'] as num?)?.toDouble() ?? 0.0
+        : 0.0;
+
     return SakaiSurfaceCard(
       child: Padding(
         padding: EdgeInsets.all(tokens.spaceMd),
@@ -285,27 +301,44 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
             ),
             const Divider(),
             SizedBox(height: tokens.spaceSm),
-            _FareRow(
-              label: 'Base Fare',
-              amount: receipt.formatAmount(receipt.amount),
-            ),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(label: 'Distance Charge', amount: receipt.formatAmount(0)),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(label: 'Time Charge', amount: receipt.formatAmount(0)),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(
-              label: 'Subtotal',
-              amount: receipt.formatAmount(receipt.amount),
-            ),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(label: 'Taxes', amount: receipt.formatAmount(0)),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(label: 'Fees', amount: receipt.formatAmount(0)),
-            SizedBox(height: tokens.spaceXs),
-            _FareRow(label: 'Discounts', amount: '-${receipt.formatAmount(0)}'),
-            const Divider(),
-            SizedBox(height: tokens.spaceSm),
+            if (receipt.estimatedFare != null) ...[
+              _FareRow(
+                label: 'Estimated Fare',
+                amount: receipt.formatAmount(receipt.estimatedFare!),
+              ),
+              SizedBox(height: tokens.spaceXs),
+            ],
+            if (receipt.actualFare != null) ...[
+              _FareRow(
+                label: 'Actual Fare',
+                amount: receipt.formatAmount(receipt.actualFare!),
+                highlight: true,
+              ),
+              SizedBox(height: tokens.spaceXs),
+            ],
+            if (hasBreakdown) ...[
+              _FareRow(
+                label: 'Base Fare',
+                amount: receipt.formatAmount(baseFare),
+              ),
+              SizedBox(height: tokens.spaceXs),
+              _FareRow(
+                label: 'Distance Charge',
+                amount: receipt.formatAmount(distanceCharge),
+              ),
+              SizedBox(height: tokens.spaceXs),
+              _FareRow(
+                label: 'Time Charge',
+                amount: receipt.formatAmount(timeCharge),
+              ),
+              SizedBox(height: tokens.spaceXs),
+              _FareRow(
+                label: 'Booking Fee',
+                amount: receipt.formatAmount(bookingFee),
+              ),
+              const Divider(),
+              SizedBox(height: tokens.spaceSm),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -352,7 +385,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
             Row(
               children: [
                 Icon(
-                  receipt.paymentMethod.name == 'cash'
+                  receipt.paymentMethod == 'cash'
                       ? Icons.money
                       : Icons.credit_card,
                   color: theme.colorScheme.primary,
@@ -373,7 +406,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                     vertical: tokens.spaceXs,
                   ),
                   decoration: BoxDecoration(
-                    color: receipt.paymentStatus.name == 'completed'
+                    color: receipt.paymentStatus == 'completed'
                         ? Colors.green.withValues(alpha: 0.1)
                         : theme.colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(tokens.radiusSm),
@@ -381,7 +414,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                   child: Text(
                     receipt.paymentStatusLabel,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: receipt.paymentStatus.name == 'completed'
+                      color: receipt.paymentStatus == 'completed'
                           ? Colors.green
                           : theme.colorScheme.error,
                       fontWeight: FontWeight.w600,
@@ -439,22 +472,33 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _FareRow extends StatelessWidget {
-  const _FareRow({required this.label, required this.amount});
+  const _FareRow({
+    required this.label,
+    required this.amount,
+    this.highlight = false,
+  });
 
   final String label;
   final String amount;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: highlight ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
         Text(
           amount,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
+            color: highlight ? Theme.of(context).colorScheme.primary : null,
+          ),
         ),
       ],
     );

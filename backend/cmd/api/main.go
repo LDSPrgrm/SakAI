@@ -110,7 +110,8 @@ func main() {
 		cfg.RefreshTokenExpiry,
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo)
-	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo)
+	fareCalc := usecase.NewFareCalculator()
+	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
@@ -150,7 +151,7 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, userRepo, driverRepo, ridePaymentRepo),
 		Admin:          handler.NewAdminHandler(adminUC, auditUC),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),

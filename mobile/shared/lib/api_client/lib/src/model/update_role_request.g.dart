@@ -14,15 +14,13 @@ class _$UpdateRoleRequest extends UpdateRoleRequest {
   @override
   final BuiltList<RolePermission> permissions;
 
-  factory _$UpdateRoleRequest([
-    void Function(UpdateRoleRequestBuilder)? updates,
-  ]) => (UpdateRoleRequestBuilder()..update(updates))._build();
+  factory _$UpdateRoleRequest(
+          [void Function(UpdateRoleRequestBuilder)? updates]) =>
+      (UpdateRoleRequestBuilder()..update(updates))._build();
 
-  _$UpdateRoleRequest._({
-    required this.name,
-    this.description,
-    required this.permissions,
-  }) : super._();
+  _$UpdateRoleRequest._(
+      {required this.name, this.description, required this.permissions})
+      : super._();
   @override
   UpdateRoleRequest rebuild(void Function(UpdateRoleRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -109,14 +107,10 @@ class UpdateRoleRequestBuilder
   _$UpdateRoleRequest _build() {
     _$UpdateRoleRequest _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$UpdateRoleRequest._(
             name: BuiltValueNullFieldError.checkNotNull(
-              name,
-              r'UpdateRoleRequest',
-              'name',
-            ),
+                name, r'UpdateRoleRequest', 'name'),
             description: description,
             permissions: permissions.build(),
           );
@@ -127,10 +121,7 @@ class UpdateRoleRequestBuilder
         permissions.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'UpdateRoleRequest',
-          _$failedField,
-          e.toString(),
-        );
+            r'UpdateRoleRequest', _$failedField, e.toString());
       }
       rethrow;
     }

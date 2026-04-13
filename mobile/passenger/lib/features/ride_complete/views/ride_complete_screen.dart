@@ -26,7 +26,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(rideCompleteNotifierProvider.notifier).loadRide(widget.rideId);
+    final notifier = ref.read(rideCompleteNotifierProvider.notifier);
+    notifier.init(widget.rideId);
+    notifier.loadRide(widget.rideId);
   }
 
   @override
@@ -40,7 +42,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen> {
   }
 
   Future<void> _submitRating() async {
-    final notifier = ref.read(rideCompleteNotifierProvider.notifier);
+    final notifier = ref.read(
+      rideCompleteNotifierProvider.notifier,
+    );
     final success = await notifier.submitRating(widget.rideId);
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,8 +148,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen> {
               onCustomTipChanged: (amount) => ref
                   .read(rideCompleteNotifierProvider.notifier)
                   .setCustomTip(amount),
-              onSkipped: () =>
-                  ref.read(rideCompleteNotifierProvider.notifier).skipTip(),
+              onSkipped: () => ref
+                  .read(rideCompleteNotifierProvider.notifier)
+                  .skipTip(),
             ),
 
             SizedBox(height: tokens.spaceLg),
@@ -161,8 +166,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen> {
                   .read(rideCompleteNotifierProvider.notifier)
                   .setFeedback(text),
               onSubmit: _submitRating,
-              onSkip: () =>
-                  ref.read(rideCompleteNotifierProvider.notifier).skipRating(),
+              onSkip: () => ref
+                  .read(rideCompleteNotifierProvider.notifier)
+                  .skipRating(),
             ),
 
             if (state.showThankYou) ...[

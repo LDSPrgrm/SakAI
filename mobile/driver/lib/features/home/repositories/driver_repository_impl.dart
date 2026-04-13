@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 
 import 'driver_repository.dart';
@@ -11,13 +12,25 @@ class DriverRepositoryImpl implements DriverRepository {
   @override
   Future<void> goOnline() async {
     try {
+      debugPrint('[DRIVER_REPO] Calling PUT /driver/status → online');
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.online,
       );
       await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
+      debugPrint('[DRIVER_REPO] goOnline success');
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails.
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        debugPrint('[DRIVER_REPO] goOnline success (2xx, body parse issue)');
+        return;
+      }
+      debugPrint(
+        '[DRIVER_REPO] goOnline failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }
@@ -25,13 +38,25 @@ class DriverRepositoryImpl implements DriverRepository {
   @override
   Future<void> goOffline() async {
     try {
+      debugPrint('[DRIVER_REPO] Calling PUT /driver/status → offline');
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.offline,
       );
       await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
+      debugPrint('[DRIVER_REPO] goOffline success');
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails.
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        debugPrint('[DRIVER_REPO] goOffline success (2xx, body parse issue)');
+        return;
+      }
+      debugPrint(
+        '[DRIVER_REPO] goOffline failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }
@@ -55,6 +80,9 @@ class DriverRepositoryImpl implements DriverRepository {
         locationUpdateRequest: request,
       );
     } on DioException catch (e) {
+      debugPrint(
+        '[DRIVER_REPO] updateLocation failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }

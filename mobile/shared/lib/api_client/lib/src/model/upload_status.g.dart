@@ -26,9 +26,13 @@ UploadStatus _$valueOf(String name) {
   }
 }
 
-final BuiltSet<UploadStatus> _$values = BuiltSet<UploadStatus>(
-  const <UploadStatus>[_$uploaded, _$underReview, _$approved, _$rejected],
-);
+final BuiltSet<UploadStatus> _$values =
+    BuiltSet<UploadStatus>(const <UploadStatus>[
+  _$uploaded,
+  _$underReview,
+  _$approved,
+  _$rejected,
+]);
 
 class _$UploadStatusMeta {
   const _$UploadStatusMeta();
@@ -40,7 +44,7 @@ class _$UploadStatusMeta {
   BuiltSet<UploadStatus> get values => _$values;
 }
 
-mixin _$UploadStatusMixin {
+abstract class _$UploadStatusMixin {
   // ignore: non_constant_identifier_names
   _$UploadStatusMeta get UploadStatus => const _$UploadStatusMeta();
 }
@@ -67,20 +71,15 @@ class _$UploadStatusSerializer implements PrimitiveSerializer<UploadStatus> {
   final String wireName = 'UploadStatus';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    UploadStatus object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, UploadStatus object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  UploadStatus deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => UploadStatus.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  UploadStatus deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      UploadStatus.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

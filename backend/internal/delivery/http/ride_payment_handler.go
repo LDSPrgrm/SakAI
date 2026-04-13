@@ -111,6 +111,9 @@ func (h *RidePaymentHandler) GetReceipt(c *gin.Context) {
 		PaymentStatus:      payment.Status,
 		CompletedAt:        ride.UpdatedAt,
 		ProcessedAt:        payment.ProcessedAt,
+		EstimatedFare:      ride.EstimatedFare,
+		ActualFare:         ride.ActualFare,
+		FareBreakdown:      ride.FareBreakdown,
 	}
 
 	respondOK(c, receipt)

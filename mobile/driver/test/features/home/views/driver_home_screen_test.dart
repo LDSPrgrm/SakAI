@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sakai_shared/sakai_shared.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
-
 import 'package:driver/app/providers.dart';
 import 'package:driver/features/home/views/driver_home_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sakai_api_client/sakai_api_client.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 final _themeConfig = SakaiThemeConfig.driver();
 final _mockApiClient = SakaiApiClient();
@@ -25,17 +24,16 @@ void main() {
       ),
     );
 
-    // Verify screen renders
-    expect(find.text('SakAI · Driver'), findsOneWidget);
-    expect(find.text('Driver workspace'), findsOneWidget);
+    // Initially driver is offline
+    expect(find.text('Unavailable'), findsOneWidget);
     expect(find.text('Start shift'), findsOneWidget);
     expect(find.text('View earnings'), findsOneWidget);
+    expect(find.byType(IconButton), findsWidgets); // menu button
   });
 
   testWidgets('GPS warning shows when online but GPS unavailable', (
     tester,
   ) async {
-    // This test verifies the GPS warning banner logic exists in the screen
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

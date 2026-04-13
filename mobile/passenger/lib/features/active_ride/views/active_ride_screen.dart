@@ -1,166 +1,128 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
+import '../models/active_ride_state.dart';
 
 /// Active ride screen showing real-time driver tracking.
 ///
-/// Listens to WebSocket events:
-/// - ride.accepted → show driver info
-/// - ride.arrived → driver at pickup
-/// - ride.status_changed → in_progress, completed, cancelled
-class ActiveRideScreen extends ConsumerStatefulWidget {
+/// Pure UI layer — reads state from [ActiveRideController] via
+/// [activeRideProvider] and dispatches actions through the controller.
+/// WebSocket parsing is handled entirely within the controller.
+class ActiveRideScreen extends ConsumerWidget {
   const ActiveRideScreen({super.key, required this.rideId});
 
   final String rideId;
 
   @override
-  ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(activeRideProvider(rideId));
+    ActiveRideStep? previousStep;
+
+    return StreamBuilder<AsyncValue<ActiveRideState>>(
+      stream: controller.stateStream,
+      initialData: controller.state,
+      builder: (context, snapshot) {
+        final rideStateAsync =
+            snapshot.data ?? const AsyncValue<ActiveRideState>.loading();
+
+        // Show snackbar when transitioning to arrived
+        final currentStep = rideStateAsync.value?.currentStep;
+        if (previousStep != null &&
+            previousStep != ActiveRideStep.arrived &&
+            currentStep == ActiveRideStep.arrived) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Your driver has arrived!')),
+              );
+            }
+          });
+        }
+        previousStep = currentStep;
+
+        return rideStateAsync.when(
+          loading: () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
+          error: (error, stackTrace) => Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(error.toString()),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(activeRideProvider(rideId)),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          data: (rideState) =>
+              _ActiveRideContent(controller: controller, rideState: rideState),
+        );
+      },
+    );
+  }
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+class _ActiveRideContent extends StatefulWidget {
+  const _ActiveRideContent({required this.controller, required this.rideState});
+
+  final ActiveRideController controller;
+  final ActiveRideState rideState;
+
+  @override
+  State<_ActiveRideContent> createState() => _ActiveRideContentState();
+}
+
+class _ActiveRideContentState extends State<_ActiveRideContent> {
   gmaps.GoogleMapController? _mapController;
   final Set<gmaps.Marker> _markers = {};
-  RideEntity? _ride;
-  bool _loading = true;
-  String? _error;
-
-  StreamSubscription<WsEvent>? _wsSub;
 
   @override
   void initState() {
     super.initState();
-    _loadRide();
-    _setupWebSocketListener();
+    // Set up navigation callbacks on the controller
+    widget.controller.onCompleted = _navigateToRideComplete;
+    widget.controller.onCancelled = _navigateToRideCancelled;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ActiveRideContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateMarkers();
   }
 
   @override
   void dispose() {
-    _wsSub?.cancel();
     _mapController?.dispose();
     super.dispose();
   }
 
-  Future<void> _loadRide() async {
-    try {
-      final client = ref.read(apiClientProvider);
-      final apiResponse = await client.getRidesApi().rideGet(
-        rideId: widget.rideId,
-      );
-      final response = apiResponse.data;
-      if (response == null) {
-        setState(() {
-          _error = 'No ride data found';
-          _loading = false;
-        });
-        return;
-      }
-      setState(() {
-        _ride = _rideFromResponse(response);
-        _loading = false;
-      });
-      _updateMarkers();
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load ride';
-        _loading = false;
-      });
-    }
-  }
-
-  void _setupWebSocketListener() {
-    final wsClient = ref.read(wsClientProvider);
-    _wsSub = wsClient.events.listen((event) {
-      if (!mounted) return;
-
-      switch (event.type) {
-        case WsEventNames.rideStatusChanged:
-          _handleStatusChanged(event.payload);
-          break;
-        case WsEventNames.driverLocationUpdated:
-          _handleDriverLocation(event.payload);
-          break;
-        case WsEventNames.rideArrived:
-          _handleDriverArrived();
-          break;
-        case WsEventNames.rideCancelled:
-          _handleRideCancelled();
-          break;
-      }
-    });
-  }
-
-  void _handleStatusChanged(Map<String, dynamic> payload) {
-    final status = payload['status'] as String?;
-    if (status == null) return;
-
-    final rideState = RideState.fromString(status);
-    setState(() {
-      _ride = _ride?.copyWith(status: rideState);
-    });
-
-    if (rideState == RideState.completed) {
-      _navigateToRideComplete();
-    } else if (rideState == RideState.cancelled) {
-      _navigateToRideCancelled();
-    }
-  }
-
-  void _handleDriverLocation(Map<String, dynamic> payload) {
-    final lat = payload['lat'] as double?;
-    final lng = payload['lng'] as double?;
-    if (lat == null || lng == null) return;
-
-    setState(() {
-      _markers.removeWhere((m) => m.markerId.value == 'driver');
-      _markers.add(
-        gmaps.Marker(
-          markerId: const gmaps.MarkerId('driver'),
-          position: gmaps.LatLng(lat, lng),
-          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
-            gmaps.BitmapDescriptor.hueAzure,
-          ),
-          infoWindow: const gmaps.InfoWindow(title: 'Your Driver'),
-        ),
-      );
-    });
-
-    _mapController?.animateCamera(
-      gmaps.CameraUpdate.newLatLng(gmaps.LatLng(lat, lng)),
-    );
-  }
-
-  void _handleDriverArrived() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Your driver has arrived!')));
-  }
-
-  void _handleRideCancelled() {
-    _navigateToRideCancelled();
-  }
-
   void _updateMarkers() {
-    if (_ride == null) return;
+    final rideData = widget.rideState;
+    final ride = rideData.ride;
+    if (ride == null) return;
 
     _markers.clear();
 
     _markers.add(
       gmaps.Marker(
         markerId: const gmaps.MarkerId('pickup'),
-        position: gmaps.LatLng(_ride!.origin.lat, _ride!.origin.lng),
+        position: gmaps.LatLng(ride.origin.lat, ride.origin.lng),
         icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
           gmaps.BitmapDescriptor.hueGreen,
         ),
         infoWindow: gmaps.InfoWindow(
           title: 'Pickup',
-          snippet: _ride!.origin.address,
+          snippet: ride.originAddress ?? '',
         ),
       ),
     );
@@ -168,49 +130,57 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     _markers.add(
       gmaps.Marker(
         markerId: const gmaps.MarkerId('destination'),
-        position: gmaps.LatLng(_ride!.destination.lat, _ride!.destination.lng),
+        position: gmaps.LatLng(ride.destination.lat, ride.destination.lng),
         icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
           gmaps.BitmapDescriptor.hueRed,
         ),
         infoWindow: gmaps.InfoWindow(
           title: 'Destination',
-          snippet: _ride!.destination.address,
+          snippet: ride.destinationAddress ?? '',
         ),
       ),
     );
+
+    // Driver marker from state
+    final driverLocation = rideData.driverLocation;
+    if (driverLocation != null) {
+      _markers.add(
+        gmaps.Marker(
+          markerId: const gmaps.MarkerId('driver'),
+          position: driverLocation,
+          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
+            gmaps.BitmapDescriptor.hueAzure,
+          ),
+          infoWindow: const gmaps.InfoWindow(title: 'Your Driver'),
+        ),
+      );
+    }
   }
 
-  void _navigateToRideComplete() {
+  void _navigateToRideComplete(String rideId) {
     if (!mounted) return;
-    context.push(Routes.rideComplete, extra: widget.rideId);
+    context.push(Routes.rideComplete, extra: rideId);
   }
 
-  void _navigateToRideCancelled() {
+  void _navigateToRideCancelled(String rideId) {
     if (!mounted) return;
-    context.go('/ride/cancelled/${widget.rideId}');
+    context.go('/ride/cancelled/$rideId');
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    // Listen for snackbar events via stream
+    final rideState = widget.rideState;
+    final ride = rideState.ride;
+    if (ride == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(_error!),
-              const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadRide, child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
+    final gmaps.LatLng initialTarget;
+    if (rideState.driverLocation != null) {
+      initialTarget = rideState.driverLocation!;
+    } else {
+      initialTarget = gmaps.LatLng(ride.origin.lat, ride.origin.lng);
     }
 
     return Scaffold(
@@ -218,7 +188,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         children: [
           gmaps.GoogleMap(
             initialCameraPosition: gmaps.CameraPosition(
-              target: gmaps.LatLng(_ride!.origin.lat, _ride!.origin.lng),
+              target: initialTarget,
               zoom: 14,
             ),
             markers: _markers,
@@ -227,7 +197,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             myLocationButtonEnabled: true,
           ),
 
-          if (_ride?.driverName != null)
+          if (rideState.driverName != null)
             Positioned(
               top: 16,
               left: 16,
@@ -251,14 +221,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _ride!.driverName!,
+                                  rideState.driverName!,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.titleMedium,
                                 ),
-                                if (_ride!.driverVehicle != null)
+                                if (rideState.driverVehicle != null)
                                   Text(
-                                    _ride!.driverVehicle!,
+                                    rideState.driverVehicle!,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodySmall,
@@ -266,12 +236,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                               ],
                             ),
                           ),
-                          _buildStatusIndicator(),
+                          _buildStatusIndicator(rideState.currentStep),
                         ],
                       ),
                       const Divider(height: 24),
                       Text(
-                        _statusText,
+                        _statusText(rideState.currentStep),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -306,17 +276,19 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Ride ${_ride!.id.substring(0, 8)}',
+                      'Ride ${ride.id.substring(0, 8)}',
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _ride!.origin.address,
+                      ride.originAddress ??
+                          '(${ride.origin.lat.toStringAsFixed(4)}, ${ride.origin.lng.toStringAsFixed(4)})',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _ride!.destination.address,
+                      ride.destinationAddress ??
+                          '(${ride.destination.lat.toStringAsFixed(4)}, ${ride.destination.lng.toStringAsFixed(4)})',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -329,26 +301,23 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     );
   }
 
-  Widget _buildStatusIndicator() {
+  Widget _buildStatusIndicator(ActiveRideStep step) {
     Color color;
     String text;
 
-    switch (_ride!.status) {
-      case RideState.accepted:
+    switch (step) {
+      case ActiveRideStep.enRoute:
         color = Colors.blue;
         text = 'En Route';
         break;
-      case RideState.arrived:
+      case ActiveRideStep.arrived:
         color = Colors.green;
         text = 'Arrived';
         break;
-      case RideState.inProgress:
+      case ActiveRideStep.inProgress:
         color = Colors.orange;
         text = 'In Progress';
         break;
-      default:
-        color = Colors.grey;
-        text = 'Unknown';
     }
 
     return Container(
@@ -364,42 +333,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     );
   }
 
-  String get _statusText {
-    switch (_ride!.status) {
-      case RideState.accepted:
+  String _statusText(ActiveRideStep step) {
+    switch (step) {
+      case ActiveRideStep.enRoute:
         return 'Your driver is on the way';
-      case RideState.arrived:
+      case ActiveRideStep.arrived:
         return 'Your driver has arrived at pickup';
-      case RideState.inProgress:
+      case ActiveRideStep.inProgress:
         return 'Ride in progress to destination';
-      case RideState.completed:
-        return 'Ride completed';
-      case RideState.cancelled:
-        return 'Ride cancelled';
-      case RideState.requested:
-        return 'Looking for a driver...';
     }
   }
-}
-
-/// Maps a generated RideResponse to a domain RideEntity.
-RideEntity _rideFromResponse(RideResponse response) {
-  return RideEntity(
-    id: response.id,
-    status: RideState.fromString(response.status.name),
-    origin: RideLocation(
-      lat: response.origin.lat,
-      lng: response.origin.lng,
-      address: response.originAddress ?? '',
-    ),
-    destination: RideLocation(
-      lat: response.destination.lat,
-      lng: response.destination.lng,
-      address: response.destinationAddress ?? '',
-    ),
-    createdAt: response.createdAt,
-    updatedAt: response.updatedAt,
-    driverName: null, // TODO: enrich with driver name from /users/{id}
-    driverVehicle: null, // TODO: enrich with vehicle info
-  );
 }

@@ -48,6 +48,7 @@ doc/FeatureFlag.md
 doc/GeoJSONFeatureCollection.md
 doc/GeoJSONFeatureCollectionFeaturesInner.md
 doc/GeoJSONFeatureCollectionFeaturesInnerGeometry.md
+doc/GetNearbyDrivers200Response.md
 doc/HealthResponse.md
 doc/HealthResponseDependencies.md
 doc/Incident.md
@@ -80,6 +81,7 @@ doc/ReceiptResponse.md
 doc/RefreshRequest.md
 doc/RegisterRequest.md
 doc/ReportDefinition.md
+doc/RideEventPayload.md
 doc/RideRequestBody.md
 doc/RideResponse.md
 doc/RideStatus.md
@@ -173,6 +175,7 @@ lib/src/model/feature_flag.dart
 lib/src/model/geo_json_feature_collection.dart
 lib/src/model/geo_json_feature_collection_features_inner.dart
 lib/src/model/geo_json_feature_collection_features_inner_geometry.dart
+lib/src/model/get_nearby_drivers200_response.dart
 lib/src/model/health_response.dart
 lib/src/model/health_response_dependencies.dart
 lib/src/model/incident.dart
@@ -205,6 +208,7 @@ lib/src/model/receipt_response.dart
 lib/src/model/refresh_request.dart
 lib/src/model/register_request.dart
 lib/src/model/report_definition.dart
+lib/src/model/ride_event_payload.dart
 lib/src/model/ride_request_body.dart
 lib/src/model/ride_response.dart
 lib/src/model/ride_status.dart
@@ -237,11 +241,5 @@ lib/src/model/ws_event_ride_requested.dart
 lib/src/model/ws_event_ride_status_changed.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/add_payment_method_request_test.dart
-test/card_details_test.dart
-test/e_wallet_details_test.dart
-test/payment_method_details_test.dart
-test/payment_method_list_response_test.dart
-test/payment_method_type_test.dart
-test/user_ride_item_test.dart
-test/user_ride_list_response_test.dart
+test/get_nearby_drivers200_response_test.dart
+test/ride_event_payload_test.dart

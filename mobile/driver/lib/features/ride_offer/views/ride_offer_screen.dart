@@ -133,6 +133,68 @@ class _RideOfferScreenState extends ConsumerState<RideOfferScreen> {
                         ],
                       ),
                       Divider(height: tokens.spaceLg),
+                      // Fare and ride type badge row.
+                      Row(
+                        children: [
+                          if (offer.estimatedFare != null)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: tokens.spaceSm,
+                                vertical: tokens.spaceXs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: scheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(
+                                  tokens.radiusSm,
+                                ),
+                              ),
+                              child: Text(
+                                'P${offer.estimatedFare!.toStringAsFixed(2)}',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: scheme.onSecondaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                          SizedBox(width: tokens.spaceSm),
+                          if (offer.rideType != null)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: tokens.spaceSm,
+                                vertical: tokens.spaceXs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(
+                                  tokens.radiusSm,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _rideTypeIcon(offer.rideType!),
+                                    size: 16,
+                                    color: scheme.primary,
+                                  ),
+                                  SizedBox(width: tokens.spaceXs),
+                                  Text(
+                                    _rideTypeLabel(offer.rideType!),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: scheme.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: tokens.spaceMd),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -227,5 +289,27 @@ class _RideOfferScreenState extends ConsumerState<RideOfferScreen> {
         ),
       ),
     );
+  }
+
+  IconData _rideTypeIcon(String rideType) {
+    switch (rideType.toLowerCase()) {
+      case 'motorcycle':
+        return Icons.two_wheeler;
+      case 'tricycle':
+        return Icons.pest_control_rodent;
+      default:
+        return Icons.directions_car;
+    }
+  }
+
+  String _rideTypeLabel(String rideType) {
+    switch (rideType.toLowerCase()) {
+      case 'motorcycle':
+        return 'Motorcycle';
+      case 'tricycle':
+        return 'Tricycle';
+      default:
+        return 'Car';
+    }
   }
 }

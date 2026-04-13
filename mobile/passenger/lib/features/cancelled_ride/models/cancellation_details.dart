@@ -1,5 +1,36 @@
 import 'package:sakai_shared/sakai_shared.dart';
 
+/// Predefined cancellation reason codes.
+enum CancellationReason {
+  driverTooFar('driver_too_far', 'Driver is too far away'),
+  changedPlans('changed_plans', 'I changed my plans'),
+  wrongPickup('wrong_pickup', 'Wrong pickup location'),
+  driverNotMoving('driver_not_moving', 'Driver is not moving'),
+  safetyConcern('safety_concern', 'Safety concern'),
+  other('other', 'Other reason');
+
+  const CancellationReason(this.code, this.label);
+
+  final String code;
+  final String label;
+
+  static CancellationReason fromCode(String? value) {
+    for (final reason in CancellationReason.values) {
+      if (reason.code == value) return reason;
+    }
+    return CancellationReason.other;
+  }
+
+  static const List<CancellationReason> predefinedReasons = [
+    driverTooFar,
+    changedPlans,
+    wrongPickup,
+    driverNotMoving,
+    safetyConcern,
+    other,
+  ];
+}
+
 /// Who initiated the cancellation.
 enum CancelledBy {
   passenger,
@@ -56,6 +87,8 @@ class CancellationDetails {
     this.cancellationFee,
     this.originAddress,
     this.destinationAddress,
+    this.reasonCode,
+    this.reasonText,
   });
 
   factory CancellationDetails.fromRideResponse(RideResponse r) {
@@ -69,12 +102,22 @@ class CancellationDetails {
     final cancelledBy = CancelledBy.fromApiEnum(r.cancelledBy);
     final wasPaid = r.fare != null && r.fare! > 0;
     final refundAmount = wasPaid ? r.fare : null;
-    // Cancellation fee would come from fare config in a real implementation;
-    // for now we leave it null (no fee shown).
-    final double? cancellationFee = null;
+    // Cancellation fee comes from the ride's fare field if a fee was applied
+    final double? cancellationFee = r.fare != null && r.fare! > 0
+        ? r.fare
+        : null;
+
+    // Parse reason code from response
+    final reasonCode = CancellationReason.fromCode(r.cancellationReason);
+    final reasonText = r.cancellationReasonText;
 
     String reason;
-    if (cancelledBy == CancelledBy.passenger) {
+    if (reasonCode != CancellationReason.other &&
+        reasonCode != CancellationReason.fromCode(null)) {
+      reason = reasonCode.label;
+    } else if (reasonText != null && reasonText.isNotEmpty) {
+      reason = reasonText;
+    } else if (cancelledBy == CancelledBy.passenger) {
       reason = 'You cancelled this ride';
     } else if (cancelledBy == CancelledBy.driver) {
       reason = 'Your driver cancelled this ride';
@@ -93,6 +136,8 @@ class CancellationDetails {
       cancellationFee: cancellationFee,
       originAddress: r.originAddress,
       destinationAddress: r.destinationAddress,
+      reasonCode: reasonCode,
+      reasonText: reasonText,
     );
   }
 
@@ -106,10 +151,13 @@ class CancellationDetails {
   final double? cancellationFee;
   final String? originAddress;
   final String? destinationAddress;
+  final CancellationReason? reasonCode;
+  final String? reasonText;
 
   bool get hasDriver => driverName != null;
   bool get hasRefund => refundAmount != null;
   bool get hasFee => cancellationFee != null && cancellationFee! > 0;
+  bool get hasReasonCode => reasonCode != null;
 
   double get netRefund {
     if (!hasRefund) return 0;

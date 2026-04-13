@@ -6,6 +6,33 @@ part of 'admin_ride_item.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const AdminRideItemRideTypeEnum _$adminRideItemRideTypeEnum_motorcycle =
+    const AdminRideItemRideTypeEnum._('motorcycle');
+const AdminRideItemRideTypeEnum _$adminRideItemRideTypeEnum_car =
+    const AdminRideItemRideTypeEnum._('car');
+const AdminRideItemRideTypeEnum _$adminRideItemRideTypeEnum_tricycle =
+    const AdminRideItemRideTypeEnum._('tricycle');
+
+AdminRideItemRideTypeEnum _$adminRideItemRideTypeEnumValueOf(String name) {
+  switch (name) {
+    case 'motorcycle':
+      return _$adminRideItemRideTypeEnum_motorcycle;
+    case 'car':
+      return _$adminRideItemRideTypeEnum_car;
+    case 'tricycle':
+      return _$adminRideItemRideTypeEnum_tricycle;
+    default:
+      throw ArgumentError(name);
+  }
+}
+
+final BuiltSet<AdminRideItemRideTypeEnum> _$adminRideItemRideTypeEnumValues =
+    BuiltSet<AdminRideItemRideTypeEnum>(const <AdminRideItemRideTypeEnum>[
+  _$adminRideItemRideTypeEnum_motorcycle,
+  _$adminRideItemRideTypeEnum_car,
+  _$adminRideItemRideTypeEnum_tricycle,
+]);
+
 const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_cash =
     const AdminRideItemPaymentMethodEnum._('cash');
 const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_gcash =
@@ -16,8 +43,7 @@ const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_card =
     const AdminRideItemPaymentMethodEnum._('card');
 
 AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'cash':
       return _$adminRideItemPaymentMethodEnum_cash;
@@ -33,15 +59,13 @@ AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnumValueOf(
 }
 
 final BuiltSet<AdminRideItemPaymentMethodEnum>
-_$adminRideItemPaymentMethodEnumValues =
-    BuiltSet<AdminRideItemPaymentMethodEnum>(
-      const <AdminRideItemPaymentMethodEnum>[
-        _$adminRideItemPaymentMethodEnum_cash,
-        _$adminRideItemPaymentMethodEnum_gcash,
-        _$adminRideItemPaymentMethodEnum_paymaya,
-        _$adminRideItemPaymentMethodEnum_card,
-      ],
-    );
+    _$adminRideItemPaymentMethodEnumValues = BuiltSet<
+        AdminRideItemPaymentMethodEnum>(const <AdminRideItemPaymentMethodEnum>[
+  _$adminRideItemPaymentMethodEnum_cash,
+  _$adminRideItemPaymentMethodEnum_gcash,
+  _$adminRideItemPaymentMethodEnum_paymaya,
+  _$adminRideItemPaymentMethodEnum_card,
+]);
 
 const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_passenger =
     const AdminRideItemCancelledByEnum._('passenger');
@@ -49,8 +73,7 @@ const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_driver =
     const AdminRideItemCancelledByEnum._('driver');
 
 AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'passenger':
       return _$adminRideItemCancelledByEnum_passenger;
@@ -62,19 +85,51 @@ AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
 }
 
 final BuiltSet<AdminRideItemCancelledByEnum>
-_$adminRideItemCancelledByEnumValues = BuiltSet<AdminRideItemCancelledByEnum>(
-  const <AdminRideItemCancelledByEnum>[
-    _$adminRideItemCancelledByEnum_passenger,
-    _$adminRideItemCancelledByEnum_driver,
-  ],
-);
+    _$adminRideItemCancelledByEnumValues =
+    BuiltSet<AdminRideItemCancelledByEnum>(const <AdminRideItemCancelledByEnum>[
+  _$adminRideItemCancelledByEnum_passenger,
+  _$adminRideItemCancelledByEnum_driver,
+]);
 
+Serializer<AdminRideItemRideTypeEnum> _$adminRideItemRideTypeEnumSerializer =
+    _$AdminRideItemRideTypeEnumSerializer();
 Serializer<AdminRideItemPaymentMethodEnum>
-_$adminRideItemPaymentMethodEnumSerializer =
+    _$adminRideItemPaymentMethodEnumSerializer =
     _$AdminRideItemPaymentMethodEnumSerializer();
 Serializer<AdminRideItemCancelledByEnum>
-_$adminRideItemCancelledByEnumSerializer =
+    _$adminRideItemCancelledByEnumSerializer =
     _$AdminRideItemCancelledByEnumSerializer();
+
+class _$AdminRideItemRideTypeEnumSerializer
+    implements PrimitiveSerializer<AdminRideItemRideTypeEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'motorcycle': 'motorcycle',
+    'car': 'car',
+    'tricycle': 'tricycle',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'motorcycle': 'motorcycle',
+    'car': 'car',
+    'tricycle': 'tricycle',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[AdminRideItemRideTypeEnum];
+  @override
+  final String wireName = 'AdminRideItemRideTypeEnum';
+
+  @override
+  Object serialize(Serializers serializers, AdminRideItemRideTypeEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
+
+  @override
+  AdminRideItemRideTypeEnum deserialize(
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      AdminRideItemRideTypeEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+}
 
 class _$AdminRideItemPaymentMethodEnumSerializer
     implements PrimitiveSerializer<AdminRideItemPaymentMethodEnum> {
@@ -98,19 +153,16 @@ class _$AdminRideItemPaymentMethodEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    AdminRideItemPaymentMethodEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, AdminRideItemPaymentMethodEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   AdminRideItemPaymentMethodEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => AdminRideItemPaymentMethodEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      AdminRideItemPaymentMethodEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$AdminRideItemCancelledByEnumSerializer
@@ -130,20 +182,16 @@ class _$AdminRideItemCancelledByEnumSerializer
   final String wireName = 'AdminRideItemCancelledByEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    AdminRideItemCancelledByEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, AdminRideItemCancelledByEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   AdminRideItemCancelledByEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => AdminRideItemCancelledByEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      AdminRideItemCancelledByEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$AdminRideItem extends AdminRideItem {
@@ -176,9 +224,19 @@ class _$AdminRideItem extends AdminRideItem {
   @override
   final double? estimatedFare;
   @override
+  final double? actualFare;
+  @override
+  final BuiltMap<String, JsonObject?>? fareBreakdown;
+  @override
+  final RideResponseRideTypeEnum? rideType;
+  @override
   final RideResponsePaymentMethodEnum? paymentMethod;
   @override
   final RideResponseCancelledByEnum? cancelledBy;
+  @override
+  final String? cancellationReason;
+  @override
+  final String? cancellationReasonText;
   @override
   final DateTime createdAt;
   @override
@@ -187,26 +245,31 @@ class _$AdminRideItem extends AdminRideItem {
   factory _$AdminRideItem([void Function(AdminRideItemBuilder)? updates]) =>
       (AdminRideItemBuilder()..update(updates))._build();
 
-  _$AdminRideItem._({
-    this.passengerName,
-    this.totalFare,
-    this.driverName,
-    required this.id,
-    required this.status,
-    required this.passenger,
-    this.driver,
-    required this.origin,
-    required this.destination,
-    this.originAddress,
-    this.destinationAddress,
-    this.notes,
-    this.fare,
-    this.estimatedFare,
-    this.paymentMethod,
-    this.cancelledBy,
-    required this.createdAt,
-    required this.updatedAt,
-  }) : super._();
+  _$AdminRideItem._(
+      {this.passengerName,
+      this.totalFare,
+      this.driverName,
+      required this.id,
+      required this.status,
+      required this.passenger,
+      this.driver,
+      required this.origin,
+      required this.destination,
+      this.originAddress,
+      this.destinationAddress,
+      this.notes,
+      this.fare,
+      this.estimatedFare,
+      this.actualFare,
+      this.fareBreakdown,
+      this.rideType,
+      this.paymentMethod,
+      this.cancelledBy,
+      this.cancellationReason,
+      this.cancellationReasonText,
+      required this.createdAt,
+      required this.updatedAt})
+      : super._();
   @override
   AdminRideItem rebuild(void Function(AdminRideItemBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -232,8 +295,13 @@ class _$AdminRideItem extends AdminRideItem {
         notes == other.notes &&
         fare == other.fare &&
         estimatedFare == other.estimatedFare &&
+        actualFare == other.actualFare &&
+        fareBreakdown == other.fareBreakdown &&
+        rideType == other.rideType &&
         paymentMethod == other.paymentMethod &&
         cancelledBy == other.cancelledBy &&
+        cancellationReason == other.cancellationReason &&
+        cancellationReasonText == other.cancellationReasonText &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -255,8 +323,13 @@ class _$AdminRideItem extends AdminRideItem {
     _$hash = $jc(_$hash, notes.hashCode);
     _$hash = $jc(_$hash, fare.hashCode);
     _$hash = $jc(_$hash, estimatedFare.hashCode);
+    _$hash = $jc(_$hash, actualFare.hashCode);
+    _$hash = $jc(_$hash, fareBreakdown.hashCode);
+    _$hash = $jc(_$hash, rideType.hashCode);
     _$hash = $jc(_$hash, paymentMethod.hashCode);
     _$hash = $jc(_$hash, cancelledBy.hashCode);
+    _$hash = $jc(_$hash, cancellationReason.hashCode);
+    _$hash = $jc(_$hash, cancellationReasonText.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -280,8 +353,13 @@ class _$AdminRideItem extends AdminRideItem {
           ..add('notes', notes)
           ..add('fare', fare)
           ..add('estimatedFare', estimatedFare)
+          ..add('actualFare', actualFare)
+          ..add('fareBreakdown', fareBreakdown)
+          ..add('rideType', rideType)
           ..add('paymentMethod', paymentMethod)
           ..add('cancelledBy', cancelledBy)
+          ..add('cancellationReason', cancellationReason)
+          ..add('cancellationReasonText', cancellationReasonText)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -357,6 +435,22 @@ class AdminRideItemBuilder
   set estimatedFare(covariant double? estimatedFare) =>
       _$this._estimatedFare = estimatedFare;
 
+  double? _actualFare;
+  double? get actualFare => _$this._actualFare;
+  set actualFare(covariant double? actualFare) =>
+      _$this._actualFare = actualFare;
+
+  MapBuilder<String, JsonObject?>? _fareBreakdown;
+  MapBuilder<String, JsonObject?> get fareBreakdown =>
+      _$this._fareBreakdown ??= MapBuilder<String, JsonObject?>();
+  set fareBreakdown(covariant MapBuilder<String, JsonObject?>? fareBreakdown) =>
+      _$this._fareBreakdown = fareBreakdown;
+
+  RideResponseRideTypeEnum? _rideType;
+  RideResponseRideTypeEnum? get rideType => _$this._rideType;
+  set rideType(covariant RideResponseRideTypeEnum? rideType) =>
+      _$this._rideType = rideType;
+
   RideResponsePaymentMethodEnum? _paymentMethod;
   RideResponsePaymentMethodEnum? get paymentMethod => _$this._paymentMethod;
   set paymentMethod(covariant RideResponsePaymentMethodEnum? paymentMethod) =>
@@ -366,6 +460,16 @@ class AdminRideItemBuilder
   RideResponseCancelledByEnum? get cancelledBy => _$this._cancelledBy;
   set cancelledBy(covariant RideResponseCancelledByEnum? cancelledBy) =>
       _$this._cancelledBy = cancelledBy;
+
+  String? _cancellationReason;
+  String? get cancellationReason => _$this._cancellationReason;
+  set cancellationReason(covariant String? cancellationReason) =>
+      _$this._cancellationReason = cancellationReason;
+
+  String? _cancellationReasonText;
+  String? get cancellationReasonText => _$this._cancellationReasonText;
+  set cancellationReasonText(covariant String? cancellationReasonText) =>
+      _$this._cancellationReasonText = cancellationReasonText;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -396,8 +500,13 @@ class AdminRideItemBuilder
       _notes = $v.notes;
       _fare = $v.fare;
       _estimatedFare = $v.estimatedFare;
+      _actualFare = $v.actualFare;
+      _fareBreakdown = $v.fareBreakdown?.toBuilder();
+      _rideType = $v.rideType;
       _paymentMethod = $v.paymentMethod;
       _cancelledBy = $v.cancelledBy;
+      _cancellationReason = $v.cancellationReason;
+      _cancellationReasonText = $v.cancellationReasonText;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -421,27 +530,17 @@ class AdminRideItemBuilder
   _$AdminRideItem _build() {
     _$AdminRideItem _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$AdminRideItem._(
             passengerName: passengerName,
             totalFare: totalFare,
             driverName: driverName,
             id: BuiltValueNullFieldError.checkNotNull(
-              id,
-              r'AdminRideItem',
-              'id',
-            ),
+                id, r'AdminRideItem', 'id'),
             status: BuiltValueNullFieldError.checkNotNull(
-              status,
-              r'AdminRideItem',
-              'status',
-            ),
+                status, r'AdminRideItem', 'status'),
             passenger: BuiltValueNullFieldError.checkNotNull(
-              passenger,
-              r'AdminRideItem',
-              'passenger',
-            ),
+                passenger, r'AdminRideItem', 'passenger'),
             driver: _driver?.build(),
             origin: origin.build(),
             destination: destination.build(),
@@ -450,18 +549,17 @@ class AdminRideItemBuilder
             notes: notes,
             fare: fare,
             estimatedFare: estimatedFare,
+            actualFare: actualFare,
+            fareBreakdown: _fareBreakdown?.build(),
+            rideType: rideType,
             paymentMethod: paymentMethod,
             cancelledBy: cancelledBy,
+            cancellationReason: cancellationReason,
+            cancellationReasonText: cancellationReasonText,
             createdAt: BuiltValueNullFieldError.checkNotNull(
-              createdAt,
-              r'AdminRideItem',
-              'createdAt',
-            ),
+                createdAt, r'AdminRideItem', 'createdAt'),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
-              updatedAt,
-              r'AdminRideItem',
-              'updatedAt',
-            ),
+                updatedAt, r'AdminRideItem', 'updatedAt'),
           );
     } catch (_) {
       late String _$failedField;
@@ -472,12 +570,12 @@ class AdminRideItemBuilder
         origin.build();
         _$failedField = 'destination';
         destination.build();
+
+        _$failedField = 'fareBreakdown';
+        _fareBreakdown?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'AdminRideItem',
-          _$failedField,
-          e.toString(),
-        );
+            r'AdminRideItem', _$failedField, e.toString());
       }
       rethrow;
     }

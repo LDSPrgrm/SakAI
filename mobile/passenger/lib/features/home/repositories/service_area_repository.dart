@@ -1,40 +1,55 @@
 import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sakai_shared/sakai_shared.dart'
+    hide NearbyDriver, ServiceArea, LatLng, VehicleType;
 import '../models/service_area.dart';
 
+/// Repository for fetching platform service areas.
+///
+/// Uses the generated SakaiApiClient for HTTP transport.
 class ServiceAreaRepository {
-  final Dio _dio;
+  final SakaiApiClient _client;
 
-  ServiceAreaRepository({Dio? dio}) : _dio = dio ?? Dio();
+  ServiceAreaRepository({SakaiApiClient? client, Interceptor? authInterceptor})
+    : _client =
+          client ??
+          SakaiApiSupport.createClient(authInterceptor: authInterceptor);
 
   Future<List<ServiceArea>> fetchServiceAreas() async {
     try {
-      // For local development with mock server:
-      // In production, this would use the real API_URL from environment
-      final response = await _dio.get<Map<String, dynamic>>(
-        'http://localhost:8081/service-area',
-      );
+      final response = await _client.getSystemApi().getServiceAreas();
 
       final data = response.data;
-      if (data == null || data['areas'] == null) {
-        return [];
+      if (data == null || data.areas == null) {
+        return _defaultAreas();
       }
 
-      final areas = (data['areas'] as List)
-          .map((a) => ServiceArea.fromJson(a as Map<String, dynamic>))
+      // The generated ServiceArea model has outdated fields (role/permission
+      // schema instead of geographic area schema). After T007 (regenerate
+      // Dart client), this mapping will use the correct center/radius fields.
+      return data.areas!
+          .map(
+            (a) => ServiceArea(
+              id: a.id,
+              name: a.name,
+              center: const LatLng(14.5995, 120.9842), // Default Manila
+              radius: 15000.0,
+            ),
+          )
           .toList();
-          
-      return areas;
     } catch (e) {
-      // Fallback to defaults or handle error
-      return [
-        ServiceArea(
-          id: 'default-manila',
-          name: 'Metro Manila (Default)',
-          center: const LatLng(14.5995, 120.9842),
-          radius: 15000.0, // 15km
-        ),
-      ];
+      return _defaultAreas();
     }
+  }
+
+  List<ServiceArea> _defaultAreas() {
+    return [
+      ServiceArea(
+        id: 'default-manila',
+        name: 'Metro Manila (Default)',
+        center: const LatLng(14.5995, 120.9842),
+        radius: 15000.0, // 15km
+      ),
+    ];
   }
 }

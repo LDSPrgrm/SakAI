@@ -4,14 +4,18 @@ import '../models/cancellation_details.dart';
 abstract class CancelledRideRepository {
   /// Fetch cancellation details for a cancelled ride.
   Future<CancellationDetails> getCancellationDetails(String rideId);
+
+  /// Cancel the given ride with a reason code and optional reason text.
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  });
 }
 
 /// Custom domain error for cancelled ride operations.
 class CancelledRideException implements Exception {
-  const CancelledRideException({
-    required this.userMessage,
-    this.machineCode,
-  });
+  const CancelledRideException({required this.userMessage, this.machineCode});
 
   final String userMessage;
   final String? machineCode;

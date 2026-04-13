@@ -115,6 +115,33 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge,
             ),
+            if (details.hasReasonCode &&
+                details.reasonCode != CancellationReason.other)
+              Padding(
+                padding: EdgeInsets.only(top: tokens.spaceXs),
+                child: Chip(
+                  label: Text(
+                    details.reasonCode!.label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  backgroundColor: theme.colorScheme.secondaryContainer,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            if (details.reasonText != null && details.reasonText!.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: tokens.spaceXs),
+                child: Text(
+                  '"${details.reasonText}"',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
             SizedBox(height: tokens.spaceXs),
             Text(
               'Cancelled on ${details.formattedCancelledAt}',
@@ -270,6 +297,92 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ignore: unused_element
+  Future<void> _showCancelDialog(
+    BuildContext context,
+    CancelledRideViewModel vm,
+  ) async {
+    final theme = Theme.of(context);
+    final tokens = SakaiDesignTokens.of(context);
+    CancellationReason? selectedReason;
+    final reasonTextController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: const Text('Cancel Ride'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Why are you cancelling this ride?',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    SizedBox(height: tokens.spaceMd),
+                    ...vm.reasonOptions.map((reason) {
+                      return RadioListTile<CancellationReason>(
+                        title: Text(reason.label),
+                        value: reason,
+                        // ignore: deprecated_member_use
+                        groupValue: selectedReason,
+                        // ignore: deprecated_member_use
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedReason = value;
+                            if (reason != CancellationReason.other) {
+                              reasonTextController.clear();
+                            }
+                          });
+                        },
+                        dense: true,
+                      );
+                    }),
+                    if (selectedReason == CancellationReason.other) ...[
+                      SizedBox(height: tokens.spaceSm),
+                      TextField(
+                        controller: reasonTextController,
+                        decoration: const InputDecoration(
+                          labelText: 'Please specify',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLength: 500,
+                        maxLines: 2,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Back'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedReason == null
+                      ? null
+                      : () {
+                          vm.selectReason(selectedReason!);
+                          if (selectedReason == CancellationReason.other &&
+                              reasonTextController.text.isNotEmpty) {
+                            vm.setReasonText(reasonTextController.text);
+                          }
+                          Navigator.of(ctx).pop();
+                        },
+                  child: const Text('Confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/lat_lng.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -13,28 +14,48 @@ part 'nearby_driver.g.dart';
 ///
 /// Properties:
 /// * [id] 
-/// * [provider] 
-/// * [configFields] - API keys and settings — sensitive fields shown masked (last 4 chars)
-/// * [isActive] 
-/// * [updatedAt] 
+/// * [name] 
+/// * [vehicleMake] 
+/// * [vehicleModel] 
+/// * [vehiclePlate] 
+/// * [vehicleType] 
+/// * [rating] 
+/// * [distanceM] 
+/// * [location] 
+/// * [heading] - Compass bearing in degrees
 @BuiltValue()
 abstract class NearbyDriver implements Built<NearbyDriver, NearbyDriverBuilder> {
   @BuiltValueField(wireName: r'id')
   String get id;
 
-  @BuiltValueField(wireName: r'provider')
-  NearbyDriverProviderEnum? get provider;
-  // enum providerEnum {  gcash,  paymaya,  card,  cash,  };
+  @BuiltValueField(wireName: r'name')
+  String get name;
 
-  /// API keys and settings — sensitive fields shown masked (last 4 chars)
-  @BuiltValueField(wireName: r'config_fields')
-  BuiltMap<String, String>? get configFields;
+  @BuiltValueField(wireName: r'vehicle_make')
+  String? get vehicleMake;
 
-  @BuiltValueField(wireName: r'is_active')
-  bool? get isActive;
+  @BuiltValueField(wireName: r'vehicle_model')
+  String? get vehicleModel;
 
-  @BuiltValueField(wireName: r'updated_at')
-  DateTime? get updatedAt;
+  @BuiltValueField(wireName: r'vehicle_plate')
+  String? get vehiclePlate;
+
+  @BuiltValueField(wireName: r'vehicle_type')
+  NearbyDriverVehicleTypeEnum get vehicleType;
+  // enum vehicleTypeEnum {  motorcycle,  car,  tricycle,  };
+
+  @BuiltValueField(wireName: r'rating')
+  double? get rating;
+
+  @BuiltValueField(wireName: r'distance_m')
+  double? get distanceM;
+
+  @BuiltValueField(wireName: r'location')
+  LatLng get location;
+
+  /// Compass bearing in degrees
+  @BuiltValueField(wireName: r'heading')
+  double? get heading;
 
   NearbyDriver._();
 
@@ -64,32 +85,61 @@ class _$NearbyDriverSerializer implements PrimitiveSerializer<NearbyDriver> {
       object.id,
       specifiedType: const FullType(String),
     );
-    if (object.provider != null) {
-      yield r'provider';
+    yield r'name';
+    yield serializers.serialize(
+      object.name,
+      specifiedType: const FullType(String),
+    );
+    if (object.vehicleMake != null) {
+      yield r'vehicle_make';
       yield serializers.serialize(
-        object.provider,
-        specifiedType: const FullType(NearbyDriverProviderEnum),
+        object.vehicleMake,
+        specifiedType: const FullType(String),
       );
     }
-    if (object.configFields != null) {
-      yield r'config_fields';
+    if (object.vehicleModel != null) {
+      yield r'vehicle_model';
       yield serializers.serialize(
-        object.configFields,
-        specifiedType: const FullType(BuiltMap, [FullType(String), FullType(String)]),
+        object.vehicleModel,
+        specifiedType: const FullType(String),
       );
     }
-    if (object.isActive != null) {
-      yield r'is_active';
+    if (object.vehiclePlate != null) {
+      yield r'vehicle_plate';
       yield serializers.serialize(
-        object.isActive,
-        specifiedType: const FullType(bool),
+        object.vehiclePlate,
+        specifiedType: const FullType(String),
       );
     }
-    if (object.updatedAt != null) {
-      yield r'updated_at';
+    yield r'vehicle_type';
+    yield serializers.serialize(
+      object.vehicleType,
+      specifiedType: const FullType(NearbyDriverVehicleTypeEnum),
+    );
+    if (object.rating != null) {
+      yield r'rating';
       yield serializers.serialize(
-        object.updatedAt,
-        specifiedType: const FullType(DateTime),
+        object.rating,
+        specifiedType: const FullType.nullable(double),
+      );
+    }
+    if (object.distanceM != null) {
+      yield r'distance_m';
+      yield serializers.serialize(
+        object.distanceM,
+        specifiedType: const FullType.nullable(double),
+      );
+    }
+    yield r'location';
+    yield serializers.serialize(
+      object.location,
+      specifiedType: const FullType(LatLng),
+    );
+    if (object.heading != null) {
+      yield r'heading';
+      yield serializers.serialize(
+        object.heading,
+        specifiedType: const FullType.nullable(double),
       );
     }
   }
@@ -122,33 +172,71 @@ class _$NearbyDriverSerializer implements PrimitiveSerializer<NearbyDriver> {
           ) as String;
           result.id = valueDes;
           break;
-        case r'provider':
+        case r'name':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(NearbyDriverProviderEnum),
-          ) as NearbyDriverProviderEnum;
-          result.provider = valueDes;
+            specifiedType: const FullType(String),
+          ) as String;
+          result.name = valueDes;
           break;
-        case r'config_fields':
+        case r'vehicle_make':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltMap, [FullType(String), FullType(String)]),
-          ) as BuiltMap<String, String>;
-          result.configFields.replace(valueDes);
+            specifiedType: const FullType(String),
+          ) as String;
+          result.vehicleMake = valueDes;
           break;
-        case r'is_active':
+        case r'vehicle_model':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(bool),
-          ) as bool;
-          result.isActive = valueDes;
+            specifiedType: const FullType(String),
+          ) as String;
+          result.vehicleModel = valueDes;
           break;
-        case r'updated_at':
+        case r'vehicle_plate':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(DateTime),
-          ) as DateTime;
-          result.updatedAt = valueDes;
+            specifiedType: const FullType(String),
+          ) as String;
+          result.vehiclePlate = valueDes;
+          break;
+        case r'vehicle_type':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(NearbyDriverVehicleTypeEnum),
+          ) as NearbyDriverVehicleTypeEnum;
+          result.vehicleType = valueDes;
+          break;
+        case r'rating':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(double),
+          ) as double?;
+          if (valueDes == null) continue;
+          result.rating = valueDes;
+          break;
+        case r'distance_m':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(double),
+          ) as double?;
+          if (valueDes == null) continue;
+          result.distanceM = valueDes;
+          break;
+        case r'location':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LatLng),
+          ) as LatLng;
+          result.location.replace(valueDes);
+          break;
+        case r'heading':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(double),
+          ) as double?;
+          if (valueDes == null) continue;
+          result.heading = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -179,22 +267,20 @@ class _$NearbyDriverSerializer implements PrimitiveSerializer<NearbyDriver> {
   }
 }
 
-class NearbyDriverProviderEnum extends EnumClass {
+class NearbyDriverVehicleTypeEnum extends EnumClass {
 
-  @BuiltValueEnumConst(wireName: r'gcash')
-  static const NearbyDriverProviderEnum gcash = _$nearbyDriverProviderEnum_gcash;
-  @BuiltValueEnumConst(wireName: r'paymaya')
-  static const NearbyDriverProviderEnum paymaya = _$nearbyDriverProviderEnum_paymaya;
-  @BuiltValueEnumConst(wireName: r'card')
-  static const NearbyDriverProviderEnum card = _$nearbyDriverProviderEnum_card;
-  @BuiltValueEnumConst(wireName: r'cash')
-  static const NearbyDriverProviderEnum cash = _$nearbyDriverProviderEnum_cash;
+  @BuiltValueEnumConst(wireName: r'motorcycle')
+  static const NearbyDriverVehicleTypeEnum motorcycle = _$nearbyDriverVehicleTypeEnum_motorcycle;
+  @BuiltValueEnumConst(wireName: r'car')
+  static const NearbyDriverVehicleTypeEnum car = _$nearbyDriverVehicleTypeEnum_car;
+  @BuiltValueEnumConst(wireName: r'tricycle')
+  static const NearbyDriverVehicleTypeEnum tricycle = _$nearbyDriverVehicleTypeEnum_tricycle;
 
-  static Serializer<NearbyDriverProviderEnum> get serializer => _$nearbyDriverProviderEnumSerializer;
+  static Serializer<NearbyDriverVehicleTypeEnum> get serializer => _$nearbyDriverVehicleTypeEnumSerializer;
 
-  const NearbyDriverProviderEnum._(String name): super(name);
+  const NearbyDriverVehicleTypeEnum._(String name): super(name);
 
-  static BuiltSet<NearbyDriverProviderEnum> get values => _$nearbyDriverProviderEnumValues;
-  static NearbyDriverProviderEnum valueOf(String name) => _$nearbyDriverProviderEnumValueOf(name);
+  static BuiltSet<NearbyDriverVehicleTypeEnum> get values => _$nearbyDriverVehicleTypeEnumValues;
+  static NearbyDriverVehicleTypeEnum valueOf(String name) => _$nearbyDriverVehicleTypeEnumValueOf(name);
 }
 
