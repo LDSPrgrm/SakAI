@@ -300,6 +300,7 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _showCancelDialog(
     BuildContext context,
     CancelledRideViewModel vm,
@@ -327,11 +328,12 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
                     ),
                     SizedBox(height: tokens.spaceMd),
                     ...vm.reasonOptions.map((reason) {
-                      final isSelected = selectedReason == reason;
                       return RadioListTile<CancellationReason>(
                         title: Text(reason.label),
                         value: reason,
+                        // ignore: deprecated_member_use
                         groupValue: selectedReason,
+                        // ignore: deprecated_member_use
                         onChanged: (value) {
                           setDialogState(() {
                             selectedReason = value;

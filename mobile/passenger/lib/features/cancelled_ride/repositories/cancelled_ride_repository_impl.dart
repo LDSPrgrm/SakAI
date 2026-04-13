@@ -46,6 +46,7 @@ class CancelledRideRepositoryImpl implements CancelledRideRepository {
         '/rides/$rideId/cancel',
         data: <String, dynamic>{
           'reason_code': reasonCode,
+          // ignore: use_null_aware_elements
           if (reasonText != null) 'reason_text': reasonText,
         },
       );

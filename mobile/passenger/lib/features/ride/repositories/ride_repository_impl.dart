@@ -181,6 +181,7 @@ class RideRepositoryImpl implements RideRepository {
         '/rides/$rideId/cancel',
         data: <String, dynamic>{
           'reason_code': reasonCode,
+          // ignore: use_null_aware_elements
           if (reasonText != null) 'reason_text': reasonText,
         },
       );
@@ -222,6 +223,7 @@ class RideRepositoryImpl implements RideRepository {
 
   /// Manually parses a raw JSON map into a [RideResponse] when the
   /// generated client fails to deserialize 2xx responses.
+  // ignore: unused_element
   RideResponse _parseRideResponse(Map<String, dynamic> json) {
     return $RideResponse((b) {
       b.id = json['id'] as String;

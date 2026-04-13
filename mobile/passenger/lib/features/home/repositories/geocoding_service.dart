@@ -236,7 +236,10 @@ class GeocodingService {
         return [];
       }
 
-      return (results as List).map((r) => r['display_name'] as String).toList();
+      // ignore: unnecessary_cast
+      return (results as List<dynamic>)
+          .map((r) => r['display_name'] as String)
+          .toList();
     } catch (e) {
       debugPrint('[GEOCODE] Nominatim suggestions error: $e');
       return [];

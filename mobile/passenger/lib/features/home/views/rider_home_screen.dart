@@ -148,6 +148,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     });
   }
 
+  // ignore: unused_element
   ServiceArea? _getNearestAreaBias(LatLng? currentLoc) {
     if (_serviceAreas.isEmpty) return null;
     if (currentLoc == null) return _serviceAreas.first;
@@ -165,6 +166,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return nearest;
   }
 
+  // ignore: unused_element
   bool _isInsideArea(LatLng? loc, ServiceArea area) {
     if (loc == null) return false;
     return _calculateDistance(loc, area.center) <= area.radius;
@@ -831,6 +833,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildRecentItem(
     IconData icon,
     String title,
@@ -1121,6 +1124,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     notifier.requestRide();
   }
 
+  // ignore: unused_element
   Widget _buildRideOption(
     String name,
     String type,

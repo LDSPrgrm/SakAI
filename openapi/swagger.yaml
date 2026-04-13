@@ -4353,17 +4353,17 @@ components:
             $ref: "#/components/schemas/NearbyDriver"
       example:
         drivers:
-          - id: "driver-1"
+          - id: "550e8400-e29b-41d4-a716-446655440001"
             name: "Juan"
             location: { lat: 16.608, lng: 120.269 }
             heading: 45.0
             vehicle_type: "motorcycle"
-          - id: "driver-2"
+          - id: "550e8400-e29b-41d4-a716-446655440002"
             name: "Pedro"
             location: { lat: 16.612, lng: 120.272 }
             heading: 180.0
             vehicle_type: "car"
-          - id: "driver-3"
+          - id: "550e8400-e29b-41d4-a716-446655440003"
             name: "Maria"
             location: { lat: 16.605, lng: 120.262 }
             heading: 270.0
