@@ -14,24 +14,41 @@ import 'package:built_value/iso_8601_date_time_serializer.dart';
 import 'package:sakai_api_client/src/date_serializer.dart';
 import 'package:sakai_api_client/src/model/date.dart';
 
+import 'package:sakai_api_client/src/model/add_payment_method_request.dart';
+import 'package:sakai_api_client/src/model/add_ride_tip_request.dart';
+import 'package:sakai_api_client/src/model/admin_batch_approve_payouts200_response.dart';
+import 'package:sakai_api_client/src/model/admin_batch_kyc200_response.dart';
 import 'package:sakai_api_client/src/model/admin_export_report200_response.dart';
 import 'package:sakai_api_client/src/model/admin_fares_response.dart';
+import 'package:sakai_api_client/src/model/admin_ride_item.dart';
+import 'package:sakai_api_client/src/model/admin_ride_list_response.dart';
 import 'package:sakai_api_client/src/model/admin_update_feature_flag_request.dart';
 import 'package:sakai_api_client/src/model/admin_update_kyc_status_request.dart';
 import 'package:sakai_api_client/src/model/admin_update_notification_template_request.dart';
+import 'package:sakai_api_client/src/model/admin_user.dart';
+import 'package:sakai_api_client/src/model/admin_user_list_response.dart';
 import 'package:sakai_api_client/src/model/audit_log.dart';
 import 'package:sakai_api_client/src/model/audit_log_response.dart';
 import 'package:sakai_api_client/src/model/auth_response.dart';
+import 'package:sakai_api_client/src/model/batch_approve_request.dart';
 import 'package:sakai_api_client/src/model/blackout_hour.dart';
 import 'package:sakai_api_client/src/model/cancel_request.dart';
+import 'package:sakai_api_client/src/model/card_details.dart';
+import 'package:sakai_api_client/src/model/change_password_request.dart';
 import 'package:sakai_api_client/src/model/commission_config.dart';
 import 'package:sakai_api_client/src/model/commission_config_rates.dart';
+import 'package:sakai_api_client/src/model/compliance_data.dart';
 import 'package:sakai_api_client/src/model/create_admin_request.dart';
+import 'package:sakai_api_client/src/model/create_role_request.dart';
 import 'package:sakai_api_client/src/model/dashboard_response.dart';
+import 'package:sakai_api_client/src/model/document_type.dart';
+import 'package:sakai_api_client/src/model/driver_document_response.dart';
+import 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
 import 'package:sakai_api_client/src/model/driver_payout.dart';
 import 'package:sakai_api_client/src/model/driver_status_request.dart';
 import 'package:sakai_api_client/src/model/driver_status_response.dart';
 import 'package:sakai_api_client/src/model/driver_summary.dart';
+import 'package:sakai_api_client/src/model/e_wallet_details.dart';
 import 'package:sakai_api_client/src/model/error_code.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
 import 'package:sakai_api_client/src/model/fare_config.dart';
@@ -41,29 +58,60 @@ import 'package:sakai_api_client/src/model/feature_flag.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection_features_inner.dart';
 import 'package:sakai_api_client/src/model/geo_json_feature_collection_features_inner_geometry.dart';
+import 'package:sakai_api_client/src/model/get_nearby_drivers200_response.dart';
 import 'package:sakai_api_client/src/model/health_response.dart';
 import 'package:sakai_api_client/src/model/health_response_dependencies.dart';
 import 'package:sakai_api_client/src/model/incident.dart';
 import 'package:sakai_api_client/src/model/incident_resolve_request.dart';
 import 'package:sakai_api_client/src/model/integration.dart';
+import 'package:sakai_api_client/src/model/integration_test_result.dart';
+import 'package:sakai_api_client/src/model/kyc_batch_request.dart';
 import 'package:sakai_api_client/src/model/kyc_entry.dart';
 import 'package:sakai_api_client/src/model/lat_lng.dart';
 import 'package:sakai_api_client/src/model/location_update_request.dart';
 import 'package:sakai_api_client/src/model/login_request.dart';
 import 'package:sakai_api_client/src/model/logout_request.dart';
+import 'package:sakai_api_client/src/model/metric_response.dart';
+import 'package:sakai_api_client/src/model/nearby_driver.dart';
+import 'package:sakai_api_client/src/model/nearby_drivers_response.dart';
 import 'package:sakai_api_client/src/model/notification_template.dart';
+import 'package:sakai_api_client/src/model/pagination_meta.dart';
+import 'package:sakai_api_client/src/model/payment_failure_response.dart';
+import 'package:sakai_api_client/src/model/payment_gateway_config.dart';
+import 'package:sakai_api_client/src/model/payment_method.dart';
+import 'package:sakai_api_client/src/model/payment_method_details.dart';
+import 'package:sakai_api_client/src/model/payment_method_list_response.dart';
+import 'package:sakai_api_client/src/model/payment_method_type.dart';
+import 'package:sakai_api_client/src/model/payment_process_request.dart';
+import 'package:sakai_api_client/src/model/payment_response.dart';
+import 'package:sakai_api_client/src/model/payment_status.dart';
 import 'package:sakai_api_client/src/model/payment_summary.dart';
+import 'package:sakai_api_client/src/model/rating_response.dart';
+import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/refresh_request.dart';
 import 'package:sakai_api_client/src/model/register_request.dart';
 import 'package:sakai_api_client/src/model/report_definition.dart';
+import 'package:sakai_api_client/src/model/ride_event_payload.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 import 'package:sakai_api_client/src/model/ride_status.dart';
+import 'package:sakai_api_client/src/model/role.dart';
+import 'package:sakai_api_client/src/model/role_permission.dart';
+import 'package:sakai_api_client/src/model/service_area.dart';
+import 'package:sakai_api_client/src/model/service_area_response.dart';
+import 'package:sakai_api_client/src/model/submit_rating_request.dart';
 import 'package:sakai_api_client/src/model/surge_config.dart';
 import 'package:sakai_api_client/src/model/system_service.dart';
+import 'package:sakai_api_client/src/model/tip_response.dart';
 import 'package:sakai_api_client/src/model/transaction.dart';
 import 'package:sakai_api_client/src/model/update_admin_status_request.dart';
+import 'package:sakai_api_client/src/model/update_payment_config_request.dart';
+import 'package:sakai_api_client/src/model/update_role_request.dart';
+import 'package:sakai_api_client/src/model/upload_status.dart';
 import 'package:sakai_api_client/src/model/user_profile.dart';
+import 'package:sakai_api_client/src/model/user_rating_response.dart';
+import 'package:sakai_api_client/src/model/user_ride_item.dart';
+import 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 import 'package:sakai_api_client/src/model/vehicle_info.dart';
 import 'package:sakai_api_client/src/model/ws_envelope.dart';
 import 'package:sakai_api_client/src/model/ws_event_driver_location_updated.dart';
@@ -78,24 +126,41 @@ import 'package:sakai_api_client/src/model/ws_event_ride_status_changed.dart';
 part 'serializers.g.dart';
 
 @SerializersFor([
+  AddPaymentMethodRequest,
+  AddRideTipRequest,
+  AdminBatchApprovePayouts200Response,
+  AdminBatchKyc200Response,
   AdminExportReport200Response,
   AdminFaresResponse,
+  AdminRideItem,
+  AdminRideListResponse,
   AdminUpdateFeatureFlagRequest,
   AdminUpdateKycStatusRequest,
   AdminUpdateNotificationTemplateRequest,
+  AdminUser,
+  AdminUserListResponse,
   AuditLog,
   AuditLogResponse,
   AuthResponse,
+  BatchApproveRequest,
   BlackoutHour,
   CancelRequest,
+  CardDetails,
+  ChangePasswordRequest,
   CommissionConfig,
   CommissionConfigRates,
+  ComplianceData,
   CreateAdminRequest,
+  CreateRoleRequest,
   DashboardResponse,
+  DocumentType,
+  DriverDocumentResponse,
+  DriverDocumentsListResponse,
   DriverPayout,
   DriverStatusRequest,
   DriverStatusResponse,
   DriverSummary,
+  EWalletDetails,
   ErrorCode,
   ErrorResponse,
   FareConfig,
@@ -105,29 +170,60 @@ part 'serializers.g.dart';
   GeoJSONFeatureCollection,
   GeoJSONFeatureCollectionFeaturesInner,
   GeoJSONFeatureCollectionFeaturesInnerGeometry,
+  GetNearbyDrivers200Response,
   HealthResponse,
   HealthResponseDependencies,
   Incident,
   IncidentResolveRequest,
   Integration,
+  IntegrationTestResult,
+  KycBatchRequest,
   KycEntry,
   LatLng,
   LocationUpdateRequest,
   LoginRequest,
   LogoutRequest,
+  MetricResponse,
+  NearbyDriver,
+  NearbyDriversResponse,
   NotificationTemplate,
+  PaginationMeta,
+  PaymentFailureResponse,
+  PaymentGatewayConfig,
+  PaymentMethod,
+  PaymentMethodDetails,
+  PaymentMethodListResponse,
+  PaymentMethodType,
+  PaymentProcessRequest,
+  PaymentResponse,
+  PaymentStatus,
   PaymentSummary,
+  RatingResponse,
+  ReceiptResponse,
   RefreshRequest,
   RegisterRequest,
   ReportDefinition,
+  RideEventPayload,
   RideRequestBody,
-  RideResponse,
+  RideResponse,$RideResponse,
   RideStatus,
+  Role,
+  RolePermission,
+  ServiceArea,
+  ServiceAreaResponse,
+  SubmitRatingRequest,
   SurgeConfig,
   SystemService,
+  TipResponse,
   Transaction,
   UpdateAdminStatusRequest,
-  UserProfile,
+  UpdatePaymentConfigRequest,
+  UpdateRoleRequest,
+  UploadStatus,
+  UserProfile,$UserProfile,
+  UserRatingResponse,
+  UserRideItem,
+  UserRideListResponse,
   VehicleInfo,
   WsEnvelope,
   WsEventDriverLocationUpdated,
@@ -155,6 +251,18 @@ Serializers serializers = (_$serializers.toBuilder()
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(NotificationTemplate)]),
         () => ListBuilder<NotificationTemplate>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(RolePermission)]),
+        () => ListBuilder<RolePermission>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(PaymentGatewayConfig)]),
+        () => ListBuilder<PaymentGatewayConfig>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(Role)]),
+        () => ListBuilder<Role>(),
       )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(Incident)]),
@@ -192,6 +300,8 @@ Serializers serializers = (_$serializers.toBuilder()
         const FullType(BuiltList, [FullType(Integration)]),
         () => ListBuilder<Integration>(),
       )
+      ..add(RideResponse.serializer)
+      ..add(UserProfile.serializer)
       ..add(const OneOfSerializer())
       ..add(const AnyOfSerializer())
       ..add(const DateSerializer())

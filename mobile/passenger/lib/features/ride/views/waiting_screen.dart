@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/routes.dart';
 import '../view_models/waiting_view_model.dart';
 
 /// Waiting screen shown immediately after a successful POST /rides.
@@ -24,6 +28,11 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   late final WaitingViewModel _vm;
+  StreamSubscription<WsEvent>? _wsSub;
+
+  /// Guards against double-navigation when both the HTTP success callback
+  /// and the WebSocket `rideCancelled` event fire in quick succession.
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -38,6 +47,8 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
       rideId: widget.rideId,
     );
     _vm.addListener(_onVmChanged);
+
+    _setupWebSocketListener();
   }
 
   @override
@@ -45,21 +56,65 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     _vm.removeListener(_onVmChanged);
     _vm.dispose();
     _pulse.dispose();
+    _wsSub?.cancel();
     super.dispose();
   }
 
   /// React to ViewModel state changes — navigation and snack bars stay here.
   void _onVmChanged() {
+    debugPrint(
+      '[WaitingScreen] _onVmChanged: cancelled=${_vm.cancelled}, error=${_vm.errorMessage}, mounted=$mounted',
+    );
     if (_vm.cancelled && mounted) {
-      Navigator.of(context).pop();
+      _goToCancelled();
       return;
     }
     if (_vm.errorMessage != null && mounted) {
+      debugPrint('[WaitingScreen] showing SnackBar: ${_vm.errorMessage}');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_vm.errorMessage!)));
       _vm.clearError();
     }
+  }
+
+  /// Navigate to the cancelled-ride screen exactly once, regardless of whether
+  /// the trigger is the HTTP response or the WebSocket `rideCancelled` event.
+  void _goToCancelled() {
+    if (_navigating || !mounted) return;
+    _navigating = true;
+    debugPrint('[WaitingScreen] navigating to cancelled screen');
+    context.go('/ride/cancelled/${widget.rideId}');
+  }
+
+  /// Listen for WebSocket events to navigate when driver accepts.
+  void _setupWebSocketListener() {
+    final wsClient = ref.read(wsClientProvider);
+    _wsSub = wsClient.events.listen((event) {
+      if (!mounted) return;
+
+      if (event.type == WsEventNames.rideAccepted) {
+        // Driver accepted — navigate to active ride screen.
+        context.go(Routes.rideActive, extra: widget.rideId);
+      } else if (event.type == WsEventNames.rideOfferExpired) {
+        // No drivers available — go back to home.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No drivers available. Please try again.'),
+            ),
+          );
+          context.go(Routes.home);
+        }
+      } else if (event.type == WsEventNames.rideCancelled) {
+        // Server confirmed cancellation via WS.
+        debugPrint('[WaitingScreen] WS rideCancelled event received');
+        // Update the VM so the button disables immediately if navigation is slow.
+        _vm.onRideCancelledByServer();
+        // Trigger navigation helper.
+        _goToCancelled();
+      }
+    });
   }
 
   @override
@@ -142,7 +197,10 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
                 builder: (context, _) => SakaiSecondaryButton(
                   label: _vm.cancelling ? 'Cancelling…' : 'Cancel Ride',
                   icon: Icons.close,
-                  onPressed: _vm.cancelling ? null : _vm.cancel,
+                  // Disable while cancelling OR after success (before navigation fires).
+                  onPressed: (_vm.cancelling || _vm.cancelled)
+                      ? null
+                      : _vm.cancel,
                 ),
               ),
             ],

@@ -1,7 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/auth_exception.dart';
+import '../repositories/driver_auth_repository.dart';
 import '../../../app/providers.dart';
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
 
 class LoginState {
   const LoginState({
@@ -23,25 +29,40 @@ class LoginState {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Notifier
+// ---------------------------------------------------------------------------
+
 class LoginNotifier extends Notifier<LoginState> {
   @override
   LoginState build() => const LoginState();
 
+  DriverAuthRepository get _authRepo => ref.read(authRepositoryProvider);
+
   Future<void> signIn({required String email, required String password}) async {
     final trimmed = email.trim();
-    if (trimmed.isEmpty) {
-      state = const LoginState(errorMessage: 'Enter your email');
+    final validation = _validate(trimmed, password);
+    if (validation != null) {
+      state = LoginState(errorMessage: validation);
       return;
     }
-    if (password.isEmpty) {
-      state = const LoginState(errorMessage: 'Enter your password');
-      return;
-    }
+
     state = const LoginState(busy: true);
+
     try {
+      final session = await _authRepo.login(email: trimmed, password: password);
       await ref
-          .read(authRepositoryProvider)
-          .login(email: trimmed, password: password);
+          .read(tokenStorageProvider)
+          .save(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            expiresAt: session.accessTokenExpiresAt,
+          );
+      ref.read(authStateProvider.notifier).markAuthenticated();
+
+      // Connect WebSocket for real-time ride updates.
+      await ref.read(wsConnectionProvider).connectIfAuthenticated();
+
       state = const LoginState(succeeded: true);
     } on AuthException catch (e) {
       state = LoginState(errorMessage: e.userMessage);
@@ -74,6 +95,14 @@ class LoginNotifier extends Notifier<LoginState> {
     if (state.errorMessage != null) {
       state = state.copyWith(errorMessage: null);
     }
+  }
+
+  String? _validate(String email, String password) {
+    if (email.isEmpty) return 'Enter your email';
+    if (!email.contains('@')) return 'Enter a valid email';
+    if (password.isEmpty) return 'Enter your password';
+    if (password.length < 6) return 'Password must be at least 6 characters';
+    return null;
   }
 }
 

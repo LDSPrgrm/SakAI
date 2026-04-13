@@ -25,15 +25,15 @@ class _$FareConfig extends FareConfig {
   factory _$FareConfig([void Function(FareConfigBuilder)? updates]) =>
       (FareConfigBuilder()..update(updates))._build();
 
-  _$FareConfig._({
-    this.vehicleType,
-    this.baseFare,
-    this.perKmRate,
-    this.perMinRate,
-    this.minimumFare,
-    this.bookingFee,
-    this.cancellationFee,
-  }) : super._();
+  _$FareConfig._(
+      {this.vehicleType,
+      this.baseFare,
+      this.perKmRate,
+      this.perMinRate,
+      this.minimumFare,
+      this.bookingFee,
+      this.cancellationFee})
+      : super._();
   @override
   FareConfig rebuild(void Function(FareConfigBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -147,8 +147,7 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
   FareConfig build() => _build();
 
   _$FareConfig _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$FareConfig._(
           vehicleType: vehicleType,
           baseFare: baseFare,

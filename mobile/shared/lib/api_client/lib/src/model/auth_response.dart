@@ -125,7 +125,7 @@ class _$AuthResponseSerializer implements PrimitiveSerializer<AuthResponse> {
             value,
             specifiedType: const FullType(UserProfile),
           ) as UserProfile;
-          result.user.replace(valueDes);
+          result.user = valueDes;
           break;
         default:
           unhandled.add(key);

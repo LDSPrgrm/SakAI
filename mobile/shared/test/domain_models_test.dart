@@ -16,7 +16,10 @@ void main() {
         code: ErrorCode.EMAIL_ALREADY_REGISTERED,
         message: 'email taken',
       );
-      expect(error.displayMessage, 'An account with this email already exists.');
+      expect(
+        error.displayMessage,
+        'An account with this email already exists.',
+      );
     });
 
     test('maps FORBIDDEN to user-friendly message', () {
@@ -24,7 +27,10 @@ void main() {
         code: ErrorCode.FORBIDDEN,
         message: 'not allowed',
       );
-      expect(error.displayMessage, 'You do not have permission to perform this action.');
+      expect(
+        error.displayMessage,
+        'You do not have permission to perform this action.',
+      );
     });
 
     test('maps NO_DRIVERS_AVAILABLE to user-friendly message', () {
@@ -32,7 +38,10 @@ void main() {
         code: ErrorCode.NO_DRIVERS_AVAILABLE,
         message: 'no drivers',
       );
-      expect(error.displayMessage, 'No drivers available right now. Please try again.');
+      expect(
+        error.displayMessage,
+        'No drivers available right now. Please try again.',
+      );
     });
 
     test('maps RATE_LIMIT_EXCEEDED to user-friendly message', () {
@@ -40,7 +49,10 @@ void main() {
         code: ErrorCode.RATE_LIMIT_EXCEEDED,
         message: 'slow down',
       );
-      expect(error.displayMessage, 'Too many requests. Please wait and try again.');
+      expect(
+        error.displayMessage,
+        'Too many requests. Please wait and try again.',
+      );
     });
 
     test('falls back to original message for unknown codes', () {
@@ -54,12 +66,14 @@ void main() {
 
   group('DomainUser', () {
     test('fromApi extracts fields from UserProfile', () {
-      final profile = UserProfile((b) => b
-        ..id = 'user-1'
-        ..name = 'Alice'
-        ..email = 'alice@test.com'
-        ..role = UserProfileRoleEnum.passenger
-        ..createdAt = DateTime.now());
+      final profile = $UserProfile(
+        (UserProfileBuilder b) => b
+          ..id = 'user-1'
+          ..name = 'Alice'
+          ..email = 'alice@test.com'
+          ..role = UserProfileRoleEnum.passenger
+          ..createdAt = DateTime.now(),
+      );
 
       final user = DomainUser.fromApi(profile);
 
@@ -70,12 +84,14 @@ void main() {
     });
 
     test('fromApi extracts driver role', () {
-      final profile = UserProfile((b) => b
-        ..id = 'user-2'
-        ..name = 'Bob'
-        ..email = 'bob@test.com'
-        ..role = UserProfileRoleEnum.driver
-        ..createdAt = DateTime.now());
+      final profile = $UserProfile(
+        (UserProfileBuilder b) => b
+          ..id = 'user-2'
+          ..name = 'Bob'
+          ..email = 'bob@test.com'
+          ..role = UserProfileRoleEnum.driver
+          ..createdAt = DateTime.now(),
+      );
 
       final user = DomainUser.fromApi(profile);
       expect(user.role, 'driver');

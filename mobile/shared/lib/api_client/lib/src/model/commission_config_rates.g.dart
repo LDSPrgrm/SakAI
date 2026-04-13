@@ -16,20 +16,17 @@ class _$CommissionConfigRates extends CommissionConfigRates {
   @override
   final num? other;
 
-  factory _$CommissionConfigRates([
-    void Function(CommissionConfigRatesBuilder)? updates,
-  ]) => (CommissionConfigRatesBuilder()..update(updates))._build();
+  factory _$CommissionConfigRates(
+          [void Function(CommissionConfigRatesBuilder)? updates]) =>
+      (CommissionConfigRatesBuilder()..update(updates))._build();
 
-  _$CommissionConfigRates._({
-    this.motorcycle,
-    this.tricycle,
-    this.car,
-    this.other,
-  }) : super._();
+  _$CommissionConfigRates._(
+      {this.motorcycle, this.tricycle, this.car, this.other})
+      : super._();
   @override
   CommissionConfigRates rebuild(
-    void Function(CommissionConfigRatesBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(CommissionConfigRatesBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   CommissionConfigRatesBuilder toBuilder() =>
@@ -117,8 +114,7 @@ class CommissionConfigRatesBuilder
   CommissionConfigRates build() => _build();
 
   _$CommissionConfigRates _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$CommissionConfigRates._(
           motorcycle: motorcycle,
           tricycle: tricycle,

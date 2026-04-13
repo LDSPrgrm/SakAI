@@ -7,14 +7,14 @@ part of 'ws_event_ride_cancelled.dart';
 // **************************************************************************
 
 const WsEventRideCancelledCancelledByEnum
-_$wsEventRideCancelledCancelledByEnum_passenger =
+    _$wsEventRideCancelledCancelledByEnum_passenger =
     const WsEventRideCancelledCancelledByEnum._('passenger');
 const WsEventRideCancelledCancelledByEnum
-_$wsEventRideCancelledCancelledByEnum_driver =
+    _$wsEventRideCancelledCancelledByEnum_driver =
     const WsEventRideCancelledCancelledByEnum._('driver');
 
 WsEventRideCancelledCancelledByEnum
-_$wsEventRideCancelledCancelledByEnumValueOf(String name) {
+    _$wsEventRideCancelledCancelledByEnumValueOf(String name) {
   switch (name) {
     case 'passenger':
       return _$wsEventRideCancelledCancelledByEnum_passenger;
@@ -26,16 +26,14 @@ _$wsEventRideCancelledCancelledByEnumValueOf(String name) {
 }
 
 final BuiltSet<WsEventRideCancelledCancelledByEnum>
-_$wsEventRideCancelledCancelledByEnumValues =
-    BuiltSet<WsEventRideCancelledCancelledByEnum>(
-      const <WsEventRideCancelledCancelledByEnum>[
-        _$wsEventRideCancelledCancelledByEnum_passenger,
-        _$wsEventRideCancelledCancelledByEnum_driver,
-      ],
-    );
+    _$wsEventRideCancelledCancelledByEnumValues = BuiltSet<
+        WsEventRideCancelledCancelledByEnum>(const <WsEventRideCancelledCancelledByEnum>[
+  _$wsEventRideCancelledCancelledByEnum_passenger,
+  _$wsEventRideCancelledCancelledByEnum_driver,
+]);
 
 Serializer<WsEventRideCancelledCancelledByEnum>
-_$wsEventRideCancelledCancelledByEnumSerializer =
+    _$wsEventRideCancelledCancelledByEnumSerializer =
     _$WsEventRideCancelledCancelledByEnumSerializer();
 
 class _$WsEventRideCancelledCancelledByEnumSerializer
@@ -51,26 +49,23 @@ class _$WsEventRideCancelledCancelledByEnumSerializer
 
   @override
   final Iterable<Type> types = const <Type>[
-    WsEventRideCancelledCancelledByEnum,
+    WsEventRideCancelledCancelledByEnum
   ];
   @override
   final String wireName = 'WsEventRideCancelledCancelledByEnum';
 
   @override
   Object serialize(
-    Serializers serializers,
-    WsEventRideCancelledCancelledByEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, WsEventRideCancelledCancelledByEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   WsEventRideCancelledCancelledByEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => WsEventRideCancelledCancelledByEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      WsEventRideCancelledCancelledByEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$WsEventRideCancelled extends WsEventRideCancelled {
@@ -81,19 +76,17 @@ class _$WsEventRideCancelled extends WsEventRideCancelled {
   @override
   final String? reason;
 
-  factory _$WsEventRideCancelled([
-    void Function(WsEventRideCancelledBuilder)? updates,
-  ]) => (WsEventRideCancelledBuilder()..update(updates))._build();
+  factory _$WsEventRideCancelled(
+          [void Function(WsEventRideCancelledBuilder)? updates]) =>
+      (WsEventRideCancelledBuilder()..update(updates))._build();
 
-  _$WsEventRideCancelled._({
-    required this.rideId,
-    required this.cancelledBy,
-    this.reason,
-  }) : super._();
+  _$WsEventRideCancelled._(
+      {required this.rideId, required this.cancelledBy, this.reason})
+      : super._();
   @override
   WsEventRideCancelled rebuild(
-    void Function(WsEventRideCancelledBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(WsEventRideCancelledBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideCancelledBuilder toBuilder() =>
@@ -174,19 +167,12 @@ class WsEventRideCancelledBuilder
   WsEventRideCancelled build() => _build();
 
   _$WsEventRideCancelled _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$WsEventRideCancelled._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-            rideId,
-            r'WsEventRideCancelled',
-            'rideId',
-          ),
+              rideId, r'WsEventRideCancelled', 'rideId'),
           cancelledBy: BuiltValueNullFieldError.checkNotNull(
-            cancelledBy,
-            r'WsEventRideCancelled',
-            'cancelledBy',
-          ),
+              cancelledBy, r'WsEventRideCancelled', 'cancelledBy'),
           reason: reason,
         );
     replace(_$result);

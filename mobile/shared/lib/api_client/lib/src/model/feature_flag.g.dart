@@ -20,7 +20,7 @@ class _$FeatureFlag extends FeatureFlag {
       (FeatureFlagBuilder()..update(updates))._build();
 
   _$FeatureFlag._({this.key, this.label, this.description, this.enabled})
-    : super._();
+      : super._();
   @override
   FeatureFlag rebuild(void Function(FeatureFlagBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -109,8 +109,7 @@ class FeatureFlagBuilder implements Builder<FeatureFlag, FeatureFlagBuilder> {
   FeatureFlag build() => _build();
 
   _$FeatureFlag _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$FeatureFlag._(
           key: key,
           label: label,

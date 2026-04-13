@@ -19,12 +19,12 @@ class _$AuthResponse extends AuthResponse {
   factory _$AuthResponse([void Function(AuthResponseBuilder)? updates]) =>
       (AuthResponseBuilder()..update(updates))._build();
 
-  _$AuthResponse._({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.accessTokenExpiresAt,
-    required this.user,
-  }) : super._();
+  _$AuthResponse._(
+      {required this.accessToken,
+      required this.refreshToken,
+      required this.accessTokenExpiresAt,
+      required this.user})
+      : super._();
   @override
   AuthResponse rebuild(void Function(AuthResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -81,9 +81,9 @@ class AuthResponseBuilder
   set accessTokenExpiresAt(DateTime? accessTokenExpiresAt) =>
       _$this._accessTokenExpiresAt = accessTokenExpiresAt;
 
-  UserProfileBuilder? _user;
-  UserProfileBuilder get user => _$this._user ??= UserProfileBuilder();
-  set user(UserProfileBuilder? user) => _$this._user = user;
+  UserProfile? _user;
+  UserProfile? get user => _$this._user;
+  set user(UserProfile? user) => _$this._user = user;
 
   AuthResponseBuilder() {
     AuthResponse._defaults(this);
@@ -95,7 +95,7 @@ class AuthResponseBuilder
       _accessToken = $v.accessToken;
       _refreshToken = $v.refreshToken;
       _accessTokenExpiresAt = $v.accessTokenExpiresAt;
-      _user = $v.user.toBuilder();
+      _user = $v.user;
       _$v = null;
     }
     return this;
@@ -115,42 +115,17 @@ class AuthResponseBuilder
   AuthResponse build() => _build();
 
   _$AuthResponse _build() {
-    _$AuthResponse _$result;
-    try {
-      _$result =
-          _$v ??
-          _$AuthResponse._(
-            accessToken: BuiltValueNullFieldError.checkNotNull(
-              accessToken,
-              r'AuthResponse',
-              'accessToken',
-            ),
-            refreshToken: BuiltValueNullFieldError.checkNotNull(
-              refreshToken,
-              r'AuthResponse',
-              'refreshToken',
-            ),
-            accessTokenExpiresAt: BuiltValueNullFieldError.checkNotNull(
-              accessTokenExpiresAt,
-              r'AuthResponse',
-              'accessTokenExpiresAt',
-            ),
-            user: user.build(),
-          );
-    } catch (_) {
-      late String _$failedField;
-      try {
-        _$failedField = 'user';
-        user.build();
-      } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'AuthResponse',
-          _$failedField,
-          e.toString(),
+    final _$result = _$v ??
+        _$AuthResponse._(
+          accessToken: BuiltValueNullFieldError.checkNotNull(
+              accessToken, r'AuthResponse', 'accessToken'),
+          refreshToken: BuiltValueNullFieldError.checkNotNull(
+              refreshToken, r'AuthResponse', 'refreshToken'),
+          accessTokenExpiresAt: BuiltValueNullFieldError.checkNotNull(
+              accessTokenExpiresAt, r'AuthResponse', 'accessTokenExpiresAt'),
+          user: BuiltValueNullFieldError.checkNotNull(
+              user, r'AuthResponse', 'user'),
         );
-      }
-      rethrow;
-    }
     replace(_$result);
     return _$result;
   }

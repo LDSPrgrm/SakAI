@@ -1,4 +1,5 @@
 import '../models/auth_session.dart';
+import '../models/session_check_result.dart';
 
 /// Domain boundary for driver authentication.
 abstract class DriverAuthRepository {
@@ -13,8 +14,12 @@ abstract class DriverAuthRepository {
     required String vehiclePlate,
     required String vehicleColor,
     required int vehicleYear,
+    required String vehicleType,
   });
 
-  /// Returns true if a valid session exists.
-  Future<bool> hasValidSession();
+  /// Checks whether a usable session exists.
+  Future<SessionCheckResult> checkSession();
+
+  /// Best-effort server-side token invalidation for explicit logout.
+  Future<void> logout({required String refreshToken});
 }

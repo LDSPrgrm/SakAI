@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:passenger/app/passenger_app.dart';
@@ -121,6 +122,8 @@ class _FakeRideRepository implements RideRepository {
     required RideLocation destination,
     String? notes,
     required String idempotencyKey,
+    VehicleType? rideType,
+    String? paymentMethod,
   }) async {
     return RideEntity(
       id: 'fake-ride',
@@ -136,7 +139,26 @@ class _FakeRideRepository implements RideRepository {
   Future<RideEntity?> getActiveRide() async => null;
 
   @override
-  Future<void> cancelRide(String rideId) async {}
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  }) async {}
+}
+
+class _FakeWsConnectionManager implements WsConnectionManager {
+  @override
+  Future<void> connectIfAuthenticated() async {
+    // No-op for tests
+  }
+
+  @override
+  Future<void> disconnect() async {
+    // No-op for tests
+  }
+
+  @override
+  bool get isConnected => false;
 }
 
 class _FakeOnboardingService implements OnboardingService {
@@ -168,6 +190,10 @@ void main() {
   late FakeTokenStorage tokenStorage;
   late _FakeOnboardingService onboardingService;
 
+  setUpAll(() async {
+    await dotenv.load(fileName: '.env');
+  });
+
   setUp(() {
     tokenStorage = FakeTokenStorage();
     authRepo = _FakeAuthRepository(tokenStorage);
@@ -183,6 +209,7 @@ void main() {
         rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
         onboardingServiceProvider.overrideWith((ref) => onboardingService),
         homeNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
+        wsConnectionProvider.overrideWithValue(_FakeWsConnectionManager()),
       ],
       child: const PassengerApp(),
     );

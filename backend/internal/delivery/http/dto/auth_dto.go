@@ -28,10 +28,11 @@ type CreateAdminRequest struct {
 
 // VehicleInput is the nested vehicle block in RegisterRequest.
 type VehicleInput struct {
-	Make  string `json:"make" binding:"required"`
-	Model string `json:"model" binding:"required"`
-	Color string `json:"color" binding:"required"`
-	Plate string `json:"plate" binding:"required"`
+	Make        string `json:"make" binding:"required"`
+	Model       string `json:"model" binding:"required"`
+	Color       string `json:"color" binding:"required"`
+	Plate       string `json:"plate" binding:"required"`
+	VehicleType string `json:"vehicle_type" binding:"required,oneof=motorcycle car tricycle"`
 }
 
 // ToDomainVehicle converts the input DTO to a domain value.
@@ -39,7 +40,13 @@ func (v *VehicleInput) ToDomainVehicle() *domain.Vehicle {
 	if v == nil {
 		return nil
 	}
-	return &domain.Vehicle{Make: v.Make, Model: v.Model, Color: v.Color, Plate: v.Plate}
+	return &domain.Vehicle{
+		Make:        v.Make,
+		Model:       v.Model,
+		Color:       v.Color,
+		Plate:       v.Plate,
+		VehicleType: domain.VehicleType(v.VehicleType),
+	}
 }
 
 // LoginRequest is the body for POST /auth/login.

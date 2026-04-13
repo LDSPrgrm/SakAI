@@ -85,3 +85,27 @@ class RideEntity {
     );
   }
 }
+
+enum PaymentMethod { cash, card }
+
+extension PaymentMethodExtension on PaymentMethod {
+  String get displayName {
+    switch (this) {
+      case PaymentMethod.cash:
+        return 'Cash';
+      case PaymentMethod.card:
+        return 'Card';
+    }
+  }
+
+  static PaymentMethod fromApi(String value) {
+    switch (value.toLowerCase()) {
+      case 'cash':
+        return PaymentMethod.cash;
+      case 'card':
+        return PaymentMethod.card;
+      default:
+        return PaymentMethod.cash;
+    }
+  }
+}

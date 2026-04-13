@@ -12,8 +12,7 @@ const DriverStatusResponseStatusEnum _$driverStatusResponseStatusEnum_offline =
     const DriverStatusResponseStatusEnum._('offline');
 
 DriverStatusResponseStatusEnum _$driverStatusResponseStatusEnumValueOf(
-  String name,
-) {
+    String name) {
   switch (name) {
     case 'online':
       return _$driverStatusResponseStatusEnum_online;
@@ -25,16 +24,14 @@ DriverStatusResponseStatusEnum _$driverStatusResponseStatusEnumValueOf(
 }
 
 final BuiltSet<DriverStatusResponseStatusEnum>
-_$driverStatusResponseStatusEnumValues =
-    BuiltSet<DriverStatusResponseStatusEnum>(
-      const <DriverStatusResponseStatusEnum>[
-        _$driverStatusResponseStatusEnum_online,
-        _$driverStatusResponseStatusEnum_offline,
-      ],
-    );
+    _$driverStatusResponseStatusEnumValues = BuiltSet<
+        DriverStatusResponseStatusEnum>(const <DriverStatusResponseStatusEnum>[
+  _$driverStatusResponseStatusEnum_online,
+  _$driverStatusResponseStatusEnum_offline,
+]);
 
 Serializer<DriverStatusResponseStatusEnum>
-_$driverStatusResponseStatusEnumSerializer =
+    _$driverStatusResponseStatusEnumSerializer =
     _$DriverStatusResponseStatusEnumSerializer();
 
 class _$DriverStatusResponseStatusEnumSerializer
@@ -55,19 +52,16 @@ class _$DriverStatusResponseStatusEnumSerializer
 
   @override
   Object serialize(
-    Serializers serializers,
-    DriverStatusResponseStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+          Serializers serializers, DriverStatusResponseStatusEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   DriverStatusResponseStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => DriverStatusResponseStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      DriverStatusResponseStatusEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$DriverStatusResponse extends DriverStatusResponse {
@@ -78,19 +72,17 @@ class _$DriverStatusResponse extends DriverStatusResponse {
   @override
   final DateTime updatedAt;
 
-  factory _$DriverStatusResponse([
-    void Function(DriverStatusResponseBuilder)? updates,
-  ]) => (DriverStatusResponseBuilder()..update(updates))._build();
+  factory _$DriverStatusResponse(
+          [void Function(DriverStatusResponseBuilder)? updates]) =>
+      (DriverStatusResponseBuilder()..update(updates))._build();
 
-  _$DriverStatusResponse._({
-    required this.driverId,
-    required this.status,
-    required this.updatedAt,
-  }) : super._();
+  _$DriverStatusResponse._(
+      {required this.driverId, required this.status, required this.updatedAt})
+      : super._();
   @override
   DriverStatusResponse rebuild(
-    void Function(DriverStatusResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(DriverStatusResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   DriverStatusResponseBuilder toBuilder() =>
@@ -170,24 +162,14 @@ class DriverStatusResponseBuilder
   DriverStatusResponse build() => _build();
 
   _$DriverStatusResponse _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$DriverStatusResponse._(
           driverId: BuiltValueNullFieldError.checkNotNull(
-            driverId,
-            r'DriverStatusResponse',
-            'driverId',
-          ),
+              driverId, r'DriverStatusResponse', 'driverId'),
           status: BuiltValueNullFieldError.checkNotNull(
-            status,
-            r'DriverStatusResponse',
-            'status',
-          ),
+              status, r'DriverStatusResponse', 'status'),
           updatedAt: BuiltValueNullFieldError.checkNotNull(
-            updatedAt,
-            r'DriverStatusResponse',
-            'updatedAt',
-          ),
+              updatedAt, r'DriverStatusResponse', 'updatedAt'),
         );
     replace(_$result);
     return _$result;

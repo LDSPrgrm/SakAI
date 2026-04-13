@@ -26,6 +26,29 @@ var errorCodeMap = []struct {
 	{domain.ErrNoDriversAvailable, http.StatusServiceUnavailable, "NO_DRIVERS_AVAILABLE"},
 	{domain.ErrForbidden, http.StatusForbidden, "FORBIDDEN"},
 	{domain.ErrCannotGoOffline, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
+	// Document errors
+	{domain.ErrInvalidDocumentType, http.StatusBadRequest, "INVALID_DOCUMENT_TYPE"},
+	{domain.ErrFileTooLarge, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE"},
+	{domain.ErrInvalidFileFormat, http.StatusUnprocessableEntity, "INVALID_FILE_FORMAT"},
+	// Rating errors
+	{domain.ErrInvalidRating, http.StatusBadRequest, "INVALID_RATING"},
+	{domain.ErrFeedbackTooLong, http.StatusBadRequest, "FEEDBACK_TOO_LONG"},
+	{domain.ErrAlreadyRated, http.StatusConflict, "ALREADY_RATED"},
+	{domain.ErrRideNotCompleted, http.StatusUnprocessableEntity, "RIDE_NOT_COMPLETED"},
+	// Payment errors
+	{domain.ErrPaymentFailed, http.StatusPaymentRequired, "PAYMENT_FAILED"},
+	{domain.ErrInvalidPaymentToken, http.StatusBadRequest, "INVALID_PAYMENT_TOKEN"},
+	{domain.ErrDuplicatePayment, http.StatusConflict, "DUPLICATE_PAYMENT"},
+	{domain.ErrIdempotencyConflict, http.StatusConflict, "DUPLICATE_PAYMENT"},
+	// Tip errors
+	{domain.ErrInvalidTipAmount, http.StatusBadRequest, "INVALID_TIP_AMOUNT"},
+	{domain.ErrTipAlreadyAdded, http.StatusConflict, "TIP_ALREADY_ADDED"},
+	// Payment method errors
+	{domain.ErrPaymentMethodUnsupported, http.StatusBadRequest, "PAYMENT_METHOD_UNSUPPORTED"},
+	{domain.ErrPaymentMethodDuplicate, http.StatusConflict, "PAYMENT_METHOD_DUPLICATE"},
+	{domain.ErrPaymentGatewayError, http.StatusBadGateway, "PAYMENT_GATEWAY_ERROR"},
+	{domain.ErrPaymentMethodNotFound, http.StatusNotFound, "PAYMENT_METHOD_NOT_FOUND"},
+	{domain.ErrPaymentMethodLastMethod, http.StatusConflict, "PAYMENT_METHOD_LAST_METHOD"},
 }
 
 // respondError writes a structured error response mapped from the domain error.

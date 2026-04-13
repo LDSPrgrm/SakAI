@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'token_storage.dart';
 
 /// Dio interceptor that injects the Bearer token from [TokenStorage].
@@ -21,6 +22,11 @@ class AuthInterceptor extends Interceptor {
     final token = await _storage.getAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
+      debugPrint(
+        '[AuthInterceptor] Injected Bearer token for: ${options.path}',
+      );
+    } else {
+      debugPrint('[AuthInterceptor] NO token found for: ${options.path}');
     }
     handler.next(options);
   }

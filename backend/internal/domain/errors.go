@@ -18,4 +18,30 @@ var (
 	ErrForbidden              = errors.New("forbidden")
 	ErrCannotGoOffline        = errors.New("cannot go offline while ride is in progress")
 	ErrIdempotencyConflict    = errors.New("idempotency key already used")
+	// Document upload errors
+	ErrInvalidDocumentType = errors.New("invalid document type")
+	ErrFileTooLarge        = errors.New("file too large")
+	ErrInvalidFileFormat   = errors.New("invalid file format")
+	// Rating errors
+	ErrInvalidRating    = errors.New("invalid rating")
+	ErrFeedbackTooLong  = errors.New("feedback too long")
+	ErrAlreadyRated     = errors.New("already rated")
+	ErrRideNotCompleted = errors.New("ride not completed")
+	// Payment errors
+	ErrPaymentFailed        = errors.New("payment failed")
+	ErrInvalidPaymentToken  = errors.New("invalid payment token")
+	ErrDuplicatePayment     = errors.New("duplicate payment")
+	// Tip errors
+	ErrInvalidTipAmount    = errors.New("invalid tip amount")
+	ErrTipAlreadyAdded     = errors.New("tip already added")
+	// Payment method errors
+	ErrPaymentMethodUnsupported = errors.New("unsupported payment method")
+	ErrPaymentMethodDuplicate   = errors.New("duplicate payment method")
+	ErrPaymentGatewayError      = errors.New("payment gateway error")
+	ErrPaymentMethodNotFound    = errors.New("payment method not found")
+	ErrPaymentMethodLastMethod  = errors.New("cannot remove last payment method")
+	// Ride type errors
+	ErrInvalidRideType = errors.New("invalid ride type: must be motorcycle, car, or tricycle")
+	// Tip errors (additional)
+	ErrTipExceedsLimit = errors.New("tip exceeds 50% of base fare")
 )

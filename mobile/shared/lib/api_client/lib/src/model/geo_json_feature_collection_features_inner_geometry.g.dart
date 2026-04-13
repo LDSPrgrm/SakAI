@@ -7,16 +7,16 @@ part of 'geo_json_feature_collection_features_inner_geometry.dart';
 // **************************************************************************
 
 const GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum
-_$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_polygon =
+    _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_polygon =
     const GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum._('polygon');
 const GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum
-_$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_multiPolygon =
+    _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_multiPolygon =
     const GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum._(
-      'multiPolygon',
-    );
+        'multiPolygon');
 
 GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum
-_$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumValueOf(String name) {
+    _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumValueOf(
+        String name) {
   switch (name) {
     case 'polygon':
       return _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_polygon;
@@ -28,23 +28,20 @@ _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumValueOf(String name) {
 }
 
 final BuiltSet<GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>
-_$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumValues =
-    BuiltSet<GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>(
-      const <GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>[
-        _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_polygon,
-        _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_multiPolygon,
-      ],
-    );
+    _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumValues = BuiltSet<
+        GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>(const <GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>[
+  _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_polygon,
+  _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum_multiPolygon,
+]);
 
 Serializer<GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum>
-_$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumSerializer =
+    _$geoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumSerializer =
     _$GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumSerializer();
 
 class _$GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumSerializer
     implements
         PrimitiveSerializer<
-          GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum
-        > {
+            GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'polygon': 'Polygon',
     'multiPolygon': 'MultiPolygon',
@@ -56,27 +53,24 @@ class _$GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnumSerializer
 
   @override
   final Iterable<Type> types = const <Type>[
-    GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum,
+    GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum
   ];
   @override
   final String wireName =
       'GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers,
+          GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$GeoJSONFeatureCollectionFeaturesInnerGeometry
@@ -86,21 +80,20 @@ class _$GeoJSONFeatureCollectionFeaturesInnerGeometry
   @override
   final BuiltList<BuiltList<BuiltList<num>>> coordinates;
 
-  factory _$GeoJSONFeatureCollectionFeaturesInnerGeometry([
-    void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder)?
-    updates,
-  ]) =>
+  factory _$GeoJSONFeatureCollectionFeaturesInnerGeometry(
+          [void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder)?
+              updates]) =>
       (GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder()..update(updates))
           ._build();
 
-  _$GeoJSONFeatureCollectionFeaturesInnerGeometry._({
-    required this.type,
-    required this.coordinates,
-  }) : super._();
+  _$GeoJSONFeatureCollectionFeaturesInnerGeometry._(
+      {required this.type, required this.coordinates})
+      : super._();
   @override
   GeoJSONFeatureCollectionFeaturesInnerGeometry rebuild(
-    void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder)
+              updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder toBuilder() =>
@@ -126,8 +119,7 @@ class _$GeoJSONFeatureCollectionFeaturesInnerGeometry
   @override
   String toString() {
     return (newBuiltValueToStringHelper(
-            r'GeoJSONFeatureCollectionFeaturesInnerGeometry',
-          )
+            r'GeoJSONFeatureCollectionFeaturesInnerGeometry')
           ..add('type', type)
           ..add('coordinates', coordinates))
         .toString();
@@ -136,10 +128,8 @@ class _$GeoJSONFeatureCollectionFeaturesInnerGeometry
 
 class GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder
     implements
-        Builder<
-          GeoJSONFeatureCollectionFeaturesInnerGeometry,
-          GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder
-        > {
+        Builder<GeoJSONFeatureCollectionFeaturesInnerGeometry,
+            GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder> {
   _$GeoJSONFeatureCollectionFeaturesInnerGeometry? _$v;
 
   GeoJSONFeatureCollectionFeaturesInnerGeometryTypeEnum? _type;
@@ -175,9 +165,8 @@ class GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder
 
   @override
   void update(
-    void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder)?
-    updates,
-  ) {
+      void Function(GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder)?
+          updates) {
     if (updates != null) updates(this);
   }
 
@@ -187,14 +176,10 @@ class GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder
   _$GeoJSONFeatureCollectionFeaturesInnerGeometry _build() {
     _$GeoJSONFeatureCollectionFeaturesInnerGeometry _$result;
     try {
-      _$result =
-          _$v ??
+      _$result = _$v ??
           _$GeoJSONFeatureCollectionFeaturesInnerGeometry._(
             type: BuiltValueNullFieldError.checkNotNull(
-              type,
-              r'GeoJSONFeatureCollectionFeaturesInnerGeometry',
-              'type',
-            ),
+                type, r'GeoJSONFeatureCollectionFeaturesInnerGeometry', 'type'),
             coordinates: coordinates.build(),
           );
     } catch (_) {
@@ -204,10 +189,9 @@ class GeoJSONFeatureCollectionFeaturesInnerGeometryBuilder
         coordinates.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-          r'GeoJSONFeatureCollectionFeaturesInnerGeometry',
-          _$failedField,
-          e.toString(),
-        );
+            r'GeoJSONFeatureCollectionFeaturesInnerGeometry',
+            _$failedField,
+            e.toString());
       }
       rethrow;
     }

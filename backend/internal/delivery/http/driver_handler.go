@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -42,8 +44,10 @@ func (h *DriverHandler) UpdateLocation(c *gin.Context) {
 		return
 	}
 	driverID := c.MustGet("userID").(uuid.UUID)
+	log.Printf("[DRIVER_HANDLER] UpdateLocation: driverID=%s, loc=(%.5f, %.5f)", driverID, req.Location.Lat, req.Location.Lng)
 	loc := req.ToDomainDriverLocation()
 	if err := h.uc.UpdateLocation(c.Request.Context(), driverID, loc); err != nil {
+		log.Printf("[DRIVER_HANDLER] UpdateLocation error: %v", err)
 		respondError(c, err)
 		return
 	}
@@ -66,5 +70,30 @@ func (h *DriverHandler) GetIncomingRide(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondOK(c, dto.NewRideResponse(ride))
+	respondOK(c, dto.NewRideResponse(ride, nil))
+}
+
+// GetNearbyDrivers handles GET /drivers/nearby?lat=...&lng=...&radius=...&ride_type=...
+func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
+	lat, err := strconv.ParseFloat(c.Query("lat"), 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "lat is required"})
+		return
+	}
+	lng, err := strconv.ParseFloat(c.Query("lng"), 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "lng is required"})
+		return
+	}
+	radius, _ := strconv.ParseFloat(c.DefaultQuery("radius", "5000"), 64)
+	rideTypeStr := c.DefaultQuery("ride_type", "car")
+	rideType := domain.RideType(rideTypeStr)
+
+	drivers, err := h.uc.GetNearbyDrivers(c.Request.Context(), lat, lng, radius, rideType)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": drivers})
 }

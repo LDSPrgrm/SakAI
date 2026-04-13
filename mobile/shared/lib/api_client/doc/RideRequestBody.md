@@ -13,6 +13,8 @@ Name | Type | Description | Notes
 **originAddress** | **String** | Human-readable pickup address (for display only) | [optional] 
 **destinationAddress** | **String** | Human-readable dropoff address (for display only) | [optional] 
 **notes** | **String** | Optional instructions for the driver | [optional] 
+**rideType** | **String** | Passenger's selected vehicle type | [default to 'car']
+**paymentMethod** | **String** | Payment method for this ride | [optional] [default to 'cash']
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

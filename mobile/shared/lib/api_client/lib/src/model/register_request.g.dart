@@ -24,9 +24,9 @@ RegisterRequestRoleEnum _$registerRequestRoleEnumValueOf(String name) {
 
 final BuiltSet<RegisterRequestRoleEnum> _$registerRequestRoleEnumValues =
     BuiltSet<RegisterRequestRoleEnum>(const <RegisterRequestRoleEnum>[
-      _$registerRequestRoleEnum_passenger,
-      _$registerRequestRoleEnum_driver,
-    ]);
+  _$registerRequestRoleEnum_passenger,
+  _$registerRequestRoleEnum_driver,
+]);
 
 Serializer<RegisterRequestRoleEnum> _$registerRequestRoleEnumSerializer =
     _$RegisterRequestRoleEnumSerializer();
@@ -48,20 +48,16 @@ class _$RegisterRequestRoleEnumSerializer
   final String wireName = 'RegisterRequestRoleEnum';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    RegisterRequestRoleEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, RegisterRequestRoleEnum object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
   RegisterRequestRoleEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RegisterRequestRoleEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+          Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      RegisterRequestRoleEnum.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 class _$RegisterRequest extends RegisterRequest {
@@ -77,12 +73,12 @@ class _$RegisterRequest extends RegisterRequest {
   factory _$RegisterRequest([void Function(RegisterRequestBuilder)? updates]) =>
       (RegisterRequestBuilder()..update(updates))._build();
 
-  _$RegisterRequest._({
-    required this.name,
-    required this.email,
-    required this.password,
-    required this.role,
-  }) : super._();
+  _$RegisterRequest._(
+      {required this.name,
+      required this.email,
+      required this.password,
+      required this.role})
+      : super._();
   @override
   RegisterRequest rebuild(void Function(RegisterRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -172,29 +168,16 @@ class RegisterRequestBuilder
   RegisterRequest build() => _build();
 
   _$RegisterRequest _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$RegisterRequest._(
           name: BuiltValueNullFieldError.checkNotNull(
-            name,
-            r'RegisterRequest',
-            'name',
-          ),
+              name, r'RegisterRequest', 'name'),
           email: BuiltValueNullFieldError.checkNotNull(
-            email,
-            r'RegisterRequest',
-            'email',
-          ),
+              email, r'RegisterRequest', 'email'),
           password: BuiltValueNullFieldError.checkNotNull(
-            password,
-            r'RegisterRequest',
-            'password',
-          ),
+              password, r'RegisterRequest', 'password'),
           role: BuiltValueNullFieldError.checkNotNull(
-            role,
-            r'RegisterRequest',
-            'role',
-          ),
+              role, r'RegisterRequest', 'role'),
         );
     replace(_$result);
     return _$result;

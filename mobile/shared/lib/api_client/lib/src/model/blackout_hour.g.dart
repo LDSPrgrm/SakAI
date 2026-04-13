@@ -99,8 +99,7 @@ class BlackoutHourBuilder
   BlackoutHour build() => _build();
 
   _$BlackoutHour _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$BlackoutHour._(
           dayOfWeek: dayOfWeek,
           startTime: startTime,

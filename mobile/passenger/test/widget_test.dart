@@ -55,6 +55,8 @@ class _FakeRideRepository implements RideRepository {
     required RideLocation destination,
     String? notes,
     required String idempotencyKey,
+    VehicleType? rideType,
+    String? paymentMethod,
   }) async {
     return RideEntity(
       id: 'fake-ride',
@@ -70,7 +72,11 @@ class _FakeRideRepository implements RideRepository {
   Future<RideEntity?> getActiveRide() async => null;
 
   @override
-  Future<void> cancelRide(String rideId) async {}
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  }) async {}
 }
 
 class _FakeOnboardingService implements OnboardingService {

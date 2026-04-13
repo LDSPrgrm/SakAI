@@ -6,39 +6,59 @@ part of 'error_code.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const ErrorCode _$EMAIL_ALREADY_REGISTERED = const ErrorCode._(
-  'EMAIL_ALREADY_REGISTERED',
-);
-const ErrorCode _$INVALID_CREDENTIALS = const ErrorCode._(
-  'INVALID_CREDENTIALS',
-);
+const ErrorCode _$EMAIL_ALREADY_REGISTERED =
+    const ErrorCode._('EMAIL_ALREADY_REGISTERED');
+const ErrorCode _$INVALID_CREDENTIALS =
+    const ErrorCode._('INVALID_CREDENTIALS');
 const ErrorCode _$TOKEN_INVALID = const ErrorCode._('TOKEN_INVALID');
 const ErrorCode _$TOKEN_EXPIRED = const ErrorCode._('TOKEN_EXPIRED');
-const ErrorCode _$REFRESH_TOKEN_INVALID = const ErrorCode._(
-  'REFRESH_TOKEN_INVALID',
-);
+const ErrorCode _$REFRESH_TOKEN_INVALID =
+    const ErrorCode._('REFRESH_TOKEN_INVALID');
 const ErrorCode _$VALIDATION_ERROR = const ErrorCode._('VALIDATION_ERROR');
 const ErrorCode _$FORBIDDEN = const ErrorCode._('FORBIDDEN');
 const ErrorCode _$RIDE_NOT_FOUND = const ErrorCode._('RIDE_NOT_FOUND');
 const ErrorCode _$USER_NOT_FOUND = const ErrorCode._('USER_NOT_FOUND');
-const ErrorCode _$RIDE_INVALID_STATE_TRANSITION = const ErrorCode._(
-  'RIDE_INVALID_STATE_TRANSITION',
-);
-const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE = const ErrorCode._(
-  'PASSENGER_HAS_ACTIVE_RIDE',
-);
-const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE = const ErrorCode._(
-  'DRIVER_HAS_ACTIVE_RIDE',
-);
-const ErrorCode _$NO_DRIVERS_AVAILABLE = const ErrorCode._(
-  'NO_DRIVERS_AVAILABLE',
-);
-const ErrorCode _$RATE_LIMIT_EXCEEDED = const ErrorCode._(
-  'RATE_LIMIT_EXCEEDED',
-);
-const ErrorCode _$INTERNAL_SERVER_ERROR = const ErrorCode._(
-  'INTERNAL_SERVER_ERROR',
-);
+const ErrorCode _$DOCUMENT_NOT_FOUND = const ErrorCode._('DOCUMENT_NOT_FOUND');
+const ErrorCode _$RIDE_INVALID_STATE_TRANSITION =
+    const ErrorCode._('RIDE_INVALID_STATE_TRANSITION');
+const ErrorCode _$PASSENGER_HAS_ACTIVE_RIDE =
+    const ErrorCode._('PASSENGER_HAS_ACTIVE_RIDE');
+const ErrorCode _$DRIVER_HAS_ACTIVE_RIDE =
+    const ErrorCode._('DRIVER_HAS_ACTIVE_RIDE');
+const ErrorCode _$RIDE_NOT_COMPLETED = const ErrorCode._('RIDE_NOT_COMPLETED');
+const ErrorCode _$NO_DRIVERS_AVAILABLE =
+    const ErrorCode._('NO_DRIVERS_AVAILABLE');
+const ErrorCode _$INVALID_RIDE_TYPE = const ErrorCode._('INVALID_RIDE_TYPE');
+const ErrorCode _$DRIVER_REMATCH_IN_PROGRESS =
+    const ErrorCode._('DRIVER_REMATCH_IN_PROGRESS');
+const ErrorCode _$CANCELLATION_FEE_APPLIED =
+    const ErrorCode._('CANCELLATION_FEE_APPLIED');
+const ErrorCode _$PAYMENT_FAILED = const ErrorCode._('PAYMENT_FAILED');
+const ErrorCode _$INVALID_PAYMENT_TOKEN =
+    const ErrorCode._('INVALID_PAYMENT_TOKEN');
+const ErrorCode _$DUPLICATE_PAYMENT = const ErrorCode._('DUPLICATE_PAYMENT');
+const ErrorCode _$PAYMENT_METHOD_UNSUPPORTED =
+    const ErrorCode._('PAYMENT_METHOD_UNSUPPORTED');
+const ErrorCode _$PAYMENT_METHOD_DUPLICATE =
+    const ErrorCode._('PAYMENT_METHOD_DUPLICATE');
+const ErrorCode _$PAYMENT_GATEWAY_ERROR =
+    const ErrorCode._('PAYMENT_GATEWAY_ERROR');
+const ErrorCode _$PAYMENT_METHOD_NOT_FOUND =
+    const ErrorCode._('PAYMENT_METHOD_NOT_FOUND');
+const ErrorCode _$PAYMENT_METHOD_LAST_METHOD =
+    const ErrorCode._('PAYMENT_METHOD_LAST_METHOD');
+const ErrorCode _$INVALID_TIP_AMOUNT = const ErrorCode._('INVALID_TIP_AMOUNT');
+const ErrorCode _$TIP_ALREADY_ADDED = const ErrorCode._('TIP_ALREADY_ADDED');
+const ErrorCode _$INVALID_RATING = const ErrorCode._('INVALID_RATING');
+const ErrorCode _$FEEDBACK_TOO_LONG = const ErrorCode._('FEEDBACK_TOO_LONG');
+const ErrorCode _$ALREADY_RATED = const ErrorCode._('ALREADY_RATED');
+const ErrorCode _$FILE_TOO_LARGE = const ErrorCode._('FILE_TOO_LARGE');
+const ErrorCode _$INVALID_FILE_FORMAT =
+    const ErrorCode._('INVALID_FILE_FORMAT');
+const ErrorCode _$RATE_LIMIT_EXCEEDED =
+    const ErrorCode._('RATE_LIMIT_EXCEEDED');
+const ErrorCode _$INTERNAL_SERVER_ERROR =
+    const ErrorCode._('INTERNAL_SERVER_ERROR');
 
 ErrorCode _$valueOf(String name) {
   switch (name) {
@@ -60,14 +80,54 @@ ErrorCode _$valueOf(String name) {
       return _$RIDE_NOT_FOUND;
     case 'USER_NOT_FOUND':
       return _$USER_NOT_FOUND;
+    case 'DOCUMENT_NOT_FOUND':
+      return _$DOCUMENT_NOT_FOUND;
     case 'RIDE_INVALID_STATE_TRANSITION':
       return _$RIDE_INVALID_STATE_TRANSITION;
     case 'PASSENGER_HAS_ACTIVE_RIDE':
       return _$PASSENGER_HAS_ACTIVE_RIDE;
     case 'DRIVER_HAS_ACTIVE_RIDE':
       return _$DRIVER_HAS_ACTIVE_RIDE;
+    case 'RIDE_NOT_COMPLETED':
+      return _$RIDE_NOT_COMPLETED;
     case 'NO_DRIVERS_AVAILABLE':
       return _$NO_DRIVERS_AVAILABLE;
+    case 'INVALID_RIDE_TYPE':
+      return _$INVALID_RIDE_TYPE;
+    case 'DRIVER_REMATCH_IN_PROGRESS':
+      return _$DRIVER_REMATCH_IN_PROGRESS;
+    case 'CANCELLATION_FEE_APPLIED':
+      return _$CANCELLATION_FEE_APPLIED;
+    case 'PAYMENT_FAILED':
+      return _$PAYMENT_FAILED;
+    case 'INVALID_PAYMENT_TOKEN':
+      return _$INVALID_PAYMENT_TOKEN;
+    case 'DUPLICATE_PAYMENT':
+      return _$DUPLICATE_PAYMENT;
+    case 'PAYMENT_METHOD_UNSUPPORTED':
+      return _$PAYMENT_METHOD_UNSUPPORTED;
+    case 'PAYMENT_METHOD_DUPLICATE':
+      return _$PAYMENT_METHOD_DUPLICATE;
+    case 'PAYMENT_GATEWAY_ERROR':
+      return _$PAYMENT_GATEWAY_ERROR;
+    case 'PAYMENT_METHOD_NOT_FOUND':
+      return _$PAYMENT_METHOD_NOT_FOUND;
+    case 'PAYMENT_METHOD_LAST_METHOD':
+      return _$PAYMENT_METHOD_LAST_METHOD;
+    case 'INVALID_TIP_AMOUNT':
+      return _$INVALID_TIP_AMOUNT;
+    case 'TIP_ALREADY_ADDED':
+      return _$TIP_ALREADY_ADDED;
+    case 'INVALID_RATING':
+      return _$INVALID_RATING;
+    case 'FEEDBACK_TOO_LONG':
+      return _$FEEDBACK_TOO_LONG;
+    case 'ALREADY_RATED':
+      return _$ALREADY_RATED;
+    case 'FILE_TOO_LARGE':
+      return _$FILE_TOO_LARGE;
+    case 'INVALID_FILE_FORMAT':
+      return _$INVALID_FILE_FORMAT;
     case 'RATE_LIMIT_EXCEEDED':
       return _$RATE_LIMIT_EXCEEDED;
     case 'INTERNAL_SERVER_ERROR':
@@ -87,13 +147,80 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$FORBIDDEN,
   _$RIDE_NOT_FOUND,
   _$USER_NOT_FOUND,
+  _$DOCUMENT_NOT_FOUND,
   _$RIDE_INVALID_STATE_TRANSITION,
   _$PASSENGER_HAS_ACTIVE_RIDE,
   _$DRIVER_HAS_ACTIVE_RIDE,
+  _$RIDE_NOT_COMPLETED,
   _$NO_DRIVERS_AVAILABLE,
+  _$INVALID_RIDE_TYPE,
+  _$DRIVER_REMATCH_IN_PROGRESS,
+  _$CANCELLATION_FEE_APPLIED,
+  _$PAYMENT_FAILED,
+  _$INVALID_PAYMENT_TOKEN,
+  _$DUPLICATE_PAYMENT,
+  _$PAYMENT_METHOD_UNSUPPORTED,
+  _$PAYMENT_METHOD_DUPLICATE,
+  _$PAYMENT_GATEWAY_ERROR,
+  _$PAYMENT_METHOD_NOT_FOUND,
+  _$PAYMENT_METHOD_LAST_METHOD,
+  _$INVALID_TIP_AMOUNT,
+  _$TIP_ALREADY_ADDED,
+  _$INVALID_RATING,
+  _$FEEDBACK_TOO_LONG,
+  _$ALREADY_RATED,
+  _$FILE_TOO_LARGE,
+  _$INVALID_FILE_FORMAT,
   _$RATE_LIMIT_EXCEEDED,
   _$INTERNAL_SERVER_ERROR,
 ]);
+
+class _$ErrorCodeMeta {
+  const _$ErrorCodeMeta();
+  ErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
+  ErrorCode get INVALID_CREDENTIALS => _$INVALID_CREDENTIALS;
+  ErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
+  ErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
+  ErrorCode get REFRESH_TOKEN_INVALID => _$REFRESH_TOKEN_INVALID;
+  ErrorCode get VALIDATION_ERROR => _$VALIDATION_ERROR;
+  ErrorCode get FORBIDDEN => _$FORBIDDEN;
+  ErrorCode get RIDE_NOT_FOUND => _$RIDE_NOT_FOUND;
+  ErrorCode get USER_NOT_FOUND => _$USER_NOT_FOUND;
+  ErrorCode get DOCUMENT_NOT_FOUND => _$DOCUMENT_NOT_FOUND;
+  ErrorCode get RIDE_INVALID_STATE_TRANSITION =>
+      _$RIDE_INVALID_STATE_TRANSITION;
+  ErrorCode get PASSENGER_HAS_ACTIVE_RIDE => _$PASSENGER_HAS_ACTIVE_RIDE;
+  ErrorCode get DRIVER_HAS_ACTIVE_RIDE => _$DRIVER_HAS_ACTIVE_RIDE;
+  ErrorCode get RIDE_NOT_COMPLETED => _$RIDE_NOT_COMPLETED;
+  ErrorCode get NO_DRIVERS_AVAILABLE => _$NO_DRIVERS_AVAILABLE;
+  ErrorCode get INVALID_RIDE_TYPE => _$INVALID_RIDE_TYPE;
+  ErrorCode get DRIVER_REMATCH_IN_PROGRESS => _$DRIVER_REMATCH_IN_PROGRESS;
+  ErrorCode get CANCELLATION_FEE_APPLIED => _$CANCELLATION_FEE_APPLIED;
+  ErrorCode get PAYMENT_FAILED => _$PAYMENT_FAILED;
+  ErrorCode get INVALID_PAYMENT_TOKEN => _$INVALID_PAYMENT_TOKEN;
+  ErrorCode get DUPLICATE_PAYMENT => _$DUPLICATE_PAYMENT;
+  ErrorCode get PAYMENT_METHOD_UNSUPPORTED => _$PAYMENT_METHOD_UNSUPPORTED;
+  ErrorCode get PAYMENT_METHOD_DUPLICATE => _$PAYMENT_METHOD_DUPLICATE;
+  ErrorCode get PAYMENT_GATEWAY_ERROR => _$PAYMENT_GATEWAY_ERROR;
+  ErrorCode get PAYMENT_METHOD_NOT_FOUND => _$PAYMENT_METHOD_NOT_FOUND;
+  ErrorCode get PAYMENT_METHOD_LAST_METHOD => _$PAYMENT_METHOD_LAST_METHOD;
+  ErrorCode get INVALID_TIP_AMOUNT => _$INVALID_TIP_AMOUNT;
+  ErrorCode get TIP_ALREADY_ADDED => _$TIP_ALREADY_ADDED;
+  ErrorCode get INVALID_RATING => _$INVALID_RATING;
+  ErrorCode get FEEDBACK_TOO_LONG => _$FEEDBACK_TOO_LONG;
+  ErrorCode get ALREADY_RATED => _$ALREADY_RATED;
+  ErrorCode get FILE_TOO_LARGE => _$FILE_TOO_LARGE;
+  ErrorCode get INVALID_FILE_FORMAT => _$INVALID_FILE_FORMAT;
+  ErrorCode get RATE_LIMIT_EXCEEDED => _$RATE_LIMIT_EXCEEDED;
+  ErrorCode get INTERNAL_SERVER_ERROR => _$INTERNAL_SERVER_ERROR;
+  ErrorCode valueOf(String name) => _$valueOf(name);
+  BuiltSet<ErrorCode> get values => _$values;
+}
+
+abstract class _$ErrorCodeMixin {
+  // ignore: non_constant_identifier_names
+  _$ErrorCodeMeta get ErrorCode => const _$ErrorCodeMeta();
+}
 
 Serializer<ErrorCode> _$errorCodeSerializer = _$ErrorCodeSerializer();
 
@@ -108,10 +235,30 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'FORBIDDEN': 'FORBIDDEN',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
+    'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
     'RIDE_INVALID_STATE_TRANSITION': 'RIDE_INVALID_STATE_TRANSITION',
     'PASSENGER_HAS_ACTIVE_RIDE': 'PASSENGER_HAS_ACTIVE_RIDE',
     'DRIVER_HAS_ACTIVE_RIDE': 'DRIVER_HAS_ACTIVE_RIDE',
+    'RIDE_NOT_COMPLETED': 'RIDE_NOT_COMPLETED',
     'NO_DRIVERS_AVAILABLE': 'NO_DRIVERS_AVAILABLE',
+    'INVALID_RIDE_TYPE': 'INVALID_RIDE_TYPE',
+    'DRIVER_REMATCH_IN_PROGRESS': 'DRIVER_REMATCH_IN_PROGRESS',
+    'CANCELLATION_FEE_APPLIED': 'CANCELLATION_FEE_APPLIED',
+    'PAYMENT_FAILED': 'PAYMENT_FAILED',
+    'INVALID_PAYMENT_TOKEN': 'INVALID_PAYMENT_TOKEN',
+    'DUPLICATE_PAYMENT': 'DUPLICATE_PAYMENT',
+    'PAYMENT_METHOD_UNSUPPORTED': 'PAYMENT_METHOD_UNSUPPORTED',
+    'PAYMENT_METHOD_DUPLICATE': 'PAYMENT_METHOD_DUPLICATE',
+    'PAYMENT_GATEWAY_ERROR': 'PAYMENT_GATEWAY_ERROR',
+    'PAYMENT_METHOD_NOT_FOUND': 'PAYMENT_METHOD_NOT_FOUND',
+    'PAYMENT_METHOD_LAST_METHOD': 'PAYMENT_METHOD_LAST_METHOD',
+    'INVALID_TIP_AMOUNT': 'INVALID_TIP_AMOUNT',
+    'TIP_ALREADY_ADDED': 'TIP_ALREADY_ADDED',
+    'INVALID_RATING': 'INVALID_RATING',
+    'FEEDBACK_TOO_LONG': 'FEEDBACK_TOO_LONG',
+    'ALREADY_RATED': 'ALREADY_RATED',
+    'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
+    'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
   };
@@ -125,10 +272,30 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'FORBIDDEN': 'FORBIDDEN',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
+    'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
     'RIDE_INVALID_STATE_TRANSITION': 'RIDE_INVALID_STATE_TRANSITION',
     'PASSENGER_HAS_ACTIVE_RIDE': 'PASSENGER_HAS_ACTIVE_RIDE',
     'DRIVER_HAS_ACTIVE_RIDE': 'DRIVER_HAS_ACTIVE_RIDE',
+    'RIDE_NOT_COMPLETED': 'RIDE_NOT_COMPLETED',
     'NO_DRIVERS_AVAILABLE': 'NO_DRIVERS_AVAILABLE',
+    'INVALID_RIDE_TYPE': 'INVALID_RIDE_TYPE',
+    'DRIVER_REMATCH_IN_PROGRESS': 'DRIVER_REMATCH_IN_PROGRESS',
+    'CANCELLATION_FEE_APPLIED': 'CANCELLATION_FEE_APPLIED',
+    'PAYMENT_FAILED': 'PAYMENT_FAILED',
+    'INVALID_PAYMENT_TOKEN': 'INVALID_PAYMENT_TOKEN',
+    'DUPLICATE_PAYMENT': 'DUPLICATE_PAYMENT',
+    'PAYMENT_METHOD_UNSUPPORTED': 'PAYMENT_METHOD_UNSUPPORTED',
+    'PAYMENT_METHOD_DUPLICATE': 'PAYMENT_METHOD_DUPLICATE',
+    'PAYMENT_GATEWAY_ERROR': 'PAYMENT_GATEWAY_ERROR',
+    'PAYMENT_METHOD_NOT_FOUND': 'PAYMENT_METHOD_NOT_FOUND',
+    'PAYMENT_METHOD_LAST_METHOD': 'PAYMENT_METHOD_LAST_METHOD',
+    'INVALID_TIP_AMOUNT': 'INVALID_TIP_AMOUNT',
+    'TIP_ALREADY_ADDED': 'TIP_ALREADY_ADDED',
+    'INVALID_RATING': 'INVALID_RATING',
+    'FEEDBACK_TOO_LONG': 'FEEDBACK_TOO_LONG',
+    'ALREADY_RATED': 'ALREADY_RATED',
+    'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
+    'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
   };
@@ -139,20 +306,15 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
   final String wireName = 'ErrorCode';
 
   @override
-  Object serialize(
-    Serializers serializers,
-    ErrorCode object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
+  Object serialize(Serializers serializers, ErrorCode object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      _toWire[object.name] ?? object.name;
 
   @override
-  ErrorCode deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => ErrorCode.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
+  ErrorCode deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      ErrorCode.valueOf(
+          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

@@ -1,9 +1,10 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,13 @@ type AuthOutput struct {
 	RefreshToken         string
 	AccessTokenExpiresAt time.Time
 	User                 *User
+}
+
+// DeclineResult carries the outcome of a ride decline, including any re-matched driver.
+type DeclineResult struct {
+	Ride           *Ride
+	NewDriverID    *uuid.UUID // set when a new driver was found
+	NewDriverFound bool
 }
 
 // ─── Repository Ports ────────────────────────────────────────────────────────
@@ -87,8 +95,9 @@ type RideRepository interface {
 	// ClearDriver sets driver_id to NULL, used when a driver declines a ride.
 	ClearDriver(ctx context.Context, rideID uuid.UUID) error
 
-	// SetCancelled transitions a ride to cancelled and records who cancelled.
-	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy) error
+	// SetCancelled transitions a ride to cancelled and records who cancelled,
+	// along with optional reason code and text, and any cancellation fee.
+	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error
 
 	// CancelExpiredOffers cancels all rides that have been in "requested" status
 	// for longer than timeout. Returns the identity of the cancelled rides.
@@ -97,12 +106,55 @@ type RideRepository interface {
 
 	// ListAll returns a paginated list of all rides for admin browsing.
 	ListAll(ctx context.Context, filter AdminRideFilter) ([]*Ride, int, error)
+
+	// ListByPassengerID returns a paginated list of rides for a specific passenger.
+	ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter UserRideFilter) ([]*Ride, int, error)
+
+	// UpdateRideFare updates the actual fare and breakdown for a ride.
+	UpdateRideFare(ctx context.Context, rideID uuid.UUID, actualFare float64, breakdown JSONMap) error
+
+	// IncrementDeclineCount increments the decline count for a ride.
+	IncrementDeclineCount(ctx context.Context, rideID uuid.UUID) error
 }
 
 // ExpiredOffer contains the identity of a ride canceled due to dispatch timeout.
 type ExpiredOffer struct {
 	RideID      uuid.UUID
 	PassengerID uuid.UUID
+}
+
+// NearbyDriver contains enriched details of a driver available for dispatch.
+type NearbyDriver struct {
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	VehicleMake  string  `json:"vehicle_make"`
+	VehicleModel string  `json:"vehicle_model"`
+	VehiclePlate string  `json:"vehicle_plate"`
+	VehicleType  string  `json:"vehicle_type"`
+	Rating       *float64 `json:"rating,omitempty"`
+	DistanceM    float64 `json:"distance_m"`
+	Lat          float64 `json:"-"` // not serialized directly
+	Lng          float64 `json:"-"` // not serialized directly
+}
+
+// Location returns the nested location object expected by the mobile API client.
+func (n NearbyDriver) Location() map[string]float64 {
+	return map[string]float64{
+		"lat": n.Lat,
+		"lng": n.Lng,
+	}
+}
+
+// MarshalJSON ensures the location is serialized as a nested object.
+func (n NearbyDriver) MarshalJSON() ([]byte, error) {
+	type Alias NearbyDriver
+	return json.Marshal(&struct {
+		Alias
+		Location map[string]float64 `json:"location"`
+	}{
+		Alias:    Alias(n),
+		Location: n.Location(),
+	})
 }
 
 // DriverRepository manages driver operational state and location.
@@ -123,6 +175,10 @@ type DriverRepository interface {
 	// FindNearbyOnline returns online drivers within radiusMeters of origin,
 	// ordered by distance ascending. Uses PostGIS ST_DWithin for efficiency.
 	FindNearbyOnline(ctx context.Context, origin LatLng, radiusMeters float64) ([]*Driver, error)
+
+	// FindNearbyOnlineByType returns online drivers of a specific vehicle type
+	// within radiusMeters of origin, ordered by distance ascending.
+	FindNearbyOnlineByType(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
 }
 
 // AdminRepository defines management of admin accounts and system settings.
@@ -254,15 +310,15 @@ type AuthUseCase interface {
 
 // RideUseCase defines the ride lifecycle contract.
 type RideUseCase interface {
-	RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination LatLng, originAddr, destAddr, notes, idempotencyKey string) (*Ride, error)
+	RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType RideType, paymentMethod PaymentMethod) (*Ride, error)
 	GetActive(ctx context.Context, userID uuid.UUID, role UserRole) (*Ride, error)
 	GetByID(ctx context.Context, userID uuid.UUID, rideID uuid.UUID) (*Ride, error)
 	Accept(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
-	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
+	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*DeclineResult, error)
 	Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Complete(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
-	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID) (*Ride, error)
+	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)
 }
 
 // DriverUseCase defines driver operational actions.
@@ -273,6 +329,8 @@ type DriverUseCase interface {
 	// GetActiveRide returns the driver's current active ride regardless of state.
 	// Used by the HTTP handler to forward location updates to the passenger.
 	GetActiveRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
+	// GetNearbyDrivers returns online drivers of a specific vehicle type within a radius.
+	GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.
@@ -280,6 +338,13 @@ type AdminRideFilter struct {
 	Status *RideStatus // optional — nil means all statuses
 	Page   int         // 1-based; 0 treated as 1
 	Limit  int         // max rows; 0 defaults to 20
+}
+
+// UserRideFilter is the filter/pagination input for passenger ride history.
+type UserRideFilter struct {
+	Statuses []RideStatus // optional — empty means all statuses
+	Page     int          // 1-based; 0 treated as 1
+	Limit    int          // max rows; 0 defaults to 20
 }
 
 // UserListFilter is the filter/pagination input for admin user browsing.
@@ -404,4 +469,130 @@ type MetricsUseCase interface {
 	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
+}
+
+// ─── New Repository Ports for Documents, Ratings, Payments ───────────────────
+
+// DocumentRepository manages driver verification documents.
+type DocumentRepository interface {
+	// Create inserts a new driver document record.
+	Create(ctx context.Context, doc *DriverDocument) error
+
+	// GetByID retrieves a document by its UUID.
+	GetByID(ctx context.Context, id uuid.UUID) (*DriverDocument, error)
+
+	// ListByDriverID returns all documents for a driver.
+	ListByDriverID(ctx context.Context, driverID uuid.UUID) ([]*DriverDocument, error)
+
+	// UpdateStatus changes the verification status of a document.
+	UpdateStatus(ctx context.Context, id uuid.UUID, status UploadStatus, rejectionReason *string, reviewedAt time.Time, reviewedBy uuid.UUID) error
+}
+
+// RatingRepository manages ride ratings.
+type RatingRepository interface {
+	// Create inserts a new rating.
+	Create(ctx context.Context, rating *Rating) error
+
+	// GetByRideAndRater returns an existing rating for a ride+rater pair, or nil.
+	GetByRideAndRater(ctx context.Context, rideID, raterID uuid.UUID) (*Rating, error)
+
+	// GetAverageByUserID computes the average rating and count for a user.
+	GetAverageByUserID(ctx context.Context, userID uuid.UUID) (*RatingSummary, error)
+}
+
+// RidePaymentRepository manages ride-specific payment transactions.
+type RidePaymentRepository interface {
+	// Create inserts a new ride payment record.
+	Create(ctx context.Context, payment *Payment) error
+
+	// GetByRideID returns the payment for a ride, or nil.
+	GetByRideID(ctx context.Context, rideID uuid.UUID) (*Payment, error)
+
+	// UpdateStatus changes the payment status (e.g., failed -> completed on retry).
+	UpdateStatus(ctx context.Context, id uuid.UUID, status PaymentStatus, gatewayTxnID *string, processedAt time.Time, failureReason *string) error
+}
+
+// ─── New UseCase Ports ───────────────────────────────────────────────────────
+
+// DocumentUseCase defines the driver document upload contract.
+type DocumentUseCase interface {
+	// UploadDocument validates and stores a driver verification document.
+	UploadDocument(ctx context.Context, driverID uuid.UUID, docType DocumentType, docNumber string, expiryDate *time.Time, imageURL string) (*DriverDocument, error)
+
+	// GetDocument returns a document by ID (owner-only access).
+	GetDocument(ctx context.Context, driverID, documentID uuid.UUID) (*DriverDocument, error)
+
+	// ListDocuments returns all documents for a driver.
+	ListDocuments(ctx context.Context, driverID uuid.UUID) ([]*DriverDocument, error)
+}
+
+// RatingUseCase defines the rating submission contract.
+type RatingUseCase interface {
+	// SubmitRating validates and stores a rating for a completed ride.
+	SubmitRating(ctx context.Context, raterID uuid.UUID, rideID uuid.UUID, stars int, feedback *string) (*Rating, error)
+
+	// GetRatingSummary returns the average rating and count for a user.
+	GetRatingSummary(ctx context.Context, userID uuid.UUID) (*RatingSummary, error)
+}
+
+// PaymentProcessingUseCase defines the card payment processing contract.
+type PaymentProcessingUseCase interface {
+	// ProcessPayment charges the passenger's card for a completed ride.
+	ProcessPayment(ctx context.Context, passengerID uuid.UUID, rideID uuid.UUID, paymentToken string, idempotencyKey string) (*Payment, error)
+
+	// GetReceipt returns the payment receipt for a ride.
+	GetReceipt(ctx context.Context, userID uuid.UUID, rideID uuid.UUID) (*Payment, error)
+}
+
+// TipOutput carries the result of a successful tip transaction.
+type TipOutput struct {
+	RideID          uuid.UUID  `json:"ride_id"`
+	BaseFare        float64    `json:"base_fare"`
+	TipAmount       float64    `json:"tip_amount"`
+	FinalTotal      float64    `json:"final_total"`
+	Currency        string     `json:"currency"`
+	PaymentMethod   string     `json:"payment_method"`
+	TransactionID   string     `json:"transaction_id"`
+	ProcessedAt     time.Time  `json:"processed_at"`
+}
+
+// TipRepository manages tip-specific payment transactions.
+type TipRepository interface {
+	// AddTip stores a tip record and processes the charge via Stripe.
+	AddTip(ctx context.Context, rideID uuid.UUID, tipAmount float64) (*TipOutput, error)
+
+	// GetByRideID returns an existing tip for a ride, or nil.
+	GetByRideID(ctx context.Context, rideID uuid.UUID) (*TipOutput, error)
+}
+
+// TipUseCase defines the tip submission contract.
+type TipUseCase interface {
+	// AddTip validates and processes a tip for a completed ride.
+	AddTip(ctx context.Context, passengerID uuid.UUID, rideID uuid.UUID, tipAmount float64) (*TipOutput, error)
+}
+
+// ─── Saved Payment Method Repository ─────────────────────────────────────────
+
+// PaymentMethodRepository manages user's saved payment methods.
+type PaymentMethodRepository interface {
+	// Create inserts a new saved payment method.
+	Create(ctx context.Context, pm *SavedPaymentMethod) error
+
+	// GetByID retrieves a payment method by its UUID.
+	GetByID(ctx context.Context, id uuid.UUID) (*SavedPaymentMethod, error)
+
+	// ListByUserID returns all payment methods for a user.
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*SavedPaymentMethod, error)
+
+	// Delete removes a payment method.
+	Delete(ctx context.Context, id uuid.UUID) error
+
+	// SetDefault marks a payment method as the user's default.
+	SetDefault(ctx context.Context, id uuid.UUID) error
+
+	// ClearDefaults removes the default flag from all of a user's payment methods.
+	ClearDefaults(ctx context.Context, userID uuid.UUID) error
+
+	// ExistsByUser checks if a payment method belongs to a user (for authorization).
+	ExistsByUser(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 }

@@ -10,15 +10,15 @@ class _$FareSimulationResponse extends FareSimulationResponse {
   @override
   final num? estimatedFare;
 
-  factory _$FareSimulationResponse([
-    void Function(FareSimulationResponseBuilder)? updates,
-  ]) => (FareSimulationResponseBuilder()..update(updates))._build();
+  factory _$FareSimulationResponse(
+          [void Function(FareSimulationResponseBuilder)? updates]) =>
+      (FareSimulationResponseBuilder()..update(updates))._build();
 
   _$FareSimulationResponse._({this.estimatedFare}) : super._();
   @override
   FareSimulationResponse rebuild(
-    void Function(FareSimulationResponseBuilder) updates,
-  ) => (toBuilder()..update(updates)).build();
+          void Function(FareSimulationResponseBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   FareSimulationResponseBuilder toBuilder() =>
@@ -41,9 +41,9 @@ class _$FareSimulationResponse extends FareSimulationResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'FareSimulationResponse',
-    )..add('estimatedFare', estimatedFare)).toString();
+    return (newBuiltValueToStringHelper(r'FareSimulationResponse')
+          ..add('estimatedFare', estimatedFare))
+        .toString();
   }
 }
 
@@ -83,8 +83,10 @@ class FareSimulationResponseBuilder
   FareSimulationResponse build() => _build();
 
   _$FareSimulationResponse _build() {
-    final _$result =
-        _$v ?? _$FareSimulationResponse._(estimatedFare: estimatedFare);
+    final _$result = _$v ??
+        _$FareSimulationResponse._(
+          estimatedFare: estimatedFare,
+        );
     replace(_$result);
     return _$result;
   }

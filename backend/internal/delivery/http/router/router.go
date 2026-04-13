@@ -14,19 +14,24 @@ import (
 
 // Deps is the set of pre-constructed handlers injected into the router.
 type Deps struct {
-	Auth    *handler.AuthHandler
-	Driver  *handler.DriverHandler
-	Ride    *handler.RideHandler
-	Admin   *handler.AdminHandler
-	Fare    *handler.FareHandler
-	Audit   *handler.AuditHandler
-	Role    *handler.RoleHandler
-	Payment *handler.PaymentHandler
-	Safety  *handler.SafetyHandler
-	System  *handler.SystemHandler
-	Report  *handler.ReportHandler
-	Metrics *handler.MetricsHandler
-	WS      *ws.Handler
+	Auth           *handler.AuthHandler
+	Driver         *handler.DriverHandler
+	Ride           *handler.RideHandler
+	Admin          *handler.AdminHandler
+	Fare           *handler.FareHandler
+	Audit          *handler.AuditHandler
+	Role           *handler.RoleHandler
+	Payment        *handler.PaymentHandler
+	Safety         *handler.SafetyHandler
+	System         *handler.SystemHandler
+	Report         *handler.ReportHandler
+	Metrics        *handler.MetricsHandler
+	Document       *handler.DocumentHandler
+	Rating         *handler.RatingHandler
+	PayProcess     *handler.RidePaymentHandler
+	Tip            *handler.TipHandler
+	PaymentMethod  *handler.PaymentMethodHandler
+	WS             *ws.Handler
 }
 
 // New builds and returns the configured Gin engine.
@@ -163,6 +168,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Ride routes — mixed roles (enforced per handler/use-case)
 		rides := authed.Group("/rides")
 		{
+			rides.GET("", middleware.RequireRole(domain.RolePassenger), d.Ride.ListMyRides)
 			rides.POST("", middleware.RequireRole(domain.RolePassenger), d.Ride.RequestRide)
 			rides.GET("/:rideId", d.Ride.GetByID)
 			rides.POST("/:rideId/cancel", d.Ride.Cancel)
@@ -177,7 +183,42 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 				driverRides.POST("/start", d.Ride.Start)
 				driverRides.POST("/complete", d.Ride.Complete)
 			}
+
+			// Rating routes (passenger or driver)
+			rides.POST("/:rideId/rating", d.Rating.SubmitRating)
+			rides.GET("/:rideId/receipt", d.PayProcess.GetReceipt)
+
+			// Tip route (passenger only)
+			rides.POST("/:rideId/tip", middleware.RequireRole(domain.RolePassenger), d.Tip.AddTip)
 		}
+
+		// Nearby drivers (passenger only)
+		authed.GET("/drivers/nearby", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDrivers)
+
+		// Payment method routes (passenger only)
+		paymentMethods := authed.Group("/users/me/payment-methods")
+		paymentMethods.Use(middleware.RequireRole(domain.RolePassenger))
+		{
+			paymentMethods.GET("", d.PaymentMethod.ListMethods)
+			paymentMethods.POST("", d.PaymentMethod.AddMethod)
+			paymentMethods.DELETE("/:paymentMethodId", d.PaymentMethod.RemoveMethod)
+			paymentMethods.PUT("/:paymentMethodId/default", d.PaymentMethod.SetDefault)
+		}
+
+		// Driver document routes
+		driverDocs := authed.Group("/drivers")
+		driverDocs.Use(middleware.RequireRole(domain.RoleDriver))
+		{
+			driverDocs.POST("/documents", d.Document.UploadDocument)
+			driverDocs.GET("/documents", d.Document.ListDocuments)
+			driverDocs.GET("/documents/:documentId", d.Document.GetDocumentStatus)
+		}
+
+		// Payment processing route
+		authed.POST("/payments/process", middleware.RequireRole(domain.RolePassenger), d.PayProcess.ProcessPayment)
+
+		// User rating lookup (any authenticated user)
+		authed.GET("/users/:userId/rating", d.Rating.GetUserRating)
 
 		// WebSocket — any authenticated user
 		authed.GET("/ws", d.WS.ServeWS)

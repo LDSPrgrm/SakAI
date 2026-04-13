@@ -13,17 +13,27 @@ func TestMigrations_EmbeddedFilesExist(t *testing.T) {
 	// Verify that all expected migration files are embedded.
 	expected := []string{
 		"001_create_users.up.sql",
+		"001_create_users.down.sql",
 		"002_create_vehicles.up.sql",
+		"002_create_vehicles.down.sql",
 		"003_create_drivers.up.sql",
+		"003_create_drivers.down.sql",
 		"004_create_rides.up.sql",
+		"004_create_rides.down.sql",
 		"005_create_refresh_tokens.up.sql",
+		"005_create_refresh_tokens.down.sql",
 		"006_add_active_ride_constraints.up.sql",
+		"006_add_active_ride_constraints.down.sql",
 		"007_add_admin_roles.up.sql",
+		"007_add_admin_roles.down.sql",
 		"008_super_admin_schema.up.sql",
+		"008_super_admin_schema.down.sql",
 		"009_create_roles.up.sql",
 		"009_create_roles.down.sql",
 		"010_add_role_id_to_users.up.sql",
 		"010_add_role_id_to_users.down.sql",
+		"011_add_documents_ratings_payments.up.sql",
+		"011_add_documents_ratings_payments.down.sql",
 	}
 
 	sub, err := fs.Sub(testMigrationFS, "migrations")
@@ -40,7 +50,7 @@ func TestMigrations_EmbeddedFilesExist(t *testing.T) {
 }
 
 func TestMigrations_Count(t *testing.T) {
-	// Verify we have exactly 10 migration files (matching the known count).
+	// Verify we have the correct number of migration files.
 	sub, err := fs.Sub(testMigrationFS, "migrations")
 	if err != nil {
 		t.Fatalf("failed to open embedded fs: %v", err)
@@ -51,9 +61,9 @@ func TestMigrations_Count(t *testing.T) {
 		t.Fatalf("failed to read embedded dir: %v", err)
 	}
 
-	// We expect 12 files (10 up + 2 down migrations).
-	if len(entries) != 12 {
-		t.Errorf("expected 12 migration files, got %d", len(entries))
+	// We expect 28 files: 14 up + 14 down (all migrations 001-014 have both).
+	if len(entries) != 28 {
+		t.Errorf("expected 28 migration files, got %d", len(entries))
 	}
 }
 

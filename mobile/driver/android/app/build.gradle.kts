@@ -19,7 +19,7 @@ var mapsApiKey = ""
 val envFile = rootProject.file("../../.env")
 if (envFile.exists()) {
     envFile.readLines().forEach {
-        if (it.startsWith("GOOGLE_MAPS_API_KEY=")) {
+        if (it.startsWith("MAPS_API_KEY=")) {
             mapsApiKey = it.substringAfter("=").trim()
         }
     }

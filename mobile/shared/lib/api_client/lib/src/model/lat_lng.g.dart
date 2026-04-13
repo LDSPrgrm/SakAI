@@ -86,8 +86,7 @@ class LatLngBuilder implements Builder<LatLng, LatLngBuilder> {
   LatLng build() => _build();
 
   _$LatLng _build() {
-    final _$result =
-        _$v ??
+    final _$result = _$v ??
         _$LatLng._(
           lat: BuiltValueNullFieldError.checkNotNull(lat, r'LatLng', 'lat'),
           lng: BuiltValueNullFieldError.checkNotNull(lng, r'LatLng', 'lng'),
