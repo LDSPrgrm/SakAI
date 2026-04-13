@@ -26,13 +26,9 @@ PaymentStatus _$valueOf(String name) {
   }
 }
 
-final BuiltSet<PaymentStatus> _$values =
-    BuiltSet<PaymentStatus>(const <PaymentStatus>[
-  _$pending,
-  _$completed,
-  _$failed,
-  _$refunded,
-]);
+final BuiltSet<PaymentStatus> _$values = BuiltSet<PaymentStatus>(
+  const <PaymentStatus>[_$pending, _$completed, _$failed, _$refunded],
+);
 
 class _$PaymentStatusMeta {
   const _$PaymentStatusMeta();
@@ -44,7 +40,7 @@ class _$PaymentStatusMeta {
   BuiltSet<PaymentStatus> get values => _$values;
 }
 
-abstract class _$PaymentStatusMixin {
+mixin _$PaymentStatusMixin {
   // ignore: non_constant_identifier_names
   _$PaymentStatusMeta get PaymentStatus => const _$PaymentStatusMeta();
 }
@@ -72,15 +68,20 @@ class _$PaymentStatusSerializer implements PrimitiveSerializer<PaymentStatus> {
   final String wireName = 'PaymentStatus';
 
   @override
-  Object serialize(Serializers serializers, PaymentStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    PaymentStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  PaymentStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      PaymentStatus.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  PaymentStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PaymentStatus.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

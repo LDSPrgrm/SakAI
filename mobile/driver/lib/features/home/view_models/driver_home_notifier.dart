@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/providers.dart';
@@ -14,6 +15,8 @@ class DriverHomeState {
   final String? errorMessage;
   final bool gpsAvailable;
   final DriverSessionStatus status;
+  final RideResponse? activeRide;
+  final gmaps.LatLng? currentLatLng;
 
   const DriverHomeState({
     required this.online,
@@ -21,6 +24,8 @@ class DriverHomeState {
     this.errorMessage,
     this.gpsAvailable = false,
     this.status = DriverSessionStatus.offline,
+    this.activeRide,
+    this.currentLatLng,
   });
 
   DriverHomeState copyWith({
@@ -29,6 +34,8 @@ class DriverHomeState {
     String? errorMessage,
     bool? gpsAvailable,
     DriverSessionStatus? status,
+    RideResponse? activeRide,
+    gmaps.LatLng? currentLatLng,
   }) {
     return DriverHomeState(
       online: online ?? this.online,
@@ -36,6 +43,8 @@ class DriverHomeState {
       errorMessage: errorMessage,
       gpsAvailable: gpsAvailable ?? this.gpsAvailable,
       status: status ?? this.status,
+      activeRide: activeRide ?? this.activeRide,
+      currentLatLng: currentLatLng ?? this.currentLatLng,
     );
   }
 }
@@ -50,10 +59,12 @@ typedef OnRideOffer = void Function(WsEventRideRequested offer);
 typedef OnOfferExpired = void Function(String rideId);
 typedef OnStatusChanged = void Function(String rideId, RideStatus status);
 typedef OnRideCancelled = void Function(String rideId);
+typedef OnActiveRideDetected = void Function(RideResponse activeRide);
 
 class DriverHomeNotifier extends Notifier<DriverHomeState> {
   StreamSubscription<WsEvent>? _wsSubscription;
   Timer? _gpsTimer;
+  Timer? _incomingRidePollTimer;
   final GpsLocationService _gpsService = GpsLocationService();
 
   // Event callbacks — set by the screen or a higher-level coordinator.
@@ -61,12 +72,14 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   OnOfferExpired? onOfferExpired;
   OnStatusChanged? onStatusChanged;
   OnRideCancelled? onRideCancelled;
+  OnActiveRideDetected? onActiveRideDetected;
 
   @override
   DriverHomeState build() {
     ref.onDispose(() {
       _stopGpsStreaming();
       _unsubscribeWs();
+      _stopIncomingRidePolling();
     });
     return const DriverHomeState(online: false, loading: false);
   }
@@ -121,7 +134,8 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
               ..id = passenger.id
               ..name = passenger.name
               ..email = passenger.email
-              ..role = passenger.role,
+              ..role = passenger.role
+              ..createdAt = passenger.createdAt,
           )
           ..origin = (LatLngBuilder()
             ..lat = origin.lat
@@ -136,6 +150,33 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
       onRideOffer?.call(offer);
     } catch (e) {
       debugPrint('[DRIVER] Poll incoming ride error: $e');
+    }
+  }
+
+  /// Checks for an active ride and updates state accordingly.
+  /// Returns true if an active ride was found.
+  Future<bool> checkForActiveRide() async {
+    try {
+      final rideRepo = ref.read(activeRideRepositoryProvider);
+      final activeRide = await rideRepo.getActiveRide();
+
+      if (activeRide != null) {
+        debugPrint(
+          '[DRIVER] Found active ride: ${activeRide.id}, status: ${activeRide.status}',
+        );
+        state = state.copyWith(activeRide: activeRide);
+        onActiveRideDetected?.call(activeRide);
+        return true;
+      }
+
+      // Clear active ride from state if none exists
+      if (state.activeRide != null) {
+        state = state.copyWith(activeRide: null);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[DRIVER] Check for active ride error: $e');
+      return false;
     }
   }
 
@@ -164,12 +205,78 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
 
   WsEventRideRequested? _parseRideRequested(Map<String, dynamic> payload) {
     try {
-      return WsEventRideRequested(
-        (b) => b
-          ..rideId = payload['ride_id'] as String
-          ..expiresAt = DateTime.parse(payload['expires_at'] as String),
+      debugPrint('[DRIVER] _parseRideRequested payload: $payload');
+
+      final rideId = payload['ride_id'] as String?;
+      if (rideId == null || rideId.isEmpty) {
+        debugPrint('[DRIVER] Missing ride_id in payload');
+        return null;
+      }
+
+      // Parse passenger profile
+      final passengerData = payload['passenger'] as Map<String, dynamic>?;
+      final roleStr = (passengerData?['role'] as String?) ?? 'passenger';
+      final passengerRole = UserProfileRoleEnum.valueOf(roleStr);
+
+      // Parse createdAt - use current time as fallback if not present
+      DateTime createdAt;
+      try {
+        final createdAtStr = passengerData?['created_at'] as String?;
+        createdAt = createdAtStr != null
+            ? DateTime.parse(createdAtStr)
+            : DateTime.now();
+      } catch (_) {
+        createdAt = DateTime.now();
+      }
+
+      final passenger = $UserProfile(
+        (pb) => pb
+          ..id = (passengerData?['id'] as String?) ?? ''
+          ..name = (passengerData?['name'] as String?) ?? 'Unknown'
+          ..email = (passengerData?['email'] as String?) ?? ''
+          ..role = passengerRole
+          ..createdAt = createdAt,
       );
-    } catch (_) {
+
+      // Parse origin coordinates
+      final originData = payload['origin'] as Map<String, dynamic>?;
+      final originLat = (originData?['lat'] as num?)?.toDouble() ?? 0.0;
+      final originLng = (originData?['lng'] as num?)?.toDouble() ?? 0.0;
+
+      // Parse destination coordinates
+      final destData = payload['destination'] as Map<String, dynamic>?;
+      final destLat = (destData?['lat'] as num?)?.toDouble() ?? 0.0;
+      final destLng = (destData?['lng'] as num?)?.toDouble() ?? 0.0;
+
+      // Parse expires_at
+      final expiresAtStr = payload['expires_at'] as String?;
+      final expiresAt = expiresAtStr != null
+          ? DateTime.parse(expiresAtStr)
+          : DateTime.now().add(const Duration(minutes: 5));
+
+      final offer = WsEventRideRequested(
+        (b) => b
+          ..rideId = rideId
+          ..passenger = passenger
+          ..origin = (LatLngBuilder()
+            ..lat = originLat
+            ..lng = originLng)
+          ..destination = (LatLngBuilder()
+            ..lat = destLat
+            ..lng = destLng)
+          ..originAddress = (payload['origin_address'] as String?) ?? ''
+          ..destinationAddress =
+              (payload['destination_address'] as String?) ?? ''
+          ..notes = (payload['notes'] as String?) ?? ''
+          ..expiresAt = expiresAt,
+      );
+
+      debugPrint('[DRIVER] Successfully parsed ride request: $rideId');
+      return offer;
+    } catch (e, stackTrace) {
+      debugPrint('[DRIVER] Failed to parse ride requested: $e');
+      debugPrint('[DRIVER] Stack trace: $stackTrace');
+      debugPrint('[DRIVER] Payload was: $payload');
       return null;
     }
   }
@@ -203,6 +310,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
           status: DriverSessionStatus.online,
         );
         _startGpsStreaming();
+        _startIncomingRidePolling();
       } else {
         debugPrint('[DRIVER] Calling goOffline()...');
         await repo.goOffline();
@@ -213,6 +321,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
           status: DriverSessionStatus.offline,
         );
         _stopGpsStreaming();
+        _stopIncomingRidePolling();
       }
     } on Exception catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -241,6 +350,68 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   void _stopGpsStreaming() {
     _gpsTimer?.cancel();
     _gpsTimer = null;
+  }
+
+  /// Starts periodic polling for incoming ride offers (every 15 seconds).
+  /// This acts as a fallback in case WebSocket events are dropped.
+  /// WS is the primary path — polling is a safety net for mobile network unreliability.
+  void _startIncomingRidePolling() {
+    _stopIncomingRidePolling();
+    _incomingRidePollTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _pollIncomingRideOnce(),
+    );
+    // Poll immediately when starting.
+    _pollIncomingRideOnce();
+  }
+
+  void _stopIncomingRidePolling() {
+    _incomingRidePollTimer?.cancel();
+    _incomingRidePollTimer = null;
+  }
+
+  Future<void> _pollIncomingRideOnce() async {
+    if (!state.online) return;
+
+    try {
+      final repo = ref.read(driverRepositoryProvider);
+      final incomingRide = await repo.getIncomingRide();
+      if (incomingRide == null) return;
+      if (incomingRide.status != RideStatus.requested) return;
+
+      debugPrint(
+        '[DRIVER] Polling found incoming ride: ${incomingRide.id}, triggering offer.',
+      );
+      // Build a WsEventRideRequested from the RideResponse.
+      final passenger = incomingRide.passenger;
+      final origin = incomingRide.origin;
+      final destination = incomingRide.destination;
+      final offer = WsEventRideRequested(
+        (b) => b
+          ..rideId = incomingRide.id
+          ..passenger = $UserProfile(
+            (pb) => pb
+              ..id = passenger.id
+              ..name = passenger.name
+              ..email = passenger.email
+              ..role = passenger.role
+              ..createdAt = passenger.createdAt,
+          )
+          ..origin = (LatLngBuilder()
+            ..lat = origin.lat
+            ..lng = origin.lng)
+          ..destination = (LatLngBuilder()
+            ..lat = destination.lat
+            ..lng = destination.lng)
+          ..originAddress = incomingRide.originAddress ?? ''
+          ..destinationAddress = incomingRide.destinationAddress ?? ''
+          ..expiresAt = DateTime.now().add(const Duration(seconds: 30)),
+      );
+      onRideOffer?.call(offer);
+    } catch (e) {
+      // Polling errors are expected when there's no incoming ride — log at debug level only once
+      debugPrint('[DRIVER] Incoming ride poll: $e');
+    }
   }
 
   Future<void> _sendLocation() async {
@@ -272,9 +443,11 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
         heading: position.heading,
       );
 
-      if (!state.gpsAvailable) {
-        state = state.copyWith(gpsAvailable: true);
-      }
+      // Update state with current location so screen can consume it (eliminates duplicate GPS timer)
+      state = state.copyWith(
+        gpsAvailable: true,
+        currentLatLng: gmaps.LatLng(position.latitude, position.longitude),
+      );
     } catch (_) {
       // Silently ignore — retry on next interval.
       if (state.gpsAvailable) {

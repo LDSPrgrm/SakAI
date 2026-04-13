@@ -93,6 +93,12 @@ class AuthRepositoryImpl implements AuthRepository {
         return const SessionCheckResult.unauthenticated();
       }
 
+      // 2xx = session is valid even if body parsing fails (generated client bug).
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        return const SessionCheckResult.authenticated();
+      }
+
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
@@ -102,8 +108,8 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 500) {
+      final sc = e.response?.statusCode;
+      if (sc != null && sc >= 500) {
         return const SessionCheckResult.transientError(
           reason: SessionCheckFailureReason.server,
         );

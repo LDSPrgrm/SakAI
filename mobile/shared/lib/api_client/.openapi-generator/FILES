@@ -34,11 +34,13 @@ doc/DocumentType.md
 doc/DriverApi.md
 doc/DriverDocumentResponse.md
 doc/DriverDocumentsListResponse.md
+doc/DriverGetEarnings200Response.md
 doc/DriverPayout.md
 doc/DriverStatusRequest.md
 doc/DriverStatusResponse.md
 doc/DriverSummary.md
 doc/EWalletDetails.md
+doc/EarningsItem.md
 doc/ErrorCode.md
 doc/ErrorResponse.md
 doc/FareConfig.md
@@ -106,6 +108,7 @@ doc/UserRideItem.md
 doc/UserRideListResponse.md
 doc/UsersApi.md
 doc/VehicleInfo.md
+doc/VehicleInput.md
 doc/WsEnvelope.md
 doc/WsEventDriverLocationUpdated.md
 doc/WsEventNoDriversAvailable.md
@@ -161,11 +164,13 @@ lib/src/model/date.dart
 lib/src/model/document_type.dart
 lib/src/model/driver_document_response.dart
 lib/src/model/driver_documents_list_response.dart
+lib/src/model/driver_get_earnings200_response.dart
 lib/src/model/driver_payout.dart
 lib/src/model/driver_status_request.dart
 lib/src/model/driver_status_response.dart
 lib/src/model/driver_summary.dart
 lib/src/model/e_wallet_details.dart
+lib/src/model/earnings_item.dart
 lib/src/model/error_code.dart
 lib/src/model/error_response.dart
 lib/src/model/fare_config.dart
@@ -230,6 +235,7 @@ lib/src/model/user_rating_response.dart
 lib/src/model/user_ride_item.dart
 lib/src/model/user_ride_list_response.dart
 lib/src/model/vehicle_info.dart
+lib/src/model/vehicle_input.dart
 lib/src/model/ws_envelope.dart
 lib/src/model/ws_event_driver_location_updated.dart
 lib/src/model/ws_event_no_drivers_available.dart
@@ -241,5 +247,6 @@ lib/src/model/ws_event_ride_requested.dart
 lib/src/model/ws_event_ride_status_changed.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/get_nearby_drivers200_response_test.dart
-test/ride_event_payload_test.dart
+test/driver_get_earnings200_response_test.dart
+test/earnings_item_test.dart
+test/vehicle_input_test.dart

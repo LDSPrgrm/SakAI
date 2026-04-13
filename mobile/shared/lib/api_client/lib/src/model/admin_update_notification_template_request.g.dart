@@ -11,18 +11,16 @@ class _$AdminUpdateNotificationTemplateRequest
   @override
   final String body;
 
-  factory _$AdminUpdateNotificationTemplateRequest(
-          [void Function(AdminUpdateNotificationTemplateRequestBuilder)?
-              updates]) =>
-      (AdminUpdateNotificationTemplateRequestBuilder()..update(updates))
-          ._build();
+  factory _$AdminUpdateNotificationTemplateRequest([
+    void Function(AdminUpdateNotificationTemplateRequestBuilder)? updates,
+  ]) => (AdminUpdateNotificationTemplateRequestBuilder()..update(updates))
+      ._build();
 
   _$AdminUpdateNotificationTemplateRequest._({required this.body}) : super._();
   @override
   AdminUpdateNotificationTemplateRequest rebuild(
-          void Function(AdminUpdateNotificationTemplateRequestBuilder)
-              updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(AdminUpdateNotificationTemplateRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   AdminUpdateNotificationTemplateRequestBuilder toBuilder() =>
@@ -46,16 +44,17 @@ class _$AdminUpdateNotificationTemplateRequest
   @override
   String toString() {
     return (newBuiltValueToStringHelper(
-            r'AdminUpdateNotificationTemplateRequest')
-          ..add('body', body))
-        .toString();
+      r'AdminUpdateNotificationTemplateRequest',
+    )..add('body', body)).toString();
   }
 }
 
 class AdminUpdateNotificationTemplateRequestBuilder
     implements
-        Builder<AdminUpdateNotificationTemplateRequest,
-            AdminUpdateNotificationTemplateRequestBuilder> {
+        Builder<
+          AdminUpdateNotificationTemplateRequest,
+          AdminUpdateNotificationTemplateRequestBuilder
+        > {
   _$AdminUpdateNotificationTemplateRequest? _$v;
 
   String? _body;
@@ -82,7 +81,8 @@ class AdminUpdateNotificationTemplateRequestBuilder
 
   @override
   void update(
-      void Function(AdminUpdateNotificationTemplateRequestBuilder)? updates) {
+    void Function(AdminUpdateNotificationTemplateRequestBuilder)? updates,
+  ) {
     if (updates != null) updates(this);
   }
 
@@ -90,10 +90,14 @@ class AdminUpdateNotificationTemplateRequestBuilder
   AdminUpdateNotificationTemplateRequest build() => _build();
 
   _$AdminUpdateNotificationTemplateRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$AdminUpdateNotificationTemplateRequest._(
           body: BuiltValueNullFieldError.checkNotNull(
-              body, r'AdminUpdateNotificationTemplateRequest', 'body'),
+            body,
+            r'AdminUpdateNotificationTemplateRequest',
+            'body',
+          ),
         );
     replace(_$result);
     return _$result;

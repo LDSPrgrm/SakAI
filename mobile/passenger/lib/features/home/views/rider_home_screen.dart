@@ -12,7 +12,6 @@ import 'destination_sheet.dart';
 
 import '../repositories/geocoding_service.dart';
 import '../repositories/service_area_repository.dart';
-import '../repositories/driver_repository.dart';
 import '../models/service_area.dart';
 import '../models/nearby_driver.dart';
 import '../models/ride_type_option.dart';
@@ -61,32 +60,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeNotifierProvider.notifier).initLocation();
       _fetchServiceAreas();
-      _startDriverPolling();
     });
-  }
-
-  void _startDriverPolling() {
-    _driverTimer?.cancel();
-    _driverTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      _fetchNearbyDrivers();
-    });
-    // Immediate fetch
-    _fetchNearbyDrivers();
-  }
-
-  Future<void> _fetchNearbyDrivers() async {
-    final currentPos =
-        ref.read(homeNotifierProvider).currentLatLng ??
-        (_serviceAreas.isNotEmpty ? _serviceAreas.first.center : null);
-    if (currentPos == null) return;
-
-    final authInterceptor = ref.read(authInterceptorProvider);
-    final drivers = await DriverRepository(
-      authInterceptor: authInterceptor,
-    ).fetchNearbyDrivers(currentPos);
-    if (mounted) {
-      setState(() => _nearbyDrivers = drivers);
-    }
   }
 
   Future<void> _fetchServiceAreas() async {
@@ -198,6 +172,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         _mapController!.animateCamera(
           CameraUpdate.newLatLngZoom(next.currentLatLng!, 15),
         );
+      }
+
+      // Sync nearby drivers from notifier (single source of truth)
+      if (next.nearbyDrivers != previous?.nearbyDrivers && mounted) {
+        setState(() {
+          _nearbyDrivers = next.nearbyDrivers;
+        });
       }
 
       if (next.createdRide != null &&
@@ -633,39 +614,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       children: [
         // Pickup and destination display
         _buildLocationRow(context, scheme, tokens),
-        const SizedBox(height: 16),
-        const Divider(),
-        // Inline search with suggestions
-        _buildSearchField(context, scheme, tokens),
-        if (_isLoadingSuggestions)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: LinearProgressIndicator(minHeight: 2),
-          )
-        else
-          const SizedBox(height: 16),
-        if (_suggestions.isNotEmpty) ...[
-          Text(
-            'Suggestions',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 8),
-          ..._suggestions.map(
-            (s) => ListTile(
-              leading: Icon(
-                Icons.place_outlined,
-                size: 20,
-                color: scheme.outline,
-              ),
-              title: Text(s, style: const TextStyle(fontSize: 14)),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              onTap: () => _handleSuggestionTapped(s),
-            ),
-          ),
-        ],
         const SizedBox(height: 16),
       ],
     );

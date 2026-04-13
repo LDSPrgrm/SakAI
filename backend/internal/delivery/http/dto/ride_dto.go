@@ -214,8 +214,8 @@ func enrichRideResponse(resp *RideResponse, r *domain.Ride, e RideResponseEnrich
 
 // CancelRideRequest is the body for POST /rides/:rideId/cancel.
 type CancelRideRequest struct {
-	ReasonCode string  `json:"reason_code" binding:"required,oneof=driver_too_far changed_plans wrong_pickup driver_not_moving safety_concern other"`
-	ReasonText *string `json:"reason_text" binding:"max=500"`
+	ReasonCode *string `json:"reason_code" binding:"omitempty,oneof=driver_too_far changed_plans wrong_pickup driver_not_moving safety_concern other"`
+	ReasonText *string `json:"reason_text" binding:"omitempty,max=500"`
 }
 
 // UserRideItemResponse is the public API shape for a ride in the history list.

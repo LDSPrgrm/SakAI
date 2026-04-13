@@ -32,11 +32,11 @@ DriverPayoutStatusEnum _$driverPayoutStatusEnumValueOf(String name) {
 
 final BuiltSet<DriverPayoutStatusEnum> _$driverPayoutStatusEnumValues =
     BuiltSet<DriverPayoutStatusEnum>(const <DriverPayoutStatusEnum>[
-  _$driverPayoutStatusEnum_pending,
-  _$driverPayoutStatusEnum_approved,
-  _$driverPayoutStatusEnum_processing,
-  _$driverPayoutStatusEnum_done,
-]);
+      _$driverPayoutStatusEnum_pending,
+      _$driverPayoutStatusEnum_approved,
+      _$driverPayoutStatusEnum_processing,
+      _$driverPayoutStatusEnum_done,
+    ]);
 
 Serializer<DriverPayoutStatusEnum> _$driverPayoutStatusEnumSerializer =
     _$DriverPayoutStatusEnumSerializer();
@@ -62,15 +62,20 @@ class _$DriverPayoutStatusEnumSerializer
   final String wireName = 'DriverPayoutStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, DriverPayoutStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    DriverPayoutStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  DriverPayoutStatusEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      DriverPayoutStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  DriverPayoutStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => DriverPayoutStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$DriverPayout extends DriverPayout {
@@ -90,14 +95,14 @@ class _$DriverPayout extends DriverPayout {
   factory _$DriverPayout([void Function(DriverPayoutBuilder)? updates]) =>
       (DriverPayoutBuilder()..update(updates))._build();
 
-  _$DriverPayout._(
-      {this.id,
-      this.batch,
-      this.driverCount,
-      this.totalAmount,
-      this.period,
-      this.status})
-      : super._();
+  _$DriverPayout._({
+    this.id,
+    this.batch,
+    this.driverCount,
+    this.totalAmount,
+    this.period,
+    this.status,
+  }) : super._();
   @override
   DriverPayout rebuild(void Function(DriverPayoutBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -203,7 +208,8 @@ class DriverPayoutBuilder
   DriverPayout build() => _build();
 
   _$DriverPayout _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$DriverPayout._(
           id: id,
           batch: batch,

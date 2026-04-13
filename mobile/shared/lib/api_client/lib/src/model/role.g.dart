@@ -9,8 +9,9 @@ part of 'role.dart';
 const RoleNameEnum _$roleNameEnum_passenger = const RoleNameEnum._('passenger');
 const RoleNameEnum _$roleNameEnum_driver = const RoleNameEnum._('driver');
 const RoleNameEnum _$roleNameEnum_admin = const RoleNameEnum._('admin');
-const RoleNameEnum _$roleNameEnum_superadmin =
-    const RoleNameEnum._('superadmin');
+const RoleNameEnum _$roleNameEnum_superadmin = const RoleNameEnum._(
+  'superadmin',
+);
 
 RoleNameEnum _$roleNameEnumValueOf(String name) {
   switch (name) {
@@ -29,11 +30,11 @@ RoleNameEnum _$roleNameEnumValueOf(String name) {
 
 final BuiltSet<RoleNameEnum> _$roleNameEnumValues =
     BuiltSet<RoleNameEnum>(const <RoleNameEnum>[
-  _$roleNameEnum_passenger,
-  _$roleNameEnum_driver,
-  _$roleNameEnum_admin,
-  _$roleNameEnum_superadmin,
-]);
+      _$roleNameEnum_passenger,
+      _$roleNameEnum_driver,
+      _$roleNameEnum_admin,
+      _$roleNameEnum_superadmin,
+    ]);
 
 Serializer<RoleNameEnum> _$roleNameEnumSerializer = _$RoleNameEnumSerializer();
 
@@ -57,15 +58,20 @@ class _$RoleNameEnumSerializer implements PrimitiveSerializer<RoleNameEnum> {
   final String wireName = 'RoleNameEnum';
 
   @override
-  Object serialize(Serializers serializers, RoleNameEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RoleNameEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  RoleNameEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RoleNameEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  RoleNameEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RoleNameEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$Role extends Role {
@@ -83,13 +89,13 @@ class _$Role extends Role {
   factory _$Role([void Function(RoleBuilder)? updates]) =>
       (RoleBuilder()..update(updates))._build();
 
-  _$Role._(
-      {required this.id,
-      required this.name,
-      required this.permissions,
-      this.createdAt,
-      this.updatedAt})
-      : super._();
+  _$Role._({
+    required this.id,
+    required this.name,
+    required this.permissions,
+    this.createdAt,
+    this.updatedAt,
+  }) : super._();
   @override
   Role rebuild(void Function(RoleBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -190,7 +196,8 @@ class RoleBuilder implements Builder<Role, RoleBuilder> {
   _$Role _build() {
     _$Role _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$Role._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'Role', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(name, r'Role', 'name'),

@@ -97,3 +97,27 @@ func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": drivers})
 }
+
+// GetNearbyDriversAllTypes handles GET /drivers/nearby/all?lat=...&lng=...&radius=...
+// Returns drivers grouped by vehicle type in a single call.
+func (h *DriverHandler) GetNearbyDriversAllTypes(c *gin.Context) {
+	lat, err := strconv.ParseFloat(c.Query("lat"), 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "lat is required"})
+		return
+	}
+	lng, err := strconv.ParseFloat(c.Query("lng"), 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "lng is required"})
+		return
+	}
+	radius, _ := strconv.ParseFloat(c.DefaultQuery("radius", "5000"), 64)
+
+	drivers, err := h.uc.GetNearbyDriversAllTypes(c.Request.Context(), lat, lng, radius)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": drivers})
+}

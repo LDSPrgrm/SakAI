@@ -28,26 +28,26 @@ class _$DriverDocumentResponse extends DriverDocumentResponse {
   @override
   final DateTime? reviewedAt;
 
-  factory _$DriverDocumentResponse(
-          [void Function(DriverDocumentResponseBuilder)? updates]) =>
-      (DriverDocumentResponseBuilder()..update(updates))._build();
+  factory _$DriverDocumentResponse([
+    void Function(DriverDocumentResponseBuilder)? updates,
+  ]) => (DriverDocumentResponseBuilder()..update(updates))._build();
 
-  _$DriverDocumentResponse._(
-      {required this.id,
-      required this.driverId,
-      required this.documentType,
-      required this.documentNumber,
-      required this.imageUrl,
-      this.expiryDate,
-      required this.uploadStatus,
-      this.rejectionReason,
-      required this.uploadedAt,
-      this.reviewedAt})
-      : super._();
+  _$DriverDocumentResponse._({
+    required this.id,
+    required this.driverId,
+    required this.documentType,
+    required this.documentNumber,
+    required this.imageUrl,
+    this.expiryDate,
+    required this.uploadStatus,
+    this.rejectionReason,
+    required this.uploadedAt,
+    this.reviewedAt,
+  }) : super._();
   @override
   DriverDocumentResponse rebuild(
-          void Function(DriverDocumentResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(DriverDocumentResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   DriverDocumentResponseBuilder toBuilder() =>
@@ -187,24 +187,46 @@ class DriverDocumentResponseBuilder
   DriverDocumentResponse build() => _build();
 
   _$DriverDocumentResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$DriverDocumentResponse._(
           id: BuiltValueNullFieldError.checkNotNull(
-              id, r'DriverDocumentResponse', 'id'),
+            id,
+            r'DriverDocumentResponse',
+            'id',
+          ),
           driverId: BuiltValueNullFieldError.checkNotNull(
-              driverId, r'DriverDocumentResponse', 'driverId'),
+            driverId,
+            r'DriverDocumentResponse',
+            'driverId',
+          ),
           documentType: BuiltValueNullFieldError.checkNotNull(
-              documentType, r'DriverDocumentResponse', 'documentType'),
+            documentType,
+            r'DriverDocumentResponse',
+            'documentType',
+          ),
           documentNumber: BuiltValueNullFieldError.checkNotNull(
-              documentNumber, r'DriverDocumentResponse', 'documentNumber'),
+            documentNumber,
+            r'DriverDocumentResponse',
+            'documentNumber',
+          ),
           imageUrl: BuiltValueNullFieldError.checkNotNull(
-              imageUrl, r'DriverDocumentResponse', 'imageUrl'),
+            imageUrl,
+            r'DriverDocumentResponse',
+            'imageUrl',
+          ),
           expiryDate: expiryDate,
           uploadStatus: BuiltValueNullFieldError.checkNotNull(
-              uploadStatus, r'DriverDocumentResponse', 'uploadStatus'),
+            uploadStatus,
+            r'DriverDocumentResponse',
+            'uploadStatus',
+          ),
           rejectionReason: rejectionReason,
           uploadedAt: BuiltValueNullFieldError.checkNotNull(
-              uploadedAt, r'DriverDocumentResponse', 'uploadedAt'),
+            uploadedAt,
+            r'DriverDocumentResponse',
+            'uploadedAt',
+          ),
           reviewedAt: reviewedAt,
         );
     replace(_$result);

@@ -15,10 +15,10 @@ class DomainDriver {
   });
 
   factory DomainDriver.fromApi(DriverSummary d) => DomainDriver(
-        id: d.id,
-        name: d.name,
-        vehicle: DomainVehicle.fromApi(d.vehicle),
-      );
+    id: d.id,
+    name: d.name,
+    vehicle: d.vehicle != null ? DomainVehicle.fromApi(d.vehicle!) : null,
+  );
 }
 
 /// Domain Vehicle model — stable wrapper around [VehicleInfo].
@@ -36,9 +36,9 @@ class DomainVehicle {
   });
 
   factory DomainVehicle.fromApi(VehicleInfo v) => DomainVehicle(
-        make: v.make,
-        model: v.model,
-        color: v.color,
-        plate: v.plate,
-      );
+    make: v.make,
+    model: v.model,
+    color: v.color,
+    plate: v.plate,
+  );
 }

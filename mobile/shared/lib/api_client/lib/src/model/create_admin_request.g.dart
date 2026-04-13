@@ -36,12 +36,12 @@ CreateAdminRequestRoleEnum _$createAdminRequestRoleEnumValueOf(String name) {
 
 final BuiltSet<CreateAdminRequestRoleEnum> _$createAdminRequestRoleEnumValues =
     BuiltSet<CreateAdminRequestRoleEnum>(const <CreateAdminRequestRoleEnum>[
-  _$createAdminRequestRoleEnum_admin,
-  _$createAdminRequestRoleEnum_superadmin,
-  _$createAdminRequestRoleEnum_operations,
-  _$createAdminRequestRoleEnum_finance,
-  _$createAdminRequestRoleEnum_support,
-]);
+      _$createAdminRequestRoleEnum_admin,
+      _$createAdminRequestRoleEnum_superadmin,
+      _$createAdminRequestRoleEnum_operations,
+      _$createAdminRequestRoleEnum_finance,
+      _$createAdminRequestRoleEnum_support,
+    ]);
 
 Serializer<CreateAdminRequestRoleEnum> _$createAdminRequestRoleEnumSerializer =
     _$CreateAdminRequestRoleEnumSerializer();
@@ -69,16 +69,20 @@ class _$CreateAdminRequestRoleEnumSerializer
   final String wireName = 'CreateAdminRequestRoleEnum';
 
   @override
-  Object serialize(Serializers serializers, CreateAdminRequestRoleEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    CreateAdminRequestRoleEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   CreateAdminRequestRoleEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      CreateAdminRequestRoleEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CreateAdminRequestRoleEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$CreateAdminRequest extends CreateAdminRequest {
@@ -91,20 +95,20 @@ class _$CreateAdminRequest extends CreateAdminRequest {
   @override
   final CreateAdminRequestRoleEnum role;
 
-  factory _$CreateAdminRequest(
-          [void Function(CreateAdminRequestBuilder)? updates]) =>
-      (CreateAdminRequestBuilder()..update(updates))._build();
+  factory _$CreateAdminRequest([
+    void Function(CreateAdminRequestBuilder)? updates,
+  ]) => (CreateAdminRequestBuilder()..update(updates))._build();
 
-  _$CreateAdminRequest._(
-      {required this.name,
-      required this.email,
-      required this.password,
-      required this.role})
-      : super._();
+  _$CreateAdminRequest._({
+    required this.name,
+    required this.email,
+    required this.password,
+    required this.role,
+  }) : super._();
   @override
   CreateAdminRequest rebuild(
-          void Function(CreateAdminRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(CreateAdminRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   CreateAdminRequestBuilder toBuilder() =>
@@ -192,16 +196,29 @@ class CreateAdminRequestBuilder
   CreateAdminRequest build() => _build();
 
   _$CreateAdminRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$CreateAdminRequest._(
           name: BuiltValueNullFieldError.checkNotNull(
-              name, r'CreateAdminRequest', 'name'),
+            name,
+            r'CreateAdminRequest',
+            'name',
+          ),
           email: BuiltValueNullFieldError.checkNotNull(
-              email, r'CreateAdminRequest', 'email'),
+            email,
+            r'CreateAdminRequest',
+            'email',
+          ),
           password: BuiltValueNullFieldError.checkNotNull(
-              password, r'CreateAdminRequest', 'password'),
+            password,
+            r'CreateAdminRequest',
+            'password',
+          ),
           role: BuiltValueNullFieldError.checkNotNull(
-              role, r'CreateAdminRequest', 'role'),
+            role,
+            r'CreateAdminRequest',
+            'role',
+          ),
         );
     replace(_$result);
     return _$result;

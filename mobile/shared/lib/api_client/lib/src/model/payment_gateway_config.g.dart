@@ -14,15 +14,15 @@ class _$PaymentGatewayConfig extends PaymentGatewayConfig {
   @override
   final double? radius;
 
-  factory _$PaymentGatewayConfig(
-          [void Function(PaymentGatewayConfigBuilder)? updates]) =>
-      (PaymentGatewayConfigBuilder()..update(updates))._build();
+  factory _$PaymentGatewayConfig([
+    void Function(PaymentGatewayConfigBuilder)? updates,
+  ]) => (PaymentGatewayConfigBuilder()..update(updates))._build();
 
   _$PaymentGatewayConfig._({this.name, this.center, this.radius}) : super._();
   @override
   PaymentGatewayConfig rebuild(
-          void Function(PaymentGatewayConfigBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(PaymentGatewayConfigBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   PaymentGatewayConfigBuilder toBuilder() =>
@@ -104,7 +104,8 @@ class PaymentGatewayConfigBuilder
   _$PaymentGatewayConfig _build() {
     _$PaymentGatewayConfig _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$PaymentGatewayConfig._(
             name: name,
             center: _center?.build(),
@@ -117,7 +118,10 @@ class PaymentGatewayConfigBuilder
         _center?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'PaymentGatewayConfig', _$failedField, e.toString());
+          r'PaymentGatewayConfig',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

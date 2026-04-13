@@ -161,11 +161,14 @@ func (ps PaymentStatus) IsCompleted() bool {
 type Payment struct {
 	ID                   uuid.UUID     `json:"id"`
 	RideID               uuid.UUID     `json:"ride_id"`
+	PassengerID          uuid.UUID     `json:"passenger_id"`
 	Amount               float64       `json:"amount"`
 	Currency             string        `json:"currency"`
 	Method               PaymentMethod `json:"method"`
 	Status               PaymentStatus `json:"status"`
-	GatewayTransactionID *string       `json:"gateway_transaction_id,omitempty"`
+	GatewayTransactionID *string       `json:"gateway_transaction_id,omitempty"` // Stripe charge ID (ch_...)
+	StripeChargeID       *string       `json:"stripe_charge_id,omitempty"`       // Alias for GatewayTransactionID
+	IdempotencyKey       *string       `json:"idempotency_key,omitempty"`
 	GatewayResponse      *string       `json:"gateway_response,omitempty"`
 	ProcessedAt          *time.Time    `json:"processed_at,omitempty"`
 	FailureReason        *string       `json:"failure_reason,omitempty"`

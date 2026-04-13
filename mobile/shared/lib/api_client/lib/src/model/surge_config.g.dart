@@ -21,13 +21,13 @@ class _$SurgeConfig extends SurgeConfig {
   factory _$SurgeConfig([void Function(SurgeConfigBuilder)? updates]) =>
       (SurgeConfigBuilder()..update(updates))._build();
 
-  _$SurgeConfig._(
-      {this.enabled,
-      this.maxMultiplier,
-      this.triggerRatio,
-      this.zones,
-      this.blackoutHours})
-      : super._();
+  _$SurgeConfig._({
+    this.enabled,
+    this.maxMultiplier,
+    this.triggerRatio,
+    this.zones,
+    this.blackoutHours,
+  }) : super._();
   @override
   SurgeConfig rebuild(void Function(SurgeConfigBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -130,7 +130,8 @@ class SurgeConfigBuilder implements Builder<SurgeConfig, SurgeConfigBuilder> {
   _$SurgeConfig _build() {
     _$SurgeConfig _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$SurgeConfig._(
             enabled: enabled,
             maxMultiplier: maxMultiplier,
@@ -147,7 +148,10 @@ class SurgeConfigBuilder implements Builder<SurgeConfig, SurgeConfigBuilder> {
         _blackoutHours?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'SurgeConfig', _$failedField, e.toString());
+          r'SurgeConfig',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

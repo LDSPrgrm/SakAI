@@ -59,7 +59,6 @@ class DriverAuthRepositoryImpl implements DriverAuthRepository {
   }) async {
     try {
       // Use raw Dio to send vehicle_type which isn't yet in the generated client
-      final baseUrl = _client.dio.options.baseUrl;
       final response = await _client.dio.post(
         '/auth/register',
         data: {

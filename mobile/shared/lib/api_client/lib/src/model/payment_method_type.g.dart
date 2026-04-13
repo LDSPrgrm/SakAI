@@ -23,12 +23,9 @@ PaymentMethodType _$valueOf(String name) {
   }
 }
 
-final BuiltSet<PaymentMethodType> _$values =
-    BuiltSet<PaymentMethodType>(const <PaymentMethodType>[
-  _$card,
-  _$eWallet,
-  _$cash,
-]);
+final BuiltSet<PaymentMethodType> _$values = BuiltSet<PaymentMethodType>(
+  const <PaymentMethodType>[_$card, _$eWallet, _$cash],
+);
 
 class _$PaymentMethodTypeMeta {
   const _$PaymentMethodTypeMeta();
@@ -39,7 +36,7 @@ class _$PaymentMethodTypeMeta {
   BuiltSet<PaymentMethodType> get values => _$values;
 }
 
-abstract class _$PaymentMethodTypeMixin {
+mixin _$PaymentMethodTypeMixin {
   // ignore: non_constant_identifier_names
   _$PaymentMethodTypeMeta get PaymentMethodType =>
       const _$PaymentMethodTypeMeta();
@@ -67,15 +64,20 @@ class _$PaymentMethodTypeSerializer
   final String wireName = 'PaymentMethodType';
 
   @override
-  Object serialize(Serializers serializers, PaymentMethodType object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    PaymentMethodType object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  PaymentMethodType deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      PaymentMethodType.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  PaymentMethodType deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PaymentMethodType.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

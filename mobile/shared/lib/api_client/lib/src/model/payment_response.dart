@@ -1,4 +1,3 @@
-//
 // AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
@@ -20,6 +19,7 @@ part 'payment_response.g.dart';
 /// * [method] 
 /// * [status] 
 /// * [gatewayTransactionId] - External payment gateway reference (e.g., Stripe PaymentIntent ID)
+/// * [failureReason] - Error message or code when payment fails
 /// * [processedAt] 
 @BuiltValue()
 abstract class PaymentResponse implements Built<PaymentResponse, PaymentResponseBuilder> {
@@ -46,6 +46,10 @@ abstract class PaymentResponse implements Built<PaymentResponse, PaymentResponse
   /// External payment gateway reference (e.g., Stripe PaymentIntent ID)
   @BuiltValueField(wireName: r'gatewayTransactionId')
   String? get gatewayTransactionId;
+
+  /// Error message or code when payment fails
+  @BuiltValueField(wireName: r'failureReason')
+  String? get failureReason;
 
   @BuiltValueField(wireName: r'processedAt')
   DateTime get processedAt;
@@ -107,6 +111,13 @@ class _$PaymentResponseSerializer implements PrimitiveSerializer<PaymentResponse
       yield r'gatewayTransactionId';
       yield serializers.serialize(
         object.gatewayTransactionId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.failureReason != null) {
+      yield r'failureReason';
+      yield serializers.serialize(
+        object.failureReason,
         specifiedType: const FullType.nullable(String),
       );
     }
@@ -187,6 +198,14 @@ class _$PaymentResponseSerializer implements PrimitiveSerializer<PaymentResponse
           ) as String?;
           if (valueDes == null) continue;
           result.gatewayTransactionId = valueDes;
+          break;
+        case r'failureReason':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.failureReason = valueDes;
           break;
         case r'processedAt':
           final valueDes = serializers.deserialize(

@@ -33,19 +33,19 @@ class _$ReceiptResponse extends ReceiptResponse {
   factory _$ReceiptResponse([void Function(ReceiptResponseBuilder)? updates]) =>
       (ReceiptResponseBuilder()..update(updates))._build();
 
-  _$ReceiptResponse._(
-      {required this.rideId,
-      required this.passengerName,
-      required this.driverName,
-      this.pickupAddress,
-      this.destinationAddress,
-      required this.amount,
-      required this.currency,
-      required this.paymentMethod,
-      required this.paymentStatus,
-      this.completedAt,
-      this.processedAt})
-      : super._();
+  _$ReceiptResponse._({
+    required this.rideId,
+    required this.passengerName,
+    required this.driverName,
+    this.pickupAddress,
+    this.destinationAddress,
+    required this.amount,
+    required this.currency,
+    required this.paymentMethod,
+    required this.paymentStatus,
+    this.completedAt,
+    this.processedAt,
+  }) : super._();
   @override
   ReceiptResponse rebuild(void Function(ReceiptResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -196,24 +196,46 @@ class ReceiptResponseBuilder
   ReceiptResponse build() => _build();
 
   _$ReceiptResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ReceiptResponse._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-              rideId, r'ReceiptResponse', 'rideId'),
+            rideId,
+            r'ReceiptResponse',
+            'rideId',
+          ),
           passengerName: BuiltValueNullFieldError.checkNotNull(
-              passengerName, r'ReceiptResponse', 'passengerName'),
+            passengerName,
+            r'ReceiptResponse',
+            'passengerName',
+          ),
           driverName: BuiltValueNullFieldError.checkNotNull(
-              driverName, r'ReceiptResponse', 'driverName'),
+            driverName,
+            r'ReceiptResponse',
+            'driverName',
+          ),
           pickupAddress: pickupAddress,
           destinationAddress: destinationAddress,
           amount: BuiltValueNullFieldError.checkNotNull(
-              amount, r'ReceiptResponse', 'amount'),
+            amount,
+            r'ReceiptResponse',
+            'amount',
+          ),
           currency: BuiltValueNullFieldError.checkNotNull(
-              currency, r'ReceiptResponse', 'currency'),
+            currency,
+            r'ReceiptResponse',
+            'currency',
+          ),
           paymentMethod: BuiltValueNullFieldError.checkNotNull(
-              paymentMethod, r'ReceiptResponse', 'paymentMethod'),
+            paymentMethod,
+            r'ReceiptResponse',
+            'paymentMethod',
+          ),
           paymentStatus: BuiltValueNullFieldError.checkNotNull(
-              paymentStatus, r'ReceiptResponse', 'paymentStatus'),
+            paymentStatus,
+            r'ReceiptResponse',
+            'paymentStatus',
+          ),
           completedAt: completedAt,
           processedAt: processedAt,
         );

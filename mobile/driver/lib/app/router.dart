@@ -141,11 +141,52 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 /// Loads the active ride from the API and navigates to the screen.
-class _ActiveRideLoader extends ConsumerWidget {
+class _ActiveRideLoader extends ConsumerStatefulWidget {
   const _ActiveRideLoader();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ActiveRideLoader> createState() => _ActiveRideLoaderState();
+}
+
+class _ActiveRideLoaderState extends ConsumerState<_ActiveRideLoader> {
+  @override
+  void initState() {
+    super.initState();
+    _loadActiveRide();
+  }
+
+  Future<void> _loadActiveRide() async {
+    try {
+      final rideRepo = ref.read(activeRideRepositoryProvider);
+      final activeRide = await rideRepo.getActiveRide();
+
+      if (!mounted) return;
+
+      if (activeRide != null) {
+        // Navigate to active ride screen with the loaded ride
+        context.go(Routes.rideActive, extra: activeRide);
+      } else {
+        // No active ride, go back to home
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No active ride found.')),
+          );
+          context.go(Routes.home);
+        }
+      }
+    } catch (e) {
+      debugPrint('[ROUTER] Failed to load active ride: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load active ride: $e')),
+        );
+        context.go(Routes.home);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

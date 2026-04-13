@@ -19,12 +19,12 @@ class _$VehicleInfo extends VehicleInfo {
   factory _$VehicleInfo([void Function(VehicleInfoBuilder)? updates]) =>
       (VehicleInfoBuilder()..update(updates))._build();
 
-  _$VehicleInfo._(
-      {required this.make,
-      required this.model,
-      required this.color,
-      required this.plate})
-      : super._();
+  _$VehicleInfo._({
+    required this.make,
+    required this.model,
+    required this.color,
+    required this.plate,
+  }) : super._();
   @override
   VehicleInfo rebuild(void Function(VehicleInfoBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -113,16 +113,29 @@ class VehicleInfoBuilder implements Builder<VehicleInfo, VehicleInfoBuilder> {
   VehicleInfo build() => _build();
 
   _$VehicleInfo _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$VehicleInfo._(
           make: BuiltValueNullFieldError.checkNotNull(
-              make, r'VehicleInfo', 'make'),
+            make,
+            r'VehicleInfo',
+            'make',
+          ),
           model: BuiltValueNullFieldError.checkNotNull(
-              model, r'VehicleInfo', 'model'),
+            model,
+            r'VehicleInfo',
+            'model',
+          ),
           color: BuiltValueNullFieldError.checkNotNull(
-              color, r'VehicleInfo', 'color'),
+            color,
+            r'VehicleInfo',
+            'color',
+          ),
           plate: BuiltValueNullFieldError.checkNotNull(
-              plate, r'VehicleInfo', 'plate'),
+            plate,
+            r'VehicleInfo',
+            'plate',
+          ),
         );
     replace(_$result);
     return _$result;

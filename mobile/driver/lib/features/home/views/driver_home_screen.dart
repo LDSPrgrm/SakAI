@@ -23,7 +23,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   late final DriverHomeNotifier _notifier;
   GoogleMapController? _mapController;
   LatLng _currentLatLng = const LatLng(14.5995, 120.9842);
-  Timer? _gpsUpdateTimer;
 
   @override
   void initState() {
@@ -32,6 +31,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     _setupWsListener();
     _initLocation();
 
+    // Connect WebSocket and poll for missed ride offers
+    _connectWebSocket();
+
+    // Check for active ride recovery on screen init
+    _notifier.checkForActiveRide();
+
     // When a ride offer arrives, navigate to the offer screen.
     _notifier.onRideOffer = (offer) {
       if (context.mounted) {
@@ -39,14 +44,41 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       }
     };
 
-    // When the ride is cancelled while on home screen, show a message.
+    // When the ride is cancelled while on home screen, clear state and show message.
     _notifier.onRideCancelled = (rideId) {
       if (context.mounted) {
+        _notifier.checkForActiveRide(); // Clear the active ride from state
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Ride was cancelled.')));
       }
     };
+
+    // When ride status changes, check for active ride updates
+    _notifier.onStatusChanged = (rideId, status) {
+      debugPrint('[DRIVER] Ride status changed: $rideId -> $status');
+      _notifier.checkForActiveRide();
+    };
+
+    // When active ride is detected, navigate to active ride screen
+    _notifier.onActiveRideDetected = (activeRide) {
+      if (context.mounted) {
+        debugPrint(
+          '[DRIVER] Active ride detected, navigating to active ride screen',
+        );
+        context.go(Routes.rideActive, extra: activeRide);
+      }
+    };
+  }
+
+  /// Connects the WebSocket and polls for any missed ride offers.
+  Future<void> _connectWebSocket() async {
+    try {
+      final wsClient = ref.read(wsClientProvider);
+      await _notifier.connectWebSocket(wsClient);
+    } catch (e) {
+      debugPrint('[DRIVER] Failed to connect WebSocket: $e');
+    }
   }
 
   Future<void> _initLocation() async {
@@ -85,11 +117,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
 
   @override
   void dispose() {
-    _gpsUpdateTimer?.cancel();
     _mapController?.dispose();
     _notifier.unsubscribeWs();
     _notifier.onRideOffer = null;
     _notifier.onRideCancelled = null;
+    _notifier.onStatusChanged = null;
+    _notifier.onActiveRideDetected = null;
     super.dispose();
   }
 
@@ -99,6 +132,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     final notifier = ref.read(driverHomeNotifierProvider.notifier);
     final tokens = SakaiDesignTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
+
+    // Use currentLatLng from notifier state (single GPS source of truth)
+    final currentLatLng = state.currentLatLng ?? _currentLatLng;
 
     ref.listen<DriverHomeState>(driverHomeNotifierProvider, (previous, next) {
       if (next.errorMessage != null &&
@@ -117,7 +153,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     markers.add(
       Marker(
         markerId: const MarkerId('driver'),
-        position: _currentLatLng,
+        position: currentLatLng,
         icon: BitmapDescriptor.defaultMarkerWithHue(
           state.online ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed,
         ),
@@ -133,7 +169,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           // Full-screen map
           GoogleMap(
             initialCameraPosition: CameraPosition(
-              target: _currentLatLng,
+              target: currentLatLng,
               zoom: 14,
             ),
             onMapCreated: (controller) => _mapController = controller,
@@ -236,6 +272,114 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               ),
             ),
 
+          // Active ride banner
+          if (state.activeRide != null)
+            Positioned(
+              top: state.online && !state.gpsAvailable ? 130 : 70,
+              left: 16,
+              right: 16,
+              child: GestureDetector(
+                onTap: () {
+                  if (context.mounted && state.activeRide != null) {
+                    context.go(Routes.rideActive, extra: state.activeRide);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(tokens.radiusMd),
+                    boxShadow: tokens.elevationMd,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.directions_car,
+                            color: scheme.onPrimaryContainer,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Active Ride',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: scheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Passenger: ${state.activeRide!.passenger.name}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: scheme.onPrimaryContainer.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              state.activeRide!.originAddress ??
+                                  'Pickup location',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: scheme.onPrimaryContainer.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.onPrimaryContainer.withValues(
+                            alpha: 0.2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _formatRideStatus(state.activeRide!.status),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: scheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           // Bottom card — online/offline toggle
           Positioned(
             bottom: 0,
@@ -257,14 +401,31 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      state.online
-                          ? 'You are online — waiting for rides'
-                          : 'Go online to start accepting rides',
+                      state.activeRide != null
+                          ? 'You have an active ride'
+                          : (state.online
+                                ? 'You are online — waiting for rides'
+                                : 'Go online to start accepting rides'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (state.activeRide != null) ...[
+                      SakaiPrimaryButton(
+                        label: 'Resume Active Ride',
+                        icon: Icons.directions_car,
+                        onPressed: () {
+                          if (context.mounted && state.activeRide != null) {
+                            context.go(
+                              Routes.rideActive,
+                              extra: state.activeRide,
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     SakaiPrimaryButton(
                       label: state.loading
                           ? (state.online ? 'Going offline…' : 'Going online…')
@@ -275,14 +436,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                       onPressed: state.loading
                           ? null
                           : () async {
-                              final wasOnline = state.online;
                               await notifier.toggleStatus();
-                              // Update GPS on toggle
-                              if (!wasOnline) {
-                                _startGpsUpdates();
-                              } else {
-                                _stopGpsUpdates();
-                              }
                             },
                     ),
                     const SizedBox(height: 12),
@@ -301,12 +455,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           // Center location button
           Positioned(
             right: 16,
-            bottom: 280,
+            bottom: state.activeRide != null ? 360 : 280,
             child: FloatingActionButton.small(
               onPressed: () {
                 if (_mapController != null) {
                   _mapController!.animateCamera(
-                    CameraUpdate.newLatLngZoom(_currentLatLng, 15),
+                    CameraUpdate.newLatLngZoom(currentLatLng, 15),
                   );
                 }
               },
@@ -333,6 +487,23 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               selected: true,
               onTap: () => Navigator.pop(context),
             ),
+            if (state.activeRide != null)
+              ListTile(
+                leading: Icon(Icons.directions_car, color: scheme.primary),
+                title: Text(
+                  'Active Ride',
+                  style: TextStyle(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (context.mounted && state.activeRide != null) {
+                    context.go(Routes.rideActive, extra: state.activeRide);
+                  }
+                },
+              ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.payments_outlined),
@@ -371,28 +542,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     );
   }
 
-  void _startGpsUpdates() {
-    _stopGpsUpdates();
-    _gpsUpdateTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
-      try {
-        final permission = await _ensureLocationPermission();
-        if (!permission) return;
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-          ),
-        );
-        if (mounted) {
-          setState(() => _currentLatLng = LatLng(pos.latitude, pos.longitude));
-        }
-      } catch (_) {
-        // Ignore silently
-      }
-    });
-  }
-
-  void _stopGpsUpdates() {
-    _gpsUpdateTimer?.cancel();
-    _gpsUpdateTimer = null;
+  String _formatRideStatus(RideStatus status) {
+    switch (status) {
+      case RideStatus.requested:
+        return 'Requested';
+      case RideStatus.accepted:
+        return 'Accepted - En Route';
+      case RideStatus.arrived:
+        return 'Arrived at Pickup';
+      case RideStatus.inProgress:
+        return 'In Progress';
+      case RideStatus.completed:
+        return 'Completed';
+      case RideStatus.cancelled:
+        return 'Cancelled';
+    }
+    return status.toString().split('.').last;
   }
 }

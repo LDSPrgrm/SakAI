@@ -28,10 +28,10 @@ AdminRideItemRideTypeEnum _$adminRideItemRideTypeEnumValueOf(String name) {
 
 final BuiltSet<AdminRideItemRideTypeEnum> _$adminRideItemRideTypeEnumValues =
     BuiltSet<AdminRideItemRideTypeEnum>(const <AdminRideItemRideTypeEnum>[
-  _$adminRideItemRideTypeEnum_motorcycle,
-  _$adminRideItemRideTypeEnum_car,
-  _$adminRideItemRideTypeEnum_tricycle,
-]);
+      _$adminRideItemRideTypeEnum_motorcycle,
+      _$adminRideItemRideTypeEnum_car,
+      _$adminRideItemRideTypeEnum_tricycle,
+    ]);
 
 const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_cash =
     const AdminRideItemPaymentMethodEnum._('cash');
@@ -43,7 +43,8 @@ const AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnum_card =
     const AdminRideItemPaymentMethodEnum._('card');
 
 AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'cash':
       return _$adminRideItemPaymentMethodEnum_cash;
@@ -59,13 +60,15 @@ AdminRideItemPaymentMethodEnum _$adminRideItemPaymentMethodEnumValueOf(
 }
 
 final BuiltSet<AdminRideItemPaymentMethodEnum>
-    _$adminRideItemPaymentMethodEnumValues = BuiltSet<
-        AdminRideItemPaymentMethodEnum>(const <AdminRideItemPaymentMethodEnum>[
-  _$adminRideItemPaymentMethodEnum_cash,
-  _$adminRideItemPaymentMethodEnum_gcash,
-  _$adminRideItemPaymentMethodEnum_paymaya,
-  _$adminRideItemPaymentMethodEnum_card,
-]);
+_$adminRideItemPaymentMethodEnumValues =
+    BuiltSet<AdminRideItemPaymentMethodEnum>(
+      const <AdminRideItemPaymentMethodEnum>[
+        _$adminRideItemPaymentMethodEnum_cash,
+        _$adminRideItemPaymentMethodEnum_gcash,
+        _$adminRideItemPaymentMethodEnum_paymaya,
+        _$adminRideItemPaymentMethodEnum_card,
+      ],
+    );
 
 const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_passenger =
     const AdminRideItemCancelledByEnum._('passenger');
@@ -73,7 +76,8 @@ const AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnum_driver =
     const AdminRideItemCancelledByEnum._('driver');
 
 AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'passenger':
       return _$adminRideItemCancelledByEnum_passenger;
@@ -85,19 +89,20 @@ AdminRideItemCancelledByEnum _$adminRideItemCancelledByEnumValueOf(
 }
 
 final BuiltSet<AdminRideItemCancelledByEnum>
-    _$adminRideItemCancelledByEnumValues =
-    BuiltSet<AdminRideItemCancelledByEnum>(const <AdminRideItemCancelledByEnum>[
-  _$adminRideItemCancelledByEnum_passenger,
-  _$adminRideItemCancelledByEnum_driver,
-]);
+_$adminRideItemCancelledByEnumValues = BuiltSet<AdminRideItemCancelledByEnum>(
+  const <AdminRideItemCancelledByEnum>[
+    _$adminRideItemCancelledByEnum_passenger,
+    _$adminRideItemCancelledByEnum_driver,
+  ],
+);
 
 Serializer<AdminRideItemRideTypeEnum> _$adminRideItemRideTypeEnumSerializer =
     _$AdminRideItemRideTypeEnumSerializer();
 Serializer<AdminRideItemPaymentMethodEnum>
-    _$adminRideItemPaymentMethodEnumSerializer =
+_$adminRideItemPaymentMethodEnumSerializer =
     _$AdminRideItemPaymentMethodEnumSerializer();
 Serializer<AdminRideItemCancelledByEnum>
-    _$adminRideItemCancelledByEnumSerializer =
+_$adminRideItemCancelledByEnumSerializer =
     _$AdminRideItemCancelledByEnumSerializer();
 
 class _$AdminRideItemRideTypeEnumSerializer
@@ -119,16 +124,20 @@ class _$AdminRideItemRideTypeEnumSerializer
   final String wireName = 'AdminRideItemRideTypeEnum';
 
   @override
-  Object serialize(Serializers serializers, AdminRideItemRideTypeEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    AdminRideItemRideTypeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   AdminRideItemRideTypeEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      AdminRideItemRideTypeEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminRideItemRideTypeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$AdminRideItemPaymentMethodEnumSerializer
@@ -153,16 +162,19 @@ class _$AdminRideItemPaymentMethodEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, AdminRideItemPaymentMethodEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    AdminRideItemPaymentMethodEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   AdminRideItemPaymentMethodEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      AdminRideItemPaymentMethodEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminRideItemPaymentMethodEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$AdminRideItemCancelledByEnumSerializer
@@ -182,16 +194,20 @@ class _$AdminRideItemCancelledByEnumSerializer
   final String wireName = 'AdminRideItemCancelledByEnum';
 
   @override
-  Object serialize(Serializers serializers, AdminRideItemCancelledByEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    AdminRideItemCancelledByEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   AdminRideItemCancelledByEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      AdminRideItemCancelledByEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminRideItemCancelledByEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$AdminRideItem extends AdminRideItem {
@@ -245,31 +261,31 @@ class _$AdminRideItem extends AdminRideItem {
   factory _$AdminRideItem([void Function(AdminRideItemBuilder)? updates]) =>
       (AdminRideItemBuilder()..update(updates))._build();
 
-  _$AdminRideItem._(
-      {this.passengerName,
-      this.totalFare,
-      this.driverName,
-      required this.id,
-      required this.status,
-      required this.passenger,
-      this.driver,
-      required this.origin,
-      required this.destination,
-      this.originAddress,
-      this.destinationAddress,
-      this.notes,
-      this.fare,
-      this.estimatedFare,
-      this.actualFare,
-      this.fareBreakdown,
-      this.rideType,
-      this.paymentMethod,
-      this.cancelledBy,
-      this.cancellationReason,
-      this.cancellationReasonText,
-      required this.createdAt,
-      required this.updatedAt})
-      : super._();
+  _$AdminRideItem._({
+    this.passengerName,
+    this.totalFare,
+    this.driverName,
+    required this.id,
+    required this.status,
+    required this.passenger,
+    this.driver,
+    required this.origin,
+    required this.destination,
+    this.originAddress,
+    this.destinationAddress,
+    this.notes,
+    this.fare,
+    this.estimatedFare,
+    this.actualFare,
+    this.fareBreakdown,
+    this.rideType,
+    this.paymentMethod,
+    this.cancelledBy,
+    this.cancellationReason,
+    this.cancellationReasonText,
+    required this.createdAt,
+    required this.updatedAt,
+  }) : super._();
   @override
   AdminRideItem rebuild(void Function(AdminRideItemBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -530,17 +546,27 @@ class AdminRideItemBuilder
   _$AdminRideItem _build() {
     _$AdminRideItem _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$AdminRideItem._(
             passengerName: passengerName,
             totalFare: totalFare,
             driverName: driverName,
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'AdminRideItem', 'id'),
+              id,
+              r'AdminRideItem',
+              'id',
+            ),
             status: BuiltValueNullFieldError.checkNotNull(
-                status, r'AdminRideItem', 'status'),
+              status,
+              r'AdminRideItem',
+              'status',
+            ),
             passenger: BuiltValueNullFieldError.checkNotNull(
-                passenger, r'AdminRideItem', 'passenger'),
+              passenger,
+              r'AdminRideItem',
+              'passenger',
+            ),
             driver: _driver?.build(),
             origin: origin.build(),
             destination: destination.build(),
@@ -557,9 +583,15 @@ class AdminRideItemBuilder
             cancellationReason: cancellationReason,
             cancellationReasonText: cancellationReasonText,
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'AdminRideItem', 'createdAt'),
+              createdAt,
+              r'AdminRideItem',
+              'createdAt',
+            ),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
-                updatedAt, r'AdminRideItem', 'updatedAt'),
+              updatedAt,
+              r'AdminRideItem',
+              'updatedAt',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -575,7 +607,10 @@ class AdminRideItemBuilder
         _fareBreakdown?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'AdminRideItem', _$failedField, e.toString());
+          r'AdminRideItem',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

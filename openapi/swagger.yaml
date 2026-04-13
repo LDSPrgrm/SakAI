@@ -548,6 +548,67 @@ paths:
         "404":
           description: No pending ride offer at this time
 
+  /driver/earnings:
+    get:
+      tags: [Driver]
+      summary: Get driver earnings history
+      description: |
+        Returns a paginated list of earnings for the authenticated driver.
+        Only `role=driver` may call this. Supports filtering by date range.
+      operationId: driverGetEarnings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD). Defaults to 30 days ago.
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD). Defaults to today.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          description: Items per page (max 50)
+      responses:
+        "200":
+          description: Paginated earnings history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EarningsItem"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Rides ─────────────────────────────────────────────────────────────────
 
   /rides/active:
@@ -655,7 +716,22 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: "Forbidden — or passenger has an unresolved failed payment older than 24 hours (code: UNPAID_RIDE_BLOCKED)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  summary: Standard forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: "Access denied"
+                unpaid_block:
+                  summary: Unpaid ride block
+                  value:
+                    code: UNPAID_RIDE_BLOCKED
+                    message: "You have an unpaid ride. Please settle your balance before requesting a new ride."
         "409":
           description: Passenger already has an active ride
           content:
@@ -2886,6 +2962,7 @@ components:
         - PAYMENT_FAILED
         - INVALID_PAYMENT_TOKEN
         - DUPLICATE_PAYMENT
+        - UNPAID_RIDE_BLOCKED
         # Payment Methods
         - PAYMENT_METHOD_UNSUPPORTED
         - PAYMENT_METHOD_DUPLICATE
@@ -3467,7 +3544,7 @@ components:
     DriverSummary:
       type: object
       description: Minimal driver info embedded in ride responses and WebSocket events.
-      required: [id, name, vehicle]
+      required: [id, name]
       properties:
         id:
           type: string
@@ -3476,9 +3553,45 @@ components:
           type: string
           example: "Juan dela Cruz"
         vehicle:
-          $ref: "#/components/schemas/VehicleInfo"
+          description: Null if driver has no vehicle record yet.
+          allOf:
+            - $ref: "#/components/schemas/VehicleInfo"
+          nullable: true
         current_location:
           $ref: "#/components/schemas/LatLng"
+
+    EarningsItem:
+      type: object
+      description: A single ride's earnings contribution for a driver.
+      required:
+        [id, ride_id, fare_amount, tip_amount, total_amount, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ride_id:
+          type: string
+          format: uuid
+        fare_amount:
+          type: number
+          format: double
+          description: Driver's share of the fare (before commission)
+        tip_amount:
+          type: number
+          format: double
+          description: Tip amount (0 if no tip)
+        total_amount:
+          type: number
+          format: double
+          description: Total earnings for this ride (fare + tip)
+        currency:
+          type: string
+          default: USD
+          description: ISO 4217 currency code
+        completed_at:
+          type: string
+          format: date-time
+          description: When the ride was completed
 
     RideEventPayload:
       type: object
@@ -4584,6 +4697,10 @@ components:
           type: string
           nullable: true
           description: External payment gateway reference (e.g., Stripe PaymentIntent ID)
+        failureReason:
+          type: string
+          nullable: true
+          description: Error message or code when payment fails
         processedAt:
           type: string
           format: date-time

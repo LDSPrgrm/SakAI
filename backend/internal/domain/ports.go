@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,StripeClient,EarningsRepository
 
 import (
 	"context"
@@ -110,6 +110,9 @@ type RideRepository interface {
 	// ListByPassengerID returns a paginated list of rides for a specific passenger.
 	ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter UserRideFilter) ([]*Ride, int, error)
 
+	// ListByDriverID returns a paginated list of rides for a specific driver.
+	ListByDriverID(ctx context.Context, driverID uuid.UUID, filter UserRideFilter) ([]*Ride, int, error)
+
 	// UpdateRideFare updates the actual fare and breakdown for a ride.
 	UpdateRideFare(ctx context.Context, rideID uuid.UUID, actualFare float64, breakdown JSONMap) error
 
@@ -121,6 +124,7 @@ type RideRepository interface {
 type ExpiredOffer struct {
 	RideID      uuid.UUID
 	PassengerID uuid.UUID
+	DriverID    *uuid.UUID
 }
 
 // NearbyDriver contains enriched details of a driver available for dispatch.
@@ -331,6 +335,8 @@ type DriverUseCase interface {
 	GetActiveRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 	// GetNearbyDrivers returns online drivers of a specific vehicle type within a radius.
 	GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
+	// GetNearbyDriversAllTypes returns online drivers grouped by vehicle type.
+	GetNearbyDriversAllTypes(ctx context.Context, lat, lng float64, radiusM float64) (map[RideType][]NearbyDriver, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.
@@ -510,6 +516,32 @@ type RidePaymentRepository interface {
 
 	// UpdateStatus changes the payment status (e.g., failed -> completed on retry).
 	UpdateStatus(ctx context.Context, id uuid.UUID, status PaymentStatus, gatewayTxnID *string, processedAt time.Time, failureReason *string) error
+
+	// HasUnpaidBlock returns true if the passenger has any failed payment older than the given cutoff.
+	HasUnpaidBlock(ctx context.Context, passengerID uuid.UUID, cutoff time.Time) (bool, error)
+}
+
+// EarningsRepository manages driver earnings persistence.
+type EarningsRepository interface {
+	// Create inserts a new driver earnings record (called on ride completion).
+	Create(ctx context.Context, earnings *DriverEarnings) error
+
+	// ListByDriverID returns paginated earnings for a driver, optionally filtered by date range.
+	ListByDriverID(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*DriverEarnings, int, error)
+}
+
+// StripeClient wraps the Stripe Go SDK for payment operations.
+type StripeClient interface {
+	// ChargePaymentMethod creates a charge against a payment method.
+	// Returns a result with Success=true and ChargeID, or Success=false with FailureReason.
+	ChargePaymentMethod(ctx context.Context, paymentMethodID string, amount float64, currency string, idempotencyKey string) (*StripeChargeResult, error)
+}
+
+// StripeChargeResult represents the outcome of a Stripe charge attempt.
+type StripeChargeResult struct {
+	Success       bool
+	ChargeID      string
+	FailureReason string
 }
 
 // ─── New UseCase Ports ───────────────────────────────────────────────────────

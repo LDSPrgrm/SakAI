@@ -12,16 +12,16 @@ class _$AdminExportReport200Response extends AdminExportReport200Response {
   @override
   final String data;
 
-  factory _$AdminExportReport200Response(
-          [void Function(AdminExportReport200ResponseBuilder)? updates]) =>
-      (AdminExportReport200ResponseBuilder()..update(updates))._build();
+  factory _$AdminExportReport200Response([
+    void Function(AdminExportReport200ResponseBuilder)? updates,
+  ]) => (AdminExportReport200ResponseBuilder()..update(updates))._build();
 
   _$AdminExportReport200Response._({required this.url, required this.data})
-      : super._();
+    : super._();
   @override
   AdminExportReport200Response rebuild(
-          void Function(AdminExportReport200ResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(AdminExportReport200ResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   AdminExportReport200ResponseBuilder toBuilder() =>
@@ -55,8 +55,10 @@ class _$AdminExportReport200Response extends AdminExportReport200Response {
 
 class AdminExportReport200ResponseBuilder
     implements
-        Builder<AdminExportReport200Response,
-            AdminExportReport200ResponseBuilder> {
+        Builder<
+          AdminExportReport200Response,
+          AdminExportReport200ResponseBuilder
+        > {
   _$AdminExportReport200Response? _$v;
 
   String? _url;
@@ -95,12 +97,19 @@ class AdminExportReport200ResponseBuilder
   AdminExportReport200Response build() => _build();
 
   _$AdminExportReport200Response _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$AdminExportReport200Response._(
           url: BuiltValueNullFieldError.checkNotNull(
-              url, r'AdminExportReport200Response', 'url'),
+            url,
+            r'AdminExportReport200Response',
+            'url',
+          ),
           data: BuiltValueNullFieldError.checkNotNull(
-              data, r'AdminExportReport200Response', 'data'),
+            data,
+            r'AdminExportReport200Response',
+            'data',
+          ),
         );
     replace(_$result);
     return _$result;

@@ -19,12 +19,12 @@ class _$AuthResponse extends AuthResponse {
   factory _$AuthResponse([void Function(AuthResponseBuilder)? updates]) =>
       (AuthResponseBuilder()..update(updates))._build();
 
-  _$AuthResponse._(
-      {required this.accessToken,
-      required this.refreshToken,
-      required this.accessTokenExpiresAt,
-      required this.user})
-      : super._();
+  _$AuthResponse._({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.accessTokenExpiresAt,
+    required this.user,
+  }) : super._();
   @override
   AuthResponse rebuild(void Function(AuthResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -115,16 +115,29 @@ class AuthResponseBuilder
   AuthResponse build() => _build();
 
   _$AuthResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$AuthResponse._(
           accessToken: BuiltValueNullFieldError.checkNotNull(
-              accessToken, r'AuthResponse', 'accessToken'),
+            accessToken,
+            r'AuthResponse',
+            'accessToken',
+          ),
           refreshToken: BuiltValueNullFieldError.checkNotNull(
-              refreshToken, r'AuthResponse', 'refreshToken'),
+            refreshToken,
+            r'AuthResponse',
+            'refreshToken',
+          ),
           accessTokenExpiresAt: BuiltValueNullFieldError.checkNotNull(
-              accessTokenExpiresAt, r'AuthResponse', 'accessTokenExpiresAt'),
+            accessTokenExpiresAt,
+            r'AuthResponse',
+            'accessTokenExpiresAt',
+          ),
           user: BuiltValueNullFieldError.checkNotNull(
-              user, r'AuthResponse', 'user'),
+            user,
+            r'AuthResponse',
+            'user',
+          ),
         );
     replace(_$result);
     return _$result;

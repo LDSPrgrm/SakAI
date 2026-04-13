@@ -108,8 +108,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.rideActive,
         builder: (context, state) {
-          final rideId = state.extra as String;
-          return ActiveRideScreen(rideId: rideId);
+          final rideId = state.extra as String?;
+          if (rideId != null) return ActiveRideScreen(rideId: rideId);
+          // Fallback: no ride ID provided, go home.
+          return const _NoActiveRideRedirect();
         },
       ),
       GoRoute(
@@ -183,3 +185,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Redirects to home when no active ride ID was provided.
+class _NoActiveRideRedirect extends StatefulWidget {
+  const _NoActiveRideRedirect();
+
+  @override
+  State<_NoActiveRideRedirect> createState() => _NoActiveRideRedirectState();
+}
+
+class _NoActiveRideRedirectState extends State<_NoActiveRideRedirect> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(Routes.home);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}

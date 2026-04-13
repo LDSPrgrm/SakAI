@@ -31,18 +31,18 @@ class _$AuditLog extends AuditLog {
   factory _$AuditLog([void Function(AuditLogBuilder)? updates]) =>
       (AuditLogBuilder()..update(updates))._build();
 
-  _$AuditLog._(
-      {this.id,
-      this.timestamp,
-      this.actorId,
-      this.ipAddress,
-      this.action,
-      this.resourceType,
-      this.resourceId,
-      this.beforeState,
-      this.afterState,
-      this.reason})
-      : super._();
+  _$AuditLog._({
+    this.id,
+    this.timestamp,
+    this.actorId,
+    this.ipAddress,
+    this.action,
+    this.resourceType,
+    this.resourceId,
+    this.beforeState,
+    this.afterState,
+    this.reason,
+  }) : super._();
   @override
   AuditLog rebuild(void Function(AuditLogBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -179,7 +179,8 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   AuditLog build() => _build();
 
   _$AuditLog _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$AuditLog._(
           id: id,
           timestamp: timestamp,

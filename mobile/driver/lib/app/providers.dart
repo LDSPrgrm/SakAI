@@ -63,10 +63,13 @@ class WsConnectionManager {
   /// Connect WebSocket when authenticated.
   Future<void> connectIfAuthenticated() async {
     final client = _ref.read(wsClientProvider);
+    // Check the actual client connection state, not just the manager's flag.
+    if (client.isConnected) return;
+
     final tokenStorage = _ref.read(tokenStorageProvider);
     final accessToken = await tokenStorage.getAccessToken();
 
-    if (accessToken != null && accessToken.isNotEmpty && !_isConnected) {
+    if (accessToken != null && accessToken.isNotEmpty) {
       _isConnected = true;
       await client.connect(
         baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,

@@ -84,40 +84,25 @@ class RideRepositoryImpl implements RideRepository {
       );
       return _toEntity(data);
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails (generated client bug).
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        final data = e.response?.data;
-        if (data is RideResponse) {
-          debugPrint('[RIDE_REPO] Ride created (2xx): ${data.id}');
-          return _toEntity(data);
-        }
-        // If data is a map, parse directly into RideEntity.
-        if (data is Map<String, dynamic>) {
-          try {
-            final entity = _entityFromMap(data);
-            debugPrint('[RIDE_REPO] Ride created (2xx, parsed): ${entity.id}');
-            return entity;
-          } catch (e2, st) {
-            debugPrint('[RIDE_REPO] Failed to parse 2xx response: $e2\n$st');
-          }
-        }
-        throw const RideException(
-          userMessage: 'Ride request succeeded but response parsing failed.',
-        );
-      }
       debugPrint(
         '[RIDE_REPO] DioException: ${e.response?.statusCode} ${e.message}',
       );
       debugPrint('[RIDE_REPO] Response data: ${e.response?.data}');
+      // 2xx = success even if body parsing fails (generated client bug).
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          debugPrint('[RIDE_REPO] Ride created via fallback');
+          return _entityFromJson(data);
+        }
+      }
       throw _fromDio(e);
     }
   }
 
-  /// Parses a raw JSON map directly into a [RideEntity] (bypassing
-  /// the generated RideResponse which fails to deserialize 2xx responses).
-  RideEntity _entityFromMap(Map<String, dynamic> json) {
+  /// Manually parses a raw JSON map into a [RideEntity].
+  RideEntity _entityFromJson(Map<String, dynamic> json) {
     final originData = json['origin'] as Map<String, dynamic>;
     final destData = json['destination'] as Map<String, dynamic>;
     final driverData = json['driver'] as Map<String, dynamic>?;
@@ -162,6 +147,12 @@ class RideRepositoryImpl implements RideRepository {
     } on DioException catch (e) {
       // 404 = no active ride — not an error condition
       if (e.response?.statusCode == 404) return null;
+      // 2xx = success even if body parsing fails (generated client bug).
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) return _entityFromJson(data);
+      }
       throw _fromDio(e);
     }
   }
@@ -264,7 +255,9 @@ class RideRepositoryImpl implements RideRepository {
     String? driverVehicle;
     if (driver != null) {
       final v = driver.vehicle;
-      driverVehicle = '${v.make} ${v.model} · ${v.plate} · ${v.color}';
+      if (v != null) {
+        driverVehicle = '${v.make} ${v.model} · ${v.plate} · ${v.color}';
+      }
     }
 
     return RideEntity(

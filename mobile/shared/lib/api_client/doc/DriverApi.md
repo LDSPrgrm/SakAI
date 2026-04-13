@@ -10,6 +10,7 @@ All URIs are relative to *http://localhost:8080/api*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**driverGetDocumentStatus**](DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
+[**driverGetEarnings**](DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
 [**driverListDocuments**](DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
@@ -49,6 +50,55 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**DriverDocumentResponse**](DriverDocumentResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **driverGetEarnings**
+> DriverGetEarnings200Response driverGetEarnings(from, to, page, limit)
+
+Get driver earnings history
+
+Returns a paginated list of earnings for the authenticated driver. Only `role=driver` may call this. Supports filtering by date range. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final Date from = 2013-10-20; // Date | Start date (YYYY-MM-DD). Defaults to 30 days ago.
+final Date to = 2013-10-20; // Date | End date (YYYY-MM-DD). Defaults to today.
+final int page = 56; // int | Page number (1-based)
+final int limit = 56; // int | Items per page (max 50)
+
+try {
+    final response = api.driverGetEarnings(from, to, page, limit);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverGetEarnings: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **from** | **Date**| Start date (YYYY-MM-DD). Defaults to 30 days ago. | [optional] 
+ **to** | **Date**| End date (YYYY-MM-DD). Defaults to today. | [optional] 
+ **page** | **int**| Page number (1-based) | [optional] [default to 1]
+ **limit** | **int**| Items per page (max 50) | [optional] [default to 20]
+
+### Return type
+
+[**DriverGetEarnings200Response**](DriverGetEarnings200Response.md)
 
 ### Authorization
 

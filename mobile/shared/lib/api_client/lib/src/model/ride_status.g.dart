@@ -53,7 +53,7 @@ class _$RideStatusMeta {
   BuiltSet<RideStatus> get values => _$values;
 }
 
-abstract class _$RideStatusMixin {
+mixin _$RideStatusMixin {
   // ignore: non_constant_identifier_names
   _$RideStatusMeta get RideStatus => const _$RideStatusMeta();
 }
@@ -84,15 +84,20 @@ class _$RideStatusSerializer implements PrimitiveSerializer<RideStatus> {
   final String wireName = 'RideStatus';
 
   @override
-  Object serialize(Serializers serializers, RideStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RideStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  RideStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideStatus.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  RideStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideStatus.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

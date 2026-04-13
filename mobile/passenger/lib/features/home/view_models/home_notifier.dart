@@ -5,12 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
+import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver;
 import 'package:uuid/uuid.dart';
 
 import '../../ride/models/ride_exception.dart';
 import '../../../app/providers.dart';
 import '../models/ride_type_option.dart';
+import '../models/nearby_driver.dart';
 import '../repositories/driver_repository.dart';
 
 enum HomeStatus {
@@ -30,6 +31,7 @@ class HomeState {
   final RideEntity? createdRide;
   final VehicleType? selectedRideType;
   final List<RideTypeOption> rideTypeOptions;
+  final List<NearbyDriver> nearbyDrivers; // Consolidated nearby drivers
 
   const HomeState({
     required this.status,
@@ -40,6 +42,7 @@ class HomeState {
     this.createdRide,
     this.selectedRideType,
     this.rideTypeOptions = const [],
+    this.nearbyDrivers = const [],
   });
 
   HomeState copyWith({
@@ -56,6 +59,7 @@ class HomeState {
     VehicleType? selectedRideType,
     bool clearSelectedRideType = false,
     List<RideTypeOption>? rideTypeOptions,
+    List<NearbyDriver>? nearbyDrivers,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -68,6 +72,7 @@ class HomeState {
           ? null
           : (selectedRideType ?? this.selectedRideType),
       rideTypeOptions: rideTypeOptions ?? this.rideTypeOptions,
+      nearbyDrivers: nearbyDrivers ?? this.nearbyDrivers,
     );
   }
 
@@ -84,33 +89,84 @@ final homeNotifierProvider = NotifierProvider<HomeNotifier, HomeState>(() {
 class HomeNotifier extends Notifier<HomeState> {
   final _uuid = const Uuid();
   String? _idempotencyKey;
-  Timer? _rideTypePollTimer;
+  Timer? _nearbyDriverPollTimer;
 
   @override
   HomeState build() {
     ref.onDispose(() {
       _stopLocationStreaming();
-      _stopRideTypePolling();
+      _stopNearbyDriverPolling();
     });
     return const HomeState(status: HomeStatus.idle);
   }
 
-  /// Starts periodic polling for nearby driver counts by ride type.
-  void _startRideTypePolling() {
-    _stopRideTypePolling();
-    _rideTypePollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (state.destination != null) {
-        fetchRideTypeOptions();
-      }
+  /// Starts consolidated periodic polling for nearby drivers.
+  /// Single poll serves both ride type options AND map markers — eliminates duplicate API calls.
+  void _startNearbyDriverPolling() {
+    _stopNearbyDriverPolling();
+    _nearbyDriverPollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _fetchNearbyDrivers();
     });
     // Immediate first fetch
-    fetchRideTypeOptions();
+    _fetchNearbyDrivers();
   }
 
-  /// Stops the periodic ride type poller.
-  void _stopRideTypePolling() {
-    _rideTypePollTimer?.cancel();
-    _rideTypePollTimer = null;
+  /// Stops the periodic nearby driver poller.
+  void _stopNearbyDriverPolling() {
+    _nearbyDriverPollTimer?.cancel();
+    _nearbyDriverPollTimer = null;
+  }
+
+  /// Fetches nearby drivers and updates both ride type options and map markers from a single API call.
+  Future<void> _fetchNearbyDrivers() async {
+    final currentPos = state.currentLatLng;
+    if (currentPos == null) return;
+
+    try {
+      final authInterceptor = ref.read(authInterceptorProvider);
+      final allDrivers = await DriverRepository(
+        authInterceptor: authInterceptor,
+      ).fetchNearbyDriversAll(currentPos);
+
+      // Flatten into a single list for map markers
+      final flatDrivers = allDrivers.values
+          .expand<NearbyDriver>((d) => d)
+          .toList();
+
+      // Build ride type options with fare estimates
+      final options = _buildRideTypeOptions(allDrivers);
+
+      state = state.copyWith(
+        nearbyDrivers: flatDrivers,
+        rideTypeOptions: options,
+      );
+    } catch (e) {
+      debugPrint('[HomeNotifier] Nearby driver poll error: $e');
+    }
+  }
+
+  /// Builds ride type options with fare estimates from nearby driver data.
+  List<RideTypeOption> _buildRideTypeOptions(
+    Map<String, List<NearbyDriver>> allDrivers,
+  ) {
+    const baseFares = {'motorcycle': 65.0, 'car': 120.0, 'tricycle': 50.0};
+    const baseDurations = {'motorcycle': 10, 'car': 15, 'tricycle': 12};
+
+    return baseFares.entries.map((entry) {
+      final typeStr = entry.key;
+      final type = VehicleType.values.firstWhere(
+        (t) => t.toString().split('.').last == typeStr,
+        orElse: () => VehicleType.car,
+      );
+      final availableDrivers = allDrivers[typeStr]?.length ?? 0;
+
+      return RideTypeOption(
+        type: type,
+        estimatedFare: entry.value,
+        estimatedDuration: Duration(minutes: baseDurations[typeStr]!),
+        availableDrivers: availableDrivers,
+      );
+    }).toList();
   }
 
   Future<void> initLocation() async {
@@ -234,8 +290,8 @@ class HomeNotifier extends Notifier<HomeState> {
       destination: destination,
       clearError: true,
     );
-    // Start real-time polling for nearby driver counts
-    _startRideTypePolling();
+    // Start consolidated nearby driver polling (serves both ride options and map markers)
+    _startNearbyDriverPolling();
   }
 
   void setPickup(RideLocation pickup) {
@@ -249,70 +305,13 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void clearDestination() {
-    _stopRideTypePolling();
-    state = state.copyWith(status: HomeStatus.idle, clearDestination: true);
-  }
-
-  /// Fetches available ride type options based on nearby drivers.
-  Future<void> fetchRideTypeOptions() async {
-    final pickup = state.pickup;
-    final currentLatLng = state.currentLatLng;
-    if (pickup == null && currentLatLng == null) return;
-
-    final location = currentLatLng ?? LatLng(pickup!.lat, pickup.lng);
-    final authInterceptor = ref.watch(authInterceptorProvider);
-    final repo = DriverRepository(authInterceptor: authInterceptor);
-
-    // Query each ride type independently
-    final rideTypeApiValues = {
-      VehicleType.motorcycle: 'motorcycle',
-      VehicleType.car: 'car',
-      VehicleType.tricycle: 'tricycle',
-    };
-
-    final driverCounts = <VehicleType, int>{};
-    for (final entry in rideTypeApiValues.entries) {
-      try {
-        final drivers = await repo.fetchNearbyDrivers(
-          location,
-          rideType: entry.value,
-        );
-        driverCounts[entry.key] = drivers.length;
-      } catch (e) {
-        debugPrint('fetchRideTypeOptions error for ${entry.key}: $e');
-        driverCounts[entry.key] = 0;
-      }
-    }
-
-    // Base fare estimates per ride type (in PHP)
-    const baseFares = {
-      VehicleType.motorcycle: 65.0,
-      VehicleType.car: 120.0,
-      VehicleType.tricycle: 50.0,
-    };
-
-    // Base duration estimates (in minutes)
-    const baseDurations = {
-      VehicleType.motorcycle: 10,
-      VehicleType.car: 15,
-      VehicleType.tricycle: 12,
-    };
-
-    final options = VehicleType.values.map((type) {
-      final availableDrivers = driverCounts[type] ?? 0;
-      // Simple fare estimate: base fare + distance-based (rough estimate)
-      final estimatedFare = baseFares[type]!;
-      final estimatedDuration = Duration(minutes: baseDurations[type]!);
-
-      return RideTypeOption(
-        type: type,
-        estimatedFare: estimatedFare,
-        estimatedDuration: estimatedDuration,
-        availableDrivers: availableDrivers,
-      );
-    }).toList();
-
-    state = state.copyWith(rideTypeOptions: options);
+    _stopNearbyDriverPolling();
+    state = state.copyWith(
+      status: HomeStatus.idle,
+      clearDestination: true,
+      nearbyDrivers: [],
+      rideTypeOptions: [],
+    );
   }
 
   /// Sets the selected ride type.

@@ -14,7 +14,8 @@ const NotificationTemplateChannelEnum _$notificationTemplateChannelEnum_push =
     const NotificationTemplateChannelEnum._('push');
 
 NotificationTemplateChannelEnum _$notificationTemplateChannelEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'email':
       return _$notificationTemplateChannelEnum_email;
@@ -28,15 +29,17 @@ NotificationTemplateChannelEnum _$notificationTemplateChannelEnumValueOf(
 }
 
 final BuiltSet<NotificationTemplateChannelEnum>
-    _$notificationTemplateChannelEnumValues = BuiltSet<
-        NotificationTemplateChannelEnum>(const <NotificationTemplateChannelEnum>[
-  _$notificationTemplateChannelEnum_email,
-  _$notificationTemplateChannelEnum_sms,
-  _$notificationTemplateChannelEnum_push,
-]);
+_$notificationTemplateChannelEnumValues =
+    BuiltSet<NotificationTemplateChannelEnum>(
+      const <NotificationTemplateChannelEnum>[
+        _$notificationTemplateChannelEnum_email,
+        _$notificationTemplateChannelEnum_sms,
+        _$notificationTemplateChannelEnum_push,
+      ],
+    );
 
 Serializer<NotificationTemplateChannelEnum>
-    _$notificationTemplateChannelEnumSerializer =
+_$notificationTemplateChannelEnumSerializer =
     _$NotificationTemplateChannelEnumSerializer();
 
 class _$NotificationTemplateChannelEnumSerializer
@@ -59,16 +62,19 @@ class _$NotificationTemplateChannelEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, NotificationTemplateChannelEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    NotificationTemplateChannelEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   NotificationTemplateChannelEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      NotificationTemplateChannelEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NotificationTemplateChannelEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$NotificationTemplate extends NotificationTemplate {
@@ -81,16 +87,16 @@ class _$NotificationTemplate extends NotificationTemplate {
   @override
   final String? body;
 
-  factory _$NotificationTemplate(
-          [void Function(NotificationTemplateBuilder)? updates]) =>
-      (NotificationTemplateBuilder()..update(updates))._build();
+  factory _$NotificationTemplate([
+    void Function(NotificationTemplateBuilder)? updates,
+  ]) => (NotificationTemplateBuilder()..update(updates))._build();
 
   _$NotificationTemplate._({this.event, this.channel, this.subject, this.body})
-      : super._();
+    : super._();
   @override
   NotificationTemplate rebuild(
-          void Function(NotificationTemplateBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(NotificationTemplateBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   NotificationTemplateBuilder toBuilder() =>
@@ -179,7 +185,8 @@ class NotificationTemplateBuilder
   NotificationTemplate build() => _build();
 
   _$NotificationTemplate _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$NotificationTemplate._(
           event: event,
           channel: channel,

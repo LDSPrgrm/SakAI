@@ -24,7 +24,8 @@ class SplashScreen extends ConsumerWidget {
           case SplashState.home:
             context.go(Routes.home);
           case SplashState.activeRide:
-            break; // Driver doesn't auto-resume active rides like passengers
+            // Navigate to active ride loader which will fetch the ride
+            context.go(Routes.rideActive);
           case SplashState.transientError:
             break;
           case SplashState.loading:

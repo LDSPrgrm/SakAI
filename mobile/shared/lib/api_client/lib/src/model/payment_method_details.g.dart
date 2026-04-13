@@ -20,22 +20,22 @@ class _$PaymentMethodDetails extends PaymentMethodDetails {
   @override
   final EWalletDetails? eWallet;
 
-  factory _$PaymentMethodDetails(
-          [void Function(PaymentMethodDetailsBuilder)? updates]) =>
-      (PaymentMethodDetailsBuilder()..update(updates))._build();
+  factory _$PaymentMethodDetails([
+    void Function(PaymentMethodDetailsBuilder)? updates,
+  ]) => (PaymentMethodDetailsBuilder()..update(updates))._build();
 
-  _$PaymentMethodDetails._(
-      {required this.id,
-      required this.type,
-      required this.isDefault,
-      required this.createdAt,
-      this.card,
-      this.eWallet})
-      : super._();
+  _$PaymentMethodDetails._({
+    required this.id,
+    required this.type,
+    required this.isDefault,
+    required this.createdAt,
+    this.card,
+    this.eWallet,
+  }) : super._();
   @override
   PaymentMethodDetails rebuild(
-          void Function(PaymentMethodDetailsBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(PaymentMethodDetailsBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   PaymentMethodDetailsBuilder toBuilder() =>
@@ -142,16 +142,29 @@ class PaymentMethodDetailsBuilder
   _$PaymentMethodDetails _build() {
     _$PaymentMethodDetails _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$PaymentMethodDetails._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'PaymentMethodDetails', 'id'),
+              id,
+              r'PaymentMethodDetails',
+              'id',
+            ),
             type: BuiltValueNullFieldError.checkNotNull(
-                type, r'PaymentMethodDetails', 'type'),
+              type,
+              r'PaymentMethodDetails',
+              'type',
+            ),
             isDefault: BuiltValueNullFieldError.checkNotNull(
-                isDefault, r'PaymentMethodDetails', 'isDefault'),
+              isDefault,
+              r'PaymentMethodDetails',
+              'isDefault',
+            ),
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'PaymentMethodDetails', 'createdAt'),
+              createdAt,
+              r'PaymentMethodDetails',
+              'createdAt',
+            ),
             card: _card?.build(),
             eWallet: _eWallet?.build(),
           );
@@ -164,7 +177,10 @@ class PaymentMethodDetailsBuilder
         _eWallet?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'PaymentMethodDetails', _$failedField, e.toString());
+          r'PaymentMethodDetails',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

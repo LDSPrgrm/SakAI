@@ -7,11 +7,12 @@ part of 'payment_failure_response.dart';
 // **************************************************************************
 
 const PaymentFailureResponseCodeEnum
-    _$paymentFailureResponseCodeEnum_PAYMENT_FAILED =
+_$paymentFailureResponseCodeEnum_PAYMENT_FAILED =
     const PaymentFailureResponseCodeEnum._('PAYMENT_FAILED');
 
 PaymentFailureResponseCodeEnum _$paymentFailureResponseCodeEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'PAYMENT_FAILED':
       return _$paymentFailureResponseCodeEnum_PAYMENT_FAILED;
@@ -21,13 +22,15 @@ PaymentFailureResponseCodeEnum _$paymentFailureResponseCodeEnumValueOf(
 }
 
 final BuiltSet<PaymentFailureResponseCodeEnum>
-    _$paymentFailureResponseCodeEnumValues = BuiltSet<
-        PaymentFailureResponseCodeEnum>(const <PaymentFailureResponseCodeEnum>[
-  _$paymentFailureResponseCodeEnum_PAYMENT_FAILED,
-]);
+_$paymentFailureResponseCodeEnumValues =
+    BuiltSet<PaymentFailureResponseCodeEnum>(
+      const <PaymentFailureResponseCodeEnum>[
+        _$paymentFailureResponseCodeEnum_PAYMENT_FAILED,
+      ],
+    );
 
 Serializer<PaymentFailureResponseCodeEnum>
-    _$paymentFailureResponseCodeEnumSerializer =
+_$paymentFailureResponseCodeEnumSerializer =
     _$PaymentFailureResponseCodeEnumSerializer();
 
 class _$PaymentFailureResponseCodeEnumSerializer
@@ -46,16 +49,19 @@ class _$PaymentFailureResponseCodeEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, PaymentFailureResponseCodeEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    PaymentFailureResponseCodeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   PaymentFailureResponseCodeEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      PaymentFailureResponseCodeEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PaymentFailureResponseCodeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$PaymentFailureResponse extends PaymentFailureResponse {
@@ -66,17 +72,19 @@ class _$PaymentFailureResponse extends PaymentFailureResponse {
   @override
   final String? gatewayErrorCode;
 
-  factory _$PaymentFailureResponse(
-          [void Function(PaymentFailureResponseBuilder)? updates]) =>
-      (PaymentFailureResponseBuilder()..update(updates))._build();
+  factory _$PaymentFailureResponse([
+    void Function(PaymentFailureResponseBuilder)? updates,
+  ]) => (PaymentFailureResponseBuilder()..update(updates))._build();
 
-  _$PaymentFailureResponse._(
-      {required this.code, required this.message, this.gatewayErrorCode})
-      : super._();
+  _$PaymentFailureResponse._({
+    required this.code,
+    required this.message,
+    this.gatewayErrorCode,
+  }) : super._();
   @override
   PaymentFailureResponse rebuild(
-          void Function(PaymentFailureResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(PaymentFailureResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   PaymentFailureResponseBuilder toBuilder() =>
@@ -157,12 +165,19 @@ class PaymentFailureResponseBuilder
   PaymentFailureResponse build() => _build();
 
   _$PaymentFailureResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$PaymentFailureResponse._(
           code: BuiltValueNullFieldError.checkNotNull(
-              code, r'PaymentFailureResponse', 'code'),
+            code,
+            r'PaymentFailureResponse',
+            'code',
+          ),
           message: BuiltValueNullFieldError.checkNotNull(
-              message, r'PaymentFailureResponse', 'message'),
+            message,
+            r'PaymentFailureResponse',
+            'message',
+          ),
           gatewayErrorCode: gatewayErrorCode,
         );
     replace(_$result);

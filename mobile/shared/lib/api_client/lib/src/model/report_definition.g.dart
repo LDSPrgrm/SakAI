@@ -14,9 +14,9 @@ class _$ReportDefinition extends ReportDefinition {
   @override
   final String? description;
 
-  factory _$ReportDefinition(
-          [void Function(ReportDefinitionBuilder)? updates]) =>
-      (ReportDefinitionBuilder()..update(updates))._build();
+  factory _$ReportDefinition([
+    void Function(ReportDefinitionBuilder)? updates,
+  ]) => (ReportDefinitionBuilder()..update(updates))._build();
 
   _$ReportDefinition._({this.id, this.title, this.description}) : super._();
   @override
@@ -101,12 +101,9 @@ class ReportDefinitionBuilder
   ReportDefinition build() => _build();
 
   _$ReportDefinition _build() {
-    final _$result = _$v ??
-        _$ReportDefinition._(
-          id: id,
-          title: title,
-          description: description,
-        );
+    final _$result =
+        _$v ??
+        _$ReportDefinition._(id: id, title: title, description: description);
     replace(_$result);
     return _$result;
   }

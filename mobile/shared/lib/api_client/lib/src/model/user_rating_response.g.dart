@@ -16,20 +16,20 @@ class _$UserRatingResponse extends UserRatingResponse {
   @override
   final DateTime? lastUpdated;
 
-  factory _$UserRatingResponse(
-          [void Function(UserRatingResponseBuilder)? updates]) =>
-      (UserRatingResponseBuilder()..update(updates))._build();
+  factory _$UserRatingResponse([
+    void Function(UserRatingResponseBuilder)? updates,
+  ]) => (UserRatingResponseBuilder()..update(updates))._build();
 
-  _$UserRatingResponse._(
-      {required this.userId,
-      required this.averageRating,
-      required this.ratingCount,
-      this.lastUpdated})
-      : super._();
+  _$UserRatingResponse._({
+    required this.userId,
+    required this.averageRating,
+    required this.ratingCount,
+    this.lastUpdated,
+  }) : super._();
   @override
   UserRatingResponse rebuild(
-          void Function(UserRatingResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(UserRatingResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   UserRatingResponseBuilder toBuilder() =>
@@ -118,14 +118,24 @@ class UserRatingResponseBuilder
   UserRatingResponse build() => _build();
 
   _$UserRatingResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$UserRatingResponse._(
           userId: BuiltValueNullFieldError.checkNotNull(
-              userId, r'UserRatingResponse', 'userId'),
+            userId,
+            r'UserRatingResponse',
+            'userId',
+          ),
           averageRating: BuiltValueNullFieldError.checkNotNull(
-              averageRating, r'UserRatingResponse', 'averageRating'),
+            averageRating,
+            r'UserRatingResponse',
+            'averageRating',
+          ),
           ratingCount: BuiltValueNullFieldError.checkNotNull(
-              ratingCount, r'UserRatingResponse', 'ratingCount'),
+            ratingCount,
+            r'UserRatingResponse',
+            'ratingCount',
+          ),
           lastUpdated: lastUpdated,
         );
     replace(_$result);

@@ -37,9 +37,9 @@ class _$RefreshRequest extends RefreshRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'RefreshRequest')
-          ..add('refreshToken', refreshToken))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'RefreshRequest',
+    )..add('refreshToken', refreshToken)).toString();
   }
 }
 
@@ -78,10 +78,14 @@ class RefreshRequestBuilder
   RefreshRequest build() => _build();
 
   _$RefreshRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$RefreshRequest._(
           refreshToken: BuiltValueNullFieldError.checkNotNull(
-              refreshToken, r'RefreshRequest', 'refreshToken'),
+            refreshToken,
+            r'RefreshRequest',
+            'refreshToken',
+          ),
         );
     replace(_$result);
     return _$result;

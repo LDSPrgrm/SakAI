@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
@@ -19,10 +20,13 @@ class ActiveRideController {
   final SakaiApiClient _client;
   final WsClient _wsClient;
 
-  final _stateController =
-      StreamController<AsyncValue<ActiveRideState>>.broadcast();
+  late final StreamController<AsyncValue<ActiveRideState>> _stateController =
+      StreamController<AsyncValue<ActiveRideState>>.broadcast(
+        onListen: _startLoading,
+      );
   Stream<AsyncValue<ActiveRideState>> get stateStream =>
       _stateController.stream;
+
   AsyncValue<ActiveRideState> _state =
       const AsyncValue<ActiveRideState>.loading();
   AsyncValue<ActiveRideState> get state => _state;
@@ -30,13 +34,18 @@ class ActiveRideController {
   StreamSubscription<WsEvent>? _wsSubscription;
   OnRideCompleted? onCompleted;
   OnRideCancelled? onCancelled;
+  bool _loadingStarted = false;
 
   ActiveRideController({
     required this.rideId,
     required SakaiApiClient client,
     required WsClient wsClient,
   }) : _client = client,
-       _wsClient = wsClient {
+       _wsClient = wsClient;
+
+  void _startLoading() {
+    if (_loadingStarted) return;
+    _loadingStarted = true;
     _loadRide();
   }
 
@@ -51,6 +60,22 @@ class ActiveRideController {
       _setupWebSocketListener();
 
       _state = AsyncValue.data(ActiveRideState.fromRideResponse(response));
+      _stateController.add(_state);
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          _setupWebSocketListener();
+          _state = AsyncValue.data(_stateFromJson(data));
+          _stateController.add(_state);
+          return;
+        }
+      }
+      _state = AsyncValue.error(
+        Exception('Failed to load ride: $e'),
+        StackTrace.current,
+      );
       _stateController.add(_state);
     } catch (e, st) {
       _state = AsyncValue.error(Exception('Failed to load ride: $e'), st);
@@ -163,6 +188,41 @@ class ActiveRideController {
   void dispose() {
     _wsSubscription?.cancel();
     _stateController.close();
+  }
+
+  // ── Fallback JSON parsing for when generated client fails on 2xx ───────
+
+  ActiveRideState _stateFromJson(Map<String, dynamic> json) {
+    final driverData = json['driver'] as Map<String, dynamic>?;
+    String? driverName;
+    String? driverVehicle;
+    gmaps.LatLng? driverLocation;
+
+    if (driverData != null) {
+      driverName = driverData['name'] as String?;
+      final v = driverData['vehicle'] as Map<String, dynamic>?;
+      if (v != null) {
+        driverVehicle =
+            '${v['make']} ${v['model']} · ${v['plate']} · ${v['color']}';
+      }
+      final loc = driverData['current_location'] as Map<String, dynamic>?;
+      if (loc != null) {
+        driverLocation = gmaps.LatLng(
+          (loc['lat'] as num).toDouble(),
+          (loc['lng'] as num).toDouble(),
+        );
+      }
+    }
+
+    return ActiveRideState(
+      currentStep: ActiveRideStep.fromRideStatus(
+        RideStatus.valueOf(json['status'] as String),
+      ),
+      driverName: driverName,
+      driverVehicle: driverVehicle,
+      driverLocation: driverLocation,
+      isLoading: false,
+    );
   }
 }
 

@@ -22,21 +22,24 @@ class _$PaymentResponse extends PaymentResponse {
   @override
   final String? gatewayTransactionId;
   @override
+  final String? failureReason;
+  @override
   final DateTime processedAt;
 
   factory _$PaymentResponse([void Function(PaymentResponseBuilder)? updates]) =>
       (PaymentResponseBuilder()..update(updates))._build();
 
-  _$PaymentResponse._(
-      {required this.id,
-      required this.rideId,
-      required this.amount,
-      required this.currency,
-      required this.method,
-      required this.status,
-      this.gatewayTransactionId,
-      required this.processedAt})
-      : super._();
+  _$PaymentResponse._({
+    required this.id,
+    required this.rideId,
+    required this.amount,
+    required this.currency,
+    required this.method,
+    required this.status,
+    this.gatewayTransactionId,
+    this.failureReason,
+    required this.processedAt,
+  }) : super._();
   @override
   PaymentResponse rebuild(void Function(PaymentResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -55,6 +58,7 @@ class _$PaymentResponse extends PaymentResponse {
         method == other.method &&
         status == other.status &&
         gatewayTransactionId == other.gatewayTransactionId &&
+        failureReason == other.failureReason &&
         processedAt == other.processedAt;
   }
 
@@ -68,6 +72,7 @@ class _$PaymentResponse extends PaymentResponse {
     _$hash = $jc(_$hash, method.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, gatewayTransactionId.hashCode);
+    _$hash = $jc(_$hash, failureReason.hashCode);
     _$hash = $jc(_$hash, processedAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -83,6 +88,7 @@ class _$PaymentResponse extends PaymentResponse {
           ..add('method', method)
           ..add('status', status)
           ..add('gatewayTransactionId', gatewayTransactionId)
+          ..add('failureReason', failureReason)
           ..add('processedAt', processedAt))
         .toString();
   }
@@ -121,6 +127,11 @@ class PaymentResponseBuilder
   set gatewayTransactionId(String? gatewayTransactionId) =>
       _$this._gatewayTransactionId = gatewayTransactionId;
 
+  String? _failureReason;
+  String? get failureReason => _$this._failureReason;
+  set failureReason(String? failureReason) =>
+      _$this._failureReason = failureReason;
+
   DateTime? _processedAt;
   DateTime? get processedAt => _$this._processedAt;
   set processedAt(DateTime? processedAt) => _$this._processedAt = processedAt;
@@ -139,6 +150,7 @@ class PaymentResponseBuilder
       _method = $v.method;
       _status = $v.status;
       _gatewayTransactionId = $v.gatewayTransactionId;
+      _failureReason = $v.failureReason;
       _processedAt = $v.processedAt;
       _$v = null;
     }
@@ -159,23 +171,46 @@ class PaymentResponseBuilder
   PaymentResponse build() => _build();
 
   _$PaymentResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$PaymentResponse._(
           id: BuiltValueNullFieldError.checkNotNull(
-              id, r'PaymentResponse', 'id'),
+            id,
+            r'PaymentResponse',
+            'id',
+          ),
           rideId: BuiltValueNullFieldError.checkNotNull(
-              rideId, r'PaymentResponse', 'rideId'),
+            rideId,
+            r'PaymentResponse',
+            'rideId',
+          ),
           amount: BuiltValueNullFieldError.checkNotNull(
-              amount, r'PaymentResponse', 'amount'),
+            amount,
+            r'PaymentResponse',
+            'amount',
+          ),
           currency: BuiltValueNullFieldError.checkNotNull(
-              currency, r'PaymentResponse', 'currency'),
+            currency,
+            r'PaymentResponse',
+            'currency',
+          ),
           method: BuiltValueNullFieldError.checkNotNull(
-              method, r'PaymentResponse', 'method'),
+            method,
+            r'PaymentResponse',
+            'method',
+          ),
           status: BuiltValueNullFieldError.checkNotNull(
-              status, r'PaymentResponse', 'status'),
+            status,
+            r'PaymentResponse',
+            'status',
+          ),
           gatewayTransactionId: gatewayTransactionId,
+          failureReason: failureReason,
           processedAt: BuiltValueNullFieldError.checkNotNull(
-              processedAt, r'PaymentResponse', 'processedAt'),
+            processedAt,
+            r'PaymentResponse',
+            'processedAt',
+          ),
         );
     replace(_$result);
     return _$result;

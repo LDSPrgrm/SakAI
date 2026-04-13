@@ -94,6 +94,11 @@ class DriverRepositoryImpl implements DriverRepository {
       return response.data;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
+      // 2xx = success even if body parsing fails.
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        return null; // WS will deliver the offer.
+      }
       throw _fromDio(e);
     } catch (_) {
       return null;
@@ -101,6 +106,19 @@ class DriverRepositoryImpl implements DriverRepository {
   }
 
   Exception _fromDio(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final code = data['code'] as String?;
+      final message = data['message'] as String?;
+      if (code == 'DRIVER_HAS_ACTIVE_RIDE') {
+        return Exception(
+          'Cannot go offline — you have an active ride. Complete or cancel it first.',
+        );
+      }
+      if (message != null && message.isNotEmpty) {
+        return Exception(message);
+      }
+    }
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout) {
       return Exception('No connection. Check network or server URL.');

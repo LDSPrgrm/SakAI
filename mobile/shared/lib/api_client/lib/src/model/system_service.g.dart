@@ -28,10 +28,10 @@ SystemServiceStatusEnum _$systemServiceStatusEnumValueOf(String name) {
 
 final BuiltSet<SystemServiceStatusEnum> _$systemServiceStatusEnumValues =
     BuiltSet<SystemServiceStatusEnum>(const <SystemServiceStatusEnum>[
-  _$systemServiceStatusEnum_ok,
-  _$systemServiceStatusEnum_degraded,
-  _$systemServiceStatusEnum_down,
-]);
+      _$systemServiceStatusEnum_ok,
+      _$systemServiceStatusEnum_degraded,
+      _$systemServiceStatusEnum_down,
+    ]);
 
 Serializer<SystemServiceStatusEnum> _$systemServiceStatusEnumSerializer =
     _$SystemServiceStatusEnumSerializer();
@@ -55,16 +55,20 @@ class _$SystemServiceStatusEnumSerializer
   final String wireName = 'SystemServiceStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, SystemServiceStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    SystemServiceStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   SystemServiceStatusEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      SystemServiceStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => SystemServiceStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$SystemService extends SystemService {
@@ -82,13 +86,13 @@ class _$SystemService extends SystemService {
   factory _$SystemService([void Function(SystemServiceBuilder)? updates]) =>
       (SystemServiceBuilder()..update(updates))._build();
 
-  _$SystemService._(
-      {this.name,
-      this.status,
-      this.latencyMs,
-      this.uptimePct,
-      this.lastChecked})
-      : super._();
+  _$SystemService._({
+    this.name,
+    this.status,
+    this.latencyMs,
+    this.uptimePct,
+    this.lastChecked,
+  }) : super._();
   @override
   SystemService rebuild(void Function(SystemServiceBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -186,7 +190,8 @@ class SystemServiceBuilder
   SystemService build() => _build();
 
   _$SystemService _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$SystemService._(
           name: name,
           status: status,

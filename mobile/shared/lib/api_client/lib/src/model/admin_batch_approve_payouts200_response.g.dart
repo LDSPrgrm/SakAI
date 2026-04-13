@@ -11,16 +11,16 @@ class _$AdminBatchApprovePayouts200Response
   @override
   final int? approved;
 
-  factory _$AdminBatchApprovePayouts200Response(
-          [void Function(AdminBatchApprovePayouts200ResponseBuilder)?
-              updates]) =>
+  factory _$AdminBatchApprovePayouts200Response([
+    void Function(AdminBatchApprovePayouts200ResponseBuilder)? updates,
+  ]) =>
       (AdminBatchApprovePayouts200ResponseBuilder()..update(updates))._build();
 
   _$AdminBatchApprovePayouts200Response._({this.approved}) : super._();
   @override
   AdminBatchApprovePayouts200Response rebuild(
-          void Function(AdminBatchApprovePayouts200ResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(AdminBatchApprovePayouts200ResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   AdminBatchApprovePayouts200ResponseBuilder toBuilder() =>
@@ -43,16 +43,18 @@ class _$AdminBatchApprovePayouts200Response
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'AdminBatchApprovePayouts200Response')
-          ..add('approved', approved))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'AdminBatchApprovePayouts200Response',
+    )..add('approved', approved)).toString();
   }
 }
 
 class AdminBatchApprovePayouts200ResponseBuilder
     implements
-        Builder<AdminBatchApprovePayouts200Response,
-            AdminBatchApprovePayouts200ResponseBuilder> {
+        Builder<
+          AdminBatchApprovePayouts200Response,
+          AdminBatchApprovePayouts200ResponseBuilder
+        > {
   _$AdminBatchApprovePayouts200Response? _$v;
 
   int? _approved;
@@ -79,7 +81,8 @@ class AdminBatchApprovePayouts200ResponseBuilder
 
   @override
   void update(
-      void Function(AdminBatchApprovePayouts200ResponseBuilder)? updates) {
+    void Function(AdminBatchApprovePayouts200ResponseBuilder)? updates,
+  ) {
     if (updates != null) updates(this);
   }
 
@@ -87,10 +90,8 @@ class AdminBatchApprovePayouts200ResponseBuilder
   AdminBatchApprovePayouts200Response build() => _build();
 
   _$AdminBatchApprovePayouts200Response _build() {
-    final _$result = _$v ??
-        _$AdminBatchApprovePayouts200Response._(
-          approved: approved,
-        );
+    final _$result =
+        _$v ?? _$AdminBatchApprovePayouts200Response._(approved: approved);
     replace(_$result);
     return _$result;
   }

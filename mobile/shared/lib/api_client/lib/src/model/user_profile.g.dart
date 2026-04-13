@@ -24,9 +24,9 @@ UserProfileRoleEnum _$userProfileRoleEnumValueOf(String name) {
 
 final BuiltSet<UserProfileRoleEnum> _$userProfileRoleEnumValues =
     BuiltSet<UserProfileRoleEnum>(const <UserProfileRoleEnum>[
-  _$userProfileRoleEnum_passenger,
-  _$userProfileRoleEnum_driver,
-]);
+      _$userProfileRoleEnum_passenger,
+      _$userProfileRoleEnum_driver,
+    ]);
 
 Serializer<UserProfileRoleEnum> _$userProfileRoleEnumSerializer =
     _$UserProfileRoleEnumSerializer();
@@ -48,18 +48,23 @@ class _$UserProfileRoleEnumSerializer
   final String wireName = 'UserProfileRoleEnum';
 
   @override
-  Object serialize(Serializers serializers, UserProfileRoleEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    UserProfileRoleEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  UserProfileRoleEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      UserProfileRoleEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  UserProfileRoleEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UserProfileRoleEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
-abstract class UserProfileBuilder {
+abstract mixin class UserProfileBuilder {
   void replace(UserProfile other);
   void update(void Function(UserProfileBuilder) updates);
   String? get id;
@@ -98,14 +103,14 @@ class _$$UserProfile extends $UserProfile {
   factory _$$UserProfile([void Function($UserProfileBuilder)? updates]) =>
       ($UserProfileBuilder()..update(updates))._build();
 
-  _$$UserProfile._(
-      {required this.id,
-      required this.name,
-      required this.email,
-      required this.role,
-      this.vehicle,
-      required this.createdAt})
-      : super._();
+  _$$UserProfile._({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.vehicle,
+    required this.createdAt,
+  }) : super._();
   @override
   $UserProfile rebuild(void Function($UserProfileBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -214,19 +219,35 @@ class $UserProfileBuilder
   _$$UserProfile _build() {
     _$$UserProfile _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$$UserProfile._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'$UserProfile', 'id'),
+              id,
+              r'$UserProfile',
+              'id',
+            ),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'$UserProfile', 'name'),
+              name,
+              r'$UserProfile',
+              'name',
+            ),
             email: BuiltValueNullFieldError.checkNotNull(
-                email, r'$UserProfile', 'email'),
+              email,
+              r'$UserProfile',
+              'email',
+            ),
             role: BuiltValueNullFieldError.checkNotNull(
-                role, r'$UserProfile', 'role'),
+              role,
+              r'$UserProfile',
+              'role',
+            ),
             vehicle: _vehicle?.build(),
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'$UserProfile', 'createdAt'),
+              createdAt,
+              r'$UserProfile',
+              'createdAt',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -235,7 +256,10 @@ class $UserProfileBuilder
         _vehicle?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'$UserProfile', _$failedField, e.toString());
+          r'$UserProfile',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

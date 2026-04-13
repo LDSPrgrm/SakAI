@@ -10,15 +10,15 @@ class _$BatchApproveRequest extends BatchApproveRequest {
   @override
   final BuiltList<String> ids;
 
-  factory _$BatchApproveRequest(
-          [void Function(BatchApproveRequestBuilder)? updates]) =>
-      (BatchApproveRequestBuilder()..update(updates))._build();
+  factory _$BatchApproveRequest([
+    void Function(BatchApproveRequestBuilder)? updates,
+  ]) => (BatchApproveRequestBuilder()..update(updates))._build();
 
   _$BatchApproveRequest._({required this.ids}) : super._();
   @override
   BatchApproveRequest rebuild(
-          void Function(BatchApproveRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(BatchApproveRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   BatchApproveRequestBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$BatchApproveRequest extends BatchApproveRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'BatchApproveRequest')
-          ..add('ids', ids))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'BatchApproveRequest',
+    )..add('ids', ids)).toString();
   }
 }
 
@@ -83,10 +83,7 @@ class BatchApproveRequestBuilder
   _$BatchApproveRequest _build() {
     _$BatchApproveRequest _$result;
     try {
-      _$result = _$v ??
-          _$BatchApproveRequest._(
-            ids: ids.build(),
-          );
+      _$result = _$v ?? _$BatchApproveRequest._(ids: ids.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -94,7 +91,10 @@ class BatchApproveRequestBuilder
         ids.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'BatchApproveRequest', _$failedField, e.toString());
+          r'BatchApproveRequest',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

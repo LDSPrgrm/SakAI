@@ -4,7 +4,6 @@ import 'package:sakai_shared/sakai_shared.dart' hide DriverRatingState;
 
 import '../../../app/router.dart';
 import '../models/driver_rating_state.dart';
-import '../repositories/driver_rating_repository.dart';
 import '../view_models/driver_rating_notifier.dart';
 import 'driver_rating_repository_provider.dart';
 

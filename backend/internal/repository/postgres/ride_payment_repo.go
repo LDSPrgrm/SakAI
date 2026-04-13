@@ -22,22 +22,23 @@ func NewRidePaymentRepo(db *pgxpool.Pool) domain.RidePaymentRepository {
 func (r *ridePaymentRepo) Create(ctx context.Context, payment *domain.Payment) error {
 	const q = `
 		INSERT INTO ride_payments (
-			id, ride_id, amount, currency, method, status,
-			gateway_transaction_id, gateway_response, processed_at, failure_reason, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+			id, ride_id, passenger_id, amount, currency, method, status,
+			gateway_transaction_id, stripe_charge_id, idempotency_key,
+			gateway_response, processed_at, failure_reason, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
 	_, err := r.db.Exec(ctx, q,
-		payment.ID, payment.RideID, payment.Amount, payment.Currency, payment.Method,
-		payment.Status, payment.GatewayTransactionID, payment.GatewayResponse,
-		payment.ProcessedAt, payment.FailureReason, payment.CreatedAt,
+		payment.ID, payment.RideID, payment.PassengerID, payment.Amount, payment.Currency, payment.Method,
+		payment.Status, payment.GatewayTransactionID, payment.StripeChargeID, payment.IdempotencyKey,
+		payment.GatewayResponse, payment.ProcessedAt, payment.FailureReason, payment.CreatedAt,
 	)
 	return err
 }
 
 func (r *ridePaymentRepo) GetByRideID(ctx context.Context, rideID uuid.UUID) (*domain.Payment, error) {
 	const q = `
-		SELECT id, ride_id, amount, currency, method, status,
-		       gateway_transaction_id, gateway_response, processed_at,
-		       failure_reason, created_at
+		SELECT id, ride_id, passenger_id, amount, currency, method, status,
+		       gateway_transaction_id, stripe_charge_id, idempotency_key,
+		       gateway_response, processed_at, failure_reason, created_at
 		FROM ride_payments
 		WHERE ride_id = $1`
 	return r.scanPayment(r.db.QueryRow(ctx, q, rideID))
@@ -58,12 +59,26 @@ func (r *ridePaymentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status
 func (r *ridePaymentRepo) scanPayment(row pgx.Row) (*domain.Payment, error) {
 	payment := &domain.Payment{}
 	err := row.Scan(
-		&payment.ID, &payment.RideID, &payment.Amount, &payment.Currency, &payment.Method,
-		&payment.Status, &payment.GatewayTransactionID, &payment.GatewayResponse,
-		&payment.ProcessedAt, &payment.FailureReason, &payment.CreatedAt,
+		&payment.ID, &payment.RideID, &payment.PassengerID, &payment.Amount, &payment.Currency, &payment.Method,
+		&payment.Status, &payment.GatewayTransactionID, &payment.StripeChargeID, &payment.IdempotencyKey,
+		&payment.GatewayResponse, &payment.ProcessedAt, &payment.FailureReason, &payment.CreatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
 	return payment, err
+}
+
+// HasUnpaidBlock returns true if the passenger has any failed payment older than the cutoff.
+func (r *ridePaymentRepo) HasUnpaidBlock(ctx context.Context, passengerID uuid.UUID, cutoff time.Time) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1 FROM ride_payments
+			WHERE passenger_id = $1
+			  AND status = 'failed'
+			  AND created_at < $2
+		)`
+	var exists bool
+	err := r.db.QueryRow(ctx, q, passengerID, cutoff).Scan(&exists)
+	return exists, err
 }

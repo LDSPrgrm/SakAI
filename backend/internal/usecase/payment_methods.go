@@ -18,12 +18,12 @@ type PaymentMethodUseCase interface {
 }
 
 type paymentMethodUseCase struct {
-	pmRepo     domain.PaymentMethodRepository
-	gatewayClient StripeClient // Reused from payment processing
+	pmRepo        domain.PaymentMethodRepository
+	gatewayClient domain.StripeClient
 }
 
 // NewPaymentMethodUseCase creates a usecase for saved payment method management.
-func NewPaymentMethodUseCase(pmRepo domain.PaymentMethodRepository, gatewayClient StripeClient) PaymentMethodUseCase {
+func NewPaymentMethodUseCase(pmRepo domain.PaymentMethodRepository, gatewayClient domain.StripeClient) PaymentMethodUseCase {
 	return &paymentMethodUseCase{
 		pmRepo:        pmRepo,
 		gatewayClient: gatewayClient,

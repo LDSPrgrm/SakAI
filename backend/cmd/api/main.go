@@ -21,18 +21,10 @@ import (
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
+	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
 	"github.com/sakai/backend/internal/usecase"
 )
-
-// ─── Stripe Client Stub ──────────────────────────────────────────────────────
-// TODO: Replace with real Stripe SDK integration.
-type stripeClientStub struct{}
-
-func (s *stripeClientStub) Charge(ctx context.Context, amountCents int64, currency, paymentMethodToken, idempotencyKey string) (string, error) {
-	// Stub: simulate successful charge.
-	return "pi_stub_" + idempotencyKey[:8], nil
-}
 
 func main() {
 	// Load .env if present. In production the real env vars take precedence,
@@ -124,8 +116,11 @@ func main() {
 	// New use cases for documents, ratings, and payment processing.
 	documentUC := usecase.NewDocumentUseCase(docRepo, rideRepo)
 	ratingUC := usecase.NewRatingUseCase(ratingRepo, rideRepo)
-	stripeClient := &stripeClientStub{}
-	paymentProcessingUC := usecase.NewPaymentProcessingUseCase(ridePaymentRepo, rideRepo, stripeClient)
+
+	// Stripe client — real SDK replaces the stub.
+	stripeClient := stripe.New(cfg.StripeSecretKey)
+
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, postgres.NewEarningsRepo(pool))
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
 	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
@@ -151,7 +146,7 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, userRepo, driverRepo, ridePaymentRepo),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo),
 		Admin:          handler.NewAdminHandler(adminUC, auditUC),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),

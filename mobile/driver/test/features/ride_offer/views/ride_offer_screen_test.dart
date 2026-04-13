@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
 
 import 'package:driver/features/ride_offer/views/ride_offer_screen.dart';
 import 'package:driver/app/providers.dart';
@@ -26,7 +25,7 @@ void main() {
     );
   }
 
-  WsEventRideRequested _createOffer() {
+  WsEventRideRequested createOffer() {
     return WsEventRideRequested(
       (b) => b
         ..rideId = 'test-offer-123'
@@ -57,7 +56,7 @@ void main() {
   testWidgets('RideOfferScreen renders passenger info and buttons', (
     tester,
   ) async {
-    final offer = _createOffer();
+    final offer = createOffer();
     await tester.pumpWidget(buildOfferScreen(offer));
 
     expect(find.text('New Ride Offer'), findsOneWidget);
@@ -69,7 +68,7 @@ void main() {
   });
 
   testWidgets('RideOfferScreen shows countdown timer', (tester) async {
-    final offer = _createOffer();
+    final offer = createOffer();
     await tester.pumpWidget(buildOfferScreen(offer));
     await tester.pump();
 

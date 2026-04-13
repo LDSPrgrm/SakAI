@@ -158,6 +158,7 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**authRefresh**](doc/AuthApi.md#authrefresh) | **POST** /auth/refresh | Refresh the access token
 [*AuthApi*](doc/AuthApi.md) | [**authRegister**](doc/AuthApi.md#authregister) | **POST** /auth/register | Register a new user
 [*DriverApi*](doc/DriverApi.md) | [**driverGetDocumentStatus**](doc/DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
+[*DriverApi*](doc/DriverApi.md) | [**driverGetEarnings**](doc/DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [*DriverApi*](doc/DriverApi.md) | [**driverGetIncomingRide**](doc/DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
 [*DriverApi*](doc/DriverApi.md) | [**driverListDocuments**](doc/DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [*DriverApi*](doc/DriverApi.md) | [**driverSetStatus**](doc/DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
@@ -220,11 +221,13 @@ Class | Method | HTTP request | Description
  - [DocumentType](doc/DocumentType.md)
  - [DriverDocumentResponse](doc/DriverDocumentResponse.md)
  - [DriverDocumentsListResponse](doc/DriverDocumentsListResponse.md)
+ - [DriverGetEarnings200Response](doc/DriverGetEarnings200Response.md)
  - [DriverPayout](doc/DriverPayout.md)
  - [DriverStatusRequest](doc/DriverStatusRequest.md)
  - [DriverStatusResponse](doc/DriverStatusResponse.md)
  - [DriverSummary](doc/DriverSummary.md)
  - [EWalletDetails](doc/EWalletDetails.md)
+ - [EarningsItem](doc/EarningsItem.md)
  - [ErrorCode](doc/ErrorCode.md)
  - [ErrorResponse](doc/ErrorResponse.md)
  - [FareConfig](doc/FareConfig.md)
@@ -289,6 +292,7 @@ Class | Method | HTTP request | Description
  - [UserRideItem](doc/UserRideItem.md)
  - [UserRideListResponse](doc/UserRideListResponse.md)
  - [VehicleInfo](doc/VehicleInfo.md)
+ - [VehicleInput](doc/VehicleInput.md)
  - [WsEnvelope](doc/WsEnvelope.md)
  - [WsEventDriverLocationUpdated](doc/WsEventDriverLocationUpdated.md)
  - [WsEventNoDriversAvailable](doc/WsEventNoDriversAvailable.md)

@@ -10,15 +10,15 @@ class _$GetNearbyDrivers200Response extends GetNearbyDrivers200Response {
   @override
   final BuiltList<NearbyDriver>? drivers;
 
-  factory _$GetNearbyDrivers200Response(
-          [void Function(GetNearbyDrivers200ResponseBuilder)? updates]) =>
-      (GetNearbyDrivers200ResponseBuilder()..update(updates))._build();
+  factory _$GetNearbyDrivers200Response([
+    void Function(GetNearbyDrivers200ResponseBuilder)? updates,
+  ]) => (GetNearbyDrivers200ResponseBuilder()..update(updates))._build();
 
   _$GetNearbyDrivers200Response._({this.drivers}) : super._();
   @override
   GetNearbyDrivers200Response rebuild(
-          void Function(GetNearbyDrivers200ResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(GetNearbyDrivers200ResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   GetNearbyDrivers200ResponseBuilder toBuilder() =>
@@ -40,16 +40,18 @@ class _$GetNearbyDrivers200Response extends GetNearbyDrivers200Response {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'GetNearbyDrivers200Response')
-          ..add('drivers', drivers))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'GetNearbyDrivers200Response',
+    )..add('drivers', drivers)).toString();
   }
 }
 
 class GetNearbyDrivers200ResponseBuilder
     implements
-        Builder<GetNearbyDrivers200Response,
-            GetNearbyDrivers200ResponseBuilder> {
+        Builder<
+          GetNearbyDrivers200Response,
+          GetNearbyDrivers200ResponseBuilder
+        > {
   _$GetNearbyDrivers200Response? _$v;
 
   ListBuilder<NearbyDriver>? _drivers;
@@ -86,10 +88,8 @@ class GetNearbyDrivers200ResponseBuilder
   _$GetNearbyDrivers200Response _build() {
     _$GetNearbyDrivers200Response _$result;
     try {
-      _$result = _$v ??
-          _$GetNearbyDrivers200Response._(
-            drivers: _drivers?.build(),
-          );
+      _$result =
+          _$v ?? _$GetNearbyDrivers200Response._(drivers: _drivers?.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -97,7 +97,10 @@ class GetNearbyDrivers200ResponseBuilder
         _drivers?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'GetNearbyDrivers200Response', _$failedField, e.toString());
+          r'GetNearbyDrivers200Response',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

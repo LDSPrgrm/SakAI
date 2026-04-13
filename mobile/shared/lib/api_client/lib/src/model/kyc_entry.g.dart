@@ -28,10 +28,10 @@ KycEntryStatusEnum _$kycEntryStatusEnumValueOf(String name) {
 
 final BuiltSet<KycEntryStatusEnum> _$kycEntryStatusEnumValues =
     BuiltSet<KycEntryStatusEnum>(const <KycEntryStatusEnum>[
-  _$kycEntryStatusEnum_pending,
-  _$kycEntryStatusEnum_approved,
-  _$kycEntryStatusEnum_rejected,
-]);
+      _$kycEntryStatusEnum_pending,
+      _$kycEntryStatusEnum_approved,
+      _$kycEntryStatusEnum_rejected,
+    ]);
 
 Serializer<KycEntryStatusEnum> _$kycEntryStatusEnumSerializer =
     _$KycEntryStatusEnumSerializer();
@@ -55,15 +55,20 @@ class _$KycEntryStatusEnumSerializer
   final String wireName = 'KycEntryStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, KycEntryStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    KycEntryStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  KycEntryStatusEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      KycEntryStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  KycEntryStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => KycEntryStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$KycEntry extends KycEntry {
@@ -83,14 +88,14 @@ class _$KycEntry extends KycEntry {
   factory _$KycEntry([void Function(KycEntryBuilder)? updates]) =>
       (KycEntryBuilder()..update(updates))._build();
 
-  _$KycEntry._(
-      {this.id,
-      this.driverId,
-      this.driverName,
-      this.submittedAt,
-      this.docs,
-      this.status})
-      : super._();
+  _$KycEntry._({
+    this.id,
+    this.driverId,
+    this.driverName,
+    this.submittedAt,
+    this.docs,
+    this.status,
+  }) : super._();
   @override
   KycEntry rebuild(void Function(KycEntryBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -197,7 +202,8 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
   _$KycEntry _build() {
     _$KycEntry _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$KycEntry._(
             id: id,
             driverId: driverId,
@@ -213,7 +219,10 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
         _docs?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'KycEntry', _$failedField, e.toString());
+          r'KycEntry',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }
