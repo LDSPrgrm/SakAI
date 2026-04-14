@@ -133,6 +133,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         }
         notifier.clearError();
       }
+      // Animate camera to follow driver's new position
+      if (previous?.currentLatLng != next.currentLatLng &&
+          next.currentLatLng != null &&
+          _mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLng(next.currentLatLng!),
+        );
+      }
     });
 
     // Build map markers
@@ -155,8 +163,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         children: [
           // Full-screen map
           GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: currentLatLng,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(14.5995, 120.9842),
               zoom: 14,
             ),
             onMapCreated: (controller) => _mapController = controller,
