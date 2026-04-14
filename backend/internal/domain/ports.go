@@ -321,7 +321,7 @@ type RideUseCase interface {
 	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*DeclineResult, error)
 	Arrive(ctx context.Context, driverID, rideID uuid.UUID, driverLocation LatLng) (*Ride, error)
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
-	Complete(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
+	Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation LatLng) (*Ride, error)
 	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)
 }
 

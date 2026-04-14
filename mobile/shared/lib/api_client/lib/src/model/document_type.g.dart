@@ -27,20 +27,6 @@ final BuiltSet<DocumentType> _$values = BuiltSet<DocumentType>(
   const <DocumentType>[_$license, _$registration, _$insurance],
 );
 
-class _$DocumentTypeMeta {
-  const _$DocumentTypeMeta();
-  DocumentType get license => _$license;
-  DocumentType get registration => _$registration;
-  DocumentType get insurance => _$insurance;
-  DocumentType valueOf(String name) => _$valueOf(name);
-  BuiltSet<DocumentType> get values => _$values;
-}
-
-mixin _$DocumentTypeMixin {
-  // ignore: non_constant_identifier_names
-  _$DocumentTypeMeta get DocumentType => const _$DocumentTypeMeta();
-}
-
 Serializer<DocumentType> _$documentTypeSerializer = _$DocumentTypeSerializer();
 
 class _$DocumentTypeSerializer implements PrimitiveSerializer<DocumentType> {

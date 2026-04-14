@@ -41,23 +41,6 @@ final BuiltSet<RideStatus> _$values = BuiltSet<RideStatus>(const <RideStatus>[
   _$cancelled,
 ]);
 
-class _$RideStatusMeta {
-  const _$RideStatusMeta();
-  RideStatus get requested => _$requested;
-  RideStatus get accepted => _$accepted;
-  RideStatus get arrived => _$arrived;
-  RideStatus get inProgress => _$inProgress;
-  RideStatus get completed => _$completed;
-  RideStatus get cancelled => _$cancelled;
-  RideStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<RideStatus> get values => _$values;
-}
-
-mixin _$RideStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$RideStatusMeta get RideStatus => const _$RideStatusMeta();
-}
-
 Serializer<RideStatus> _$rideStatusSerializer = _$RideStatusSerializer();
 
 class _$RideStatusSerializer implements PrimitiveSerializer<RideStatus> {

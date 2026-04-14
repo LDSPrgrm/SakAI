@@ -390,7 +390,9 @@ func TestRideUseCase_Complete_SuccessWithFareCalculation(t *testing.T) {
 	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(&completedRide, nil)
 	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(nil)
 
-	result, err := uc.Complete(context.Background(), driverID, ride.ID)
+	// Driver location at destination (within 100m).
+	driverLocation := domain.LatLng{Lat: 14.6, Lng: 121.0}
+	result, err := uc.Complete(context.Background(), driverID, ride.ID, driverLocation)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -413,7 +415,9 @@ func TestRideUseCase_Complete_WrongDriver(t *testing.T) {
 
 	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
 
-	_, err := uc.Complete(context.Background(), wrongDriverID, ride.ID)
+	// Driver location at destination (within 100m).
+	driverLocation := domain.LatLng{Lat: ride.Destination.Lat, Lng: ride.Destination.Lng}
+	_, err := uc.Complete(context.Background(), wrongDriverID, ride.ID, driverLocation)
 	if err != domain.ErrForbidden {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
@@ -432,7 +436,9 @@ func TestRideUseCase_Complete_InvalidStateTransition(t *testing.T) {
 
 	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
 
-	_, err := uc.Complete(context.Background(), driverID, ride.ID)
+	// Driver location at destination (within 100m).
+	driverLocation := domain.LatLng{Lat: ride.Destination.Lat, Lng: ride.Destination.Lng}
+	_, err := uc.Complete(context.Background(), driverID, ride.ID, driverLocation)
 	if err != domain.ErrInvalidStateTransition {
 		t.Errorf("expected ErrInvalidStateTransition, got %v", err)
 	}

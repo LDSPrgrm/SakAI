@@ -30,21 +30,6 @@ final BuiltSet<UploadStatus> _$values = BuiltSet<UploadStatus>(
   const <UploadStatus>[_$uploaded, _$underReview, _$approved, _$rejected],
 );
 
-class _$UploadStatusMeta {
-  const _$UploadStatusMeta();
-  UploadStatus get uploaded => _$uploaded;
-  UploadStatus get underReview => _$underReview;
-  UploadStatus get approved => _$approved;
-  UploadStatus get rejected => _$rejected;
-  UploadStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<UploadStatus> get values => _$values;
-}
-
-mixin _$UploadStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$UploadStatusMeta get UploadStatus => const _$UploadStatusMeta();
-}
-
 Serializer<UploadStatus> _$uploadStatusSerializer = _$UploadStatusSerializer();
 
 class _$UploadStatusSerializer implements PrimitiveSerializer<UploadStatus> {

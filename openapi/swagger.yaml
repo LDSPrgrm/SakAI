@@ -846,7 +846,7 @@ paths:
       description: |
         Transitions: `accepted` → `arrived`.
         Triggers: `ride.status_changed` WebSocket event → both parties.
-        Requires driver to be within 200 meters of pickup location.
+        Requires driver to be within 50 meters of pickup location.
       operationId: rideArrive
       security:
         - BearerAuth: []
@@ -899,7 +899,7 @@ paths:
                 too_far:
                   value:
                     code: DRIVER_TOO_FAR
-                    message: "Driver must be within 200 meters of pickup location"
+                    message: "Driver must be within 50 meters of pickup location"
 
   /rides/{rideId}/start:
     post:
@@ -944,11 +944,23 @@ paths:
         Transitions: `in_progress` → `completed`.
         Driver status automatically returns to `online` after completion.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 100 meters of destination location.
       operationId: rideComplete
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of completion
       responses:
         "200":
           description: Ride completed
@@ -956,6 +968,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -963,14 +984,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `in_progress` state
+          description: Ride is not in `in_progress` state or driver too far from destination
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'in_progress' state to complete"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'in_progress' state to complete"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR_FROM_DESTINATION
+                    message: "Driver must be within 100 meters of destination"
 
   /rides/{rideId}/cancel:
     post:

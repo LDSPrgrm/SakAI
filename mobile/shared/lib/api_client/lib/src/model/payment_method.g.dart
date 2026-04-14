@@ -24,19 +24,6 @@ final BuiltSet<PaymentMethod> _$values = BuiltSet<PaymentMethod>(
   const <PaymentMethod>[_$cash, _$card],
 );
 
-class _$PaymentMethodMeta {
-  const _$PaymentMethodMeta();
-  PaymentMethod get cash => _$cash;
-  PaymentMethod get card => _$card;
-  PaymentMethod valueOf(String name) => _$valueOf(name);
-  BuiltSet<PaymentMethod> get values => _$values;
-}
-
-mixin _$PaymentMethodMixin {
-  // ignore: non_constant_identifier_names
-  _$PaymentMethodMeta get PaymentMethod => const _$PaymentMethodMeta();
-}
-
 Serializer<PaymentMethod> _$paymentMethodSerializer =
     _$PaymentMethodSerializer();
 

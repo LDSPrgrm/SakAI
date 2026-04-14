@@ -12,8 +12,6 @@ import '../features/ride_offer/views/ride_offer_screen.dart';
 import '../features/active_ride/views/active_ride_screen.dart';
 import '../features/earnings/views/earnings_screen.dart';
 import '../features/ride_complete/views/driver_rating_screen.dart';
-import '../features/ride_complete/repositories/driver_rating_repository_impl.dart';
-import '../features/ride_complete/views/driver_rating_repository_provider.dart';
 import 'providers.dart';
 
 abstract class Routes {
@@ -124,15 +122,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
           final rideId = extra['rideId'] as String;
           final passengerName = extra['passengerName'] as String;
-          final ratingRepo = DriverRatingRepositoryImpl(
-            ref.read(apiClientProvider),
-          );
-          return DriverRatingRepositoryProvider(
-            repository: ratingRepo,
-            child: DriverRatingScreen(
-              rideId: rideId,
-              passengerName: passengerName,
-            ),
+          return DriverRatingScreen(
+            rideId: rideId,
+            passengerName: passengerName,
           );
         },
       ),

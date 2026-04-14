@@ -249,4 +249,3 @@ lib/src/model/ws_event_ride_requested.dart
 lib/src/model/ws_event_ride_status_changed.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/ride_arrive_request_test.dart

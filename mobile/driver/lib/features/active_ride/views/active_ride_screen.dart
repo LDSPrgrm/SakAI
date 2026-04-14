@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -195,7 +196,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       SakaiPrimaryButton(
                         label: "I've Arrived",
                         icon: Icons.flag,
-                        onPressed: () => _manager.arriveAtPickup(),
+                        onPressed: () => _handleArrive(context),
                       ),
                     if (state.currentStep == ActiveRideStep.arrived)
                       SakaiPrimaryButton(
@@ -207,7 +208,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       SakaiPrimaryButton(
                         label: 'Complete Ride',
                         icon: Icons.check_circle,
-                        onPressed: () => _manager.completeRide(),
+                        onPressed: () => _handleComplete(context),
                       ),
                     if (state.currentStep != ActiveRideStep.inProgress) ...[
                       SizedBox(height: tokens.spaceSm),
@@ -232,6 +233,78 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> _handleArrive(BuildContext context) async {
+    await _manager.arriveAtPickup();
+    if (!mounted) return;
+    _showProximityDialog(
+      context,
+      title: 'Too Far from Pickup',
+      message: _manager.state.errorMessage!,
+      onForce: () {
+        Navigator.of(context).pop();
+        _manager.arriveAtPickup(force: true);
+      },
+    );
+  }
+
+  Future<void> _handleComplete(BuildContext context) async {
+    await _manager.completeRide();
+    if (!mounted) return;
+    _showProximityDialog(
+      context,
+      title: 'Too Far from Destination',
+      message: _manager.state.errorMessage!,
+      onForce: () {
+        Navigator.of(context).pop();
+        _manager.completeRide(force: true);
+      },
+    );
+  }
+
+  void _showProximityDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required VoidCallback onForce,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.location_off,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message),
+            SizedBox(height: 12),
+            Text(
+              'GPS can be inaccurate in tunnels or near tall buildings. Try again after moving closer.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Move Closer'),
+          ),
+          FilledButton(onPressed: onForce, child: const Text('Force Anyway')),
+        ],
+      ),
+    );
   }
 
   Future<void> _showCancelConfirmation(BuildContext context) async {

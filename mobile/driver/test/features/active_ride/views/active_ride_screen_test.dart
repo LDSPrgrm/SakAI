@@ -15,7 +15,7 @@ class _MockActiveRideRepository implements ActiveRideRepository {
   Future<void> startRide(String rideId) async {}
 
   @override
-  Future<void> completeRide(String rideId) async {}
+  Future<void> completeRide(String rideId, LatLng driverLocation) async {}
 
   @override
   Future<void> cancelRide(String rideId) async {}

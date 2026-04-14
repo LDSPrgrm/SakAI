@@ -47,5 +47,6 @@ var (
 	// Tip errors (additional)
 	ErrTipExceedsLimit = errors.New("tip exceeds 50% of base fare")
 	// Proximity validation errors
-	ErrDriverTooFarFromPickup = errors.New("driver must be within 200 meters of pickup location")
+	ErrDriverTooFarFromPickup = errors.New("driver must be within 50 meters of pickup location")
+	ErrDriverTooFarFromDestination = errors.New("driver must be within 100 meters of destination")
 )

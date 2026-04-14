@@ -232,6 +232,11 @@ type ArriveAtPickupRequest struct {
 	DriverLocation LatLngInput `json:"driver_location" binding:"required"`
 }
 
+// CompleteRideRequest is the body for POST /rides/:rideId/complete.
+type CompleteRideRequest struct {
+	DriverLocation LatLngInput `json:"driver_location" binding:"required"`
+}
+
 // UserRideItemResponse is the public API shape for a ride in the history list.
 type UserRideItemResponse struct {
 	ID                 string              `json:"id"`

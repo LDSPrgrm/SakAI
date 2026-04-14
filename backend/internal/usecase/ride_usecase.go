@@ -177,9 +177,9 @@ func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, d
 		return nil, domain.ErrInvalidStateTransition
 	}
 
-	// Validate driver is within 200 meters of pickup location.
+	// Validate driver is within 50 meters of pickup location.
 	distanceToPickup := driverLocation.DistanceTo(ride.Origin)
-	const maxArrivalDistanceMeters = 200.0
+	const maxArrivalDistanceMeters = 50.0
 	if distanceToPickup > maxArrivalDistanceMeters {
 		return nil, domain.ErrDriverTooFarFromPickup
 	}
@@ -196,7 +196,7 @@ func (uc *rideUseCase) Start(ctx context.Context, driverID, rideID uuid.UUID) (*
 	})
 }
 
-func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
+func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
 	ride, err := uc.rideRepo.GetByID(ctx, rideID)
 	if err != nil {
 		return nil, err
@@ -206,6 +206,13 @@ func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID)
 	}
 	if !ride.Status.CanTransitionTo(domain.RideStatusCompleted) {
 		return nil, domain.ErrInvalidStateTransition
+	}
+
+	// Validate driver is within 100 meters of destination location.
+	distanceToDestination := driverLocation.DistanceTo(ride.Destination)
+	const maxCompletionDistanceMeters = 100.0
+	if distanceToDestination > maxCompletionDistanceMeters {
+		return nil, domain.ErrDriverTooFarFromDestination
 	}
 
 	// Calculate actual fare using actual distance/duration.

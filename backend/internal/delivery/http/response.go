@@ -51,6 +51,7 @@ var errorCodeMap = []struct {
 	{domain.ErrPaymentMethodLastMethod, http.StatusConflict, "PAYMENT_METHOD_LAST_METHOD"},
 	// Proximity validation errors
 	{domain.ErrDriverTooFarFromPickup, http.StatusConflict, "DRIVER_TOO_FAR"},
+	{domain.ErrDriverTooFarFromDestination, http.StatusConflict, "DRIVER_TOO_FAR_FROM_DESTINATION"},
 }
 
 // respondError writes a structured error response mapped from the domain error.

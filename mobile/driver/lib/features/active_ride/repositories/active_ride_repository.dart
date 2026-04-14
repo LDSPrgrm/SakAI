@@ -14,7 +14,8 @@ abstract class ActiveRideRepository {
   Future<void> startRide(String rideId);
 
   /// Completes the ride (in_progress → completed).
-  Future<void> completeRide(String rideId);
+  /// Requires driver's current GPS location for proximity validation.
+  Future<void> completeRide(String rideId, LatLng driverLocation);
 
   /// Cancels the ride (any non-terminal state → cancelled).
   Future<void> cancelRide(String rideId);

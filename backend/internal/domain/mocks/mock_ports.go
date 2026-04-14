@@ -383,22 +383,6 @@ func (mr *MockRideRepositoryMockRecorder) ListAll(ctx, filter any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockRideRepository)(nil).ListAll), ctx, filter)
 }
 
-// ListByPassengerID mocks base method.
-func (m *MockRideRepository) ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter domain.UserRideFilter) ([]*domain.Ride, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListByPassengerID", ctx, passengerID, filter)
-	ret0, _ := ret[0].([]*domain.Ride)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ListByPassengerID indicates an expected call of ListByPassengerID.
-func (mr *MockRideRepositoryMockRecorder) ListByPassengerID(ctx, passengerID, filter any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByPassengerID", reflect.TypeOf((*MockRideRepository)(nil).ListByPassengerID), ctx, passengerID, filter)
-}
-
 // ListByDriverID mocks base method.
 func (m *MockRideRepository) ListByDriverID(ctx context.Context, driverID uuid.UUID, filter domain.UserRideFilter) ([]*domain.Ride, int, error) {
 	m.ctrl.T.Helper()
@@ -413,6 +397,22 @@ func (m *MockRideRepository) ListByDriverID(ctx context.Context, driverID uuid.U
 func (mr *MockRideRepositoryMockRecorder) ListByDriverID(ctx, driverID, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByDriverID", reflect.TypeOf((*MockRideRepository)(nil).ListByDriverID), ctx, driverID, filter)
+}
+
+// ListByPassengerID mocks base method.
+func (m *MockRideRepository) ListByPassengerID(ctx context.Context, passengerID uuid.UUID, filter domain.UserRideFilter) ([]*domain.Ride, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByPassengerID", ctx, passengerID, filter)
+	ret0, _ := ret[0].([]*domain.Ride)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListByPassengerID indicates an expected call of ListByPassengerID.
+func (mr *MockRideRepositoryMockRecorder) ListByPassengerID(ctx, passengerID, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByPassengerID", reflect.TypeOf((*MockRideRepository)(nil).ListByPassengerID), ctx, passengerID, filter)
 }
 
 // SetCancelled mocks base method.
@@ -1950,18 +1950,18 @@ func (mr *MockRideUseCaseMockRecorder) Accept(ctx, driverID, rideID any) *gomock
 }
 
 // Arrive mocks base method.
-func (m *MockRideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
+func (m *MockRideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Arrive", ctx, driverID, rideID)
+	ret := m.ctrl.Call(m, "Arrive", ctx, driverID, rideID, driverLocation)
 	ret0, _ := ret[0].(*domain.Ride)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Arrive indicates an expected call of Arrive.
-func (mr *MockRideUseCaseMockRecorder) Arrive(ctx, driverID, rideID any) *gomock.Call {
+func (mr *MockRideUseCaseMockRecorder) Arrive(ctx, driverID, rideID, driverLocation any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Arrive", reflect.TypeOf((*MockRideUseCase)(nil).Arrive), ctx, driverID, rideID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Arrive", reflect.TypeOf((*MockRideUseCase)(nil).Arrive), ctx, driverID, rideID, driverLocation)
 }
 
 // Cancel mocks base method.
@@ -1980,18 +1980,18 @@ func (mr *MockRideUseCaseMockRecorder) Cancel(ctx, userID, role, rideID, reasonC
 }
 
 // Complete mocks base method.
-func (m *MockRideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
+func (m *MockRideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Complete", ctx, driverID, rideID)
+	ret := m.ctrl.Call(m, "Complete", ctx, driverID, rideID, driverLocation)
 	ret0, _ := ret[0].(*domain.Ride)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Complete indicates an expected call of Complete.
-func (mr *MockRideUseCaseMockRecorder) Complete(ctx, driverID, rideID any) *gomock.Call {
+func (mr *MockRideUseCaseMockRecorder) Complete(ctx, driverID, rideID, driverLocation any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockRideUseCase)(nil).Complete), ctx, driverID, rideID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockRideUseCase)(nil).Complete), ctx, driverID, rideID, driverLocation)
 }
 
 // Decline mocks base method.
@@ -2136,6 +2136,21 @@ func (m *MockDriverUseCase) GetNearbyDrivers(ctx context.Context, lat, lng, radi
 func (mr *MockDriverUseCaseMockRecorder) GetNearbyDrivers(ctx, lat, lng, radiusM, rideType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNearbyDrivers", reflect.TypeOf((*MockDriverUseCase)(nil).GetNearbyDrivers), ctx, lat, lng, radiusM, rideType)
+}
+
+// GetNearbyDriversAllTypes mocks base method.
+func (m *MockDriverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, lng, radiusM float64) (map[domain.RideType][]domain.NearbyDriver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNearbyDriversAllTypes", ctx, lat, lng, radiusM)
+	ret0, _ := ret[0].(map[domain.RideType][]domain.NearbyDriver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNearbyDriversAllTypes indicates an expected call of GetNearbyDriversAllTypes.
+func (mr *MockDriverUseCaseMockRecorder) GetNearbyDriversAllTypes(ctx, lat, lng, radiusM any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNearbyDriversAllTypes", reflect.TypeOf((*MockDriverUseCase)(nil).GetNearbyDriversAllTypes), ctx, lat, lng, radiusM)
 }
 
 // SetStatus mocks base method.

@@ -348,9 +348,26 @@ func (h *RideHandler) Start(c *gin.Context) {
 }
 
 func (h *RideHandler) Complete(c *gin.Context) {
-	h.driverTransition(c, func(driverID, rideID uuid.UUID) (*domain.Ride, error) {
-		return h.uc.Complete(c.Request.Context(), driverID, rideID)
-	}, ws.EventRideStatusChanged)
+	rideID, err := uuid.Parse(c.Param("rideId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid ride ID"})
+		return
+	}
+
+	var req dto.CompleteRideRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+
+	driverID := c.MustGet("userID").(uuid.UUID)
+	ride, err := h.uc.Complete(c.Request.Context(), driverID, rideID, req.DriverLocation.ToDomainLatLng())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status})
+	respondOK(c, h.rideResponse(ride))
 }
 
 func (h *RideHandler) Cancel(c *gin.Context) {

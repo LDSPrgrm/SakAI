@@ -1,3 +1,5 @@
+import 'dart:math' show sin, cos, sqrt, asin, pi;
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sakai_shared/sakai_shared.dart';
@@ -67,8 +69,11 @@ class ActiveRideManager extends ChangeNotifier {
 
   ActiveRideState get state => _state;
 
-  Future<void> arriveAtPickup() async {
+  Future<void> arriveAtPickup({bool force = false}) async {
     if (_state.isTransitioning) return;
+
+    final ride = _state.ride;
+    if (ride == null) return;
 
     // Capture current GPS position before transitioning.
     Position? currentPosition;
@@ -89,7 +94,25 @@ class ActiveRideManager extends ChangeNotifier {
       return;
     }
 
-    // Geolocator.getCurrentPosition either returns a valid Position or throws.
+    final driverLatLng = _Position(
+      currentPosition.latitude,
+      currentPosition.longitude,
+    );
+    final pickupLatLng = _Position(ride.origin.lat, ride.origin.lng);
+    final distanceToPickup = _haversineDistance(driverLatLng, pickupLatLng);
+    const pickupThreshold = 50.0; // 50 meters
+
+    if (!force && distanceToPickup > pickupThreshold) {
+      _state = _state.copyWith(
+        isTransitioning: false,
+        errorMessage:
+            'You are ${distanceToPickup.toStringAsFixed(0)}m away from the pickup point. '
+            'You must be within ${pickupThreshold.toStringAsFixed(0)}m to mark as arrived.',
+      );
+      notifyListeners();
+      return;
+    }
+
     final lat = currentPosition.latitude;
     final lng = currentPosition.longitude;
 
@@ -101,17 +124,25 @@ class ActiveRideManager extends ChangeNotifier {
           ..lat = lat
           ..lng = lng,
       );
-      await _repo.arriveAtPickup(_state.ride!.id, latLng);
+      await _repo.arriveAtPickup(ride.id, latLng);
       _state = _state.copyWith(
         isTransitioning: false,
         currentStep: ActiveRideStep.arrived,
       );
       notifyListeners();
     } catch (e) {
-      _state = _state.copyWith(
-        isTransitioning: false,
-        errorMessage: _errorMessage(e),
-      );
+      final msg = _errorMessage(e);
+      // If the backend still says too far, offer force option.
+      if (msg.contains('DRIVER_TOO_FAR')) {
+        _state = _state.copyWith(
+          isTransitioning: false,
+          errorMessage:
+              'You are still outside the pickup area (${distanceToPickup.toStringAsFixed(0)}m). '
+              'Move closer and try again, or contact support if GPS is inaccurate.',
+        );
+      } else {
+        _state = _state.copyWith(isTransitioning: false, errorMessage: msg);
+      }
       notifyListeners();
     }
   }
@@ -136,12 +167,62 @@ class ActiveRideManager extends ChangeNotifier {
     }
   }
 
-  Future<void> completeRide() async {
+  Future<void> completeRide({bool force = false}) async {
     if (_state.isTransitioning) return;
+
+    final ride = _state.ride;
+    if (ride == null) return;
+
+    // Capture current GPS position before transitioning.
+    Position? currentPosition;
+    try {
+      currentPosition = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (e) {
+      _state = _state.copyWith(
+        isTransitioning: false,
+        errorMessage:
+            'Unable to get GPS location. Please enable location services.',
+      );
+      notifyListeners();
+      return;
+    }
+
+    final driverLatLng = _Position(
+      currentPosition.latitude,
+      currentPosition.longitude,
+    );
+    final destLatLng = _Position(ride.destination.lat, ride.destination.lng);
+    final distanceToDest = _haversineDistance(driverLatLng, destLatLng);
+    const destinationThreshold = 100.0; // 100 meters
+
+    if (!force && distanceToDest > destinationThreshold) {
+      _state = _state.copyWith(
+        isTransitioning: false,
+        errorMessage:
+            'You are ${distanceToDest.toStringAsFixed(0)}m away from the destination. '
+            'You must be within ${destinationThreshold.toStringAsFixed(0)}m to complete the ride.',
+      );
+      notifyListeners();
+      return;
+    }
+
+    final lat = currentPosition.latitude;
+    final lng = currentPosition.longitude;
+
     _state = _state.copyWith(isTransitioning: true, errorMessage: null);
     notifyListeners();
     try {
-      await _repo.completeRide(_state.ride!.id);
+      final latLng = LatLng(
+        (b) => b
+          ..lat = lat
+          ..lng = lng,
+      );
+      await _repo.completeRide(ride.id, latLng);
       _state = _state.copyWith(isTransitioning: false);
       notifyListeners();
       final completedRide = _state.ride;
@@ -149,10 +230,17 @@ class ActiveRideManager extends ChangeNotifier {
         onCompleted?.call(completedRide);
       }
     } catch (e) {
-      _state = _state.copyWith(
-        isTransitioning: false,
-        errorMessage: _errorMessage(e),
-      );
+      final msg = _errorMessage(e);
+      if (msg.contains('DRIVER_TOO_FAR_FROM_DESTINATION')) {
+        _state = _state.copyWith(
+          isTransitioning: false,
+          errorMessage:
+              'You are still outside the destination area (${distanceToDest.toStringAsFixed(0)}m). '
+              'Move closer and try again, or contact support if GPS is inaccurate.',
+        );
+      } else {
+        _state = _state.copyWith(isTransitioning: false, errorMessage: msg);
+      }
       notifyListeners();
     }
   }
@@ -199,11 +287,35 @@ class ActiveRideManager extends ChangeNotifier {
   String _errorMessage(dynamic e) {
     final msg = e.toString().replaceFirst('Exception: ', '');
     if (msg.contains('409')) {
+      if (msg.contains('DRIVER_TOO_FAR_FROM_DESTINATION')) {
+        return 'You must be within 100 meters of the destination.';
+      }
       if (msg.contains('DRIVER_TOO_FAR')) {
-        return 'You must be within 200 meters of the pickup location.';
+        return 'You must be within 50 meters of the pickup location.';
       }
       return 'Cannot perform this action in current state.';
     }
     return msg.isEmpty ? 'Something went wrong. Try again.' : msg;
   }
+
+  /// Haversine distance in meters between two lat/lng points.
+  static double _haversineDistance(_Position a, _Position b) {
+    const r = 6371000.0; // Earth radius in meters
+    final dLat = _toRad(b.lat - a.lat);
+    final dLng = _toRad(b.lng - a.lng);
+    final x =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRad(a.lat)) * cos(_toRad(b.lat)) * sin(dLng / 2) * sin(dLng / 2);
+    return r * 2 * asin(sqrt(x));
+  }
+
+  static double _toRad(double deg) => deg * pi / 180.0;
+}
+
+/// Simple lat/lng pair for distance calculations.
+class _Position {
+  final double lat;
+  final double lng;
+
+  const _Position(this.lat, this.lng);
 }

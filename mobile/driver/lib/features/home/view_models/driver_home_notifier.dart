@@ -311,13 +311,12 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
       if (targetOnline) {
         debugPrint('[DRIVER] Calling goOnline()...');
         await repo.goOnline();
-        debugPrint('[DRIVER] goOnline() success, starting GPS');
+        debugPrint('[DRIVER] goOnline() success');
         state = state.copyWith(
           online: true,
           loading: false,
           status: DriverSessionStatus.online,
         );
-        _startGpsStreaming();
         _startIncomingRidePolling();
       } else {
         debugPrint('[DRIVER] Calling goOffline()...');
@@ -328,7 +327,6 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
           loading: false,
           status: DriverSessionStatus.offline,
         );
-        _stopGpsStreaming();
         _stopIncomingRidePolling();
       }
     } on Exception catch (e) {
@@ -344,14 +342,14 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     }
   }
 
-  /// Starts periodic GPS streaming (every 4 seconds).
-  void _startGpsStreaming() {
+  /// Starts GPS tracking (always runs, regardless of online status).
+  /// Position updates the marker; backend updates only happen when online.
+  void startGpsTracking() {
     _stopGpsStreaming();
     _gpsTimer = Timer.periodic(
       const Duration(seconds: 4),
       (_) => _sendLocation(),
     );
-    // Send first location immediately.
     _sendLocation();
   }
 
@@ -423,8 +421,6 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   }
 
   Future<void> _sendLocation() async {
-    if (!state.online) return;
-
     final repo = ref.read(driverRepositoryProvider);
     try {
       final position = await _gpsService.getCurrentPosition();
@@ -445,17 +441,20 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
         return;
       }
 
-      await repo.updateLocation(
-        position.latitude,
-        position.longitude,
-        heading: position.heading,
-      );
-
-      // Update state with current location so screen can consume it (eliminates duplicate GPS timer)
+      // Always update the marker position (even when offline).
       state = state.copyWith(
         gpsAvailable: true,
         currentLatLng: gmaps.LatLng(position.latitude, position.longitude),
       );
+
+      // Only send to backend when online.
+      if (state.online) {
+        await repo.updateLocation(
+          position.latitude,
+          position.longitude,
+          heading: position.heading,
+        );
+      }
     } catch (_) {
       // Silently ignore — retry on next interval.
       if (state.gpsAvailable) {

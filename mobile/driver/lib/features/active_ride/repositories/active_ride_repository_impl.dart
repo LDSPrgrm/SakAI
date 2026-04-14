@@ -62,9 +62,17 @@ class ActiveRideRepositoryImpl implements ActiveRideRepository {
   }
 
   @override
-  Future<void> completeRide(String rideId) async {
+  Future<void> completeRide(String rideId, LatLng driverLocation) async {
     try {
-      await _apiClient.getRidesApi().rideComplete(rideId: rideId);
+      final request = RideArriveRequest((b) {
+        b.driverLocation
+          ..lat = driverLocation.lat
+          ..lng = driverLocation.lng;
+      });
+      await _apiClient.getRidesApi().rideComplete(
+        rideId: rideId,
+        rideArriveRequest: request,
+      );
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode != null && statusCode >= 200 && statusCode < 300) return;

@@ -31,6 +31,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     _setupWsListener();
     _initLocation();
 
+    // Start GPS tracking immediately (updates marker regardless of online status).
+    _notifier.startGpsTracking();
+
     // Check for active ride recovery on screen init
     _notifier.checkForActiveRide();
 
@@ -143,20 +146,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
       }
     });
 
-    // Build map markers
+    // No custom markers needed — the native blue GPS dot shows driver location.
     final markers = <Marker>{};
-    markers.add(
-      Marker(
-        markerId: const MarkerId('driver'),
-        position: currentLatLng,
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          state.online ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueRed,
-        ),
-        infoWindow: InfoWindow(
-          title: state.online ? 'You (Online)' : 'You (Offline)',
-        ),
-      ),
-    );
 
     return Scaffold(
       body: Stack(
@@ -447,11 +438,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
             ),
           ),
 
-          // Center location button
+          // Re-center on current GPS location
           Positioned(
             right: 16,
-            bottom: state.activeRide != null ? 360 : 280,
+            bottom: 280,
             child: FloatingActionButton.small(
+              heroTag: 'centerLocation',
               onPressed: () {
                 if (_mapController != null) {
                   _mapController!.animateCamera(

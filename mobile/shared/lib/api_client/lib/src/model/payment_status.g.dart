@@ -30,21 +30,6 @@ final BuiltSet<PaymentStatus> _$values = BuiltSet<PaymentStatus>(
   const <PaymentStatus>[_$pending, _$completed, _$failed, _$refunded],
 );
 
-class _$PaymentStatusMeta {
-  const _$PaymentStatusMeta();
-  PaymentStatus get pending => _$pending;
-  PaymentStatus get completed => _$completed;
-  PaymentStatus get failed => _$failed;
-  PaymentStatus get refunded => _$refunded;
-  PaymentStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<PaymentStatus> get values => _$values;
-}
-
-mixin _$PaymentStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$PaymentStatusMeta get PaymentStatus => const _$PaymentStatusMeta();
-}
-
 Serializer<PaymentStatus> _$paymentStatusSerializer =
     _$PaymentStatusSerializer();
 

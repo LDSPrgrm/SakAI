@@ -206,7 +206,7 @@ Name | Type | Description  | Notes
 
 Driver signals arrival at pickup
 
-Transitions: `accepted` → `arrived`. Triggers: `ride.status_changed` WebSocket event → both parties. Requires driver to be within 200 meters of pickup location. 
+Transitions: `accepted` → `arrived`. Triggers: `ride.status_changed` WebSocket event → both parties. Requires driver to be within 50 meters of pickup location. 
 
 ### Example
 ```dart
@@ -292,11 +292,11 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideComplete**
-> RideResponse rideComplete(rideId)
+> RideResponse rideComplete(rideId, rideArriveRequest)
 
 Driver completes the ride at dropoff
 
-Transitions: `in_progress` → `completed`. Driver status automatically returns to `online` after completion. Triggers: `ride.status_changed` WebSocket event → both parties. 
+Transitions: `in_progress` → `completed`. Driver status automatically returns to `online` after completion. Triggers: `ride.status_changed` WebSocket event → both parties. Requires driver to be within 100 meters of destination location. 
 
 ### Example
 ```dart
@@ -304,9 +304,10 @@ import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getRidesApi();
 final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final RideArriveRequest rideArriveRequest = ; // RideArriveRequest | 
 
 try {
-    final response = api.rideComplete(rideId);
+    final response = api.rideComplete(rideId, rideArriveRequest);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling RidesApi->rideComplete: $e\n');
@@ -318,6 +319,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rideId** | **String**| UUID of the ride | 
+ **rideArriveRequest** | [**RideArriveRequest**](RideArriveRequest.md)|  | 
 
 ### Return type
 
@@ -329,7 +331,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

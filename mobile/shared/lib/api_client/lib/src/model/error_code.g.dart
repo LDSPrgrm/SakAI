@@ -199,54 +199,6 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$INTERNAL_SERVER_ERROR,
 ]);
 
-class _$ErrorCodeMeta {
-  const _$ErrorCodeMeta();
-  ErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
-  ErrorCode get INVALID_CREDENTIALS => _$INVALID_CREDENTIALS;
-  ErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
-  ErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
-  ErrorCode get REFRESH_TOKEN_INVALID => _$REFRESH_TOKEN_INVALID;
-  ErrorCode get VALIDATION_ERROR => _$VALIDATION_ERROR;
-  ErrorCode get FORBIDDEN => _$FORBIDDEN;
-  ErrorCode get RIDE_NOT_FOUND => _$RIDE_NOT_FOUND;
-  ErrorCode get USER_NOT_FOUND => _$USER_NOT_FOUND;
-  ErrorCode get DOCUMENT_NOT_FOUND => _$DOCUMENT_NOT_FOUND;
-  ErrorCode get RIDE_INVALID_STATE_TRANSITION =>
-      _$RIDE_INVALID_STATE_TRANSITION;
-  ErrorCode get PASSENGER_HAS_ACTIVE_RIDE => _$PASSENGER_HAS_ACTIVE_RIDE;
-  ErrorCode get DRIVER_HAS_ACTIVE_RIDE => _$DRIVER_HAS_ACTIVE_RIDE;
-  ErrorCode get RIDE_NOT_COMPLETED => _$RIDE_NOT_COMPLETED;
-  ErrorCode get NO_DRIVERS_AVAILABLE => _$NO_DRIVERS_AVAILABLE;
-  ErrorCode get INVALID_RIDE_TYPE => _$INVALID_RIDE_TYPE;
-  ErrorCode get DRIVER_REMATCH_IN_PROGRESS => _$DRIVER_REMATCH_IN_PROGRESS;
-  ErrorCode get CANCELLATION_FEE_APPLIED => _$CANCELLATION_FEE_APPLIED;
-  ErrorCode get PAYMENT_FAILED => _$PAYMENT_FAILED;
-  ErrorCode get INVALID_PAYMENT_TOKEN => _$INVALID_PAYMENT_TOKEN;
-  ErrorCode get DUPLICATE_PAYMENT => _$DUPLICATE_PAYMENT;
-  ErrorCode get UNPAID_RIDE_BLOCKED => _$UNPAID_RIDE_BLOCKED;
-  ErrorCode get PAYMENT_METHOD_UNSUPPORTED => _$PAYMENT_METHOD_UNSUPPORTED;
-  ErrorCode get PAYMENT_METHOD_DUPLICATE => _$PAYMENT_METHOD_DUPLICATE;
-  ErrorCode get PAYMENT_GATEWAY_ERROR => _$PAYMENT_GATEWAY_ERROR;
-  ErrorCode get PAYMENT_METHOD_NOT_FOUND => _$PAYMENT_METHOD_NOT_FOUND;
-  ErrorCode get PAYMENT_METHOD_LAST_METHOD => _$PAYMENT_METHOD_LAST_METHOD;
-  ErrorCode get INVALID_TIP_AMOUNT => _$INVALID_TIP_AMOUNT;
-  ErrorCode get TIP_ALREADY_ADDED => _$TIP_ALREADY_ADDED;
-  ErrorCode get INVALID_RATING => _$INVALID_RATING;
-  ErrorCode get FEEDBACK_TOO_LONG => _$FEEDBACK_TOO_LONG;
-  ErrorCode get ALREADY_RATED => _$ALREADY_RATED;
-  ErrorCode get FILE_TOO_LARGE => _$FILE_TOO_LARGE;
-  ErrorCode get INVALID_FILE_FORMAT => _$INVALID_FILE_FORMAT;
-  ErrorCode get RATE_LIMIT_EXCEEDED => _$RATE_LIMIT_EXCEEDED;
-  ErrorCode get INTERNAL_SERVER_ERROR => _$INTERNAL_SERVER_ERROR;
-  ErrorCode valueOf(String name) => _$valueOf(name);
-  BuiltSet<ErrorCode> get values => _$values;
-}
-
-mixin _$ErrorCodeMixin {
-  // ignore: non_constant_identifier_names
-  _$ErrorCodeMeta get ErrorCode => const _$ErrorCodeMeta();
-}
-
 Serializer<ErrorCode> _$errorCodeSerializer = _$ErrorCodeSerializer();
 
 class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
