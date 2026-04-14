@@ -1,6 +1,6 @@
 # ─── Stage 1: Build ──────────────────────────────────────────────────────────
 # Build context is the REPO ROOT (set in the workflow: context: .)
-# so both backend/ and migrations/ are available.
+# so backend/ (including internal migrations) is available.
 FROM golang:1.26-alpine AS builder
 
 # Install git (needed by some go modules) and ca-certificates (TLS)
@@ -25,16 +25,11 @@ COPY --from=builder /usr/share/zoneinfo                  /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt   /etc/ssl/certs/
 COPY --from=builder /app/server                          /server
 
-# Copy SQL migration files — the server runs golang-migrate at startup.
-# MIGRATIONS_DIR env var (default: /migrations) tells the server where to find them.
-COPY migrations/ /migrations/
 
 # Non-root UID/GID — scratch images don't have useradd, so just declare the UID
 USER 65532:65532
 
 EXPOSE 8080
 
-# Override MIGRATIONS_DIR to the absolute path inside the image
-ENV MIGRATIONS_DIR=/migrations
 
 ENTRYPOINT ["/server"]
