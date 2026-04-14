@@ -24,8 +24,8 @@ permissions:
 
 # ─── Shared environment ───────────────────────────────────────────────────────
 env:
-  # Your Docker Hub namespace + image name, e.g. "johnverz/saka-backend"
-  IMAGE_NAME: ${{ vars.DOCKERHUB_NAMESPACE }}/sakai-backend
+  # Your Docker Hub namespace + image name, e.g. "sakai/backend"
+  IMAGE_NAME: ${{ vars.DOCKERHUB_NAMESPACE }}/backend
 
 jobs:
   # ── 1. Build & push ──────────────────────────────────────────────────────────
@@ -130,24 +130,6 @@ jobs:
           readme-filepath: ./backend/README.md
           short-description: "SakAI Go API server"
 
-  # ── 3. Trigger Render redeploy ────────────────────────────────────────────────
-  render-deploy:
-    name: Trigger Render Deploy
-    runs-on: ubuntu-latest
-    needs: build-push
-    # Fire on every successful image push (main branch and release tags)
-    if: ${{ always() && needs.build-push.result == 'success' }}
-    steps:
-      - name: Trigger Render deploy hook
-        run: |
-          echo "Triggering Render deploy..."
-          HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
-            --max-time 30 \
-            -X POST \
-            "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
-          echo "Render API responded with HTTP $HTTP_STATUS"
-          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "::error::Render deploy hook failed (HTTP $HTTP_STATUS)"
-            exit 1
-          fi
-          echo "Render deploy triggered successfully."
+  # ── 3. Deploy ─────────────────────────────────────────────────────────────────
+  # Railway watches the Docker Hub image tag configured in the Railway dashboard
+  # and redeploys automatically when a new image is pushed — no webhook needed.
