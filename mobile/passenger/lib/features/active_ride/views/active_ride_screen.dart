@@ -159,12 +159,25 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
 
   void _navigateToRideComplete(String rideId) {
     if (!mounted) return;
-    context.push(Routes.rideComplete, extra: rideId);
+    // Defer navigation to avoid mutating providers during the build phase.
+    // This callback is invoked from StreamBuilder.builder, which runs during
+    // widget build; pushing a route synchronously would mount the destination
+    // screen (and its initState provider mutations) before build completes.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.push(Routes.rideComplete, extra: rideId);
+      }
+    });
   }
 
   void _navigateToRideCancelled(String rideId) {
     if (!mounted) return;
-    context.go('/ride/cancelled/$rideId');
+    // Defer navigation to avoid mutating providers during the build phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.go('/ride/cancelled/$rideId');
+      }
+    });
   }
 
   @override

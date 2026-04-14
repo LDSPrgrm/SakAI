@@ -246,6 +246,7 @@ class RideRepositoryImpl implements RideRepository {
         pb.name = passengerData != null
             ? (passengerData['name'] as String? ?? '')
             : '';
+        pb.createdAt = _parseDateTime(passengerData?['created_at']);
       });
     });
   }
@@ -327,6 +328,15 @@ class RideRepositoryImpl implements RideRepository {
         return 'This ride cannot be cancelled. It may already be completed or cancelled.';
       default:
         return 'Ride request failed. Please try again.';
+    }
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    try {
+      return DateTime.parse(value as String);
+    } catch (_) {
+      return DateTime.now();
     }
   }
 }

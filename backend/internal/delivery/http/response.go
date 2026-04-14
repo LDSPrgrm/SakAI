@@ -49,6 +49,8 @@ var errorCodeMap = []struct {
 	{domain.ErrPaymentGatewayError, http.StatusBadGateway, "PAYMENT_GATEWAY_ERROR"},
 	{domain.ErrPaymentMethodNotFound, http.StatusNotFound, "PAYMENT_METHOD_NOT_FOUND"},
 	{domain.ErrPaymentMethodLastMethod, http.StatusConflict, "PAYMENT_METHOD_LAST_METHOD"},
+	// Proximity validation errors
+	{domain.ErrDriverTooFarFromPickup, http.StatusConflict, "DRIVER_TOO_FAR"},
 }
 
 // respondError writes a structured error response mapped from the domain error.

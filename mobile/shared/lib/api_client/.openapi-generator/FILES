@@ -83,6 +83,7 @@ doc/ReceiptResponse.md
 doc/RefreshRequest.md
 doc/RegisterRequest.md
 doc/ReportDefinition.md
+doc/RideArriveRequest.md
 doc/RideEventPayload.md
 doc/RideRequestBody.md
 doc/RideResponse.md
@@ -213,6 +214,7 @@ lib/src/model/receipt_response.dart
 lib/src/model/refresh_request.dart
 lib/src/model/register_request.dart
 lib/src/model/report_definition.dart
+lib/src/model/ride_arrive_request.dart
 lib/src/model/ride_event_payload.dart
 lib/src/model/ride_request_body.dart
 lib/src/model/ride_response.dart
@@ -247,6 +249,4 @@ lib/src/model/ws_event_ride_requested.dart
 lib/src/model/ws_event_ride_status_changed.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/driver_get_earnings200_response_test.dart
-test/earnings_item_test.dart
-test/vehicle_input_test.dart
+test/ride_arrive_request_test.dart

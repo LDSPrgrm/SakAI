@@ -45,6 +45,8 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
     switch (result.status) {
       case SessionCheckStatus.authenticated:
         ref.read(authStateProvider.notifier).markAuthenticated();
+        // Connect WebSocket for real-time ride offers (was missing on session restore)
+        await ref.read(wsConnectionProvider).connectIfAuthenticated();
         // 2. Check for active ride recovery
         final hasActiveRide = await _checkForActiveRide();
         if (hasActiveRide) {

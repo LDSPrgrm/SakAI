@@ -118,6 +118,7 @@ Serializers _$serializers =
           ..add(RegisterRequest.serializer)
           ..add(RegisterRequestRoleEnum.serializer)
           ..add(ReportDefinition.serializer)
+          ..add(RideArriveRequest.serializer)
           ..add(RideEventPayload.serializer)
           ..add(RideEventPayloadStatusEnum.serializer)
           ..add(RideRequestBody.serializer)

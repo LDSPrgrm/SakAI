@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../repositories/active_ride_repository.dart';
@@ -68,10 +69,39 @@ class ActiveRideManager extends ChangeNotifier {
 
   Future<void> arriveAtPickup() async {
     if (_state.isTransitioning) return;
+
+    // Capture current GPS position before transitioning.
+    Position? currentPosition;
+    try {
+      currentPosition = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (e) {
+      _state = _state.copyWith(
+        isTransitioning: false,
+        errorMessage:
+            'Unable to get GPS location. Please enable location services.',
+      );
+      notifyListeners();
+      return;
+    }
+
+    // Geolocator.getCurrentPosition either returns a valid Position or throws.
+    final lat = currentPosition.latitude;
+    final lng = currentPosition.longitude;
+
     _state = _state.copyWith(isTransitioning: true, errorMessage: null);
     notifyListeners();
     try {
-      await _repo.arriveAtPickup(_state.ride!.id);
+      final latLng = LatLng(
+        (b) => b
+          ..lat = lat
+          ..lng = lng,
+      );
+      await _repo.arriveAtPickup(_state.ride!.id, latLng);
       _state = _state.copyWith(
         isTransitioning: false,
         currentStep: ActiveRideStep.arrived,
@@ -169,6 +199,9 @@ class ActiveRideManager extends ChangeNotifier {
   String _errorMessage(dynamic e) {
     final msg = e.toString().replaceFirst('Exception: ', '');
     if (msg.contains('409')) {
+      if (msg.contains('DRIVER_TOO_FAR')) {
+        return 'You must be within 200 meters of the pickup location.';
+      }
       return 'Cannot perform this action in current state.';
     }
     return msg.isEmpty ? 'Something went wrong. Try again.' : msg;

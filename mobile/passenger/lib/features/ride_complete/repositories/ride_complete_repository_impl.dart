@@ -83,10 +83,30 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
   // ── Fallback JSON parsing for when generated client fails on 2xx ───────
 
   RideResponse _rideFromJson(Map<String, dynamic> json) {
+    // Parse passenger for completeness (required by OpenAPI contract).
+    final passengerData = json['passenger'] as Map<String, dynamic>?;
+    final passengerRoleStr = passengerData?['role'] as String?;
+    final passengerRole = passengerRoleStr != null
+        ? UserProfileRoleEnum.valueOf(passengerRoleStr)
+        : UserProfileRoleEnum.passenger;
+
+    // Parse driver (optional, not used by completion summary but parsed for
+    // contract completeness).
+    // ignore: unused_local_variable
+    final driverData = json['driver'] as Map<String, dynamic>?;
+
     return $RideResponse(
       (b) => b
         ..id = json['id'] as String
         ..status = RideStatus.valueOf(json['status'] as String)
+        ..passenger = $UserProfile(
+          (pb) => pb
+            ..id = passengerData?['id'] as String? ?? ''
+            ..name = passengerData?['name'] as String? ?? ''
+            ..email = passengerData?['email'] as String? ?? ''
+            ..role = passengerRole
+            ..createdAt = _parseDateTime(passengerData?['created_at']),
+        )
         ..origin.replace(
           LatLng(
             (ob) => ob
@@ -106,5 +126,14 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
         ..createdAt = DateTime.parse(json['created_at'] as String)
         ..updatedAt = DateTime.parse(json['updated_at'] as String),
     );
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    try {
+      return DateTime.parse(value as String);
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 }

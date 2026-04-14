@@ -1,3 +1,4 @@
+//
 // AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
@@ -92,6 +93,7 @@ import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/refresh_request.dart';
 import 'package:sakai_api_client/src/model/register_request.dart';
 import 'package:sakai_api_client/src/model/report_definition.dart';
+import 'package:sakai_api_client/src/model/ride_arrive_request.dart';
 import 'package:sakai_api_client/src/model/ride_event_payload.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
@@ -207,6 +209,7 @@ part 'serializers.g.dart';
   RefreshRequest,
   RegisterRequest,
   ReportDefinition,
+  RideArriveRequest,
   RideEventPayload,
   RideRequestBody,
   RideResponse,$RideResponse,

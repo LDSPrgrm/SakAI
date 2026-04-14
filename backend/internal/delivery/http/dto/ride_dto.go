@@ -2,6 +2,7 @@ package dto
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,11 +41,12 @@ type VehicleInfoDTO struct {
 
 // UserProfileDTO is the public API shape for a user's identity.
 type UserProfileDTO struct {
-	ID      string          `json:"id"`
-	Name    string          `json:"name"`
-	Email   string          `json:"email"`
-	Role    domain.UserRole `json:"role"`
-	Vehicle *VehicleInfoDTO `json:"vehicle,omitempty"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Email     string          `json:"email"`
+	Role      domain.UserRole `json:"role"`
+	Vehicle   *VehicleInfoDTO `json:"vehicle,omitempty"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // DriverSummaryDTO is minimal driver info embedded in ride responses.
@@ -100,9 +102,10 @@ func NewRideResponse(r *domain.Ride, enricher RideResponseEnricher, paymentEnric
 		ID:     r.ID.String(),
 		Status: r.Status,
 		Passenger: &UserProfileDTO{
-			ID:   r.PassengerID.String(),
-			Name: "", // will be enriched if enricher provided
-			Role: domain.RolePassenger,
+			ID:        r.PassengerID.String(),
+			Name:      "", // will be enriched if enricher provided
+			Role:      domain.RolePassenger,
+			CreatedAt: r.CreatedAt,
 		},
 		Origin:      r.Origin,
 		Destination: r.Destination,
@@ -172,14 +175,20 @@ func NewRideResponse(r *domain.Ride, enricher RideResponseEnricher, paymentEnric
 func enrichRideResponse(resp *RideResponse, r *domain.Ride, e RideResponseEnricher) {
 	ctx := context.Background()
 
-	// Fetch passenger details
+	// Fetch passenger details - always populate with at least the ID
 	if passenger, err := e.GetUserByID(ctx, r.PassengerID); err == nil {
 		resp.Passenger = &UserProfileDTO{
-			ID:    passenger.ID.String(),
-			Name:  passenger.Name,
-			Email: passenger.Email,
-			Role:  passenger.Role,
+			ID:        passenger.ID.String(),
+			Name:      passenger.Name,
+			Email:     passenger.Email,
+			Role:      passenger.Role,
+			CreatedAt: passenger.CreatedAt,
 		}
+	} else {
+		// Enrichment failed: passenger record not found or DB error.
+		// Keep the minimal stub with ID already set by NewRideResponse.
+		// This ensures the API contract (non-null passenger) is always honored.
+		log.Printf("[ENRICH] Failed to fetch passenger %s: %v (using minimal stub)", r.PassengerID, err)
 	}
 
 	// Fetch driver details if assigned
@@ -216,6 +225,11 @@ func enrichRideResponse(resp *RideResponse, r *domain.Ride, e RideResponseEnrich
 type CancelRideRequest struct {
 	ReasonCode *string `json:"reason_code" binding:"omitempty,oneof=driver_too_far changed_plans wrong_pickup driver_not_moving safety_concern other"`
 	ReasonText *string `json:"reason_text" binding:"omitempty,max=500"`
+}
+
+// ArriveAtPickupRequest is the body for POST /rides/:rideId/arrive.
+type ArriveAtPickupRequest struct {
+	DriverLocation LatLngInput `json:"driver_location" binding:"required"`
 }
 
 // UserRideItemResponse is the public API shape for a ride in the history list.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart' show rideCompleteRepositoryProvider;
@@ -16,6 +18,7 @@ class RideCompleteState {
     this.customTipAmount,
     this.error,
     this.showThankYou = false,
+    this.shouldNavigateHome = false,
   });
 
   final bool loading;
@@ -25,6 +28,7 @@ class RideCompleteState {
   final double? customTipAmount;
   final String? error;
   final bool showThankYou;
+  final bool shouldNavigateHome;
 
   double get finalTotal {
     if (summary == null) return 0;
@@ -45,6 +49,7 @@ class RideCompleteState {
     double? customTipAmount,
     String? error,
     bool? showThankYou,
+    bool? shouldNavigateHome,
   }) {
     return RideCompleteState(
       loading: loading ?? this.loading,
@@ -54,14 +59,39 @@ class RideCompleteState {
       customTipAmount: customTipAmount ?? this.customTipAmount,
       error: error,
       showThankYou: showThankYou ?? this.showThankYou,
+      shouldNavigateHome: shouldNavigateHome ?? this.shouldNavigateHome,
     );
   }
 }
 
 /// Notifier managing the ride completion screen state.
 class RideCompleteNotifier extends Notifier<RideCompleteState> {
+  Timer? _autoCloseTimer;
+
   @override
-  RideCompleteState build() => const RideCompleteState();
+  RideCompleteState build() {
+    // Start auto-close timer when provider is created
+    _startAutoCloseTimer();
+    return const RideCompleteState();
+  }
+
+  /// Start countdown timer for auto-navigation.
+  void _startAutoCloseTimer() {
+    _autoCloseTimer?.cancel();
+    _autoCloseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (state.rating.countdownActive && state.rating.secondsRemaining > 0) {
+        state = state.copyWith(
+          rating: state.rating.copyWith(
+            secondsRemaining: state.rating.secondsRemaining - 1,
+          ),
+        );
+      } else if (state.rating.countdownActive &&
+          state.rating.secondsRemaining <= 0) {
+        _autoCloseTimer?.cancel();
+        state = state.copyWith(shouldNavigateHome: true);
+      }
+    });
+  }
 
   /// Initialize the notifier with the ride ID (called by the screen).
   void init(String rideId) {
@@ -109,7 +139,12 @@ class RideCompleteNotifier extends Notifier<RideCompleteState> {
         state.rating.feedback?.isEmpty ?? true ? null : state.rating.feedback,
       );
       state = state.copyWith(
-        rating: state.rating.copyWith(submitted: true, submitting: false),
+        rating: state.rating.copyWith(
+          submitted: true,
+          submitting: false,
+          countdownActive: true,
+          secondsRemaining: 15,
+        ),
         showThankYou: true,
       );
       return true;
@@ -125,7 +160,13 @@ class RideCompleteNotifier extends Notifier<RideCompleteState> {
   }
 
   void skipRating() {
-    state = state.copyWith(rating: state.rating.copyWith(skipped: true));
+    state = state.copyWith(
+      rating: state.rating.copyWith(
+        skipped: true,
+        countdownActive: true,
+        secondsRemaining: 5,
+      ),
+    );
   }
 
   // --- Tip ---

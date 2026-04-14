@@ -31,9 +31,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     _setupWsListener();
     _initLocation();
 
-    // Connect WebSocket and poll for missed ride offers
-    _connectWebSocket();
-
     // Check for active ride recovery on screen init
     _notifier.checkForActiveRide();
 
@@ -69,16 +66,6 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         context.go(Routes.rideActive, extra: activeRide);
       }
     };
-  }
-
-  /// Connects the WebSocket and polls for any missed ride offers.
-  Future<void> _connectWebSocket() async {
-    try {
-      final wsClient = ref.read(wsClientProvider);
-      await _notifier.connectWebSocket(wsClient);
-    } catch (e) {
-      debugPrint('[DRIVER] Failed to connect WebSocket: $e');
-    }
   }
 
   Future<void> _initLocation() async {

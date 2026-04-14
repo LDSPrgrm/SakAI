@@ -319,7 +319,7 @@ type RideUseCase interface {
 	GetByID(ctx context.Context, userID uuid.UUID, rideID uuid.UUID) (*Ride, error)
 	Accept(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Decline(ctx context.Context, driverID, rideID uuid.UUID) (*DeclineResult, error)
-	Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
+	Arrive(ctx context.Context, driverID, rideID uuid.UUID, driverLocation LatLng) (*Ride, error)
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Complete(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)

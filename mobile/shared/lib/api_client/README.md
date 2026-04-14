@@ -270,6 +270,7 @@ Class | Method | HTTP request | Description
  - [RefreshRequest](doc/RefreshRequest.md)
  - [RegisterRequest](doc/RegisterRequest.md)
  - [ReportDefinition](doc/ReportDefinition.md)
+ - [RideArriveRequest](doc/RideArriveRequest.md)
  - [RideEventPayload](doc/RideEventPayload.md)
  - [RideRequestBody](doc/RideRequestBody.md)
  - [RideResponse](doc/RideResponse.md)

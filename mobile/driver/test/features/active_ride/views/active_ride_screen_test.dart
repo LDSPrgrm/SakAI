@@ -9,7 +9,7 @@ import 'package:driver/app/providers.dart';
 
 class _MockActiveRideRepository implements ActiveRideRepository {
   @override
-  Future<void> arriveAtPickup(String rideId) async {}
+  Future<void> arriveAtPickup(String rideId, LatLng driverLocation) async {}
 
   @override
   Future<void> startRide(String rideId) async {}

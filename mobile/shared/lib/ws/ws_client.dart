@@ -35,8 +35,6 @@ class WsClient {
 
     try {
       _channel = WebSocketChannel.connect(uri);
-      _isConnected = true;
-      _reconnectAttempts = 0;
 
       _channel!.stream.listen(
         (data) {
@@ -57,6 +55,10 @@ class WsClient {
         },
         cancelOnError: false,
       );
+
+      // Connection established successfully - reset reconnect attempts
+      _isConnected = true;
+      _reconnectAttempts = 0;
     } catch (e) {
       debugPrint('[WS] Connect failed: $e');
       _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken);

@@ -846,11 +846,23 @@ paths:
       description: |
         Transitions: `accepted` → `arrived`.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 200 meters of pickup location.
       operationId: rideArrive
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of arrival
       responses:
         "200":
           description: Driver arrived at pickup
@@ -858,6 +870,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -865,14 +886,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `accepted` state
+          description: Ride is not in `accepted` state or driver too far from pickup
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'accepted' state to mark arrival"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'accepted' state to mark arrival"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR
+                    message: "Driver must be within 200 meters of pickup location"
 
   /rides/{rideId}/start:
     post:

@@ -7,7 +7,8 @@ abstract class ActiveRideRepository {
   Future<RideResponse?> getActiveRide();
 
   /// Marks the driver as arrived at pickup (accepted → arrived).
-  Future<void> arriveAtPickup(String rideId);
+  /// Requires driver's current GPS location for proximity validation.
+  Future<void> arriveAtPickup(String rideId, LatLng driverLocation);
 
   /// Starts the ride (arrived → in_progress).
   Future<void> startRide(String rideId);

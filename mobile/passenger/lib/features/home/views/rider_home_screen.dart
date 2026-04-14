@@ -200,7 +200,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               backgroundColor: Theme.of(context).colorScheme.errorContainer,
             ),
           );
-        ref.read(homeNotifierProvider.notifier).clearError();
+        // Defer clearError to avoid mutating provider during build phase.
+        Future(() {
+          ref.read(homeNotifierProvider.notifier).clearError();
+        });
       }
     });
   }

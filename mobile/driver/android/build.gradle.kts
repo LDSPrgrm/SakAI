@@ -23,6 +23,9 @@ subprojects {
             android.compileSdkVersion(36)
         }
     }
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.addAll(listOf("-Xlint:-options"))
+    }
 }
 
 subprojects {

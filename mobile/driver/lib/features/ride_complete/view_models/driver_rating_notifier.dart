@@ -1,58 +1,99 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 
-import '../models/driver_rating_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../app/providers.dart' show apiClientProvider;
+import '../models/driver_rating_state.dart' as local;
 import '../repositories/driver_rating_repository.dart';
+import '../repositories/driver_rating_repository_impl.dart';
 
-/// ChangeNotifier managing the driver's rating UI state.
-class DriverRatingNotifier extends ChangeNotifier {
-  DriverRatingNotifier({required DriverRatingRepository repository, required DriverRatingState initialState})
-      : _repository = repository,
-        _state = initialState;
+/// Notifier managing the driver's rating UI state with auto-close support.
+class DriverRatingNotifier extends Notifier<local.DriverRatingState> {
+  Timer? _autoCloseTimer;
 
-  final DriverRatingRepository _repository;
-  DriverRatingState _state;
-
-  DriverRatingState get state => _state;
-
-  void setStars(int stars) {
-    _state = _state.copyWith(stars: stars, error: null);
-    notifyListeners();
+  @override
+  local.DriverRatingState build() {
+    // Start auto-close timer when provider is created
+    _startAutoCloseTimer();
+    return const local.DriverRatingState();
   }
 
-  void setFeedback(String? feedback) {
-    _state = _state.copyWith(feedback: feedback);
-    notifyListeners();
+  /// Start countdown timer for auto-navigation (15 seconds after submission).
+  void _startAutoCloseTimer() {
+    _autoCloseTimer?.cancel();
+    _autoCloseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (state.countdownActive && state.secondsRemaining > 0) {
+        state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);
+      } else if (state.countdownActive && state.secondsRemaining <= 0) {
+        _autoCloseTimer?.cancel();
+        state = state.copyWith(shouldNavigateHome: true);
+      }
+    });
+  }
+
+  /// Initialize with ride context (called by screen).
+  void init({String rideId = '', String passengerName = ''}) {
+    state = state.copyWith(rideId: rideId, passengerName: passengerName);
+  }
+
+  DriverRatingRepository get _repo => ref.read(driverRatingRepositoryProvider);
+
+  void setStars(int stars) {
+    state = state.copyWith(stars: stars, error: null);
+  }
+
+  void setFeedback(String feedback) {
+    state = state.copyWith(feedback: feedback.isEmpty ? null : feedback);
   }
 
   Future<bool> submitRating() async {
-    if (_state.stars < 1 || _state.isSubmitting) return false;
+    if (state.stars < 1 || state.isSubmitting) return false;
 
-    _state = _state.copyWith(isSubmitting: true, error: null);
-    notifyListeners();
-
+    state = state.copyWith(isSubmitting: true, error: null);
     try {
-      await _repository.submitRating(
-        _state.rideId,
-        _state.stars,
-        (_state.feedback != null && _state.feedback!.isNotEmpty)
-            ? _state.feedback
-            : null,
+      await _repo.submitRating(
+        state.rideId,
+        state.stars,
+        state.feedback?.isEmpty ?? true ? null : state.feedback,
       );
-      _state = _state.copyWith(isSubmitted: true, isSubmitting: false);
-      notifyListeners();
+      state = state.copyWith(
+        isSubmitted: true,
+        isSubmitting: false,
+        countdownActive: true,
+        secondsRemaining: 15,
+      );
       return true;
     } catch (e) {
-      _state = _state.copyWith(
+      state = state.copyWith(
         isSubmitting: false,
         error: 'Failed to submit rating. Please try again.',
       );
-      notifyListeners();
       return false;
     }
   }
 
   void skipRating() {
-    _state = _state.copyWith(isSubmitted: true);
-    notifyListeners();
+    _autoCloseTimer?.cancel();
+    state = state.copyWith(
+      isSubmitted: true,
+      countdownActive: true,
+      secondsRemaining: 5,
+    );
+  }
+
+  /// Navigate home manually (resets timer).
+  void navigateHome() {
+    _autoCloseTimer?.cancel();
+    state = state.copyWith(shouldNavigateHome: true);
   }
 }
+
+final driverRatingNotifierProvider =
+    NotifierProvider<DriverRatingNotifier, local.DriverRatingState>(
+      DriverRatingNotifier.new,
+    );
+
+/// Repository provider for driver rating.
+final driverRatingRepositoryProvider = Provider<DriverRatingRepository>((ref) {
+  return DriverRatingRepositoryImpl(ref.watch(apiClientProvider));
+});

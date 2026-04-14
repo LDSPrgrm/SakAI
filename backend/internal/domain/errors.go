@@ -46,4 +46,6 @@ var (
 	ErrInvalidRideType = errors.New("invalid ride type: must be motorcycle, car, or tricycle")
 	// Tip errors (additional)
 	ErrTipExceedsLimit = errors.New("tip exceeds 50% of base fare")
+	// Proximity validation errors
+	ErrDriverTooFarFromPickup = errors.New("driver must be within 200 meters of pickup location")
 )

@@ -1,3 +1,4 @@
+//
 // AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
@@ -95,6 +96,7 @@ export 'package:sakai_api_client/src/model/receipt_response.dart';
 export 'package:sakai_api_client/src/model/refresh_request.dart';
 export 'package:sakai_api_client/src/model/register_request.dart';
 export 'package:sakai_api_client/src/model/report_definition.dart';
+export 'package:sakai_api_client/src/model/ride_arrive_request.dart';
 export 'package:sakai_api_client/src/model/ride_event_payload.dart';
 export 'package:sakai_api_client/src/model/ride_request_body.dart';
 export 'package:sakai_api_client/src/model/ride_response.dart';

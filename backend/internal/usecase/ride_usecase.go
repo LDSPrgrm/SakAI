@@ -165,10 +165,29 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 	return &domain.DeclineResult{Ride: ride, NewDriverID: &newDriverID, NewDriverFound: true}, nil
 }
 
-func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
-	return uc.transition(ctx, driverID, rideID, domain.RideStatusArrived, func(r *domain.Ride) bool {
-		return r.DriverID != nil && *r.DriverID == driverID
-	})
+func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
+	ride, err := uc.rideRepo.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+	if ride.DriverID == nil || *ride.DriverID != driverID {
+		return nil, domain.ErrForbidden
+	}
+	if !ride.Status.CanTransitionTo(domain.RideStatusArrived) {
+		return nil, domain.ErrInvalidStateTransition
+	}
+
+	// Validate driver is within 200 meters of pickup location.
+	distanceToPickup := driverLocation.DistanceTo(ride.Origin)
+	const maxArrivalDistanceMeters = 200.0
+	if distanceToPickup > maxArrivalDistanceMeters {
+		return nil, domain.ErrDriverTooFarFromPickup
+	}
+
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived); err != nil {
+		return nil, err
+	}
+	return uc.rideRepo.GetByID(ctx, rideID)
 }
 
 func (uc *rideUseCase) Start(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {

@@ -1,4 +1,4 @@
-/// State model for the rating selection UI.
+/// State model for the rating selection UI with auto-close support.
 class RatingState {
   const RatingState({
     this.stars = 0,
@@ -7,6 +7,8 @@ class RatingState {
     this.skipped = false,
     this.submitting = false,
     this.error,
+    this.countdownActive = false,
+    this.secondsRemaining = 0,
   });
 
   final int stars; // 0 = not selected, 1-5 = selected
@@ -16,6 +18,10 @@ class RatingState {
   final bool submitting;
   final String? error;
 
+  // Auto-close fields
+  final bool countdownActive;
+  final int secondsRemaining;
+
   RatingState copyWith({
     int? stars,
     String? feedback,
@@ -23,6 +29,8 @@ class RatingState {
     bool? skipped,
     bool? submitting,
     String? error,
+    bool? countdownActive,
+    int? secondsRemaining,
   }) {
     return RatingState(
       stars: stars ?? this.stars,
@@ -31,6 +39,8 @@ class RatingState {
       skipped: skipped ?? this.skipped,
       submitting: submitting ?? this.submitting,
       error: error,
+      countdownActive: countdownActive ?? this.countdownActive,
+      secondsRemaining: secondsRemaining ?? this.secondsRemaining,
     );
   }
 }

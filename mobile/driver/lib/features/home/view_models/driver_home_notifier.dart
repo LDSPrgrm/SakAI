@@ -91,7 +91,15 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   }
 
   /// Connects the WebSocket client. Should be called after authentication.
+  /// Skips if already connected (e.g., splash screen handled it).
   Future<void> connectWebSocket(WsClient wsClient) async {
+    if (wsClient.isConnected) {
+      debugPrint('[DRIVER] WebSocket already connected, skipping reconnect');
+      // Still set up listener and poll for missed offers.
+      setupWsListener(wsClient);
+      await pollIncomingRide(wsClient);
+      return;
+    }
     try {
       final tokenStorage = ref.read(tokenStorageProvider);
       final accessToken = await tokenStorage.getAccessToken();
