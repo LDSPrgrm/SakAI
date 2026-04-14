@@ -24,8 +24,8 @@ permissions:
 
 # ─── Shared environment ───────────────────────────────────────────────────────
 env:
-  # Your Docker Hub namespace + image name, e.g. "sakai/backend"
-  IMAGE_NAME: ${{ vars.DOCKERHUB_NAMESPACE }}/backend
+  # Your Docker Hub namespace + image name, e.g. "johnverz/sakai-backend"
+  IMAGE_NAME: ${{ vars.DOCKERHUB_NAMESPACE }}/sakai-backend
 
 jobs:
   # ── 1. Build & push ──────────────────────────────────────────────────────────
