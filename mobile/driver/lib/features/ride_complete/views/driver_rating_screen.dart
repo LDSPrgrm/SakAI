@@ -50,9 +50,14 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
       ),
     );
 
-    // Initialize notifier with ride context
-    final notifier = ref.read(driverRatingNotifierProvider.notifier);
-    notifier.init(rideId: widget.rideId, passengerName: widget.passengerName);
+    // Defer initialization until after widget build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref
+            .read(driverRatingNotifierProvider.notifier)
+            .init(rideId: widget.rideId, passengerName: widget.passengerName);
+      }
+    });
 
     _completionController.forward();
   }

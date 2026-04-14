@@ -30,35 +30,41 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     _manager = ActiveRideManager(repo: repo, initialRide: widget.initialRide);
     _manager.onCompleted = (ride) {
       // Wire earnings: extract actual fare and record the ride.
+      // Use Future to defer provider modification until after widget build completes.
       final actualFare = ride.fare ?? 0.0;
-      ref
-          .read(earningsNotifierProvider.notifier)
-          .addRide(
-            rideId: ride.id,
-            fare: actualFare,
-            completedAt: DateTime.now(),
+      Future(() {
+        if (context.mounted) {
+          ref
+              .read(earningsNotifierProvider.notifier)
+              .addRide(
+                rideId: ride.id,
+                fare: actualFare,
+                completedAt: DateTime.now(),
+              );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ride completed')));
+          // Navigate to rating screen instead of going directly home.
+          context.push(
+            Routes.rideRating,
+            extra: <String, String>{
+              'rideId': ride.id,
+              'passengerName': ride.passenger.name,
+            },
           );
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ride completed')));
-        // Navigate to rating screen instead of going directly home.
-        context.push(
-          Routes.rideRating,
-          extra: <String, String>{
-            'rideId': ride.id,
-            'passengerName': ride.passenger.name,
-          },
-        );
-      }
+        }
+      });
     };
     _manager.onCancelled = () {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
-        context.go(Routes.home);
-      }
+      // Use Future to defer navigation until after widget build completes.
+      Future(() {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
+          context.go(Routes.home);
+        }
+      });
     };
   }
 
@@ -238,29 +244,35 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   Future<void> _handleArrive(BuildContext context) async {
     await _manager.arriveAtPickup();
     if (!mounted) return;
-    _showProximityDialog(
-      context,
-      title: 'Too Far from Pickup',
-      message: _manager.state.errorMessage!,
-      onForce: () {
-        Navigator.of(context).pop();
-        _manager.arriveAtPickup(force: true);
-      },
-    );
+    final errorMessage = _manager.state.errorMessage;
+    if (errorMessage != null) {
+      _showProximityDialog(
+        context,
+        title: 'Too Far from Pickup',
+        message: errorMessage,
+        onForce: () {
+          Navigator.of(context).pop();
+          _manager.arriveAtPickup(force: true);
+        },
+      );
+    }
   }
 
   Future<void> _handleComplete(BuildContext context) async {
     await _manager.completeRide();
     if (!mounted) return;
-    _showProximityDialog(
-      context,
-      title: 'Too Far from Destination',
-      message: _manager.state.errorMessage!,
-      onForce: () {
-        Navigator.of(context).pop();
-        _manager.completeRide(force: true);
-      },
-    );
+    final errorMessage = _manager.state.errorMessage;
+    if (errorMessage != null) {
+      _showProximityDialog(
+        context,
+        title: 'Too Far from Destination',
+        message: errorMessage,
+        onForce: () {
+          Navigator.of(context).pop();
+          _manager.completeRide(force: true);
+        },
+      );
+    }
   }
 
   void _showProximityDialog(

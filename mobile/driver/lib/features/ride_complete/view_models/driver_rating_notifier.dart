@@ -31,7 +31,7 @@ class DriverRatingNotifier extends Notifier<local.DriverRatingState> {
     });
   }
 
-  /// Initialize with ride context (called by screen).
+  /// Initialize with ride context (called by screen after build completes).
   void init({String rideId = '', String passengerName = ''}) {
     state = state.copyWith(rideId: rideId, passengerName: passengerName);
   }
