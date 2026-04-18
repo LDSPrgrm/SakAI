@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
-import { adminApi } from '@/lib/admin-api';
+import { reportsApi } from '@/api/super-admin/reports';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ interface ReportItem {
 // ── Export helper ─────────────────────────────────────────────────────────────
 
 async function handleExport(type: string) {
-  const csv = await adminApi.reports.exportCsv(type);
+  const csv = await reportsApi.exportCsv(type);
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -75,11 +75,11 @@ export function SAReports() {
     async function initialLoad() {
       setLoading(true);
       const [list, vehicle, payment, waitTime, ratings] = await Promise.all([
-        adminApi.reports.getReportList(),
-        adminApi.reports.getChartData('rides-by-vehicle'),
-        adminApi.reports.getChartData('payment-method'),
-        adminApi.reports.getChartData('wait-time'),
-        adminApi.reports.getChartData('average-ratings'),
+        reportsApi.getReportList(),
+        reportsApi.getChartData('rides-by-vehicle'),
+        reportsApi.getChartData('payment-method'),
+        reportsApi.getChartData('wait-time'),
+        reportsApi.getChartData('average-ratings'),
       ]);
       setReportList(list as ReportItem[]);
       setVehicleData(vehicle as { name: string; value: number }[]);
@@ -96,7 +96,7 @@ export function SAReports() {
   // ── Reload chart data when selectedReport changes ───────────────────────────
 
   const reloadChartData = useCallback(async () => {
-    await adminApi.reports.getChartData(selectedReport);
+    await reportsApi.getChartData(selectedReport);
     // Additional chart-specific data can be wired here when backend ships
   }, [selectedReport]);
 

@@ -1,7 +1,7 @@
 import { adminRequest, extractArray } from './_request';
-import type { components } from '@/types/openapi';
+import type { AdminUser } from '@/types/super-admin/admin';
 
-export type AdminUser = components['schemas']['AdminUser'];
+export type { AdminUser };
 export type AdminStatus = 'active' | 'suspended' | 'deactivated';
 
 export interface CreateAdminPayload {

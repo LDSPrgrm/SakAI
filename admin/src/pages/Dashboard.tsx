@@ -4,22 +4,23 @@ import { Users, Car, Clock, MapPin, Activity } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { formatPHP } from '@/lib/utils';
 import { api, HealthResponse } from '@/lib/api';
-import { adminApi, DashboardMetrics } from '@/lib/admin-api';
+import { metricsApi, type ChartPoint } from '@/api/super-admin/metrics';
+import type { DashboardMetrics } from '@/types/super-admin';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function Dashboard() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [ridesChart, setRidesChart] = useState<{ name: string; rides: number }[]>([]);
-  const [revenueChart, setRevenueChart] = useState<{ name: string; revenue: number }[]>([]);
+  const [ridesChart, setRidesChart] = useState<ChartPoint[]>([]);
+  const [revenueChart, setRevenueChart] = useState<ChartPoint[]>([]);
   const [activity, setActivity] = useState<{ id: string; message: string; time: string; isAlert: boolean }[]>([]);
 
   useEffect(() => {
     api.health.check().then(setHealth).catch(() => setHealth({ status: 'down' }));
-    adminApi.dashboard.getMetrics().then(setMetrics).catch(() => {});
-    adminApi.dashboard.getRidesChart().then(setRidesChart).catch(() => {});
-    adminApi.dashboard.getRevenueChart().then(setRevenueChart).catch(() => {});
-    adminApi.dashboard.getActivityFeed().then(setActivity).catch(() => {});
+    metricsApi.getDashboard().then(setMetrics).catch(() => {});
+    metricsApi.getRidesChart().then(setRidesChart).catch(() => {});
+    metricsApi.getRevenueChart().then(setRevenueChart).catch(() => {});
+    metricsApi.getActivityFeed().then(setActivity).catch(() => {});
   }, []);
 
   const statusColor = health?.status === 'ok'

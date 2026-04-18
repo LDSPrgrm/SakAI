@@ -1,4 +1,4 @@
-import { AuditLogEntry } from '@/lib/admin-api';
+import type { AuditLogEntry } from '@/types/super-admin';
 
 export const auditLogs: AuditLogEntry[] = [
   { id: 'AUD-001', timestamp: '2026-04-02T09:15:00Z', actor_id: 'a1b2c3d4', actor_name: 'Eduardo Reyes', ip_address: '192.168.7.101', action: 'update', resource_type: 'fare_config', resource_id: 'fare-moto-001', before_state: { base_fare: 45 }, after_state: { base_fare: 50 }, reason: 'Adjusted for fuel cost increase' },

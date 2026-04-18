@@ -6,6 +6,3 @@ DROP TABLE IF EXISTS incidents;
 DROP TABLE IF EXISTS audit_log_entries;
 DROP TABLE IF EXISTS surge_configs;
 DROP TABLE IF EXISTS fare_configs;
-
--- Note: ENUM values 'operations', 'finance', 'support' cannot be removed
--- from user_role in PostgreSQL. They remain as orphan values.

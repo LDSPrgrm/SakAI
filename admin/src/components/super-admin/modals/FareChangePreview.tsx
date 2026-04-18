@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, ArrowRight } from 'lucide-react';
 import { formatPHP } from '@/utils/formatCurrency';
-import type { FareConfig } from '@/lib/admin-api';
+import type { FareConfig } from '@/types/super-admin';
 
 interface FareChangePreviewProps {
   open: boolean;

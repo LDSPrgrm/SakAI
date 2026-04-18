@@ -11,7 +11,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
-import { adminApi, AdminRoleDefinition, RolePermission, RolePermissionKey } from '@/lib/admin-api';
+import { rolesApi } from '@/api/super-admin/roles';
+import type { AdminRoleDefinition, RolePermission, RolePermissionKey } from '@/types/super-admin';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
@@ -193,7 +194,7 @@ export function SARoleManagement() {
     useForm<RoleFormValues>({ resolver: zodResolver(roleSchema) });
 
   async function loadRoles() {
-    const list = await adminApi.roles.list();
+    const list = await rolesApi.list() as unknown as AdminRoleDefinition[];
     setRoles(list);
   }
 
@@ -239,10 +240,10 @@ export function SARoleManagement() {
     };
 
     if (editingRole) {
-      const updated = await adminApi.roles.update(editingRole.id, body);
+      const updated = await rolesApi.update(editingRole.id, body) as unknown as AdminRoleDefinition;
       setRoles((prev) => prev.map((r) => r.id === editingRole.id ? updated : r));
     } else {
-      const created = await adminApi.roles.create(body);
+      const created = await rolesApi.create(body) as unknown as AdminRoleDefinition;
       setRoles((prev) => [created, ...prev]);
     }
 
@@ -287,14 +288,14 @@ export function SARoleManagement() {
   // ── Duplicate / delete ────────────────────────────────────────────────────
 
   async function handleDuplicate(role: AdminRoleDefinition) {
-    const copy = await adminApi.roles.duplicate(role.id);
+    const copy = await rolesApi.duplicate(role.id) as unknown as AdminRoleDefinition;
     setRoles((prev) => [...prev, copy]);
   }
 
   async function handleDelete() {
     if (!deleteConfirm.role) return;
     const id = deleteConfirm.role.id;
-    await adminApi.roles.delete(id);
+    await rolesApi.delete(id);
     setRoles((prev) => prev.filter((r) => r.id !== id));
     setDeleteConfirm({ open: false, role: null });
   }

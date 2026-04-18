@@ -3,7 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { RolePermissionForm, type RoleFormValues } from '../forms/RolePermissionForm';
-import type { AdminRoleDefinition } from '@/lib/admin-api';
+import type { AdminRoleDefinition } from '@/types/super-admin';
 
 interface CreateRoleModalProps {
   open:      boolean;

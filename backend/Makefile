@@ -1,4 +1,4 @@
-.PHONY: build test lint generate vet tidy
+.PHONY: build test lint generate vet tidy ci
 
 # ──────────────────────────────────────────────
 # Primary targets
@@ -35,6 +35,13 @@ generate:
 ## tidy: ensure go.mod and go.sum are clean
 tidy:
 	go mod tidy
+
+## ci: run the same checks as ci-backend.yml (test with coverage + vuln scan + build)
+ci:
+	go test -race -count=1 -timeout 120s -coverprofile=coverage.out -covermode=atomic ./...
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	go build -v -o /dev/null ./cmd/api
+	go mod tidy && git diff --exit-code go.mod go.sum
 
 ## all: tidy, vet, generate, test, build
 all: tidy vet generate test build

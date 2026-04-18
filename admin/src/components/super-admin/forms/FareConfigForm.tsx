@@ -4,7 +4,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { FareConfig } from '@/lib/admin-api';
+import type { FareConfig } from '@/types/super-admin';
 
 const fareSchema = z.object({
   vehicle_type:      z.enum(['motorcycle', 'tricycle', 'car']),

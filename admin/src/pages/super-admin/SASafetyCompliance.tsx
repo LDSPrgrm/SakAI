@@ -15,13 +15,9 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import {
-  adminApi,
-  Incident,
-  IncidentStatus,
-  IncidentType,
-  KycEntry,
-} from '@/lib/admin-api';
+import { safetyApi } from '@/api/super-admin/safety';
+import { reportsApi } from '@/api/super-admin/reports';
+import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -105,9 +101,9 @@ export function SASafetyCompliance() {
   useEffect(() => {
     async function load() {
       const [inc, kyc, ltfrb] = await Promise.all([
-        adminApi.safety.getIncidents(),
-        adminApi.safety.getKycQueue(),
-        adminApi.safety.getLtfrbCompliance(),
+        safetyApi.getIncidents(),
+        safetyApi.getKycQueue(),
+        safetyApi.getLtfrbCompliance(),
       ]);
       setIncidents(inc);
       setKycQueue(kyc);
@@ -144,7 +140,7 @@ export function SASafetyCompliance() {
 
   async function handleKycConfirm() {
     const status = kycConfirm.action === 'approve' ? 'approved' : 'rejected';
-    const updated = await adminApi.safety.updateKyc(kycConfirm.entryId, status);
+    const updated = await safetyApi.updateKyc(kycConfirm.entryId, status);
     setKycQueue((prev) =>
       prev.map((k) => (k.id === updated.id ? updated : k))
     );
@@ -168,7 +164,7 @@ export function SASafetyCompliance() {
   }
 
   function handleGenerateReport() {
-    adminApi.reports.exportCsv('ltfrb').then(url => {
+    reportsApi.exportCsv('ltfrb').then(url => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   }

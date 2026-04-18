@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { SummaryCard } from '@/components/shared/SummaryCard';
-import { adminApi, DashboardMetrics } from '@/lib/admin-api';
+import { metricsApi } from '@/api/super-admin/metrics';
+import type { DashboardMetrics } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 import type { ActivityItem } from '@/mocks/admin/dashboard';
 
@@ -20,12 +21,10 @@ const TOOLTIP_STYLE = {
 
 export function SADashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [ridesChart, setRidesChart] = useState<{ name: string; rides: number }[] | null>(null);
-  const [revenueChart, setRevenueChart] = useState<
-    { name: string; revenue: number; gcash: number; cash: number; paymaya: number; card: number }[] | null
-  >(null);
-  const [vehicleData, setVehicleData] = useState<{ name: string; value: number }[] | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[] | null>(null);
+  const [ridesChart, setRidesChart] = useState<any[] | null>(null);
+  const [revenueChart, setRevenueChart] = useState<any[] | null>(null);
+  const [vehicleData, setVehicleData] = useState<any[] | null>(null);
+  const [activity, setActivity] = useState<any[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -33,11 +32,11 @@ export function SADashboard() {
 
     async function load() {
       const [m, rc, rev, vd, af] = await Promise.all([
-        adminApi.dashboard.getMetrics(),
-        adminApi.dashboard.getRidesChart(),
-        adminApi.dashboard.getRevenueChart(),
-        adminApi.dashboard.getVehicleDistribution(),
-        adminApi.dashboard.getActivityFeed(),
+        metricsApi.getDashboard(),
+        metricsApi.getRidesChart(),
+        metricsApi.getRevenueChart(),
+        metricsApi.getVehicleDistribution(),
+        metricsApi.getActivityFeed(),
       ]);
       if (cancelled) return;
       setMetrics(m);

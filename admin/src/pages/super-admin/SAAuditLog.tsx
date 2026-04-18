@@ -12,7 +12,8 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { adminApi, AuditLogEntry } from '@/lib/admin-api';
+import { auditApi } from '@/api/super-admin/audit';
+import type { AuditLogEntry } from '@/types/super-admin';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -164,11 +165,11 @@ export function SAAuditLog() {
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
 
   useEffect(() => {
-    adminApi.audit.getLogs().then(setLogs);
+    auditApi.getLogs().then(l => setLogs(l as unknown as AuditLogEntry[]));
   }, []);
 
   const handleExportCsv = async () => {
-    const csvContent = await adminApi.audit.exportCsv();
+    const csvContent = await auditApi.exportCsv();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

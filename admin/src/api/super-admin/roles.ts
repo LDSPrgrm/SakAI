@@ -1,8 +1,7 @@
 import { adminRequest, extractArray } from './_request';
-import type { components } from '@/types/openapi';
+import type { Role, RolePermission } from '@/types/super-admin';
 
-export type Role           = components['schemas']['Role'];
-export type RolePermission = components['schemas']['RolePermission'];
+export type { Role, RolePermission };
 
 export interface CreateRolePayload {
   name: string;

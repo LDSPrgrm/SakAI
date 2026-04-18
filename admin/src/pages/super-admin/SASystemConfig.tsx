@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { adminApi, FeatureFlag } from '@/lib/admin-api';
+import { systemApi } from '@/api/super-admin/system';
+import type { FeatureFlag } from '@/types/super-admin';
 
 // ── Local types ───────────────────────────────────────────────────────────────
 
@@ -246,13 +247,13 @@ export function SASystemConfig() {
   const [saveBannerVisible, setSaveBannerVisible] = useState(false);
 
   useEffect(() => {
-    adminApi.system.getIntegrations().then((data) =>
+    systemApi.getIntegrations().then((data) =>
       setIntegrations(data as Integration[])
     );
-    adminApi.system.getNotificationTemplates().then((data) =>
+    systemApi.getNotificationTemplates().then((data) =>
       setTemplates(data as NotificationTemplate[])
     );
-    adminApi.system.getFeatureFlags().then(setFeatureFlags);
+    systemApi.getFeatureFlags().then(f => setFeatureFlags(f as unknown as FeatureFlag[]));
   }, []);
 
   const showSaveBanner = () => {
@@ -261,7 +262,7 @@ export function SASystemConfig() {
   };
 
   const handleUpdateIntegration = async (service: string, newKey: string) => {
-    await adminApi.system.updateIntegration(service, { api_key: newKey });
+    await systemApi.updateIntegration(service, { api_key: newKey });
     setIntegrations((prev) =>
       prev.map((i) => (i.service === service ? { ...i, api_key: newKey } : i))
     );
@@ -269,7 +270,7 @@ export function SASystemConfig() {
   };
 
   const handleUpdateTemplate = async (event: string, body: string) => {
-    await adminApi.system.updateTemplate(event, body);
+    await systemApi.updateTemplate(event, body);
     setTemplates((prev) =>
       prev.map((t) => (t.event === event ? { ...t, body } : t))
     );
@@ -277,7 +278,7 @@ export function SASystemConfig() {
   };
 
   const handleToggleFlag = async (key: string, next: boolean) => {
-    const updated = await adminApi.system.toggleFlag(key, next);
+    const updated = await systemApi.toggleFlag(key, next) as unknown as FeatureFlag;
     setFeatureFlags((prev) =>
       prev.map((f) => (f.key === key ? { ...f, enabled: updated.enabled } : f))
     );

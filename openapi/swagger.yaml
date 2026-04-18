@@ -38,13 +38,33 @@ info:
 
     See **WebSocket Event Schemas** in `components/schemas` for all payload definitions.
 
-  version: "1.1.0"
+  version: "1.2.0"
   contact:
     name: SakAI Engineering
+  x-ci:
+    workflows:
+      - name: CI — Admin Panel
+        file: .github/workflows/ci-admin.yml
+        jobs: [typecheck, test, build]
+        triggers: [admin/**, openapi/**]
+      - name: CI — Backend
+        file: .github/workflows/ci-backend.yml
+        jobs: [test, vuln, build]
+        triggers: [backend/**, migrations/**, openapi/**]
+      - name: CI — API Contract
+        file: .github/workflows/ci-api-contract.yml
+        jobs: [validate]
+        triggers: [openapi/**]
+      - name: CI — Mobile
+        file: .github/workflows/ci-mobile.yml
+        jobs: [detect, shared, passenger, driver, summary]
+        triggers: [mobile/**, openapi/**]
 
 servers:
   - url: http://localhost:8080/api
     description: Local development
+  - url: http://192.168.100.43/api
+    description: Local network (admin panel target)
 
 tags:
   - name: System

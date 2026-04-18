@@ -1,4 +1,4 @@
-import { Transaction, DriverPayout } from '@/lib/admin-api';
+import type { Transaction, DriverPayout } from '@/types/super-admin';
 
 export const summary = {
   total_revenue: 4520000,

@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { PERMISSION_KEYS, PERMISSION_LABELS, HAS_WRITE_SCOPE } from '@/utils/permissions';
-import type { RolePermission, RolePermissionKey } from '@/lib/admin-api';
+import type { RolePermission, RolePermissionKey } from '@/types/super-admin';
 
 const permSchema = z.object({
   name:        z.string().min(1, 'Role name is required'),
