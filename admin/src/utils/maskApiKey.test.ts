@@ -3,7 +3,8 @@ import { maskApiKey } from './maskApiKey';
 
 describe('maskApiKey', () => {
   it('shows only the last 4 characters by default', () => {
-    expect(maskApiKey('sk-1234567890abcdef')).toBe('••••••••••••••ef');
+    // 'sk-1234567890abcdef' = 19 chars → 15 bullets + last 4 'cdef'
+    expect(maskApiKey('sk-1234567890abcdef')).toBe('•••••••••••••••cdef');
   });
 
   it('masks with bullet characters', () => {
@@ -22,7 +23,8 @@ describe('maskApiKey', () => {
   });
 
   it('respects custom visibleChars', () => {
-    expect(maskApiKey('ABCDEFGH', 6)).toBe('••BCDEFGH');
+    // 'ABCDEFGH' = 8 chars, visibleChars=6 → 2 bullets + last 6 'CDEFGH'
+    expect(maskApiKey('ABCDEFGH', 6)).toBe('••CDEFGH');
   });
 
   it('caps bullet count at 20 for very long keys', () => {

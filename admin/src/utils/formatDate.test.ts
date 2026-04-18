@@ -17,14 +17,14 @@ describe('formatDate', () => {
 
 describe('formatDateTime', () => {
   it('includes time in 12-hour format', () => {
-    // 08:00 UTC = 16:00 PHT = 4:00 PM
-    expect(formatDateTime(ISO_AFTERNOON)).toBe('Apr 18, 2026, 4:00 PM');
+    // 08:00 UTC = 16:00 PHT = 4:00 PM; hour:'2-digit' zero-pads to 04:00 PM
+    expect(formatDateTime(ISO_AFTERNOON)).toBe('Apr 18, 2026, 04:00 PM');
   });
 });
 
 describe('formatTime', () => {
   it('returns time only in PHT', () => {
-    expect(formatTime(ISO_AFTERNOON)).toBe('4:00 PM');
+    expect(formatTime(ISO_AFTERNOON)).toBe('04:00 PM');
   });
 });
 
