@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, CheckCircle } from 'lucide-react';
 import { formatPHP } from '@/utils/formatCurrency';
-import type { DriverPayout } from '@/lib/admin-api';
+import type { DriverPayout } from '@/types/super-admin';
 
 interface PayoutApprovalModalProps {
   open: boolean;

@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Settings2, Zap, Calculator, CheckCircle } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { adminApi, FareConfig, SurgeConfig } from '@/lib/admin-api';
+import { faresApi } from '@/api/super-admin/fares';
+import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 
 type VehicleType = 'motorcycle' | 'tricycle' | 'car';
 
@@ -57,7 +58,6 @@ function validateConfig(config: FareConfig): Partial<Record<string, string>> {
 }
 
 const DEFAULT_FARE: FareConfig = {
-  id: '',
   vehicle_type: 'motorcycle',
   base_fare: 50,
   minimum_fare: 50,
@@ -65,8 +65,6 @@ const DEFAULT_FARE: FareConfig = {
   per_min_rate: 2,
   booking_fee: 0,
   cancellation_fee: 0,
-  updated_by: '',
-  updated_at: '',
 };
 
 export function FareSurge() {
@@ -89,8 +87,8 @@ export function FareSurge() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.fares.getConfigs(),
-      adminApi.fares.getSurge(),
+      faresApi.getConfigs() as unknown as Promise<FareConfig[]>,
+      faresApi.getSurge() as unknown as Promise<SurgeConfig>,
     ]).then(([fareList, surge]) => {
       const mapped: Record<VehicleType, FareConfig> = { ...configs };
       for (const fc of fareList) {
@@ -128,8 +126,8 @@ export function FareSurge() {
 
     const fareUpdates = Object.values(configs);
     Promise.all([
-      adminApi.fares.updateConfig('', fareUpdates[0]),
-      adminApi.fares.updateSurge(surgeConfig),
+      faresApi.updateConfigs(fareUpdates),
+      faresApi.updateSurge(surgeConfig as SurgeConfig),
     ]).then(() => {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -148,7 +146,11 @@ export function FareSurge() {
     if (!simTime || isNaN(time) || time < 0) { setSimError('Enter a valid time.'); return; }
 
     try {
-      const result = await adminApi.fares.simulate(simVehicle, dist, time);
+      const result = await faresApi.simulate(
+        simVehicle, 
+        { lat: 14.5995, lng: 120.9842 }, 
+        { lat: 14.5995 + dist * 0.01, lng: 120.9842 }
+      );
       setSimResult(result);
     } catch {
       // Fallback: local calculation

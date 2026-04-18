@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { adminApi, Transaction, DriverPayout } from '@/lib/admin-api';
+import { paymentsApi } from '@/api/super-admin/payments';
+import { reportsApi } from '@/api/super-admin/reports';
+import type { Transaction, DriverPayout } from '@/types/super-admin';
+import type { PaymentSummary } from '@/api/super-admin/payments';
 
 function txnStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
   switch (status) {
@@ -32,30 +35,29 @@ export function Payments() {
   const [search, setSearch] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [payouts, setPayouts] = useState<DriverPayout[]>([]);
-  const [summary, setSummary] = useState<{ total_revenue: number; payouts: number; commission: number; pending_settlements: number } | null>(null);
+  const [summary, setSummary] = useState<{ total_revenue?: number; payouts?: number; commission?: number; pending_settlements?: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.payments.getTransactions(),
-      adminApi.payments.getPayouts(),
-      adminApi.payments.getSummary(),
-    ]).then(([txns, pouts, sum]) => {
-      setTransactions(txns);
-      setPayouts(pouts);
+      paymentsApi.getSummary() as unknown as Promise<PaymentSummary>,
+      paymentsApi.getTransactions() as unknown as Promise<Transaction[]>,
+      paymentsApi.getPayouts() as unknown as Promise<DriverPayout[]>,
+    ]).then(([sum, tx, po]) => {
+      setTransactions(tx);
+      setPayouts(po);
       setSummary(sum);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const handleApprovePayout = (id: string) => {
-    adminApi.payments.approvePayout(id)
-      .then(() => setPayouts(prev => prev.filter(p => p.id !== id)))
-      .catch(() => {});
+    paymentsApi.approvePayout(id).catch(() => {});
+    setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: 'processing' } : p));
   };
 
   const handleExport = () => {
-    adminApi.reports.exportCsv('financial').then(url => {
+    reportsApi.exportCsv('financial').then(url => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };
@@ -83,22 +85,22 @@ export function Payments() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <SummaryCard
           title="Total Revenue (30d)"
-          amount={summary ? formatPHP(summary.total_revenue) : '—'}
+          amount={summary ? formatPHP(summary.total_revenue ?? 0) : '—'}
           icon={<Wallet className="w-5 h-5 text-primary" />}
         />
         <SummaryCard
           title="Driver Payouts (30d)"
-          amount={summary ? formatPHP(summary.payouts) : '—'}
+          amount={summary ? formatPHP(summary.payouts ?? 0) : '—'}
           icon={<ArrowUpRight className="w-5 h-5 text-danger" />}
         />
         <SummaryCard
           title="Platform Commission"
-          amount={summary ? formatPHP(summary.commission) : '—'}
+          amount={summary ? formatPHP(summary.commission ?? 0) : '—'}
           icon={<ArrowDownRight className="w-5 h-5 text-success" />}
         />
         <SummaryCard
           title="Pending Settlements"
-          amount={summary ? formatPHP(summary.pending_settlements) : '—'}
+          amount={summary ? formatPHP(summary.pending_settlements ?? 0) : '—'}
           icon={<CheckCircle className="w-5 h-5 text-warning" />}
         />
       </div>

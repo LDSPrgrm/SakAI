@@ -6,7 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { CheckCircle, Loader2, ToggleLeft, ToggleRight, X } from 'lucide-react';
-import { adminApi, AdminRole, AdminRoleDefinition, AdminUser } from '@/lib/admin-api';
+import { adminsApi } from '@/api/super-admin/admins';
+import { rolesApi } from '@/api/super-admin/roles';
+import { systemApi } from '@/api/super-admin/system';
+import { paymentsApi } from '@/api/super-admin/payments';
+import type { AdminRole, AdminRoleDefinition, AdminUser } from '@/types/super-admin';
 
 function roleVariant(role: string): 'info' | 'default' {
   return role === 'super_admin' ? 'info' : 'default';
@@ -106,22 +110,19 @@ function AdminModal({ mode, initial, roleOptions, roleDefinitions, onClose, onSa
       const selectedRoleDef = roleDefinitions.find(r => r.name === form.role);
       let saved: AdminUser;
       if (mode === 'add') {
-        saved = await adminApi.admins.create({
+        saved = await adminsApi.create({
           name: form.name.trim(),
           email: form.email.trim(),
-          role: form.role as AdminRole,
-          role_id: selectedRoleDef?.id,
-          status: 'active',
-          created_by: 'current_admin',
+          role_id: selectedRoleDef?.id || '',
           password: form.password,
-        });
+        }) as unknown as AdminUser;
       } else {
-        saved = await adminApi.admins.update(initial!.id!, {
+        saved = await adminsApi.update(initial!.id!, {
           name: form.name.trim(),
           email: form.email.trim(),
           role: form.role as AdminRole,
           role_id: selectedRoleDef?.id,
-        });
+        }) as unknown as AdminUser;
       }
       onSave(saved);
       onClose();
@@ -277,16 +278,16 @@ export function Settings() {
   const [systemLoading, setSystemLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.admins.list()
-      .then(setAdmins)
+    adminsApi.list()
+      .then(r => setAdmins(r as unknown as AdminUser[]))
       .catch(() => {})
       .finally(() => setAdminsLoading(false));
 
-    adminApi.roles.list()
-      .then(setRoleDefinitions)
+    rolesApi.list()
+      .then(r => setRoleDefinitions(r as unknown as AdminRoleDefinition[]))
       .catch(() => {});
 
-    adminApi.system.getNotificationTemplates()
+    systemApi.getNotificationTemplates()
       .then((raw: any[]) => {
         const mapped: NotifTemplate[] = raw.map(t => ({
           event: t.event ?? '',
@@ -299,11 +300,11 @@ export function Settings() {
       .catch(() => {})
       .finally(() => setTemplatesLoading(false));
 
-    adminApi.system.getIntegrations()
+    systemApi.getIntegrations()
       .then((raw: any[]) => {
         // Map integrations (gcash/paymaya/card configs) from system integrations or payment configs
-        return adminApi.payments.getPaymentConfigs?.()
-          .then((configs: GatewayConfig[]) => setGateways(configs))
+        return paymentsApi.getGatewayConfigs()
+          .then((configs) => setGateways(configs as unknown as GatewayConfig[]))
           .catch(() => {});
       })
       .catch(() => {})
@@ -323,7 +324,7 @@ export function Settings() {
     if (Object.keys(errs).length > 0) { setNotifErrors(errs); return; }
     setNotifErrors({});
     Promise.all(
-      templates.map(t => adminApi.system.updateTemplate(t.event, t.body).catch(() => {}))
+      templates.map(t => systemApi.updateTemplate(t.event, t.body).catch(() => {}))
     ).then(() => {
       setNotifSaved(true);
       setTimeout(() => setNotifSaved(false), 3000);
@@ -334,7 +335,7 @@ export function Settings() {
     const gw = gateways[idx];
     const updated = { ...gw, is_active: !gw.is_active };
     setGateways(prev => prev.map((g, i) => i === idx ? updated : g));
-    adminApi.system.updateIntegration(gw.provider, { is_active: String(updated.is_active) }).catch(() => {});
+    systemApi.updateIntegration(gw.provider, { is_active: String(updated.is_active) }).catch(() => {});
   };
 
   const handleSaveSystem = () => {
@@ -420,7 +421,7 @@ export function Settings() {
                             size="sm"
                             className="text-danger"
                             disabled={admin.status === 'deactivated'}
-                            onClick={() => adminApi.admins.deactivate(admin.id).then(() =>
+                            onClick={() => adminsApi.deactivate(admin.id).then(() =>
                               setAdmins(prev => prev.map(a => a.id === admin.id ? { ...a, status: 'deactivated' } : a))
                             ).catch(() => {})}
                           >

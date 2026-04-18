@@ -5,7 +5,7 @@
 import { tokenStore } from '@/lib/api';
 
 export const BASE_URL =
-  (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.22:8080/api';
+  (import.meta.env.VITE_API_URL as string) || 'https://sakai-backend-production.up.railway.app/api';
 
 export async function adminRequest<T>(
   method: string,

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
-import { adminApi, FareConfig, SurgeConfig } from '@/lib/admin-api';
+import { faresApi } from '@/api/super-admin/fares';
+import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
 
   async function handleConfirm() {
     if (!pendingValues) return;
-    await adminApi.fares.updateConfig(config.id, pendingValues);
+    await faresApi.updateConfigs([pendingValues as any]);
     setConfirmOpen(false);
     setPendingValues(null);
     onSaved();
@@ -163,8 +164,8 @@ export function SAFareConfig() {
     async function load() {
       try {
         const [configs, surge] = await Promise.all([
-          adminApi.fares.getConfigs(),
-          adminApi.fares.getSurge(),
+          faresApi.getConfigs(),
+          faresApi.getSurge(),
         ]);
         setFareConfigs(configs || []);
         setSurgeConfig(surge || { enabled: false, max_multiplier: 1, trigger_ratio: 1 } as SurgeConfig);
@@ -188,7 +189,7 @@ export function SAFareConfig() {
   async function saveSurge() {
     if (!surgeConfig) return;
     setSurgeSaving(true);
-    const updated = await adminApi.fares.updateSurge({
+    const updated = await faresApi.updateSurge({
       enabled: surgeEnabled,
       max_multiplier: parseFloat(maxMultiplier) || surgeConfig.max_multiplier,
       trigger_ratio: parseFloat(triggerRatio) || surgeConfig.trigger_ratio,
@@ -212,7 +213,11 @@ export function SAFareConfig() {
       return;
     }
     setSimLoading(true);
-    const result = await adminApi.fares.simulate(simVehicle, dist, time);
+    const result = await faresApi.simulate(
+      simVehicle,
+      { lat: 14.5995, lng: 120.9842 },
+      { lat: 14.5995 + dist * 0.01, lng: 120.9842 + time * 0.001 },
+    );
     setSimResult(result);
     setSimLoading(false);
   }
@@ -267,7 +272,7 @@ export function SAFareConfig() {
                     <FareTabForm
                       config={config as FareConfig}
                       onSaved={() => {
-                        adminApi.fares.getConfigs().then((res) => setFareConfigs(res || []));
+                        faresApi.getConfigs().then((res) => setFareConfigs(res as unknown as FareConfig[] || []));
                       }}
                       onBannerShow={showBanner}
                     />

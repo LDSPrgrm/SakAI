@@ -1,4 +1,4 @@
-import { Incident, KycEntry } from '@/lib/admin-api';
+import type { Incident, KycEntry } from '@/types/super-admin';
 
 export const incidents: Incident[] = [
   { id: 'INC-001', ride_id: 'RD-99421', triggered_by: 'rider', rider_name: 'Maria Santos', driver_name: 'Juan Dela Cruz', type: 'sos_triggered', severity: 'high', status: 'investigating', assigned_to: 'Maria Santos (Ops)', resolution_notes: null, created_at: '2026-04-02T09:15:00Z', resolved_at: null },
