@@ -48,7 +48,7 @@ interface PermissionsState {
   clear: () => void;
 }
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'https://sakai-backend-production.up.railway.app/api';
+const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
 
 async function fetchRolePermissions(roleId: string): Promise<Role> {
   const token = tokenStore.getAccess();
