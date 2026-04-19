@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
-import 'package:sakai_shared/sakai_shared.dart';
 
 import 'driver_repository.dart';
 
@@ -12,13 +12,25 @@ class DriverRepositoryImpl implements DriverRepository {
   @override
   Future<void> goOnline() async {
     try {
+      debugPrint('[DRIVER_REPO] Calling PUT /driver/status → online');
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.online,
       );
       await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
+      debugPrint('[DRIVER_REPO] goOnline success');
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails.
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        debugPrint('[DRIVER_REPO] goOnline success (2xx, body parse issue)');
+        return;
+      }
+      debugPrint(
+        '[DRIVER_REPO] goOnline failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }
@@ -26,13 +38,25 @@ class DriverRepositoryImpl implements DriverRepository {
   @override
   Future<void> goOffline() async {
     try {
+      debugPrint('[DRIVER_REPO] Calling PUT /driver/status → offline');
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.offline,
       );
       await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
+      debugPrint('[DRIVER_REPO] goOffline success');
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails.
+      if (e.response?.statusCode != null &&
+          e.response!.statusCode! >= 200 &&
+          e.response!.statusCode! < 300) {
+        debugPrint('[DRIVER_REPO] goOffline success (2xx, body parse issue)');
+        return;
+      }
+      debugPrint(
+        '[DRIVER_REPO] goOffline failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }
@@ -56,11 +80,45 @@ class DriverRepositoryImpl implements DriverRepository {
         locationUpdateRequest: request,
       );
     } on DioException catch (e) {
+      debugPrint(
+        '[DRIVER_REPO] updateLocation failed: ${e.response?.statusCode} ${e.message}',
+      );
       throw _fromDio(e);
     }
   }
 
+  @override
+  Future<RideResponse?> getIncomingRide() async {
+    try {
+      final response = await _apiClient.getDriverApi().driverGetIncomingRide();
+      return response.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      // 2xx = success even if body parsing fails.
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        return null; // WS will deliver the offer.
+      }
+      throw _fromDio(e);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Exception _fromDio(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final code = data['code'] as String?;
+      final message = data['message'] as String?;
+      if (code == 'DRIVER_HAS_ACTIVE_RIDE') {
+        return Exception(
+          'Cannot go offline — you have an active ride. Complete or cancel it first.',
+        );
+      }
+      if (message != null && message.isNotEmpty) {
+        return Exception(message);
+      }
+    }
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout) {
       return Exception('No connection. Check network or server URL.');

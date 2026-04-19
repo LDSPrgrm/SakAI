@@ -1,14 +1,26 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
+import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver;
 import 'package:uuid/uuid.dart';
 
 import '../../ride/models/ride_exception.dart';
 import '../../../app/providers.dart';
+import '../models/ride_type_option.dart';
+import '../models/nearby_driver.dart';
+import '../repositories/driver_repository.dart';
 
-enum HomeStatus { idle, locating, destinationSet, requesting }
+enum HomeStatus {
+  idle,
+  locating,
+  destinationSet,
+  requesting,
+  selectingRideType,
+}
 
 class HomeState {
   final HomeStatus status;
@@ -17,6 +29,9 @@ class HomeState {
   final RideLocation? destination;
   final String? errorMessage;
   final RideEntity? createdRide;
+  final VehicleType? selectedRideType;
+  final List<RideTypeOption> rideTypeOptions;
+  final List<NearbyDriver> nearbyDrivers; // Consolidated nearby drivers
 
   const HomeState({
     required this.status,
@@ -25,6 +40,9 @@ class HomeState {
     this.destination,
     this.errorMessage,
     this.createdRide,
+    this.selectedRideType,
+    this.rideTypeOptions = const [],
+    this.nearbyDrivers = const [],
   });
 
   HomeState copyWith({
@@ -35,18 +53,33 @@ class HomeState {
     String? errorMessage,
     RideEntity? createdRide,
     bool clearError = false,
+    bool clearDestination = false,
+    bool clearPickup = false,
+    bool clearCreatedRide = false,
+    VehicleType? selectedRideType,
+    bool clearSelectedRideType = false,
+    List<RideTypeOption>? rideTypeOptions,
+    List<NearbyDriver>? nearbyDrivers,
   }) {
     return HomeState(
       status: status ?? this.status,
       currentLatLng: currentLatLng ?? this.currentLatLng,
-      pickup: pickup ?? this.pickup,
-      destination: destination ?? this.destination,
+      pickup: clearPickup ? null : (pickup ?? this.pickup),
+      destination: clearDestination ? null : (destination ?? this.destination),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      createdRide: createdRide ?? this.createdRide,
+      createdRide: clearCreatedRide ? null : (createdRide ?? this.createdRide),
+      selectedRideType: clearSelectedRideType
+          ? null
+          : (selectedRideType ?? this.selectedRideType),
+      rideTypeOptions: rideTypeOptions ?? this.rideTypeOptions,
+      nearbyDrivers: nearbyDrivers ?? this.nearbyDrivers,
     );
   }
 
-  bool get canRequest => destination != null && status != HomeStatus.requesting;
+  bool get canRequest =>
+      destination != null &&
+      selectedRideType != null &&
+      status != HomeStatus.requesting;
 }
 
 final homeNotifierProvider = NotifierProvider<HomeNotifier, HomeState>(() {
@@ -56,10 +89,84 @@ final homeNotifierProvider = NotifierProvider<HomeNotifier, HomeState>(() {
 class HomeNotifier extends Notifier<HomeState> {
   final _uuid = const Uuid();
   String? _idempotencyKey;
+  Timer? _nearbyDriverPollTimer;
 
   @override
   HomeState build() {
+    ref.onDispose(() {
+      _stopLocationStreaming();
+      _stopNearbyDriverPolling();
+    });
     return const HomeState(status: HomeStatus.idle);
+  }
+
+  /// Starts consolidated periodic polling for nearby drivers.
+  /// Single poll serves both ride type options AND map markers — eliminates duplicate API calls.
+  void _startNearbyDriverPolling() {
+    _stopNearbyDriverPolling();
+    _nearbyDriverPollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _fetchNearbyDrivers();
+    });
+    // Immediate first fetch
+    _fetchNearbyDrivers();
+  }
+
+  /// Stops the periodic nearby driver poller.
+  void _stopNearbyDriverPolling() {
+    _nearbyDriverPollTimer?.cancel();
+    _nearbyDriverPollTimer = null;
+  }
+
+  /// Fetches nearby drivers and updates both ride type options and map markers from a single API call.
+  Future<void> _fetchNearbyDrivers() async {
+    final currentPos = state.currentLatLng;
+    if (currentPos == null) return;
+
+    try {
+      final authInterceptor = ref.read(authInterceptorProvider);
+      final allDrivers = await DriverRepository(
+        authInterceptor: authInterceptor,
+      ).fetchNearbyDriversAll(currentPos);
+
+      // Flatten into a single list for map markers
+      final flatDrivers = allDrivers.values
+          .expand<NearbyDriver>((d) => d)
+          .toList();
+
+      // Build ride type options with fare estimates
+      final options = _buildRideTypeOptions(allDrivers);
+
+      state = state.copyWith(
+        nearbyDrivers: flatDrivers,
+        rideTypeOptions: options,
+      );
+    } catch (e) {
+      debugPrint('[HomeNotifier] Nearby driver poll error: $e');
+    }
+  }
+
+  /// Builds ride type options with fare estimates from nearby driver data.
+  List<RideTypeOption> _buildRideTypeOptions(
+    Map<String, List<NearbyDriver>> allDrivers,
+  ) {
+    const baseFares = {'motorcycle': 65.0, 'car': 120.0, 'tricycle': 50.0};
+    const baseDurations = {'motorcycle': 10, 'car': 15, 'tricycle': 12};
+
+    return baseFares.entries.map((entry) {
+      final typeStr = entry.key;
+      final type = VehicleType.values.firstWhere(
+        (t) => t.toString().split('.').last == typeStr,
+        orElse: () => VehicleType.car,
+      );
+      final availableDrivers = allDrivers[typeStr]?.length ?? 0;
+
+      return RideTypeOption(
+        type: type,
+        estimatedFare: entry.value,
+        estimatedDuration: Duration(minutes: baseDurations[typeStr]!),
+        availableDrivers: availableDrivers,
+      );
+    }).toList();
   }
 
   Future<void> initLocation() async {
@@ -73,44 +180,99 @@ class HomeNotifier extends Notifier<HomeState> {
         );
         return;
       }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-      final currentLatLng = LatLng(pos.latitude, pos.longitude);
-
-      // Reverse-geocode the pickup position
-      final placemarks = await placemarkFromCoordinates(
-        pos.latitude,
-        pos.longitude,
-      );
-      final p = placemarks.isNotEmpty ? placemarks.first : null;
-      final address = p == null
-          ? '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}'
-          : [
-              p.street,
-              p.subLocality,
-              p.locality,
-            ].where((s) => s != null && s.isNotEmpty).join(', ');
-
-      final pickup = RideLocation(
-        lat: pos.latitude,
-        lng: pos.longitude,
-        address: address,
-      );
-
-      state = state.copyWith(
-        status: HomeStatus.idle,
-        currentLatLng: currentLatLng,
-        pickup: pickup,
-      );
+      await _updatePickupFromGps();
+      _startLocationStreaming();
     } catch (e) {
       state = state.copyWith(
         status: HomeStatus.idle,
         errorMessage: 'Could not determine your location. Check GPS settings.',
       );
     }
+  }
+
+  /// Updates pickup location from current GPS position.
+  Future<void> _updatePickupFromGps() async {
+    final pos = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    final currentLatLng = LatLng(pos.latitude, pos.longitude);
+
+    // Reverse-geocode the pickup position
+    final placemarks = await placemarkFromCoordinates(
+      pos.latitude,
+      pos.longitude,
+    );
+    final p = placemarks.isNotEmpty ? placemarks.first : null;
+    final address = p == null
+        ? '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}'
+        : [
+            p.street,
+            p.subLocality,
+            p.locality,
+          ].where((s) => s != null && s.isNotEmpty).join(', ');
+
+    state = state.copyWith(
+      status: HomeStatus.idle,
+      currentLatLng: currentLatLng,
+      pickup: RideLocation(
+        lat: pos.latitude,
+        lng: pos.longitude,
+        address: address,
+      ),
+    );
+  }
+
+  /// Starts streaming GPS to keep pickup location fresh.
+  void _startLocationStreaming() {
+    _stopLocationStreaming();
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10, // Update every 10 meters
+          ),
+        ).listen((position) {
+          final currentLatLng = LatLng(position.latitude, position.longitude);
+          placemarkFromCoordinates(position.latitude, position.longitude)
+              .then((placemarks) {
+                final p = placemarks.isNotEmpty ? placemarks.first : null;
+                final address = p == null
+                    ? '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}'
+                    : [
+                        p.street,
+                        p.subLocality,
+                        p.locality,
+                      ].where((s) => s != null && s.isNotEmpty).join(', ');
+                state = state.copyWith(
+                  currentLatLng: currentLatLng,
+                  pickup: RideLocation(
+                    lat: position.latitude,
+                    lng: position.longitude,
+                    address: address,
+                  ),
+                );
+              })
+              .catchError((_) {
+                // If reverse geocoding fails, still update coordinates.
+                state = state.copyWith(
+                  currentLatLng: currentLatLng,
+                  pickup: RideLocation(
+                    lat: position.latitude,
+                    lng: position.longitude,
+                    address:
+                        state.pickup?.address ??
+                        '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}',
+                  ),
+                );
+              });
+        });
+  }
+
+  StreamSubscription<Position>? _positionStream;
+
+  void _stopLocationStreaming() {
+    _positionStream?.cancel();
+    _positionStream = null;
   }
 
   Future<bool> _ensureLocationPermission() async {
@@ -128,6 +290,8 @@ class HomeNotifier extends Notifier<HomeState> {
       destination: destination,
       clearError: true,
     );
+    // Start consolidated nearby driver polling (serves both ride options and map markers)
+    _startNearbyDriverPolling();
   }
 
   void setPickup(RideLocation pickup) {
@@ -141,19 +305,34 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void clearDestination() {
+    _stopNearbyDriverPolling();
     state = state.copyWith(
       status: HomeStatus.idle,
-      destination:
-          null, // Cannot simply set to null with copyWith if it ignores nulls, wait let's redefine copyWith or just recreate state.
+      clearDestination: true,
+      nearbyDrivers: [],
+      rideTypeOptions: [],
     );
+  }
+
+  /// Sets the selected ride type.
+  void setSelectedRideType(VehicleType type) {
+    state = state.copyWith(selectedRideType: type);
   }
 
   Future<RideEntity?> requestRide() async {
     final pickup = state.pickup;
     final destination = state.destination;
-    if (pickup == null || destination == null) return null;
+    final rideType = state.selectedRideType;
+    debugPrint(
+      '[HOME] requestRide called: pickup=$pickup, destination=$destination, rideType=$rideType',
+    );
+    if (pickup == null || destination == null) {
+      debugPrint('[HOME] Cannot request ride: pickup or destination is null');
+      return null;
+    }
 
     _idempotencyKey ??= _uuid.v4();
+    debugPrint('[HOME] Requesting ride with idempotency key: $_idempotencyKey');
     state = state.copyWith(status: HomeStatus.requesting, clearError: true);
 
     try {
@@ -162,15 +341,26 @@ class HomeNotifier extends Notifier<HomeState> {
         origin: pickup,
         destination: destination,
         idempotencyKey: _idempotencyKey!,
+        rideType: rideType,
+        paymentMethod: 'cash', // Default to cash for now
       );
 
       _idempotencyKey = null; // clear after definitive success
+      debugPrint('[HOME] Ride created successfully: ${ride.id}');
       state = state.copyWith(createdRide: ride);
       return ride;
     } on RideException catch (e) {
+      debugPrint('[HOME] RideException: ${e.userMessage}');
       state = state.copyWith(
         status: HomeStatus.destinationSet,
         errorMessage: e.userMessage,
+      );
+      return null;
+    } catch (e) {
+      debugPrint('[HOME] Unexpected error: $e');
+      state = state.copyWith(
+        status: HomeStatus.destinationSet,
+        errorMessage: 'Failed to request ride. Try again.',
       );
       return null;
     }

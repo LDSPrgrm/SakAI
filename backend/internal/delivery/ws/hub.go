@@ -5,6 +5,7 @@ package ws
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -131,6 +132,7 @@ func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
 	cl, ok := h.clients[userID]
 	h.mu.RUnlock()
 	if !ok {
+		log.Printf("[WS] SendToUser FAILED: user %s not connected (total clients: %d)", userID, len(h.clients))
 		return
 	}
 	select {
@@ -152,4 +154,14 @@ func (h *Hub) BroadcastToRide(ride *domain.Ride, event EventType, payload any) {
 	if ride.DriverID != nil {
 		h.SendToUser(*ride.DriverID, event, payload)
 	}
+}
+
+// BroadcastToRideByIDs targets both the passenger and driver given explicit IDs,
+// avoiding the need to construct a full domain.Ride for Redis-sourced events.
+func (h *Hub) BroadcastToRideByIDs(rideID uuid.UUID, passengerID uuid.UUID, driverID *uuid.UUID, event EventType, payload any) {
+	h.SendToUser(passengerID, event, payload)
+	if driverID != nil {
+		h.SendToUser(*driverID, event, payload)
+	}
+	_ = rideID // rideID is logged/available for future tracing
 }

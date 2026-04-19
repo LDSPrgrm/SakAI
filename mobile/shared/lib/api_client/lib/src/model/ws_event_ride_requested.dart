@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -152,7 +151,7 @@ class _$WsEventRideRequestedSerializer implements PrimitiveSerializer<WsEventRid
             value,
             specifiedType: const FullType(UserProfile),
           ) as UserProfile;
-          result.passenger.replace(valueDes);
+          result.passenger = valueDes;
           break;
         case r'origin':
           final valueDes = serializers.deserialize(

@@ -35,25 +35,49 @@ SakAI/
 
 The backend is built with **Go** and uses **Gin** for routing. It strictly follows a **Clean Architecture** pattern to ensure testability and separation of concerns:
 
-- **`cmd/`**: Contains the entry points for the application (e.g., `cmd/api/main.go` starts the server).
-- **`configs/`**: Handles environment configurations.
-- **`pkg/`**: Stores shared middleware (like Authentication, Logging, CORS, and Rate Limiting) and utilities that can be imported by different internals.
+- **`cmd/`**: Contains the entry points for the application.
+  - `cmd/api/` — Main server entry point (`main.go` starts the HTTP + WebSocket server).
+  - `cmd/seed-admin/` — CLI tool to bootstrap the first `superadmin` account.
+- **`configs/`**: Handles environment-based configuration loading (`.env` files, defaults, validation).
+- **`pkg/`**: Shared utilities that can be imported across internal layers.
+  - `jwt/jwt.go` — JWT token generation, parsing, and validation.
+  - `testutil/fixtures.go` — Test helpers and fixtures.
+  - *(Note: Middleware was moved to `internal/delivery/http/middleware/`.)*
 - **`internal/`**: The core application logic.
-  - **`domain/`**: The very core. Defines business objects (`driver.go`, `ride.go`) AND the interfaces (ports) for repositories and usecases (`ports.go`). This ensures strict dependency inversion — all other layers depend on domain, not on each other.
-  - **`usecase/`**: Holds the pure business logic and rules for ride matching, user management, etc. It implements the interfaces defined in the domain layer.
-  - **`repository/`**: Handles data access (PostgreSQL/Redis adapters). It implements the repository interfaces defined in the domain layer.
-  - **`delivery/`**: Exposes the backend to the outside world. Divided into:
-    - `http/` for standard REST APIs (using Gin handlers).
-      - `dto/` for Data Transfer Objects, ensuring pure domain entities are not leaked to the API and handling validation and response mapping.
-    - `ws/` for WebSocket handlers dealing with real-time location and event updates.
-    - `infrastructure/` mapping background workers (like expiry workers) or external systems.
+  - **`domain/`** (10 files): The very core. Defines business entities AND the interfaces (ports) for repositories and usecases. Zero external dependencies.
+    - `admin.go`, `audit.go`, `driver.go`, `errors.go`, `incident.go`, `location.go`, `ports.go`, `ride.go`, `user.go`, `vehicle.go`
+  - **`usecase/`** (13 files): Holds the pure business logic and rules. Implements domain interfaces.
+    - `admin_usecase.go`, `auth_usecase.go` (+ test), `driver_usecase.go` (+ test), `metrics_usecase.go`, `payment_usecase.go`, `report_usecase.go`, `ride_usecase.go` (+ test), `role_usecase.go`, `safety_usecase.go`, `system_usecase.go`
+  - **`repository/`** (10 files): Handles data access via PostgreSQL/Redis adapters. Implements domain repository interfaces.
+    - `admin_repo.go`, `driver_repo.go`, `metrics_repo.go`, `payment_repo.go`, `report_repo.go`, `ride_repo.go`, `role_repo.go`, `safety_repo.go`, `system_repo.go`, `user_token_repo.go`
+  - **`delivery/`**: Exposes the backend to the outside world.
+    - `http/` — REST API handlers (10 handlers):
+      - `admin_handler.go`, `auth_handler.go`, `driver_handler.go`, `metrics_handler.go`, `payment_handler.go`, `report_handler.go`, `ride_handler.go`, `role_handler.go`, `safety_handler.go`, `system_handler.go`
+      - `dto/` — Data Transfer Objects (4 files: `admin_dto.go`, `auth_dto.go`, `driver_dto.go`, `ride_dto.go`) for request/response mapping.
+      - `middleware/` — HTTP middleware (3 files: `auth.go`, `rate_limit.go`, `security.go`).
+      - `router/` — Gin route registration and middleware wiring.
+      - `response.go` — Shared response helpers.
+    - `ws/` — WebSocket handlers (3 files: `handler.go`, `hub.go`, `redis_dispatcher.go`).
+  - **`infrastructure/`**: Background workers and database connectivity.
+    - `database/` — PostgreSQL connection setup, migration execution, transaction helpers (`postgres.go`, `migrate.go`, `tx.go`).
+    - `expiry/` — Background worker for stale ride offer cleanup (`worker.go`).
 
 ### 2. `migrations/` (Database State Management)
 
-Contains raw SQL scripts that define the PostgreSQL schema and PostGIS dependencies.
+Contains raw SQL scripts that define the PostgreSQL schema and PostGIS dependencies. Currently **10 migration files** (001–010):
 
-- Includes sequential rollouts like `001_create_users.sql`, `002_create_vehicles.sql`, `create_drivers`, `create_rides`, and adding active ride constraints.
-- This approach ensures deterministic database structures, critical for spatial data management (tracking lat/lng locations accurately).
+- `001_create_users.up.sql` — User accounts table.
+- `002_create_vehicles.up.sql` — Vehicle information table.
+- `003_create_drivers.up.sql` — Driver profiles with PostGIS location column.
+- `004_create_rides.up.sql` — Ride lifecycle table with state machine.
+- `005_create_refresh_tokens.up.sql` — JWT refresh token storage.
+- `006_add_active_ride_constraints.up.sql` — Partial unique index preventing duplicate active rides.
+- `007_add_admin_roles.up.sql` — Admin role schema.
+- `008_super_admin_schema.up.sql` — Superadmin capabilities.
+- `009_create_roles.up.sql` — General RBAC roles table (+ down migration).
+- `010_add_role_id_to_users.up.sql` — Links users to RBAC roles (+ down migration).
+
+Migrations are embedded into the Go binary via `go:embed` and executed automatically at server startup.
 
 ### 3. `openapi/` (The API Contract)
 

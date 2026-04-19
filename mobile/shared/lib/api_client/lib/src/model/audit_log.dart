@@ -1,8 +1,8 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
+import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,8 +14,12 @@ part 'audit_log.g.dart';
 /// * [id] 
 /// * [timestamp] 
 /// * [actorId] 
+/// * [ipAddress] 
 /// * [action] 
 /// * [resourceType] 
+/// * [resourceId] 
+/// * [beforeState] 
+/// * [afterState] 
 /// * [reason] 
 @BuiltValue()
 abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
@@ -28,11 +32,23 @@ abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
   @BuiltValueField(wireName: r'actor_id')
   String? get actorId;
 
+  @BuiltValueField(wireName: r'ip_address')
+  String? get ipAddress;
+
   @BuiltValueField(wireName: r'action')
   String? get action;
 
   @BuiltValueField(wireName: r'resource_type')
   String? get resourceType;
+
+  @BuiltValueField(wireName: r'resource_id')
+  String? get resourceId;
+
+  @BuiltValueField(wireName: r'before_state')
+  JsonObject? get beforeState;
+
+  @BuiltValueField(wireName: r'after_state')
+  JsonObject? get afterState;
 
   @BuiltValueField(wireName: r'reason')
   String? get reason;
@@ -81,6 +97,13 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.ipAddress != null) {
+      yield r'ip_address';
+      yield serializers.serialize(
+        object.ipAddress,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.action != null) {
       yield r'action';
       yield serializers.serialize(
@@ -95,11 +118,32 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.resourceId != null) {
+      yield r'resource_id';
+      yield serializers.serialize(
+        object.resourceId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.beforeState != null) {
+      yield r'before_state';
+      yield serializers.serialize(
+        object.beforeState,
+        specifiedType: const FullType.nullable(JsonObject),
+      );
+    }
+    if (object.afterState != null) {
+      yield r'after_state';
+      yield serializers.serialize(
+        object.afterState,
+        specifiedType: const FullType.nullable(JsonObject),
+      );
+    }
     if (object.reason != null) {
       yield r'reason';
       yield serializers.serialize(
         object.reason,
-        specifiedType: const FullType(String),
+        specifiedType: const FullType.nullable(String),
       );
     }
   }
@@ -146,6 +190,13 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
           ) as String;
           result.actorId = valueDes;
           break;
+        case r'ip_address':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.ipAddress = valueDes;
+          break;
         case r'action':
           final valueDes = serializers.deserialize(
             value,
@@ -160,11 +211,35 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
           ) as String;
           result.resourceType = valueDes;
           break;
-        case r'reason':
+        case r'resource_id':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
+          result.resourceId = valueDes;
+          break;
+        case r'before_state':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(JsonObject),
+          ) as JsonObject?;
+          if (valueDes == null) continue;
+          result.beforeState = valueDes;
+          break;
+        case r'after_state':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(JsonObject),
+          ) as JsonObject?;
+          if (valueDes == null) continue;
+          result.afterState = valueDes;
+          break;
+        case r'reason':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
           result.reason = valueDes;
           break;
         default:

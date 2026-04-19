@@ -11,16 +11,21 @@ import (
 )
 
 type rideUseCase struct {
-	rideRepo   domain.RideRepository
-	driverRepo domain.DriverRepository
+	rideRepo      domain.RideRepository
+	driverRepo    domain.DriverRepository
+	fareCalculator *FareCalculator
 }
 
 // NewRideUseCase creates a new domain.RideUseCase.
-func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository) domain.RideUseCase {
-	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo}
+func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository, fareCalculator *FareCalculator) domain.RideUseCase {
+	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo, fareCalculator: fareCalculator}
 }
 
-func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string) (*domain.Ride, error) {
+func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType domain.RideType, paymentMethod domain.PaymentMethod) (*domain.Ride, error) {
+	// Note: paymentMethod is accepted for future payment processing integration.
+	// Currently rides default to cash; card payments are handled separately via PaymentProcessingUseCase.
+	_ = paymentMethod // suppress unused variable warning until payment integration
+
 	// Idempotency: return existing ride if key already used.
 	if existing, err := uc.rideRepo.GetByIdempotencyKey(ctx, idempotencyKey); err == nil {
 		return existing, nil
@@ -33,20 +38,41 @@ func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, o
 		return nil, err
 	}
 
-	// Find the nearest online driver.
-	drivers, err := uc.driverRepo.FindNearbyOnline(ctx, origin, 5000)
+	// Find the nearest online driver matching the requested vehicle type.
+	drivers, err := uc.driverRepo.FindNearbyOnlineByType(ctx, origin.Lat, origin.Lng, 5000, rideType)
 	if err != nil {
+		log.Printf("[RIDE] Error finding drivers: %v", err)
 		return nil, err
 	}
+	log.Printf("[RIDE] Found %d drivers near (%.5f, %.5f) within 5000m for ride_type=%s", len(drivers), origin.Lat, origin.Lng, rideType)
 	if len(drivers) == 0 {
 		return nil, domain.ErrNoDriversAvailable
+	}
+
+	// Calculate estimated fare using the fare calculator.
+	// Distance is approximated from the straight-line distance between origin and destination.
+	distanceM := origin.DistanceTo(destination)
+	distanceKm := distanceM / 1000.0
+	durationMin := distanceKm * 3.0 // rough estimate: 3 min per km (20 km/h average)
+	// Use default car rates for estimation — in production these come from fare_configs table.
+	baseFare := 50.0
+	perKmRate := 10.0
+	perMinRate := 2.0
+	bookingFee := 5.0
+	estimatedFare := uc.fareCalculator.EstimateFare(distanceKm, durationMin, baseFare, perKmRate, perMinRate, bookingFee)
+
+	// Parse the driver ID from string to UUID.
+	driverID, err := uuid.Parse(drivers[0].ID)
+	if err != nil {
+		log.Printf("[RIDE] Error parsing driver ID: %v", err)
+		return nil, err
 	}
 
 	now := time.Now()
 	ride := &domain.Ride{
 		ID:                 uuid.New(),
 		PassengerID:        passengerID,
-		DriverID:           &drivers[0].UserID, // assign closest driver
+		DriverID:           &driverID, // assign closest driver
 		Status:             domain.RideStatusRequested,
 		Origin:             origin,
 		Destination:        destination,
@@ -54,6 +80,8 @@ func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, o
 		DestinationAddress: destAddr,
 		Notes:              notes,
 		IdempotencyKey:     idempotencyKey,
+		RideType:           rideType,
+		EstimatedFare:      &estimatedFare,
 		CreatedAt:          now,
 		UpdatedAt:          now,
 	}
@@ -88,7 +116,7 @@ func (uc *rideUseCase) Accept(ctx context.Context, driverID, rideID uuid.UUID) (
 	})
 }
 
-func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
+func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) (*domain.DeclineResult, error) {
 	ride, err := uc.rideRepo.GetByID(ctx, rideID)
 	if err != nil {
 		return nil, err
@@ -101,16 +129,65 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 	if err := uc.rideRepo.ClearDriver(ctx, rideID); err != nil {
 		return nil, err
 	}
+	// Reset status to requested and increment decline count.
 	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusRequested); err != nil {
 		return nil, err
 	}
-	return uc.rideRepo.GetByID(ctx, rideID)
+	if err := uc.rideRepo.IncrementDeclineCount(ctx, rideID); err != nil {
+		log.Printf("[RIDE] Warn: could not increment decline count for ride %s: %v", rideID, err)
+	}
+
+	// Attempt re-match: find nearest online driver of the same ride type.
+	drivers, err := uc.driverRepo.FindNearbyOnlineByType(ctx, ride.Origin.Lat, ride.Origin.Lng, 5000, ride.RideType)
+	if err != nil {
+		log.Printf("[RIDE] Error finding re-match drivers for ride %s: %v", rideID, err)
+	}
+	if len(drivers) == 0 {
+		// No drivers available — leave ride in requested state; expiry worker handles it.
+		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
+		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
+	}
+
+	// Assign the new driver.
+	newDriverID, err := uuid.Parse(drivers[0].ID)
+	if err != nil {
+		log.Printf("[RIDE] Error parsing re-match driver ID: %v", err)
+		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
+		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
+	}
+	if err := uc.rideRepo.AssignDriver(ctx, rideID, newDriverID); err != nil {
+		log.Printf("[RIDE] Error assigning re-match driver for ride %s: %v", rideID, err)
+		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
+		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
+	}
+
+	ride, _ = uc.rideRepo.GetByID(ctx, rideID)
+	return &domain.DeclineResult{Ride: ride, NewDriverID: &newDriverID, NewDriverFound: true}, nil
 }
 
-func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
-	return uc.transition(ctx, driverID, rideID, domain.RideStatusArrived, func(r *domain.Ride) bool {
-		return r.DriverID != nil && *r.DriverID == driverID
-	})
+func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
+	ride, err := uc.rideRepo.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+	if ride.DriverID == nil || *ride.DriverID != driverID {
+		return nil, domain.ErrForbidden
+	}
+	if !ride.Status.CanTransitionTo(domain.RideStatusArrived) {
+		return nil, domain.ErrInvalidStateTransition
+	}
+
+	// Validate driver is within 50 meters of pickup location.
+	distanceToPickup := driverLocation.DistanceTo(ride.Origin)
+	const maxArrivalDistanceMeters = 50.0
+	if distanceToPickup > maxArrivalDistanceMeters {
+		return nil, domain.ErrDriverTooFarFromPickup
+	}
+
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived); err != nil {
+		return nil, err
+	}
+	return uc.rideRepo.GetByID(ctx, rideID)
 }
 
 func (uc *rideUseCase) Start(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
@@ -119,23 +196,69 @@ func (uc *rideUseCase) Start(ctx context.Context, driverID, rideID uuid.UUID) (*
 	})
 }
 
-func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID) (*domain.Ride, error) {
-	ride, err := uc.transition(ctx, driverID, rideID, domain.RideStatusCompleted, func(r *domain.Ride) bool {
-		return r.DriverID != nil && *r.DriverID == driverID
-	})
+func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation domain.LatLng) (*domain.Ride, error) {
+	ride, err := uc.rideRepo.GetByID(ctx, rideID)
 	if err != nil {
 		return nil, err
 	}
+	if ride.DriverID == nil || *ride.DriverID != driverID {
+		return nil, domain.ErrForbidden
+	}
+	if !ride.Status.CanTransitionTo(domain.RideStatusCompleted) {
+		return nil, domain.ErrInvalidStateTransition
+	}
+
+	// Validate driver is within 100 meters of destination location.
+	distanceToDestination := driverLocation.DistanceTo(ride.Destination)
+	const maxCompletionDistanceMeters = 100.0
+	if distanceToDestination > maxCompletionDistanceMeters {
+		return nil, domain.ErrDriverTooFarFromDestination
+	}
+
+	// Calculate actual fare using actual distance/duration.
+	// Distance is approximated from the straight-line distance between origin and destination.
+	distanceM := ride.Origin.DistanceTo(ride.Destination)
+	distanceKm := distanceM / 1000.0
+	durationMin := distanceKm * 3.0 // rough estimate: 3 min per km (20 km/h average)
+	// Use default car rates — in production these come from fare_configs table.
+	baseFare := 50.0
+	perKmRate := 10.0
+	perMinRate := 2.0
+	bookingFee := 5.0
+	actualFare, breakdown := uc.fareCalculator.CalculateActualFare(distanceKm, durationMin, baseFare, perKmRate, perMinRate, bookingFee, 1.0, 0.0)
+
+	// Convert breakdown to JSONMap for storage.
+	breakdownJSON := domain.JSONMap{
+		"base_fare":       breakdown.BaseFare,
+		"distance_charge": breakdown.DistanceCharge,
+		"time_charge":     breakdown.TimeCharge,
+		"booking_fee":     breakdown.BookingFee,
+	}
+
+	// Store actual fare and breakdown on the ride.
+	if err := uc.rideRepo.UpdateRideFare(ctx, rideID, actualFare, breakdownJSON); err != nil {
+		log.Printf("[RIDE] Warn: could not update fare for ride %s: %v", rideID, err)
+	}
+
+	// Transition to completed status.
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusCompleted); err != nil {
+		return nil, err
+	}
+
+	ride, err = uc.rideRepo.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Return driver to online pool automatically on completion.
 	// Non-fatal: if this fails the driver can manually set their status.
-	// Log so operations can detect stuck drivers in monitoring.
 	if err := uc.driverRepo.UpdateStatus(ctx, driverID, domain.DriverStatusOnline); err != nil {
 		log.Printf("warn: could not reset driver %s to online after ride completion: %v", driverID, err)
 	}
 	return ride, nil
 }
 
-func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID) (*domain.Ride, error) {
+func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*domain.Ride, error) {
 	ride, err := uc.rideRepo.GetByID(ctx, rideID)
 	if err != nil {
 		return nil, err
@@ -156,7 +279,27 @@ func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain
 		}
 		by = domain.CancelledByDriver
 	}
-	if err := uc.rideRepo.SetCancelled(ctx, rideID, by); err != nil {
+
+	// Validate reason code if provided.
+	if reasonCode != nil && !domain.IsValidCancellationReason(*reasonCode) {
+		reasonCode = nil
+	}
+
+	// Determine cancellation fee from fare configs.
+	// Use default rates — in production these come from fare_configs table.
+	var cancellationFee *float64
+	if ride.RideType != "" {
+		// Default cancellation fee: 10% of estimated fare, minimum 20.0
+		if ride.EstimatedFare != nil && *ride.EstimatedFare > 0 {
+			fee := (*ride.EstimatedFare) * 0.10
+			if fee < 20.0 {
+				fee = 20.0
+			}
+			cancellationFee = &fee
+		}
+	}
+
+	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)

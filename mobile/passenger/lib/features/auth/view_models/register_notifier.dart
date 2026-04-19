@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/auth_exception.dart';
 import '../repositories/auth_repository.dart';
@@ -52,11 +53,19 @@ class RegisterNotifier extends Notifier<RegisterState> {
     state = const RegisterState(busy: true);
 
     try {
-      await _authRepo.register(
+      final session = await _authRepo.register(
         name: name.trim(),
         email: email.trim(),
         password: password,
       );
+      await ref
+          .read(tokenStorageProvider)
+          .save(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            expiresAt: session.accessTokenExpiresAt,
+          );
+      ref.read(authStateProvider.notifier).markAuthenticated();
       state = const RegisterState(succeeded: true);
     } on AuthException catch (e) {
       state = RegisterState(errorMessage: e.userMessage);

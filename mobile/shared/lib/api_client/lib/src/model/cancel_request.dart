@@ -1,8 +1,8 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,12 +11,18 @@ part 'cancel_request.g.dart';
 /// CancelRequest
 ///
 /// Properties:
-/// * [reason] - Optional cancellation reason
+/// * [reasonCode] - Predefined cancellation reason
+/// * [reasonText] - Free-text explanation when reason_code is \"other\"
 @BuiltValue()
 abstract class CancelRequest implements Built<CancelRequest, CancelRequestBuilder> {
-  /// Optional cancellation reason
-  @BuiltValueField(wireName: r'reason')
-  String? get reason;
+  /// Predefined cancellation reason
+  @BuiltValueField(wireName: r'reason_code')
+  CancelRequestReasonCodeEnum get reasonCode;
+  // enum reasonCodeEnum {  driver_too_far,  changed_plans,  wrong_pickup,  driver_not_moving,  safety_concern,  other,  };
+
+  /// Free-text explanation when reason_code is \"other\"
+  @BuiltValueField(wireName: r'reason_text')
+  String? get reasonText;
 
   CancelRequest._();
 
@@ -41,11 +47,16 @@ class _$CancelRequestSerializer implements PrimitiveSerializer<CancelRequest> {
     CancelRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    if (object.reason != null) {
-      yield r'reason';
+    yield r'reason_code';
+    yield serializers.serialize(
+      object.reasonCode,
+      specifiedType: const FullType(CancelRequestReasonCodeEnum),
+    );
+    if (object.reasonText != null) {
+      yield r'reason_text';
       yield serializers.serialize(
-        object.reason,
-        specifiedType: const FullType(String),
+        object.reasonText,
+        specifiedType: const FullType.nullable(String),
       );
     }
   }
@@ -71,12 +82,20 @@ class _$CancelRequestSerializer implements PrimitiveSerializer<CancelRequest> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
-        case r'reason':
+        case r'reason_code':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.reason = valueDes;
+            specifiedType: const FullType(CancelRequestReasonCodeEnum),
+          ) as CancelRequestReasonCodeEnum;
+          result.reasonCode = valueDes;
+          break;
+        case r'reason_text':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.reasonText = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -105,5 +124,34 @@ class _$CancelRequestSerializer implements PrimitiveSerializer<CancelRequest> {
     );
     return result.build();
   }
+}
+
+class CancelRequestReasonCodeEnum extends EnumClass {
+
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'driver_too_far')
+  static const CancelRequestReasonCodeEnum driverTooFar = _$cancelRequestReasonCodeEnum_driverTooFar;
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'changed_plans')
+  static const CancelRequestReasonCodeEnum changedPlans = _$cancelRequestReasonCodeEnum_changedPlans;
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'wrong_pickup')
+  static const CancelRequestReasonCodeEnum wrongPickup = _$cancelRequestReasonCodeEnum_wrongPickup;
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'driver_not_moving')
+  static const CancelRequestReasonCodeEnum driverNotMoving = _$cancelRequestReasonCodeEnum_driverNotMoving;
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'safety_concern')
+  static const CancelRequestReasonCodeEnum safetyConcern = _$cancelRequestReasonCodeEnum_safetyConcern;
+  /// Predefined cancellation reason
+  @BuiltValueEnumConst(wireName: r'other')
+  static const CancelRequestReasonCodeEnum other = _$cancelRequestReasonCodeEnum_other;
+
+  static Serializer<CancelRequestReasonCodeEnum> get serializer => _$cancelRequestReasonCodeEnumSerializer;
+
+  const CancelRequestReasonCodeEnum._(String name): super(name);
+
+  static BuiltSet<CancelRequestReasonCodeEnum> get values => _$cancelRequestReasonCodeEnumValues;
+  static CancelRequestReasonCodeEnum valueOf(String name) => _$cancelRequestReasonCodeEnumValueOf(name);
 }
 

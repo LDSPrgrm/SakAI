@@ -5,6 +5,7 @@ import 'package:sakai_api_client/sakai_api_client.dart';
 
 import '../models/auth_exception.dart';
 import '../models/auth_session.dart';
+import '../models/session_check_result.dart';
 import 'auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -80,21 +81,55 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<bool> hasValidSession() async {
+  Future<SessionCheckResult> checkSession() async {
     try {
+      debugPrint(
+        '[AuthRepo] Checking session at: ${_client.dio.options.baseUrl}/users/me',
+      );
       await _client.getUsersApi().usersGetMe();
-      return true;
+      return const SessionCheckResult.authenticated();
     } on DioException catch (e) {
-      // 401 = token expired or missing; any other error = treat as not authenticated
-      if (e.response?.statusCode == 401) return false;
-      // Network errors: conservatively return false so user lands on login.
-      return false;
+      if (e.response?.statusCode == 401) {
+        return const SessionCheckResult.unauthenticated();
+      }
+
+      // 2xx = session is valid even if body parsing fails (generated client bug).
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        return const SessionCheckResult.authenticated();
+      }
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        return const SessionCheckResult.transientError(
+          reason: SessionCheckFailureReason.network,
+        );
+      }
+
+      final sc = e.response?.statusCode;
+      if (sc != null && sc >= 500) {
+        return const SessionCheckResult.transientError(
+          reason: SessionCheckFailureReason.server,
+        );
+      }
+
+      return const SessionCheckResult.transientError();
     }
+  }
+
+  @override
+  Future<void> logout({required String refreshToken}) async {
+    if (refreshToken.isEmpty) return;
+    final request = LogoutRequest((b) => b..refreshToken = refreshToken);
+    await _client.getAuthApi().authLogout(logoutRequest: request);
   }
 
   AuthException _fromDio(DioException e) {
     debugPrint('[AuthRepo] Error: ${e.type} - ${e.message}');
     debugPrint('[AuthRepo] Requested URI: ${e.requestOptions.uri}');
+    debugPrint('[AuthRepo] Base URL was: ${e.requestOptions.baseUrl}');
     if (e.response != null) {
       debugPrint('[AuthRepo] Status: ${e.response?.statusCode}');
       debugPrint('[AuthRepo] Response: ${e.response?.data}');

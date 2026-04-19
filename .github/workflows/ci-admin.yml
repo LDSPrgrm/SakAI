@@ -1,17 +1,17 @@
-name: CI — Admin Panel
+name: CI - Admin Panel
 
 on:
   push:
     branches: [main, admin]
     paths:
-      - 'admin/**'
-      - 'openapi/**'
-      - '.github/workflows/ci-admin.yml'
+      - "admin/**"
+      - "openapi/**"
+      - ".github/workflows/ci-admin.yml"
   pull_request:
     paths:
-      - 'admin/**'
-      - 'openapi/**'
-      - '.github/workflows/ci-admin.yml'
+      - "admin/**"
+      - "openapi/**"
+      - ".github/workflows/ci-admin.yml"
 
 concurrency:
   group: ci-admin-${{ github.ref }}
@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
           cache-dependency-path: admin/package-lock.json
 
@@ -59,7 +59,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
           cache-dependency-path: admin/package-lock.json
 
@@ -85,7 +85,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
           cache-dependency-path: admin/package-lock.json
 

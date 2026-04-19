@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:passenger/app/passenger_app.dart';
 import 'package:passenger/app/providers.dart';
 import 'package:passenger/features/auth/models/auth_session.dart';
+import 'package:passenger/features/auth/models/session_check_result.dart';
 import 'package:passenger/features/auth/repositories/auth_repository.dart';
 import 'package:passenger/features/ride/repositories/ride_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
@@ -40,7 +41,11 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<bool> hasValidSession() async => false; // always redirect to login in tests
+  Future<SessionCheckResult> checkSession() async =>
+      const SessionCheckResult.unauthenticated();
+
+  @override
+  Future<void> logout({required String refreshToken}) async {}
 }
 
 class _FakeRideRepository implements RideRepository {
@@ -50,6 +55,8 @@ class _FakeRideRepository implements RideRepository {
     required RideLocation destination,
     String? notes,
     required String idempotencyKey,
+    VehicleType? rideType,
+    String? paymentMethod,
   }) async {
     return RideEntity(
       id: 'fake-ride',
@@ -65,7 +72,11 @@ class _FakeRideRepository implements RideRepository {
   Future<RideEntity?> getActiveRide() async => null;
 
   @override
-  Future<void> cancelRide(String rideId) async {}
+  Future<void> cancelRide(
+    String rideId, {
+    String? reasonCode,
+    String? reasonText,
+  }) async {}
 }
 
 class _FakeOnboardingService implements OnboardingService {

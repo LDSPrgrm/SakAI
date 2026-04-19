@@ -21,6 +21,7 @@ import (
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
+	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
 	"github.com/sakai/backend/internal/usecase"
 )
@@ -35,9 +36,9 @@ func main() {
 	cfg := configs.Load()
 
 	// ── Migrations ────────────────────────────────────────────────────────────
-	// Runs all pending UP migrations at startup. Already-applied migrations are
-	// skipped. The path is relative to where the binary is executed.
-	if err := database.Migrate(cfg.DatabaseURL, cfg.MigrationsDir); err != nil {
+	// Runs all pending UP migrations at startup from embedded files.
+	// Already-applied migrations are skipped.
+	if err := database.Migrate(cfg.DatabaseURL); err != nil {
 		log.Fatalf("migrations: %v", err)
 	}
 	log.Println("migrations: up to date")
@@ -88,6 +89,10 @@ func main() {
 	systemRepo := postgres.NewSystemRepo(pool)
 	reportRepo := postgres.NewReportRepo(pool)
 	metricsIndividualRepo := postgres.NewMetricsRepo(pool)
+	// New repositories for documents, ratings, and ride payments.
+	docRepo := postgres.NewDocumentRepo(pool)
+	ratingRepo := postgres.NewRatingRepo(pool)
+	ridePaymentRepo := postgres.NewRidePaymentRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -97,7 +102,8 @@ func main() {
 		cfg.RefreshTokenExpiry,
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo)
-	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo)
+	fareCalc := usecase.NewFareCalculator()
+	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
@@ -107,6 +113,24 @@ func main() {
 	systemUC := usecase.NewSystemUseCase(systemRepo, auditRepo)
 	reportUC := usecase.NewReportUseCase(reportRepo)
 	metricsUC := usecase.NewMetricsUseCase(metricsIndividualRepo)
+	// New use cases for documents, ratings, and payment processing.
+	documentUC := usecase.NewDocumentUseCase(docRepo, rideRepo)
+	ratingUC := usecase.NewRatingUseCase(ratingRepo, rideRepo)
+
+	// Stripe client — real SDK replaces the stub.
+	stripeClient := stripe.New(cfg.StripeSecretKey)
+
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, postgres.NewEarningsRepo(pool))
+	// Tip use case.
+	tipRepo := postgres.NewTipRepo(pool)
+	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
+
+	// Payment method repository and usecase
+	pmRepo := postgres.NewPaymentMethodRepo(pool)
+	pmUC := usecase.NewPaymentMethodUseCase(pmRepo, stripeClient)
+
+	// User ride history usecase
+	userRideUC := usecase.NewUserRideUseCase(rideRepo)
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
@@ -120,19 +144,24 @@ func main() {
 
 	// ── HTTP handlers ─────────────────────────────────────────────────────────
 	deps := router.Deps{
-		Auth:    handler.NewAuthHandler(authUC),
-		Driver:  handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:    handler.NewRideHandler(rideUC, dispatcher),
-		Admin:   handler.NewAdminHandler(adminUC, auditUC),
-		Fare:    handler.NewFareHandler(fareUC),
-		Audit:   handler.NewAuditHandler(auditUC),
-		Role:    handler.NewRoleHandler(roleUC),
-		Payment: handler.NewPaymentHandler(paymentUC),
-		Safety:  handler.NewSafetyHandler(safetyUC),
-		System:  handler.NewSystemHandler(systemUC),
-		Report:  handler.NewReportHandler(reportUC),
-		Metrics: handler.NewMetricsHandler(metricsUC),
-		WS:      ws.NewHandler(hub),
+		Auth:           handler.NewAuthHandler(authUC),
+		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo),
+		Admin:          handler.NewAdminHandler(adminUC, auditUC),
+		Fare:           handler.NewFareHandler(fareUC),
+		Audit:          handler.NewAuditHandler(auditUC),
+		Role:           handler.NewRoleHandler(roleUC),
+		Payment:        handler.NewPaymentHandler(paymentUC),
+		Safety:         handler.NewSafetyHandler(safetyUC),
+		System:         handler.NewSystemHandler(systemUC),
+		Report:         handler.NewReportHandler(reportUC),
+		Metrics:        handler.NewMetricsHandler(metricsUC),
+		Document:       handler.NewDocumentHandler(documentUC),
+		Rating:         handler.NewRatingHandler(ratingUC),
+		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
+		Tip:            handler.NewTipHandler(tipUC),
+		PaymentMethod:  handler.NewPaymentMethodHandler(pmUC),
+		WS:             ws.NewHandler(hub),
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

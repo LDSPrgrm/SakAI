@@ -57,17 +57,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
   }
 
+  String? _fieldError(String key) {
+    final state = ref.watch(registerNotifierProvider);
+    return state.fieldErrors[key];
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = SakaiDesignTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(registerNotifierProvider);
 
-    ref.listen<RegisterState>(registerNotifierProvider, (_, next) {
-      if (next.succeeded) {
+    ref.listen<RegisterState>(registerNotifierProvider, (previous, next) {
+      if (next.succeeded && !(previous?.succeeded ?? false)) {
         context.go(Routes.home);
       }
-      if (next.errorMessage != null) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -130,6 +136,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         keyboardType: TextInputType.name,
                         textInputAction: TextInputAction.next,
                         enabled: !state.busy,
+                        errorText: _fieldError('name'),
                       ),
                       SizedBox(height: t.spaceMd),
                       SakaiTextField(
@@ -140,6 +147,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         enabled: !state.busy,
+                        errorText: _fieldError('email'),
                       ),
                       SizedBox(height: t.spaceMd),
                       SakaiTextField(
@@ -150,6 +158,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: true,
                         textInputAction: TextInputAction.next,
                         enabled: !state.busy,
+                        errorText: _fieldError('password'),
                       ),
                       SizedBox(height: t.spaceMd),
                       SakaiTextField(
@@ -160,6 +169,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: true,
                         textInputAction: TextInputAction.next,
                         enabled: !state.busy,
+                        errorText: _fieldError('confirmPassword'),
                       ),
                       SizedBox(height: t.spaceXl * 2),
 
@@ -169,6 +179,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: t.spaceLg),
+
+                      // Vehicle Type Dropdown
+                      DropdownButtonFormField<RegVehicleType>(
+                        initialValue: state.selectedVehicleType,
+                        decoration: InputDecoration(
+                          labelText: 'Vehicle Type',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: const Icon(Icons.directions_car),
+                        ),
+                        items: RegVehicleType.values.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type.displayName),
+                          );
+                        }).toList(),
+                        onChanged: state.busy
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  ref
+                                      .read(registerNotifierProvider.notifier)
+                                      .setVehicleType(value);
+                                }
+                              },
+                      ),
+                      SizedBox(height: t.spaceMd),
+
                       Row(
                         children: [
                           Expanded(
@@ -178,6 +217,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               hint: 'Toyota',
                               textInputAction: TextInputAction.next,
                               enabled: !state.busy,
+                              errorText: _fieldError('vehicleMake'),
                             ),
                           ),
                           SizedBox(width: t.spaceMd),
@@ -188,6 +228,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               hint: 'Vios',
                               textInputAction: TextInputAction.next,
                               enabled: !state.busy,
+                              errorText: _fieldError('vehicleModel'),
                             ),
                           ),
                         ],
@@ -202,6 +243,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               hint: 'ABC 1234',
                               textInputAction: TextInputAction.next,
                               enabled: !state.busy,
+                              errorText: _fieldError('vehiclePlate'),
                             ),
                           ),
                           SizedBox(width: t.spaceMd),
@@ -212,6 +254,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               hint: 'Silver',
                               textInputAction: TextInputAction.next,
                               enabled: !state.busy,
+                              errorText: _fieldError('vehicleColor'),
                             ),
                           ),
                         ],
@@ -224,6 +267,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.done,
                         enabled: !state.busy,
+                        errorText: _fieldError('vehicleYear'),
                       ),
 
                       SizedBox(height: t.spaceXl),

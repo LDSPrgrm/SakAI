@@ -18,9 +18,11 @@ class SakaiTextField extends StatelessWidget {
     this.enabled = true,
     this.maxLines = 1,
     this.errorText,
+    this.focusNode,
   });
 
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String? label;
   final String? hint;
   final bool obscureText;
@@ -40,6 +42,7 @@ class SakaiTextField extends StatelessWidget {
       padding: EdgeInsets.only(bottom: t.spaceSm),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         obscureText: obscureText,
         keyboardType: keyboardType,
         textInputAction: textInputAction,

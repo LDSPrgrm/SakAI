@@ -9,6 +9,9 @@ All URIs are relative to *http://localhost:8080/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**addRideTip**](RidesApi.md#addridetip) | **POST** /rides/{rideId}/tip | Add a tip to a completed ride
+[**getRideReceipt**](RidesApi.md#getridereceipt) | **GET** /rides/{rideId}/receipt | Get payment receipt for a completed ride
+[**paymentProcess**](RidesApi.md#paymentprocess) | **POST** /payments/process | Process a card payment for a completed ride
 [**rideAccept**](RidesApi.md#rideaccept) | **POST** /rides/{rideId}/accept | Driver accepts the ride offer
 [**rideArrive**](RidesApi.md#ridearrive) | **POST** /rides/{rideId}/arrive | Driver signals arrival at pickup
 [**rideCancel**](RidesApi.md#ridecancel) | **POST** /rides/{rideId}/cancel | Cancel an active ride
@@ -16,9 +19,144 @@ Method | HTTP request | Description
 [**rideDecline**](RidesApi.md#ridedecline) | **POST** /rides/{rideId}/decline | Driver declines the ride offer
 [**rideGet**](RidesApi.md#rideget) | **GET** /rides/{rideId} | Get ride details by ID
 [**rideGetActive**](RidesApi.md#ridegetactive) | **GET** /rides/active | Get the caller&#39;s current active ride
+[**rideList**](RidesApi.md#ridelist) | **GET** /rides | List user&#39;s ride history
 [**rideRequest**](RidesApi.md#riderequest) | **POST** /rides | Request a new ride
 [**rideStart**](RidesApi.md#ridestart) | **POST** /rides/{rideId}/start | Driver starts the ride after passenger boards
+[**submitRating**](RidesApi.md#submitrating) | **POST** /rides/{rideId}/rating | Submit a rating for the other party in a ride
 
+
+# **addRideTip**
+> TipResponse addRideTip(rideId, addRideTipRequest)
+
+Add a tip to a completed ride
+
+Add an optional tip to a completed ride's payment. Only the passenger associated with the ride can add a tip. Tips can only be added after ride completion. Maximum tip amount is 50% of base fare. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final AddRideTipRequest addRideTipRequest = ; // AddRideTipRequest | 
+
+try {
+    final response = api.addRideTip(rideId, addRideTipRequest);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->addRideTip: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **rideId** | **String**| UUID of the ride | 
+ **addRideTipRequest** | [**AddRideTipRequest**](AddRideTipRequest.md)|  | 
+
+### Return type
+
+[**TipResponse**](TipResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getRideReceipt**
+> ReceiptResponse getRideReceipt(rideId)
+
+Get payment receipt for a completed ride
+
+Retrieve the payment receipt for a completed ride. Accessible by both the passenger and driver associated with the ride. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+
+try {
+    final response = api.getRideReceipt(rideId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->getRideReceipt: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **rideId** | **String**| UUID of the ride | 
+
+### Return type
+
+[**ReceiptResponse**](ReceiptResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **paymentProcess**
+> PaymentResponse paymentProcess(idempotencyKey, paymentProcessRequest)
+
+Process a card payment for a completed ride
+
+Process a card payment using a tokenized payment from the mobile SDK (e.g., Stripe). Requires `Idempotency-Key` header for safe retry handling. Only the passenger associated with the ride can process payment. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final String idempotencyKey = 550e8400-e29b-41d4-a716-446655440000; // String | Client-generated UUID to prevent duplicate ride creation on retries. Generate once per request attempt and store until a definitive response is received. 
+final PaymentProcessRequest paymentProcessRequest = ; // PaymentProcessRequest | 
+
+try {
+    final response = api.paymentProcess(idempotencyKey, paymentProcessRequest);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->paymentProcess: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **idempotencyKey** | **String**| Client-generated UUID to prevent duplicate ride creation on retries. Generate once per request attempt and store until a definitive response is received.  | 
+ **paymentProcessRequest** | [**PaymentProcessRequest**](PaymentProcessRequest.md)|  | 
+
+### Return type
+
+[**PaymentResponse**](PaymentResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideAccept**
 > RideResponse rideAccept(rideId)
@@ -64,11 +202,11 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideArrive**
-> RideResponse rideArrive(rideId)
+> RideResponse rideArrive(rideId, rideArriveRequest)
 
 Driver signals arrival at pickup
 
-Transitions: `accepted` → `arrived`. Triggers: `ride.status_changed` WebSocket event → both parties. 
+Transitions: `accepted` → `arrived`. Triggers: `ride.status_changed` WebSocket event → both parties. Requires driver to be within 50 meters of pickup location. 
 
 ### Example
 ```dart
@@ -76,9 +214,10 @@ import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getRidesApi();
 final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final RideArriveRequest rideArriveRequest = ; // RideArriveRequest | 
 
 try {
-    final response = api.rideArrive(rideId);
+    final response = api.rideArrive(rideId, rideArriveRequest);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling RidesApi->rideArrive: $e\n');
@@ -90,6 +229,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rideId** | **String**| UUID of the ride | 
+ **rideArriveRequest** | [**RideArriveRequest**](RideArriveRequest.md)|  | 
 
 ### Return type
 
@@ -101,7 +241,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -152,11 +292,11 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideComplete**
-> RideResponse rideComplete(rideId)
+> RideResponse rideComplete(rideId, rideArriveRequest)
 
 Driver completes the ride at dropoff
 
-Transitions: `in_progress` → `completed`. Driver status automatically returns to `online` after completion. Triggers: `ride.status_changed` WebSocket event → both parties. 
+Transitions: `in_progress` → `completed`. Driver status automatically returns to `online` after completion. Triggers: `ride.status_changed` WebSocket event → both parties. Requires driver to be within 100 meters of destination location. 
 
 ### Example
 ```dart
@@ -164,9 +304,10 @@ import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getRidesApi();
 final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final RideArriveRequest rideArriveRequest = ; // RideArriveRequest | 
 
 try {
-    final response = api.rideComplete(rideId);
+    final response = api.rideComplete(rideId, rideArriveRequest);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling RidesApi->rideComplete: $e\n');
@@ -178,6 +319,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rideId** | **String**| UUID of the ride | 
+ **rideArriveRequest** | [**RideArriveRequest**](RideArriveRequest.md)|  | 
 
 ### Return type
 
@@ -189,7 +331,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -319,6 +461,53 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **rideList**
+> UserRideListResponse rideList(page, limit, status)
+
+List user's ride history
+
+Returns a paginated list of the authenticated user's past rides. Only `role=passenger` may call this. Supports filtering by status. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final int page = 56; // int | Page number (1-based)
+final int limit = 56; // int | Items per page (max 50)
+final String status = status_example; // String | Filter by status (comma-separated): completed,cancelled
+
+try {
+    final response = api.rideList(page, limit, status);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->rideList: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **page** | **int**| Page number (1-based) | [optional] [default to 1]
+ **limit** | **int**| Items per page (max 50) | [optional] [default to 20]
+ **status** | **String**| Filter by status (comma-separated): completed,cancelled | [optional] 
+
+### Return type
+
+[**UserRideListResponse**](UserRideListResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **rideRequest**
 > RideResponse rideRequest(idempotencyKey, rideRequestBody)
 
@@ -403,6 +592,51 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **submitRating**
+> RatingResponse submitRating(rideId, submitRatingRequest)
+
+Submit a rating for the other party in a ride
+
+Submit a rating (1-5 stars) with optional written feedback. Each user can rate once per ride. Both passengers and drivers can rate. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final SubmitRatingRequest submitRatingRequest = ; // SubmitRatingRequest | 
+
+try {
+    final response = api.submitRating(rideId, submitRatingRequest);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->submitRating: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **rideId** | **String**| UUID of the ride | 
+ **submitRatingRequest** | [**SubmitRatingRequest**](SubmitRatingRequest.md)|  | 
+
+### Return type
+
+[**RatingResponse**](RatingResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

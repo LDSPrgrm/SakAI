@@ -12,7 +12,7 @@ class _$DriverSummary extends DriverSummary {
   @override
   final String name;
   @override
-  final VehicleInfo vehicle;
+  final VehicleInfo? vehicle;
   @override
   final LatLng? currentLocation;
 
@@ -22,7 +22,7 @@ class _$DriverSummary extends DriverSummary {
   _$DriverSummary._({
     required this.id,
     required this.name,
-    required this.vehicle,
+    this.vehicle,
     this.currentLocation,
   }) : super._();
   @override
@@ -95,7 +95,7 @@ class DriverSummaryBuilder
     if ($v != null) {
       _id = $v.id;
       _name = $v.name;
-      _vehicle = $v.vehicle.toBuilder();
+      _vehicle = $v.vehicle?.toBuilder();
       _currentLocation = $v.currentLocation?.toBuilder();
       _$v = null;
     }
@@ -131,14 +131,14 @@ class DriverSummaryBuilder
               r'DriverSummary',
               'name',
             ),
-            vehicle: vehicle.build(),
+            vehicle: _vehicle?.build(),
             currentLocation: _currentLocation?.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'vehicle';
-        vehicle.build();
+        _vehicle?.build();
         _$failedField = 'currentLocation';
         _currentLocation?.build();
       } catch (e) {

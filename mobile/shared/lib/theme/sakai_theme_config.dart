@@ -15,32 +15,26 @@ class SakaiThemeConfig {
     this.useMaterial3 = true,
     this.successColor,
     this.dangerColor,
+    this.warningColor,
     this.darkBackgroundColor,
     this.darkSurfaceColor,
     this.darkBorderColor,
   });
 
-  /// Passenger app default: cool, trust-forward palette.
+  /// Passenger app default: bold, energetic red palette.
   factory SakaiThemeConfig.passenger() => SakaiThemeConfig(
-    primarySeed: const Color(0xFF00DC82),
-    secondarySeed: const Color(0xFF0369A1),
+    primarySeed: const Color(0xFFff4b4b),
+    secondarySeed: const Color(0xFFe04343),
     tokens: SakaiDesignTokens.defaults,
   );
 
-  /// Driver app default: distinct accent while sharing the same token scale.
+  /// Driver app default: same red brand identity.
   factory SakaiThemeConfig.driver() => SakaiThemeConfig(
-    // Match the Stitch driver palette:
-    // - primary:     #00dc82
-    // - accent-blue:#1A73E8
-    // - success:    #34A853
-    // - danger:     #EA4335
-    // - dark bg:    #0D1117
-    // - dark surface:#161B22
-    // - dark border:#30363d
-    primarySeed: const Color(0xFF00DC82),
-    secondarySeed: const Color(0xFF1A73E8),
+    primarySeed: const Color(0xFFff4b4b),
+    secondarySeed: const Color(0xFFff4b4b),
     successColor: const Color(0xFF34A853),
     dangerColor: const Color(0xFFEA4335),
+    warningColor: const Color(0xFFFBBC04),
     darkBackgroundColor: const Color(0xFF0D1117),
     darkSurfaceColor: const Color(0xFF161B22),
     darkBorderColor: const Color(0xFF30363D),
@@ -53,6 +47,7 @@ class SakaiThemeConfig {
   final bool useMaterial3;
   final Color? successColor;
   final Color? dangerColor;
+  final Color? warningColor;
   final Color? darkBackgroundColor;
   final Color? darkSurfaceColor;
   final Color? darkBorderColor;
@@ -64,6 +59,7 @@ class SakaiThemeConfig {
     bool? useMaterial3,
     Color? successColor,
     Color? dangerColor,
+    Color? warningColor,
     Color? darkBackgroundColor,
     Color? darkSurfaceColor,
     Color? darkBorderColor,
@@ -75,6 +71,7 @@ class SakaiThemeConfig {
       useMaterial3: useMaterial3 ?? this.useMaterial3,
       successColor: successColor ?? this.successColor,
       dangerColor: dangerColor ?? this.dangerColor,
+      warningColor: warningColor ?? this.warningColor,
       darkBackgroundColor: darkBackgroundColor ?? this.darkBackgroundColor,
       darkSurfaceColor: darkSurfaceColor ?? this.darkSurfaceColor,
       darkBorderColor: darkBorderColor ?? this.darkBorderColor,

@@ -99,41 +99,75 @@ All URIs are relative to *http://localhost:8080/api*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 [*AdminApi*](doc/AdminApi.md) | [**adminApprovePayout**](doc/AdminApi.md#adminapprovepayout) | **PUT** /admin/payments/payouts/{id}/approve | Approve a driver payout
+[*AdminApi*](doc/AdminApi.md) | [**adminAuditExport**](doc/AdminApi.md#adminauditexport) | **GET** /admin/audit/export | Export audit log as CSV
+[*AdminApi*](doc/AdminApi.md) | [**adminBatchApprovePayouts**](doc/AdminApi.md#adminbatchapprovepayouts) | **POST** /admin/payments/payouts/approve | Batch approve driver payouts
+[*AdminApi*](doc/AdminApi.md) | [**adminBatchKyc**](doc/AdminApi.md#adminbatchkyc) | **POST** /admin/safety/kyc/batch | Batch approve or reject KYC submissions
+[*AdminApi*](doc/AdminApi.md) | [**adminChangePassword**](doc/AdminApi.md#adminchangepassword) | **PUT** /admin/auth/password | Change own password
+[*AdminApi*](doc/AdminApi.md) | [**adminCreateRole**](doc/AdminApi.md#admincreaterole) | **POST** /admin/roles | Create a custom role
 [*AdminApi*](doc/AdminApi.md) | [**adminCreateUser**](doc/AdminApi.md#admincreateuser) | **POST** /admin/users | Create a new administrator
+[*AdminApi*](doc/AdminApi.md) | [**adminDeactivateUser**](doc/AdminApi.md#admindeactivateuser) | **DELETE** /admin/users/{id} | Deactivate an administrator
+[*AdminApi*](doc/AdminApi.md) | [**adminDeleteRole**](doc/AdminApi.md#admindeleterole) | **DELETE** /admin/roles/{id} | Delete a role
 [*AdminApi*](doc/AdminApi.md) | [**adminExportReport**](doc/AdminApi.md#adminexportreport) | **POST** /admin/reports/export/{type} | Generate a report export
 [*AdminApi*](doc/AdminApi.md) | [**adminGetCommissionConfig**](doc/AdminApi.md#admingetcommissionconfig) | **GET** /admin/payments/commission-config | Get commission configuration
+[*AdminApi*](doc/AdminApi.md) | [**adminGetCompliance**](doc/AdminApi.md#admingetcompliance) | **GET** /admin/safety/compliance | LTFRB compliance dashboard data
 [*AdminApi*](doc/AdminApi.md) | [**adminGetDashboard**](doc/AdminApi.md#admingetdashboard) | **GET** /admin/dashboard | Get platform dashboard metrics
 [*AdminApi*](doc/AdminApi.md) | [**adminGetFares**](doc/AdminApi.md#admingetfares) | **GET** /admin/fares | Get fare configurations
 [*AdminApi*](doc/AdminApi.md) | [**adminGetFeatureFlags**](doc/AdminApi.md#admingetfeatureflags) | **GET** /admin/system/feature-flags | Get all feature flags
 [*AdminApi*](doc/AdminApi.md) | [**adminGetIntegrations**](doc/AdminApi.md#admingetintegrations) | **GET** /admin/system/integrations | Get 3rd party integrations
 [*AdminApi*](doc/AdminApi.md) | [**adminGetKycQueue**](doc/AdminApi.md#admingetkycqueue) | **GET** /admin/safety/kyc | Get KYC queue
 [*AdminApi*](doc/AdminApi.md) | [**adminGetNotificationTemplates**](doc/AdminApi.md#admingetnotificationtemplates) | **GET** /admin/system/notification-templates | Get notification templates
+[*AdminApi*](doc/AdminApi.md) | [**adminGetPaymentConfig**](doc/AdminApi.md#admingetpaymentconfig) | **GET** /admin/payments/config | Get payment gateway configurations
 [*AdminApi*](doc/AdminApi.md) | [**adminGetPaymentSummary**](doc/AdminApi.md#admingetpaymentsummary) | **GET** /admin/payments/summary | Get financial summary
 [*AdminApi*](doc/AdminApi.md) | [**adminGetPayouts**](doc/AdminApi.md#admingetpayouts) | **GET** /admin/payments/payouts | Get pending driver payouts
 [*AdminApi*](doc/AdminApi.md) | [**adminGetReportChart**](doc/AdminApi.md#admingetreportchart) | **GET** /admin/reports/chart/{type} | Get data for a specific report chart
 [*AdminApi*](doc/AdminApi.md) | [**adminGetReportList**](doc/AdminApi.md#admingetreportlist) | **GET** /admin/reports/list | Get available reports
+[*AdminApi*](doc/AdminApi.md) | [**adminGetRole**](doc/AdminApi.md#admingetrole) | **GET** /admin/roles/{id} | Get role with permissions
+[*AdminApi*](doc/AdminApi.md) | [**adminGetRoleAdmins**](doc/AdminApi.md#admingetroleadmins) | **GET** /admin/roles/{id}/admins | List admins assigned to a role
+[*AdminApi*](doc/AdminApi.md) | [**adminGetRolePermissions**](doc/AdminApi.md#admingetrolepermissions) | **GET** /admin/roles/{id}/permissions | Get permission set for a role
 [*AdminApi*](doc/AdminApi.md) | [**adminGetServices**](doc/AdminApi.md#admingetservices) | **GET** /admin/system/services | Get system services health
+[*AdminApi*](doc/AdminApi.md) | [**adminGetSurge**](doc/AdminApi.md#admingetsurge) | **GET** /admin/fares/surge | Get surge pricing configuration
 [*AdminApi*](doc/AdminApi.md) | [**adminGetTransactions**](doc/AdminApi.md#admingettransactions) | **GET** /admin/payments/transactions | Get recent transactions
+[*AdminApi*](doc/AdminApi.md) | [**adminGetUserActivity**](doc/AdminApi.md#admingetuseractivity) | **GET** /admin/users/{id}/activity | Get admin activity log
 [*AdminApi*](doc/AdminApi.md) | [**adminListAudit**](doc/AdminApi.md#adminlistaudit) | **GET** /admin/audit | List audit logs
+[*AdminApi*](doc/AdminApi.md) | [**adminListDrivers**](doc/AdminApi.md#adminlistdrivers) | **GET** /admin/users/drivers | List all drivers
 [*AdminApi*](doc/AdminApi.md) | [**adminListIncidents**](doc/AdminApi.md#adminlistincidents) | **GET** /admin/incidents | List system incidents
+[*AdminApi*](doc/AdminApi.md) | [**adminListPassengers**](doc/AdminApi.md#adminlistpassengers) | **GET** /admin/users/passengers | List all passengers
+[*AdminApi*](doc/AdminApi.md) | [**adminListRides**](doc/AdminApi.md#adminlistrides) | **GET** /admin/rides | List all rides (Admin Browse)
+[*AdminApi*](doc/AdminApi.md) | [**adminListRoles**](doc/AdminApi.md#adminlistroles) | **GET** /admin/roles | List all roles
 [*AdminApi*](doc/AdminApi.md) | [**adminListUsers**](doc/AdminApi.md#adminlistusers) | **GET** /admin/users | List all administrators
+[*AdminApi*](doc/AdminApi.md) | [**adminMetricsDrivers**](doc/AdminApi.md#adminmetricsdrivers) | **GET** /admin/metrics/drivers | Active driver count with trend
+[*AdminApi*](doc/AdminApi.md) | [**adminMetricsRevenue**](doc/AdminApi.md#adminmetricsrevenue) | **GET** /admin/metrics/revenue | Revenue for a period (PHP)
+[*AdminApi*](doc/AdminApi.md) | [**adminMetricsRiders**](doc/AdminApi.md#adminmetricsriders) | **GET** /admin/metrics/riders | Active rider count with trend
+[*AdminApi*](doc/AdminApi.md) | [**adminMetricsRides**](doc/AdminApi.md#adminmetricsrides) | **GET** /admin/metrics/rides | Ride count for a period
+[*AdminApi*](doc/AdminApi.md) | [**adminMetricsWaitTime**](doc/AdminApi.md#adminmetricswaittime) | **GET** /admin/metrics/wait-time | Average wait time stats
 [*AdminApi*](doc/AdminApi.md) | [**adminResolveIncident**](doc/AdminApi.md#adminresolveincident) | **PUT** /admin/incidents/{id}/resolve | Resolve an incident
 [*AdminApi*](doc/AdminApi.md) | [**adminSimulateFare**](doc/AdminApi.md#adminsimulatefare) | **POST** /admin/fares/simulate | Simulate a ride fare
+[*AdminApi*](doc/AdminApi.md) | [**adminTestIntegration**](doc/AdminApi.md#admintestintegration) | **POST** /admin/system/integrations/{service}/test | Test integration health
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateCommissionConfig**](doc/AdminApi.md#adminupdatecommissionconfig) | **PUT** /admin/payments/commission-config | Update commission configuration
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateFares**](doc/AdminApi.md#adminupdatefares) | **PUT** /admin/fares | Update base fares
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateFeatureFlag**](doc/AdminApi.md#adminupdatefeatureflag) | **PUT** /admin/system/feature-flags/{key} | Update a feature flag
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateIntegration**](doc/AdminApi.md#adminupdateintegration) | **PUT** /admin/system/integrations/{service} | Update integration settings
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateKycStatus**](doc/AdminApi.md#adminupdatekycstatus) | **PUT** /admin/safety/kyc/{id} | Update KYC status
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateNotificationTemplate**](doc/AdminApi.md#adminupdatenotificationtemplate) | **PUT** /admin/system/notification-templates/{event} | Update a notification template
+[*AdminApi*](doc/AdminApi.md) | [**adminUpdatePaymentConfig**](doc/AdminApi.md#adminupdatepaymentconfig) | **PUT** /admin/payments/config/{provider} | Update payment gateway config
+[*AdminApi*](doc/AdminApi.md) | [**adminUpdateRole**](doc/AdminApi.md#adminupdaterole) | **PUT** /admin/roles/{id} | Update role
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateSurge**](doc/AdminApi.md#adminupdatesurge) | **PUT** /admin/surge | Update surge configuration
 [*AdminApi*](doc/AdminApi.md) | [**adminUpdateUser**](doc/AdminApi.md#adminupdateuser) | **PUT** /admin/users/{id} | Update administrator status
 [*AuthApi*](doc/AuthApi.md) | [**authLogin**](doc/AuthApi.md#authlogin) | **POST** /auth/login | Login and receive tokens
 [*AuthApi*](doc/AuthApi.md) | [**authLogout**](doc/AuthApi.md#authlogout) | **POST** /auth/logout | Logout and invalidate tokens
 [*AuthApi*](doc/AuthApi.md) | [**authRefresh**](doc/AuthApi.md#authrefresh) | **POST** /auth/refresh | Refresh the access token
 [*AuthApi*](doc/AuthApi.md) | [**authRegister**](doc/AuthApi.md#authregister) | **POST** /auth/register | Register a new user
+[*DriverApi*](doc/DriverApi.md) | [**driverGetDocumentStatus**](doc/DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
+[*DriverApi*](doc/DriverApi.md) | [**driverGetEarnings**](doc/DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [*DriverApi*](doc/DriverApi.md) | [**driverGetIncomingRide**](doc/DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
+[*DriverApi*](doc/DriverApi.md) | [**driverListDocuments**](doc/DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [*DriverApi*](doc/DriverApi.md) | [**driverSetStatus**](doc/DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [*DriverApi*](doc/DriverApi.md) | [**driverUpdateLocation**](doc/DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
+[*DriverApi*](doc/DriverApi.md) | [**driverUploadDocument**](doc/DriverApi.md#driveruploaddocument) | **POST** /drivers/documents | Upload a driver verification document
+[*DriverApi*](doc/DriverApi.md) | [**getNearbyDrivers**](doc/DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers by ride type
+[*RidesApi*](doc/RidesApi.md) | [**addRideTip**](doc/RidesApi.md#addridetip) | **POST** /rides/{rideId}/tip | Add a tip to a completed ride
+[*RidesApi*](doc/RidesApi.md) | [**getRideReceipt**](doc/RidesApi.md#getridereceipt) | **GET** /rides/{rideId}/receipt | Get payment receipt for a completed ride
+[*RidesApi*](doc/RidesApi.md) | [**paymentProcess**](doc/RidesApi.md#paymentprocess) | **POST** /payments/process | Process a card payment for a completed ride
 [*RidesApi*](doc/RidesApi.md) | [**rideAccept**](doc/RidesApi.md#rideaccept) | **POST** /rides/{rideId}/accept | Driver accepts the ride offer
 [*RidesApi*](doc/RidesApi.md) | [**rideArrive**](doc/RidesApi.md#ridearrive) | **POST** /rides/{rideId}/arrive | Driver signals arrival at pickup
 [*RidesApi*](doc/RidesApi.md) | [**rideCancel**](doc/RidesApi.md#ridecancel) | **POST** /rides/{rideId}/cancel | Cancel an active ride
@@ -141,32 +175,59 @@ Class | Method | HTTP request | Description
 [*RidesApi*](doc/RidesApi.md) | [**rideDecline**](doc/RidesApi.md#ridedecline) | **POST** /rides/{rideId}/decline | Driver declines the ride offer
 [*RidesApi*](doc/RidesApi.md) | [**rideGet**](doc/RidesApi.md#rideget) | **GET** /rides/{rideId} | Get ride details by ID
 [*RidesApi*](doc/RidesApi.md) | [**rideGetActive**](doc/RidesApi.md#ridegetactive) | **GET** /rides/active | Get the caller&#39;s current active ride
+[*RidesApi*](doc/RidesApi.md) | [**rideList**](doc/RidesApi.md#ridelist) | **GET** /rides | List user&#39;s ride history
 [*RidesApi*](doc/RidesApi.md) | [**rideRequest**](doc/RidesApi.md#riderequest) | **POST** /rides | Request a new ride
 [*RidesApi*](doc/RidesApi.md) | [**rideStart**](doc/RidesApi.md#ridestart) | **POST** /rides/{rideId}/start | Driver starts the ride after passenger boards
+[*RidesApi*](doc/RidesApi.md) | [**submitRating**](doc/RidesApi.md#submitrating) | **POST** /rides/{rideId}/rating | Submit a rating for the other party in a ride
+[*SystemApi*](doc/SystemApi.md) | [**getServiceAreas**](doc/SystemApi.md#getserviceareas) | **GET** /service-area | Get platform service areas
 [*SystemApi*](doc/SystemApi.md) | [**healthCheck**](doc/SystemApi.md#healthcheck) | **GET** /health | Health check
+[*UsersApi*](doc/UsersApi.md) | [**getUserRating**](doc/UsersApi.md#getuserrating) | **GET** /users/{userId}/rating | Get average rating for a user
+[*UsersApi*](doc/UsersApi.md) | [**paymentMethodsAdd**](doc/UsersApi.md#paymentmethodsadd) | **POST** /users/me/payment-methods | Add a new payment method
+[*UsersApi*](doc/UsersApi.md) | [**paymentMethodsList**](doc/UsersApi.md#paymentmethodslist) | **GET** /users/me/payment-methods | List user&#39;s saved payment methods
+[*UsersApi*](doc/UsersApi.md) | [**paymentMethodsRemove**](doc/UsersApi.md#paymentmethodsremove) | **DELETE** /users/me/payment-methods/{paymentMethodId} | Remove a payment method
+[*UsersApi*](doc/UsersApi.md) | [**paymentMethodsSetDefault**](doc/UsersApi.md#paymentmethodssetdefault) | **PUT** /users/me/payment-methods/{paymentMethodId}/default | Set default payment method
 [*UsersApi*](doc/UsersApi.md) | [**usersGetMe**](doc/UsersApi.md#usersgetme) | **GET** /users/me | Get the authenticated user&#39;s profile
 
 
 ## Documentation For Models
 
+ - [AddPaymentMethodRequest](doc/AddPaymentMethodRequest.md)
+ - [AddRideTipRequest](doc/AddRideTipRequest.md)
+ - [AdminBatchApprovePayouts200Response](doc/AdminBatchApprovePayouts200Response.md)
+ - [AdminBatchKyc200Response](doc/AdminBatchKyc200Response.md)
  - [AdminExportReport200Response](doc/AdminExportReport200Response.md)
  - [AdminFaresResponse](doc/AdminFaresResponse.md)
+ - [AdminRideItem](doc/AdminRideItem.md)
+ - [AdminRideListResponse](doc/AdminRideListResponse.md)
  - [AdminUpdateFeatureFlagRequest](doc/AdminUpdateFeatureFlagRequest.md)
  - [AdminUpdateKycStatusRequest](doc/AdminUpdateKycStatusRequest.md)
  - [AdminUpdateNotificationTemplateRequest](doc/AdminUpdateNotificationTemplateRequest.md)
+ - [AdminUser](doc/AdminUser.md)
+ - [AdminUserListResponse](doc/AdminUserListResponse.md)
  - [AuditLog](doc/AuditLog.md)
  - [AuditLogResponse](doc/AuditLogResponse.md)
  - [AuthResponse](doc/AuthResponse.md)
+ - [BatchApproveRequest](doc/BatchApproveRequest.md)
  - [BlackoutHour](doc/BlackoutHour.md)
  - [CancelRequest](doc/CancelRequest.md)
+ - [CardDetails](doc/CardDetails.md)
+ - [ChangePasswordRequest](doc/ChangePasswordRequest.md)
  - [CommissionConfig](doc/CommissionConfig.md)
  - [CommissionConfigRates](doc/CommissionConfigRates.md)
+ - [ComplianceData](doc/ComplianceData.md)
  - [CreateAdminRequest](doc/CreateAdminRequest.md)
+ - [CreateRoleRequest](doc/CreateRoleRequest.md)
  - [DashboardResponse](doc/DashboardResponse.md)
+ - [DocumentType](doc/DocumentType.md)
+ - [DriverDocumentResponse](doc/DriverDocumentResponse.md)
+ - [DriverDocumentsListResponse](doc/DriverDocumentsListResponse.md)
+ - [DriverGetEarnings200Response](doc/DriverGetEarnings200Response.md)
  - [DriverPayout](doc/DriverPayout.md)
  - [DriverStatusRequest](doc/DriverStatusRequest.md)
  - [DriverStatusResponse](doc/DriverStatusResponse.md)
  - [DriverSummary](doc/DriverSummary.md)
+ - [EWalletDetails](doc/EWalletDetails.md)
+ - [EarningsItem](doc/EarningsItem.md)
  - [ErrorCode](doc/ErrorCode.md)
  - [ErrorResponse](doc/ErrorResponse.md)
  - [FareConfig](doc/FareConfig.md)
@@ -176,30 +237,63 @@ Class | Method | HTTP request | Description
  - [GeoJSONFeatureCollection](doc/GeoJSONFeatureCollection.md)
  - [GeoJSONFeatureCollectionFeaturesInner](doc/GeoJSONFeatureCollectionFeaturesInner.md)
  - [GeoJSONFeatureCollectionFeaturesInnerGeometry](doc/GeoJSONFeatureCollectionFeaturesInnerGeometry.md)
+ - [GetNearbyDrivers200Response](doc/GetNearbyDrivers200Response.md)
  - [HealthResponse](doc/HealthResponse.md)
  - [HealthResponseDependencies](doc/HealthResponseDependencies.md)
  - [Incident](doc/Incident.md)
  - [IncidentResolveRequest](doc/IncidentResolveRequest.md)
  - [Integration](doc/Integration.md)
+ - [IntegrationTestResult](doc/IntegrationTestResult.md)
+ - [KycBatchRequest](doc/KycBatchRequest.md)
  - [KycEntry](doc/KycEntry.md)
  - [LatLng](doc/LatLng.md)
  - [LocationUpdateRequest](doc/LocationUpdateRequest.md)
  - [LoginRequest](doc/LoginRequest.md)
  - [LogoutRequest](doc/LogoutRequest.md)
+ - [MetricResponse](doc/MetricResponse.md)
+ - [NearbyDriver](doc/NearbyDriver.md)
+ - [NearbyDriversResponse](doc/NearbyDriversResponse.md)
  - [NotificationTemplate](doc/NotificationTemplate.md)
+ - [PaginationMeta](doc/PaginationMeta.md)
+ - [PaymentFailureResponse](doc/PaymentFailureResponse.md)
+ - [PaymentGatewayConfig](doc/PaymentGatewayConfig.md)
+ - [PaymentMethod](doc/PaymentMethod.md)
+ - [PaymentMethodDetails](doc/PaymentMethodDetails.md)
+ - [PaymentMethodListResponse](doc/PaymentMethodListResponse.md)
+ - [PaymentMethodType](doc/PaymentMethodType.md)
+ - [PaymentProcessRequest](doc/PaymentProcessRequest.md)
+ - [PaymentResponse](doc/PaymentResponse.md)
+ - [PaymentStatus](doc/PaymentStatus.md)
  - [PaymentSummary](doc/PaymentSummary.md)
+ - [RatingResponse](doc/RatingResponse.md)
+ - [ReceiptResponse](doc/ReceiptResponse.md)
  - [RefreshRequest](doc/RefreshRequest.md)
  - [RegisterRequest](doc/RegisterRequest.md)
  - [ReportDefinition](doc/ReportDefinition.md)
+ - [RideArriveRequest](doc/RideArriveRequest.md)
+ - [RideEventPayload](doc/RideEventPayload.md)
  - [RideRequestBody](doc/RideRequestBody.md)
  - [RideResponse](doc/RideResponse.md)
  - [RideStatus](doc/RideStatus.md)
+ - [Role](doc/Role.md)
+ - [RolePermission](doc/RolePermission.md)
+ - [ServiceArea](doc/ServiceArea.md)
+ - [ServiceAreaResponse](doc/ServiceAreaResponse.md)
+ - [SubmitRatingRequest](doc/SubmitRatingRequest.md)
  - [SurgeConfig](doc/SurgeConfig.md)
  - [SystemService](doc/SystemService.md)
+ - [TipResponse](doc/TipResponse.md)
  - [Transaction](doc/Transaction.md)
  - [UpdateAdminStatusRequest](doc/UpdateAdminStatusRequest.md)
+ - [UpdatePaymentConfigRequest](doc/UpdatePaymentConfigRequest.md)
+ - [UpdateRoleRequest](doc/UpdateRoleRequest.md)
+ - [UploadStatus](doc/UploadStatus.md)
  - [UserProfile](doc/UserProfile.md)
+ - [UserRatingResponse](doc/UserRatingResponse.md)
+ - [UserRideItem](doc/UserRideItem.md)
+ - [UserRideListResponse](doc/UserRideListResponse.md)
  - [VehicleInfo](doc/VehicleInfo.md)
+ - [VehicleInput](doc/VehicleInput.md)
  - [WsEnvelope](doc/WsEnvelope.md)
  - [WsEventDriverLocationUpdated](doc/WsEventDriverLocationUpdated.md)
  - [WsEventNoDriversAvailable](doc/WsEventNoDriversAvailable.md)

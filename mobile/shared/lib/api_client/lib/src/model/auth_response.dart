@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -125,7 +124,7 @@ class _$AuthResponseSerializer implements PrimitiveSerializer<AuthResponse> {
             value,
             specifiedType: const FullType(UserProfile),
           ) as UserProfile;
-          result.user.replace(valueDes);
+          result.user = valueDes;
           break;
         default:
           unhandled.add(key);

@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -32,7 +34,16 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		// upgrader already wrote the HTTP error response.
 		return
 	}
+	log.Printf("[WS] Registered connection for user %s (%s)", userID, c.GetString("role"))
 	h.hub.Register(userID, conn)
+
+	// Hardening: read limit and deadline prevent resource exhaustion.
+	conn.SetReadLimit(4096)
+	conn.SetReadDeadline(time.Now().Add(2 * h.hub.pingInterval))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(2 * h.hub.pingInterval))
+		return nil
+	})
 
 	// readPump — discard inbound frames; detect disconnection.
 	// WebSocket is server-push only in this design.

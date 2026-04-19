@@ -19,7 +19,7 @@ var mapsApiKey = ""
 val envFile = rootProject.file("../../.env")
 if (envFile.exists()) {
     envFile.readLines().forEach {
-        if (it.startsWith("GOOGLE_MAPS_API_KEY=")) {
+        if (it.startsWith("MAPS_API_KEY=")) {
             mapsApiKey = it.substringAfter("=").trim()
         }
     }
@@ -31,15 +31,17 @@ if (mapsApiKey.isEmpty()) {
 android {
     namespace = "com.sakai.rider"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    // Use a hardcoded NDK version to avoid provider errors with recent AGP/Flutter versions
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_21.toString()
+        freeCompilerArgs += listOf("-Xjvm-default=all", "-Xlint=deprecation")
     }
 
     defaultConfig {
@@ -49,8 +51,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = 36
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = 1
+        versionName = "1.0.0"
         manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 

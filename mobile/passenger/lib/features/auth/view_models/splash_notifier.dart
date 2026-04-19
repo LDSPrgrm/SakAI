@@ -1,49 +1,72 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../repositories/auth_repository.dart';
-import '../../ride/repositories/ride_repository.dart';
 import '../../../app/providers.dart';
+import '../models/session_check_result.dart';
 
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
+enum SplashState {
+  loading,
+  unauthenticated,
+  home,
+  activeRide,
+  welcome,
+  transientError,
+}
 
-enum SplashState { loading, unauthenticated, home, activeRide, welcome }
+/// Result of splash check, includes active ride ID if present.
+class SplashResult {
+  final SplashState state;
+  final String? activeRideId;
+  const SplashResult(this.state, [this.activeRideId]);
+}
 
-// ---------------------------------------------------------------------------
-// Notifier
-// ---------------------------------------------------------------------------
-
-class SplashNotifier extends AsyncNotifier<SplashState> {
+class SplashNotifier extends AsyncNotifier<SplashResult> {
   @override
-  Future<SplashState> build() => _check();
+  Future<SplashResult> build() async {
+    // Rely on Riverpod's built-in caching per ProviderContainer.
+    // No static state to avoid cross-test interference.
+    return await _check();
+  }
 
-  Future<SplashState> _check() async {
+  Future<SplashResult> _check() async {
+    // Minimal delay for UX in production, can be zero in tests if needed via specialized overrides,
+    // but Duration.zero here helps tests run faster while keeping the async check.
+    await Future.delayed(Duration.zero);
+
     final onboarding = ref.read(onboardingServiceProvider);
 
-    // 1. Show welcome carousel on first launch.
-    if (!onboarding.hasSeenWelcome()) return SplashState.welcome;
+    if (!onboarding.hasSeenWelcome()) {
+      ref.read(authStateProvider.notifier).markUnauthenticated();
+      return const SplashResult(SplashState.welcome);
+    }
 
     final authRepo = ref.read(authRepositoryProvider);
     final rideRepo = ref.read(rideRepositoryProvider);
-    return _resolve(authRepo, rideRepo);
-  }
 
-  static Future<SplashState> _resolve(
-    AuthRepository authRepo,
-    RideRepository rideRepo,
-  ) async {
-    // 2. Validate stored session via GET /users/me (performed inside repository).
-    final valid = await authRepo.hasValidSession();
-    if (!valid) return SplashState.unauthenticated;
-
-    // 3. Check for an in-progress ride.
-    final active = await rideRepo.getActiveRide();
-    return active != null ? SplashState.activeRide : SplashState.home;
+    final result = await authRepo.checkSession();
+    switch (result.status) {
+      case SessionCheckStatus.authenticated:
+        ref.read(authStateProvider.notifier).markAuthenticated();
+        RideEntity? active;
+        try {
+          active = await rideRepo.getActiveRide();
+        } catch (_) {
+          // Non-fatal: default to home.
+        }
+        await ref.read(wsConnectionProvider).connectIfAuthenticated();
+        return active != null
+            ? SplashResult(SplashState.activeRide, active.id)
+            : const SplashResult(SplashState.home);
+      case SessionCheckStatus.unauthenticated:
+        ref.read(authStateProvider.notifier).markUnauthenticated();
+        return const SplashResult(SplashState.unauthenticated);
+      case SessionCheckStatus.transientError:
+        ref.read(authStateProvider.notifier).resetToUnknown();
+        return const SplashResult(SplashState.transientError);
+    }
   }
 }
 
-final splashProvider = AsyncNotifierProvider<SplashNotifier, SplashState>(
+final splashProvider = AsyncNotifierProvider<SplashNotifier, SplashResult>(
   SplashNotifier.new,
 );

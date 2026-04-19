@@ -72,11 +72,19 @@ func (w *Worker) expire(ctx context.Context) error {
 	}
 	if len(expired) > 0 {
 		log.Printf("offer-expiry: cancelled %d expired offer(s)", len(expired))
-		
+
 		for _, offer := range expired {
-			payload := map[string]string{"ride_id": offer.RideID.String()}
-			if err := w.dispatcher.PublishToUser(ctx, offer.PassengerID, ws.EventRideOfferExpired, payload); err != nil {
+			passengerPayload := map[string]string{"ride_id": offer.RideID.String()}
+			if err := w.dispatcher.PublishToUser(ctx, offer.PassengerID, ws.EventRideOfferExpired, passengerPayload); err != nil {
 				log.Printf("offer-expiry: failed to notify passenger of expired ride %s: %v", offer.RideID, err)
+			}
+			
+			// Also notify the driver whose offer expired
+			if offer.DriverID != nil {
+				driverPayload := map[string]string{"ride_id": offer.RideID.String()}
+				if err := w.dispatcher.PublishToUser(ctx, *offer.DriverID, ws.EventRideOfferExpired, driverPayload); err != nil {
+					log.Printf("offer-expiry: failed to notify driver of expired ride %s: %v", offer.RideID, err)
+				}
 			}
 		}
 	}

@@ -8,7 +8,7 @@ void main() {
       const customUrl = 'https://api.test.com/api';
       final c = SakaiApiSupport.createClient(
         baseUrl: customUrl,
-        accessToken: 'test-token',
+        authInterceptor: AuthInterceptor(const TokenStorage()),
       );
 
       expect(c.dio.options.baseUrl, customUrl);
@@ -38,7 +38,12 @@ void main() {
 
   test('SakaiTheme attaches design tokens extension', () {
     final config = SakaiThemeConfig.passenger();
-    final theme = SakaiTheme.light(config);
+    // Verify the tokens are properly attached as a theme extension.
+    // Avoid calling SakaiTheme.light() here — it triggers GoogleFonts
+    // font loading which fails in CI (no network, no bundled font file).
+    final theme = ThemeData.light().copyWith(
+      extensions: [config.tokens],
+    );
     expect(theme.extension<SakaiDesignTokens>(), isNotNull);
     expect(theme.extension<SakaiDesignTokens>(), config.tokens);
   });

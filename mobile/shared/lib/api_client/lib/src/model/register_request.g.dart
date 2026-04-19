@@ -73,6 +73,8 @@ class _$RegisterRequest extends RegisterRequest {
   final String password;
   @override
   final RegisterRequestRoleEnum role;
+  @override
+  final VehicleInput? vehicle;
 
   factory _$RegisterRequest([void Function(RegisterRequestBuilder)? updates]) =>
       (RegisterRequestBuilder()..update(updates))._build();
@@ -82,6 +84,7 @@ class _$RegisterRequest extends RegisterRequest {
     required this.email,
     required this.password,
     required this.role,
+    this.vehicle,
   }) : super._();
   @override
   RegisterRequest rebuild(void Function(RegisterRequestBuilder) updates) =>
@@ -97,7 +100,8 @@ class _$RegisterRequest extends RegisterRequest {
         name == other.name &&
         email == other.email &&
         password == other.password &&
-        role == other.role;
+        role == other.role &&
+        vehicle == other.vehicle;
   }
 
   @override
@@ -107,6 +111,7 @@ class _$RegisterRequest extends RegisterRequest {
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, password.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
+    _$hash = $jc(_$hash, vehicle.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -117,7 +122,8 @@ class _$RegisterRequest extends RegisterRequest {
           ..add('name', name)
           ..add('email', email)
           ..add('password', password)
-          ..add('role', role))
+          ..add('role', role)
+          ..add('vehicle', vehicle))
         .toString();
   }
 }
@@ -142,6 +148,10 @@ class RegisterRequestBuilder
   RegisterRequestRoleEnum? get role => _$this._role;
   set role(RegisterRequestRoleEnum? role) => _$this._role = role;
 
+  VehicleInputBuilder? _vehicle;
+  VehicleInputBuilder get vehicle => _$this._vehicle ??= VehicleInputBuilder();
+  set vehicle(VehicleInputBuilder? vehicle) => _$this._vehicle = vehicle;
+
   RegisterRequestBuilder() {
     RegisterRequest._defaults(this);
   }
@@ -153,6 +163,7 @@ class RegisterRequestBuilder
       _email = $v.email;
       _password = $v.password;
       _role = $v.role;
+      _vehicle = $v.vehicle?.toBuilder();
       _$v = null;
     }
     return this;
@@ -172,30 +183,47 @@ class RegisterRequestBuilder
   RegisterRequest build() => _build();
 
   _$RegisterRequest _build() {
-    final _$result =
-        _$v ??
-        _$RegisterRequest._(
-          name: BuiltValueNullFieldError.checkNotNull(
-            name,
-            r'RegisterRequest',
-            'name',
-          ),
-          email: BuiltValueNullFieldError.checkNotNull(
-            email,
-            r'RegisterRequest',
-            'email',
-          ),
-          password: BuiltValueNullFieldError.checkNotNull(
-            password,
-            r'RegisterRequest',
-            'password',
-          ),
-          role: BuiltValueNullFieldError.checkNotNull(
-            role,
-            r'RegisterRequest',
-            'role',
-          ),
+    _$RegisterRequest _$result;
+    try {
+      _$result =
+          _$v ??
+          _$RegisterRequest._(
+            name: BuiltValueNullFieldError.checkNotNull(
+              name,
+              r'RegisterRequest',
+              'name',
+            ),
+            email: BuiltValueNullFieldError.checkNotNull(
+              email,
+              r'RegisterRequest',
+              'email',
+            ),
+            password: BuiltValueNullFieldError.checkNotNull(
+              password,
+              r'RegisterRequest',
+              'password',
+            ),
+            role: BuiltValueNullFieldError.checkNotNull(
+              role,
+              r'RegisterRequest',
+              'role',
+            ),
+            vehicle: _vehicle?.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'vehicle';
+        _vehicle?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'RegisterRequest',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

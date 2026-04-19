@@ -1,6 +1,6 @@
 # SakAI Project Roadmap
 
-> **Last Updated:** 2026-03-05 | **Status:** Phase 2 in progress
+> **Last Updated:** 2026-04-11 | **Status:** Phase 2 nearly complete — 3 items remaining
 
 This roadmap is structured around two key milestones:
 
@@ -16,36 +16,43 @@ This roadmap is structured around two key milestones:
 
 - [x] Project scaffolding (Go + Gin + Postgres + PostGIS)
 - [x] Clean Architecture structure (Domain → UseCase → Repository → Delivery)
-- [x] Database schema & migrations (users, vehicles, drivers, rides, refresh_tokens, active ride constraints)
-- [x] Domain models (User, Ride, Driver, Vehicle, Location)
+- [x] Database schema & migrations (users, vehicles, drivers, rides, refresh_tokens, active ride constraints, RBAC — 10 migrations total)
+- [x] Domain models (User, Ride, Driver, Vehicle, Location, Admin, Audit, Incident, Role)
 - [x] Auth system (JWT access tokens, refresh token rotation, logout)
 - [x] Core ride flow (Request, Accept, Decline, Arrive, Start, Complete, Cancel)
 - [x] Ride state machine with `CanTransitionTo` guard
 - [x] Idempotency keys on ride requests
-- [x] WebSocket hub with event broadcasting
-- [x] Background expiry worker for stale ride offers
-- [x] OpenAPI/Swagger spec (comprehensive — 1300+ lines)
+- [x] WebSocket hub with event broadcasting + Redis Pub/Sub dispatcher
+- [x] Background expiry worker for stale ride offers (emits `ride.offer_expired` via dispatcher)
+- [x] OpenAPI/Swagger spec (comprehensive — 3400+ lines, 66 endpoints across 6 tags)
 - [x] Unit tests for auth, driver, and ride use cases
+- [x] Admin backend APIs (~49 endpoints: users, fares, surge, incidents, payments, reports, metrics, roles, safety/KYC, system config)
+- [x] Metrics, payment, report, role, and safety use-cases, repositories, and handlers
 
 ---
 
+<<<<<<< HEAD
 ## 🛡️ Phase 2: Security & Bug Fixes ✅
+=======
+## 🛡️ Phase 2: Security & Bug Fixes
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 > **Goal:** Address system audit findings to make the backend safe for real client connections.
 
-### ✅ Completed
+### ✅ Completed (13 of 16)
 
 - [x] Race condition fix — DB partial index for `RequestRide`
 - [x] `Decline` properly clears `driver_id` (ClearDriver)
 - [x] Driver location updates sent only to the correct passenger
 - [x] Vehicle data included in driver responses
-- [x] Self-healing background worker for ride offer expiry
+- [x] Self-healing background worker for ride offer expiry (emits `ride.offer_expired` via Redis dispatcher)
 - [x] LatLng validation bounds checks
 - [x] Auth rate limiting (10 rpm / IP)
 - [x] `FindNearbyOnline` limited to 1 closest driver
 - [x] Transactional user registration (`CreateWithTokens`)
 - [x] JWT weak-secret panic guard for production
 - [x] Logging for critical async failures
+<<<<<<< HEAD
 
 ### ✅ Completed — Critical
 
@@ -54,18 +61,27 @@ This roadmap is structured around two key milestones:
 - [x] **L3:** `GetByID` — verify caller is ride participant, return `403` otherwise ([REQ-2.3](requirements.md#req-23-ride-participant-authorization))
 - [x] **H4:** Request body size limit middleware (`MaxBytesReader`, 1 MiB) ([REQ-2.4](requirements.md#req-24-request-body-size-limit))
 - [x] **SC1:** GIST index on `drivers.location` column (partial index, `WHERE status = 'online'`) ([REQ-2.5](requirements.md#req-25-geospatial-index))
+=======
+- [x] `GetByID` — verifies caller is ride participant (passenger or assigned driver), returns `403 Forbidden` otherwise
+- [x] Request body size limit middleware (`MaxBodySize`, 1 MiB)
+- [x] Security headers middleware (X-Frame-Options: DENY, X-Content-Type-Options: nosniff, CSP: default-src 'self')
+- [x] Cancel — enforces per-role state validation (passenger/driver ownership checks)
+- [x] GiST index on `drivers.location` column (present in `003_create_drivers.up.sql`)
+- [x] Admin backend with RBAC (~49 endpoints defined in spec with handler/usecase/repo implementations)
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 ### 🚧 To Do — High (Important but not blocking MVP)
 
-- [ ] **H1:** Delete dead `SendToDriver` alias from `hub.go` ([REQ-2.6](requirements.md#req-26-remove-dead-code))
-- [ ] **H2:** WebSocket read deadlines & read limit (`SetReadDeadline`, `SetReadLimit`) ([REQ-2.7](requirements.md#req-27-websocket-connection-hardening))
-- [ ] **H3:** Embed migrations into binary (`go:embed`) ([REQ-2.8](requirements.md#req-28-embedded-migrations))
-- [ ] **H5:** Wrap refresh token rotation in a DB transaction ([REQ-2.9](requirements.md#req-29-transactional-token-rotation))
-- [ ] **L1:** Server-side re-dispatch after driver decline
-- [ ] **L2:** Cancel — enforce per-role state validation ([REQ-2.10](requirements.md#req-210-cancel-role-enforcement))
-- [ ] **S1:** Config-driven WebSocket allowed origins ([REQ-2.11](requirements.md#req-211-config-driven-websocket-origins))
-- [ ] **S3:** Security headers middleware (X-Frame-Options, CSP, etc.) ([REQ-2.12](requirements.md#req-212-security-headers-middleware))
-- [ ] **D2:** Verify FK cascade on `refresh_tokens.user_id`
+- [ ] **H2:** WebSocket read deadlines & read limit (`SetReadDeadline`, `SetReadLimit`, `PongHandler`) ([REQ-2.7](requirements.md#req-27-websocket-connection-hardening))
+- [ ] **H3:** Embed migrations into binary (`go:embed`) to avoid path-resolution issues ([REQ-2.8](requirements.md#req-28-embedded-migrations))
+- [ ] **H5:** Wrap refresh token rotation in a DB transaction (`Transact` around `Delete` + `Store`) ([REQ-2.9](requirements.md#req-29-transactional-token-rotation))
+
+### ℹ️ Deferred / Mitigated
+
+- ~~**H1:** Delete dead `SendToDriver` alias~~ — Alias is still present but documented as intentional convenience method; low risk. Can be cleaned up opportunistically.
+- ~~**L1:** Server-side re-dispatch after driver decline~~ — Passenger client re-calls `POST /rides` with same idempotency key as mitigation. Auto re-dispatch deferred to Phase 5.
+- ~~**S1:** Config-driven WebSocket allowed origins~~ — `CheckOrigin: true` is acceptable for mobile-only clients (no browser CSRF vector). Should be revisited if a web admin dashboard is built.
+- ~~**D2:** Verify FK cascade on `refresh_tokens.user_id`~~ — Migration `005_create_refresh_tokens.up.sql` includes FK constraint; verified.
 
 ---
 
@@ -110,6 +126,7 @@ This roadmap is structured around two key milestones:
 
 ## 🖥️ Phase 4: Admin Dashboard 🚧
 
+<<<<<<< HEAD
 > **Goal:** Basic web dashboard for operational visibility. Lightweight — enough to manage the MVP.
 >
 > **Status:** Frontend feature-complete. API contract alignment in progress (see `docs/audit_check.md`).
@@ -122,6 +139,17 @@ This roadmap is structured around two key milestones:
 - [x] **Driver management:** Approve/suspend/deactivate drivers, view vehicle info
 - [x] **Super Admin panel:** Fare config, payments, safety/KYC, reports, system health, audit log, role management
 - [ ] API contract alignment — undocumented endpoints need spec additions: `GET /admin/users/me`, `POST /admin/audit`, `POST /admin/roles/{id}/duplicate`, `PUT /admin/users/{id}/password`
+=======
+> **Goal:** Basic web dashboard for operational visibility. Backend APIs are defined in the OpenAPI spec (~49 endpoints) with handler/usecase/repo implementations in place.
+
+- [ ] Choose framework (React or Vue.js — TBD)
+- [ ] Auth flow (admin-only role or super-user JWT)
+- [x] **Backend APIs:** All admin endpoints defined in OpenAPI spec and implemented (users CRUD, fares, surge, incidents, rides list, passengers, drivers, payments, metrics, roles, safety/KYC, reports, system config)
+- [ ] **Dashboard overview:** Active rides count, online drivers count, total users
+- [x] **Ride list:** Searchable table with status filters, ride details view (Backend Done)
+- [x] **User list:** Browse passengers and drivers, view profiles (Backend Done)
+- [ ] **Driver management:** Approve/suspend drivers, view vehicle info
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 ### Definition of Done — Phase 4
 
@@ -205,6 +233,7 @@ This roadmap is structured around two key milestones:
 
 ## Summary Table
 
+<<<<<<< HEAD
 | Phase | Name                 | Focus            | Status         |
 | ----- | -------------------- | ---------------- | -------------- |
 | 1     | Backend Foundation   | Core API         | ✅ Complete    |
@@ -215,3 +244,15 @@ This roadmap is structured around two key milestones:
 | 5     | Real-Time Resilience | WS reliability   | ⬜ Not Started |
 | 6     | Polish & UX          | Production UX    | ⬜ Not Started |
 | 7     | Production Readiness | Deploy & operate | ⬜ Not Started |
+=======
+| Phase | Name                 | Focus            | Status                  |
+| ----- | -------------------- | ---------------- | ----------------------- |
+| 1     | Backend Foundation   | Core API         | ✅ Complete             |
+| 2     | Security & Bug Fixes | Audit fixes      | 🚧 3 items remaining    |
+| 3     | Flutter Mobile Apps  | Client apps      | ⬜ Not Started          |
+| 4     | Admin Dashboard      | Operations UI    | 🚧 Backend done, frontend TBD |
+| —     | **MVP Milestone**    | **End-to-end**   | —                       |
+| 5     | Real-Time Resilience | WS reliability   | ⬜ Not Started          |
+| 6     | Polish & UX          | Production UX    | ⬜ Not Started          |
+| 7     | Production Readiness | Deploy & operate | ⬜ Not Started          |
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12

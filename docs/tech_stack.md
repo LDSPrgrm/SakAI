@@ -6,7 +6,7 @@ Here is the comprehensive breakdown of the technology stack utilized in the **Sa
 
 - **Framework:** Flutter
 - **Language:** Dart
-- **Architecture Pattern:** Clean Architecture (Domain, Data, Presentation layers) combined with MVVM for UI state management.
+- **Architecture Pattern:** MVVM
 - **Role:** Used to build both the Passenger app and the Driver app from a unified, cross-platform codebase ensuring decoupled business logic and UI.
 
 ## 🧱 Backend Infrastructure
@@ -43,10 +43,11 @@ Here is the comprehensive breakdown of the technology stack utilized in the **Sa
 - **Specification:** OpenAPI (Swagger)
 - **Role:** Serves as the ultimate layout for REST APIs. Ensures both backend models and mobile frontend clients agree on data structures. Allows code generation for API clients to eradicate manual boilerplate and bugs.
 
-## 🧮 Administrative Web App (To-Be)
+## 🧮 Administrative Web App
 
-- **Framework Options:** React or Vue.js
-- **Role:** Web dashboard for system operation tools, driver approvals, analytics, and business insights.
+- **Framework:** React
+- **Backend APIs:** ~49 admin endpoints defined in OpenAPI spec covering user management, fare/surge pricing, incident resolution, payment processing, audit logging, reporting, metrics, RBAC, safety/KYC, and system configuration.
+- **Role:** Web dashboard for system operations, driver management, analytics, business insights, and platform administration.
 
 ## 📦 Deployment & Containerization
 

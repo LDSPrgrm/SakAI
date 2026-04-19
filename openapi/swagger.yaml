@@ -108,6 +108,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
 
+  /service-area:
+    get:
+      tags: [System]
+      summary: Get platform service areas
+      description: |
+        Returns the list of geographic zones where SakAI currently operates.
+        Used by the client to restrict search radius and matching.
+      operationId: getServiceAreas
+      responses:
+        "200":
+          description: List of service areas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceAreaResponse"
+
+  /drivers/nearby:
+    get:
+      tags: [Driver]
+      summary: Get nearby available drivers by ride type
+      description: |
+        Returns a list of online drivers within the specified radius and vehicle type.
+        Used by the passenger app to show available ride options with driver counts.
+      operationId: getNearbyDrivers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: radius_m
+          in: query
+          schema: { type: number, format: double, default: 5000 }
+        - name: ride_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [motorcycle, car, tricycle]
+      responses:
+        "200":
+          description: List of nearby drivers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drivers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NearbyDriver"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: No drivers available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: NO_DRIVERS_AVAILABLE
+                message: "No drivers of requested type within range"
+
   # ── Auth ──────────────────────────────────────────────────────────────────
 
   /auth/register:
@@ -252,6 +324,149 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /users/me/payment-methods:
+    get:
+      tags: [Users]
+      summary: List user's saved payment methods
+      description: |
+        Returns all payment methods saved by the authenticated user.
+        Only `role=passenger` may call this.
+      operationId: paymentMethodsList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Users]
+      summary: Add a new payment method
+      description: |
+        Adds a new payment method to the user's account.
+        For cards, requires a tokenized payment method ID from the payment gateway (e.g., Stripe).
+        Only `role=passenger` may call this.
+      operationId: paymentMethodsAdd
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPaymentMethodRequest"
+      responses:
+        "201":
+          description: Payment method added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Duplicate payment method
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PAYMENT_METHOD_DUPLICATE
+                message: "This payment method is already saved to your account"
+
+  /users/me/payment-methods/{paymentMethodId}:
+    delete:
+      tags: [Users]
+      summary: Remove a payment method
+      description: |
+        Removes a saved payment method. Cannot remove the last payment method.
+        Only `role=passenger` may call this.
+      operationId: paymentMethodsRemove
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentMethodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the payment method to remove
+      responses:
+        "204":
+          description: Payment method removed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PAYMENT_METHOD_NOT_FOUND
+                message: "Payment method not found"
+        "409":
+          description: Cannot remove last payment method
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PAYMENT_METHOD_LAST_METHOD
+                message: "Cannot remove your only payment method"
+
+  /users/me/payment-methods/{paymentMethodId}/default:
+    put:
+      tags: [Users]
+      summary: Set default payment method
+      description: |
+        Sets a payment method as the default for future rides.
+        Only `role=passenger` may call this.
+      operationId: paymentMethodsSetDefault
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentMethodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the payment method to set as default
+      responses:
+        "200":
+          description: Default updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PAYMENT_METHOD_NOT_FOUND
+                message: "Payment method not found"
+
   # ── Driver ────────────────────────────────────────────────────────────────
 
   /driver/status:
@@ -353,6 +568,67 @@ paths:
         "404":
           description: No pending ride offer at this time
 
+  /driver/earnings:
+    get:
+      tags: [Driver]
+      summary: Get driver earnings history
+      description: |
+        Returns a paginated list of earnings for the authenticated driver.
+        Only `role=driver` may call this. Supports filtering by date range.
+      operationId: driverGetEarnings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD). Defaults to 30 days ago.
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD). Defaults to today.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          description: Items per page (max 50)
+      responses:
+        "200":
+          description: Paginated earnings history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EarningsItem"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Rides ─────────────────────────────────────────────────────────────────
 
   /rides/active:
@@ -381,6 +657,50 @@ paths:
           description: No active ride found for this user
 
   /rides:
+    get:
+      tags: [Rides]
+      summary: List user's ride history
+      description: |
+        Returns a paginated list of the authenticated user's past rides.
+        Only `role=passenger` may call this. Supports filtering by status.
+      operationId: rideList
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          description: Items per page (max 50)
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Filter by status (comma-separated): completed,cancelled"
+      responses:
+        "200":
+          description: Paginated ride history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRideListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       tags: [Rides]
       summary: Request a new ride
@@ -416,7 +736,22 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: "Forbidden — or passenger has an unresolved failed payment older than 24 hours (code: UNPAID_RIDE_BLOCKED)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  summary: Standard forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: "Access denied"
+                unpaid_block:
+                  summary: Unpaid ride block
+                  value:
+                    code: UNPAID_RIDE_BLOCKED
+                    message: "You have an unpaid ride. Please settle your balance before requesting a new ride."
         "409":
           description: Passenger already has an active ride
           content:
@@ -531,11 +866,24 @@ paths:
       description: |
         Transitions: `accepted` → `arrived`.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 50 meters of pickup location.
       operationId: rideArrive
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of arrival
       responses:
         "200":
           description: Driver arrived at pickup
@@ -543,6 +891,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -550,14 +907,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `accepted` state
+          description: Ride is not in `accepted` state or driver too far from pickup
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'accepted' state to mark arrival"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'accepted' state to mark arrival"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR
+                    message: "Driver must be within 50 meters of pickup location"
 
   /rides/{rideId}/start:
     post:
@@ -602,11 +965,24 @@ paths:
         Transitions: `in_progress` → `completed`.
         Driver status automatically returns to `online` after completion.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 100 meters of destination location.
       operationId: rideComplete
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of completion
       responses:
         "200":
           description: Ride completed
@@ -614,6 +990,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -621,14 +1006,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `in_progress` state
+          description: Ride is not in `in_progress` state or driver too far from destination
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'in_progress' state to complete"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'in_progress' state to complete"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR_FROM_DESTINATION
+                    message: "Driver must be within 100 meters of destination"
 
   /rides/{rideId}/cancel:
     post:
@@ -1654,6 +2045,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active rider count with trend
+      description: Returns the current number of active riders and the trend compared to the previous period.
       operationId: adminMetricsRiders
       security:
         - BearerAuth: []
@@ -1671,6 +2063,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active driver count with trend
+      description: Returns the current number of active drivers and the trend compared to the previous period.
       operationId: adminMetricsDrivers
       security:
         - BearerAuth: []
@@ -1688,6 +2081,7 @@ paths:
     get:
       tags: [Admin]
       summary: Ride count for a period
+      description: Returns the total number of rides completed within the specified period.
       operationId: adminMetricsRides
       security:
         - BearerAuth: []
@@ -1711,6 +2105,7 @@ paths:
     get:
       tags: [Admin]
       summary: Revenue for a period (PHP)
+      description: Returns the total revenue generated within the specified period in Philippine Pesos.
       operationId: adminMetricsRevenue
       security:
         - BearerAuth: []
@@ -1734,6 +2129,7 @@ paths:
     get:
       tags: [Admin]
       summary: Average wait time stats
+      description: Returns the average wait time for passengers across the platform.
       operationId: adminMetricsWaitTime
       security:
         - BearerAuth: []
@@ -1801,6 +2197,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get role with permissions
+      description: Returns the details of a specific role, including its associated permissions.
       operationId: adminGetRole
       security:
         - BearerAuth: []
@@ -1887,6 +2284,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get permission set for a role
+      description: Returns the list of permissions assigned to the specified role.
       operationId: adminGetRolePermissions
       security:
         - BearerAuth: []
@@ -1913,6 +2311,7 @@ paths:
     get:
       tags: [Admin]
       summary: List admins assigned to a role
+      description: Returns a list of administrators who have been assigned the specified role.
       operationId: adminGetRoleAdmins
       security:
         - BearerAuth: []
@@ -1941,6 +2340,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get surge pricing configuration
+      description: Returns the current global surge pricing settings and multipliers.
       operationId: adminGetSurge
       security:
         - BearerAuth: []
@@ -2048,6 +2448,7 @@ paths:
     post:
       tags: [Admin]
       summary: Batch approve or reject KYC submissions
+      description: Processes multiple driver KYC submissions in a single batch operation.
       operationId: adminBatchKyc
       security:
         - BearerAuth: []
@@ -2078,6 +2479,7 @@ paths:
     get:
       tags: [Admin]
       summary: LTFRB compliance dashboard data
+      description: Returns aggregated metrics and stats for LTFRB compliance reporting.
       operationId: adminGetCompliance
       security:
         - BearerAuth: []
@@ -2151,6 +2553,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+<<<<<<< HEAD
   # ── Admin self-profile ────────────────────────────────────────────────────
 
   /admin/users/me:
@@ -2161,10 +2564,89 @@ paths:
         Returns the current admin's profile including role_id, role_name, and status.
         Call on admin app cold-start to re-hydrate session state.
       operationId: adminGetMe
+=======
+  # ── Driver Documents ──────────────────────────────────────────────────────
+
+  /drivers/documents:
+    post:
+      tags: [Driver]
+      summary: Upload a driver verification document
+      description: |
+        Upload a driver verification document (license, registration, or insurance).
+        Requires `role=driver`. Uploaded documents enter `uploaded` status and await admin review.
+        Images must be JPEG or PNG, max 10MB.
+      operationId: driverUploadDocument
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [documentType, documentNumber, image]
+              properties:
+                documentType:
+                  type: string
+                  enum: [license, registration, insurance]
+                  description: Type of document being uploaded
+                documentNumber:
+                  type: string
+                  minLength: 5
+                  maxLength: 50
+                  description: Document identifier (license number, registration number, etc.)
+                expiryDate:
+                  type: string
+                  format: date
+                  description: Document expiration date (optional)
+                image:
+                  type: string
+                  format: binary
+                  description: Document image file (JPEG/PNG, max 10MB)
+      responses:
+        "201":
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDocumentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: FILE_TOO_LARGE
+                message: "File size exceeds 10MB limit"
+        "422":
+          description: Invalid file format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: INVALID_FILE_FORMAT
+                message: "Only JPEG and PNG images are accepted"
+
+    get:
+      tags: [Driver]
+      summary: List all uploaded documents for the authenticated driver
+      description: |
+        Returns all documents uploaded by the authenticated driver with their current verification status.
+      operationId: driverListDocuments
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
       security:
         - BearerAuth: []
       responses:
         "200":
+<<<<<<< HEAD
           description: Admin profile
           content:
             application/json:
@@ -2193,21 +2675,199 @@ paths:
           schema:
             type: string
             format: uuid
+=======
+          description: List of driver documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDocumentsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /drivers/documents/{documentId}:
+    get:
+      tags: [Driver]
+      summary: Get status of a specific document
+      description: |
+        Retrieve the status and details of an uploaded document.
+        Only the document owner can access this endpoint.
+      operationId: driverGetDocumentStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          description: UUID of the document
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverDocumentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: DOCUMENT_NOT_FOUND
+                message: "Document not found or you do not have access"
+
+  # ── Payments ──────────────────────────────────────────────────────────────
+
+  /payments/process:
+    post:
+      tags: [Rides]
+      summary: Process a card payment for a completed ride
+      description: |
+        Process a card payment using a tokenized payment from the mobile SDK (e.g., Stripe).
+        Requires `Idempotency-Key` header for safe retry handling.
+        Only the passenger associated with the ride can process payment.
+      operationId: paymentProcess
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
       requestBody:
         required: true
         content:
           application/json:
             schema:
+<<<<<<< HEAD
               $ref: "#/components/schemas/ResetPasswordRequest"
       responses:
         "204":
           description: Password reset
+=======
+              type: object
+              required: [rideId, paymentMethodToken]
+              properties:
+                rideId:
+                  type: string
+                  format: uuid
+                  description: UUID of the completed ride
+                paymentMethodToken:
+                  type: string
+                  description: Tokenized payment method from mobile SDK (e.g., Stripe PaymentIntent token)
+      responses:
+        "200":
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          description: Payment failed (card declined, insufficient funds)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentFailureResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Duplicate request (idempotency key conflict)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: DUPLICATE_PAYMENT
+                message: "A payment with this idempotency key already exists"
+        "422":
+          description: Ride not in completed state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_NOT_COMPLETED
+                message: "Cannot process payment for a ride that is not in completed state"
+
+  /rides/{rideId}/receipt:
+    get:
+      tags: [Rides]
+      summary: Get payment receipt for a completed ride
+      description: |
+        Retrieve the payment receipt for a completed ride.
+        Accessible by both the passenger and driver associated with the ride.
+      operationId: getRideReceipt
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      responses:
+        "200":
+          description: Payment receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /rides/{rideId}/tip:
+    post:
+      tags: [Rides]
+      summary: Add a tip to a completed ride
+      description: |
+        Add an optional tip to a completed ride's payment.
+        Only the passenger associated with the ride can add a tip.
+        Tips can only be added after ride completion.
+        Maximum tip amount is 50% of base fare.
+      operationId: addRideTip
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipAmount]
+              properties:
+                tipAmount:
+                  type: number
+                  format: double
+                  minimum: 0
+                  description: Tip amount in ride currency
+      responses:
+        "200":
+          description: Tip added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TipResponse"
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+<<<<<<< HEAD
 
   # ── Role duplication ──────────────────────────────────────────────────────
 
@@ -2226,10 +2886,112 @@ paths:
         - name: id
           in: path
           required: true
+=======
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Tip already added to this ride
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: TIP_ALREADY_ADDED
+                message: "A tip has already been added to this ride"
+        "422":
+          description: Ride not in completed state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_NOT_COMPLETED
+                message: "Cannot add tip for a ride that is not in completed state"
+
+  # ── Ratings ───────────────────────────────────────────────────────────────
+
+  /rides/{rideId}/rating:
+    post:
+      tags: [Rides]
+      summary: Submit a rating for the other party in a ride
+      description: |
+        Submit a rating (1-5 stars) with optional written feedback.
+        Each user can rate once per ride. Both passengers and drivers can rate.
+      operationId: submitRating
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stars]
+              properties:
+                stars:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  description: Star rating (1-5)
+                feedback:
+                  type: string
+                  maxLength: 500
+                  description: Optional written feedback (max 500 characters)
+      responses:
+        "201":
+          description: Rating submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RatingResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: User has already rated this ride
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: ALREADY_RATED
+                message: "You have already rated this ride"
+        "422":
+          description: Ride not in completed state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_NOT_COMPLETED
+                message: "Cannot rate a ride that is not in completed state"
+
+  /users/{userId}/rating:
+    get:
+      tags: [Users]
+      summary: Get average rating for a user
+      description: |
+        Retrieve the average rating and rating count for any user.
+        Any authenticated user can access this endpoint.
+      operationId: getUserRating
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: UUID of the user
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
           schema:
             type: string
             format: uuid
       responses:
+<<<<<<< HEAD
         "201":
           description: Duplicated role
           content:
@@ -2242,6 +3004,18 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+=======
+        "200":
+          description: User rating summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRatingResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 # ---------------------------------------------------------------------------
 # COMPONENTS
@@ -2389,17 +3163,49 @@ components:
         # Authorization
         - FORBIDDEN
         # Resources
+        - NOT_FOUND
         - RIDE_NOT_FOUND
         - USER_NOT_FOUND
+        - DOCUMENT_NOT_FOUND
         # Ride state
         - RIDE_INVALID_STATE_TRANSITION
         - PASSENGER_HAS_ACTIVE_RIDE
         - DRIVER_HAS_ACTIVE_RIDE
+        - RIDE_NOT_COMPLETED
         # Matching
         - NO_DRIVERS_AVAILABLE
+        # Ride type validation
+        - INVALID_RIDE_TYPE
+        - DRIVER_REMATCH_IN_PROGRESS
+        - CANCELLATION_FEE_APPLIED
+        # Payments
+        - PAYMENT_FAILED
+        - INVALID_PAYMENT_TOKEN
+        - DUPLICATE_PAYMENT
+        - UNPAID_RIDE_BLOCKED
+        # Payment Methods
+        - PAYMENT_METHOD_UNSUPPORTED
+        - PAYMENT_METHOD_DUPLICATE
+        - PAYMENT_GATEWAY_ERROR
+        - PAYMENT_METHOD_NOT_FOUND
+        - PAYMENT_METHOD_LAST_METHOD
+        # Tips
+        - INVALID_TIP_AMOUNT
+        - TIP_ALREADY_ADDED
+        # Ratings
+        - INVALID_RATING
+        - FEEDBACK_TOO_LONG
+        - ALREADY_RATED
+        # File uploads
+        - FILE_TOO_LARGE
+        - INVALID_FILE_FORMAT
+        - INVALID_DOCUMENT_TYPE
         # Operational
         - RATE_LIMIT_EXCEEDED
         - INTERNAL_SERVER_ERROR
+        # Proximity
+        - DRIVER_TOO_FAR
+        - DRIVER_TOO_FAR_FROM_DESTINATION
 
     ErrorResponse:
       type: object
@@ -2488,7 +3294,30 @@ components:
         role:
           type: string
           enum: [passenger, driver]
-          example: "passenger"
+          example: "driver"
+        vehicle:
+          $ref: "#/components/schemas/VehicleInput"
+
+    VehicleInput:
+      type: object
+      required: [make, model, color, plate, vehicle_type]
+      properties:
+        make:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios"
+        color:
+          type: string
+          example: "Silver"
+        plate:
+          type: string
+          example: "ABC 1234"
+        vehicle_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          example: "car"
 
     LoginRequest:
       type: object
@@ -2576,6 +3405,167 @@ components:
           format: date-time
           example: "2026-02-19T06:21:53Z"
 
+    # -- Payment Methods ------------------------------------------------------
+
+    PaymentMethodType:
+      type: string
+      enum: [card, e_wallet, cash]
+      description: Type of payment method
+
+    PaymentMethodDetails:
+      type: object
+      required: [id, type, is_default, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/PaymentMethodType"
+        is_default:
+          type: boolean
+          description: Whether this is the default payment method
+        created_at:
+          type: string
+          format: date-time
+        card:
+          allOf:
+            - $ref: "#/components/schemas/CardDetails"
+          nullable: true
+          description: Present only if type == "card"
+        e_wallet:
+          allOf:
+            - $ref: "#/components/schemas/EWalletDetails"
+          nullable: true
+          description: Present only if type == "e_wallet"
+
+    CardDetails:
+      type: object
+      required: [last4, expiry_month, expiry_year, brand]
+      properties:
+        last4:
+          type: string
+          description: Last 4 digits of card
+          example: "1234"
+        expiry_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 12
+        expiry_year:
+          type: integer
+          example: 2027
+        brand:
+          type: string
+          description: Card brand name
+          example: "Visa"
+
+    EWalletDetails:
+      type: object
+      required: [provider, account_id]
+      properties:
+        provider:
+          type: string
+          description: E-wallet provider name
+          example: "GCash"
+        account_id:
+          type: string
+          description: Account identifier (phone or account ID)
+          example: "+639171234567"
+
+    PaymentMethodListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMethodDetails"
+
+    AddPaymentMethodRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          $ref: "#/components/schemas/PaymentMethodType"
+        card_token:
+          type: string
+          nullable: true
+          description: Payment gateway token for card (required if type == "card")
+        provider:
+          type: string
+          nullable: true
+          description: E-wallet provider name (required if type == "e_wallet")
+        account_id:
+          type: string
+          nullable: true
+          description: E-wallet account ID (required if type == "e_wallet")
+        set_as_default:
+          type: boolean
+          default: false
+          description: Set as default payment method
+
+    # -- Ride History ---------------------------------------------------------
+
+    UserRideItem:
+      type: object
+      required:
+        [
+          id,
+          status,
+          origin_address,
+          destination_address,
+          estimated_fare,
+          payment_method,
+          created_at,
+          updated_at,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/RideStatus"
+        origin_address:
+          type: string
+          example: "123 Rizal Ave, Manila"
+        destination_address:
+          type: string
+          example: "BGC, Taguig City"
+        fare:
+          type: number
+          format: double
+          nullable: true
+          description: Final fare (null if not completed)
+          example: 250.00
+        estimated_fare:
+          type: number
+          format: double
+          example: 230.00
+        driver:
+          allOf:
+            - $ref: "#/components/schemas/DriverSummary"
+          nullable: true
+        payment_method:
+          type: string
+          enum: [cash, card]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserRideListResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRideItem"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+
     VehicleInfo:
       type: object
       required: [make, model, color, plate]
@@ -2653,7 +3643,7 @@ components:
 
     RideRequestBody:
       type: object
-      required: [origin, destination]
+      required: [origin, destination, ride_type]
       properties:
         origin:
           $ref: "#/components/schemas/LatLng"
@@ -2672,6 +3662,16 @@ components:
           maxLength: 500
           description: Optional instructions for the driver
           example: "I'll be waiting at the lobby entrance."
+        ride_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          default: car
+          description: Passenger's selected vehicle type
+        payment_method:
+          type: string
+          enum: [cash, card]
+          default: cash
+          description: Payment method for this ride
 
     RideResponse:
       type: object
@@ -2706,11 +3706,58 @@ components:
         notes:
           type: string
           nullable: true
+        fare:
+          type: number
+          format: double
+          nullable: true
+          description: Final fare amount (null if ride not completed)
+          example: 250.00
+        estimated_fare:
+          type: number
+          format: double
+          description: Estimated fare at request time
+          example: 230.00
+        actual_fare:
+          type: number
+          format: double
+          nullable: true
+          description: Actual fare after completion
+          example: 250.00
+        fare_breakdown:
+          type: object
+          nullable: true
+          description: JSONB breakdown of fare components
+          additionalProperties: true
+          example:
+            {
+              "base_fare": 40.0,
+              "distance_charge": 150.0,
+              "time_charge": 40.0,
+              "booking_fee": 20.0,
+            }
+        ride_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+          description: Vehicle type for this ride
+        payment_method:
+          type: string
+          enum: [cash, card]
+          description: Payment method used for ride
         cancelled_by:
           type: string
           enum: [passenger, driver]
           nullable: true
           description: Set only when status is `cancelled`
+        cancellation_reason:
+          type: string
+          nullable: true
+          description: Predefined cancellation reason code
+          example: "driver_too_far"
+        cancellation_reason_text:
+          type: string
+          nullable: true
+          description: Free-text cancellation reason
+          example: "Driver was too far away"
         created_at:
           type: string
           format: date-time
@@ -2721,7 +3768,7 @@ components:
     DriverSummary:
       type: object
       description: Minimal driver info embedded in ride responses and WebSocket events.
-      required: [id, name, vehicle]
+      required: [id, name]
       properties:
         id:
           type: string
@@ -2730,23 +3777,88 @@ components:
           type: string
           example: "Juan dela Cruz"
         vehicle:
-          $ref: "#/components/schemas/VehicleInfo"
+          description: Null if driver has no vehicle record yet.
+          allOf:
+            - $ref: "#/components/schemas/VehicleInfo"
+          nullable: true
         current_location:
           $ref: "#/components/schemas/LatLng"
 
+    EarningsItem:
+      type: object
+      description: A single ride's earnings contribution for a driver.
+      required:
+        [id, ride_id, fare_amount, tip_amount, total_amount, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ride_id:
+          type: string
+          format: uuid
+        fare_amount:
+          type: number
+          format: double
+          description: Driver's share of the fare (before commission)
+        tip_amount:
+          type: number
+          format: double
+          description: Tip amount (0 if no tip)
+        total_amount:
+          type: number
+          format: double
+          description: Total earnings for this ride (fare + tip)
+        currency:
+          type: string
+          default: USD
+          description: ISO 4217 currency code
+        completed_at:
+          type: string
+          format: date-time
+          description: When the ride was completed
+
+    RideEventPayload:
+      type: object
+      description: Consistent payload for ride WebSocket events
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            [requested, accepted, arrived, in_progress, completed, cancelled]
+        driver_id:
+          type: string
+          format: uuid
+          nullable: true
+        passenger_id:
+          type: string
+          format: uuid
+          nullable: true
+
     CancelRequest:
       type: object
+      required: [reason_code]
       properties:
-        reason:
+        reason_code:
           type: string
-          maxLength: 255
-          description: Optional cancellation reason
-          example: "Change of plans"
+          enum:
+            - driver_too_far
+            - changed_plans
+            - wrong_pickup
+            - driver_not_moving
+            - safety_concern
+            - other
+          description: Predefined cancellation reason
+        reason_text:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Free-text explanation when reason_code is "other"
 
-    # =========================================================================
-    # WebSocket Event Schemas
-    # =========================================================================
-    # Connection: ws://{host}/ws?token={access_token}
+    # ==================================================================    # WebSocket Event Schemas
+    # ==================================================================    # Connection: ws://{host}/ws?token={access_token}
     #
     # Envelope format (all messages):
     #   { "event": "<event_name>", "payload": { ... } }
@@ -2758,8 +3870,7 @@ components:
     # Events are filtered server-side:
     #   - Drivers only receive events for their assigned ride
     #   - Passengers only receive events for their own ride
-    # =========================================================================
-
+    # ==================================================================
     WsEnvelope:
       type: object
       description: Wrapper for all WebSocket messages
@@ -3456,15 +4567,55 @@ components:
           type: string
           enum: [up, down, flat]
 
-    Role:
+    ServiceAreaResponse:
       type: object
+      properties:
+        areas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceArea"
+      example:
+        areas:
+          - id: "550e8400-e29b-41d4-a716-446655440000"
+            name: "Northern Luzon Service Area"
+            center: { lat: 16.607538, lng: 120.2693932 }
+            radius: 100000.0
+
+    ServiceArea:
+      type: object
+      required: [id, name, center, radius]
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-          example: city_manager
+        description:
+          type: string
+        center:
+          $ref: "#/components/schemas/LatLng"
+        radius:
+          type: number
+          format: float
+          description: Service radius in meters
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Role:
+      type: object
+      required: [id, name, permissions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
         description:
           type: string
         is_system:
@@ -3556,22 +4707,77 @@ components:
     PaymentGatewayConfig:
       type: object
       properties:
+        name:
+          type: string
+          example: "Metro Manila"
+        center:
+          $ref: "#/components/schemas/LatLng"
+        radius:
+          type: number
+          format: float
+          description: Service radius in meters
+          example: 15000.0
+
+    NearbyDriversResponse:
+      type: object
+      properties:
+        drivers:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbyDriver"
+      example:
+        drivers:
+          - id: "550e8400-e29b-41d4-a716-446655440001"
+            name: "Juan"
+            location: { lat: 16.608, lng: 120.269 }
+            heading: 45.0
+            vehicle_type: "motorcycle"
+          - id: "550e8400-e29b-41d4-a716-446655440002"
+            name: "Pedro"
+            location: { lat: 16.612, lng: 120.272 }
+            heading: 180.0
+            vehicle_type: "car"
+          - id: "550e8400-e29b-41d4-a716-446655440003"
+            name: "Maria"
+            location: { lat: 16.605, lng: 120.262 }
+            heading: 270.0
+            vehicle_type: "tricycle"
+
+    NearbyDriver:
+      type: object
+      required: [id, name, location, vehicle_type]
+      properties:
         id:
           type: string
           format: uuid
-        provider:
+        name:
           type: string
-          enum: [gcash, paymaya, card, cash]
-        config_fields:
-          type: object
-          additionalProperties:
-            type: string
-          description: API keys and settings — sensitive fields shown masked (last 4 chars)
-        is_active:
-          type: boolean
-        updated_at:
+        vehicle_make:
           type: string
-          format: date-time
+        vehicle_model:
+          type: string
+        vehicle_plate:
+          type: string
+        vehicle_type:
+          type: string
+          enum: [motorcycle, car, tricycle]
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 5
+          nullable: true
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        location:
+          $ref: "#/components/schemas/LatLng"
+        heading:
+          type: number
+          format: double
+          nullable: true
+          description: Compass bearing in degrees
 
     UpdatePaymentConfigRequest:
       type: object
@@ -3646,3 +4852,279 @@ components:
               type: string
               format: date-time
               nullable: true
+
+    # ── Driver Documents ────────────────────────────────────────────────────
+
+    DocumentType:
+      type: string
+      enum: [license, registration, insurance]
+      description: Type of driver verification document
+
+    UploadStatus:
+      type: string
+      enum: [uploaded, under_review, approved, rejected]
+      description: Current status of document verification
+
+    DriverDocumentResponse:
+      type: object
+      required:
+        [
+          id,
+          driverId,
+          documentType,
+          documentNumber,
+          imageUrl,
+          uploadStatus,
+          uploadedAt,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        driverId:
+          type: string
+          format: uuid
+        documentType:
+          $ref: "#/components/schemas/DocumentType"
+        documentNumber:
+          type: string
+          description: Document identifier (license #, registration #, etc.)
+        imageUrl:
+          type: string
+          format: uri
+          description: URL of uploaded document image
+        expiryDate:
+          type: string
+          format: date
+          nullable: true
+          description: Document expiration date
+        uploadStatus:
+          $ref: "#/components/schemas/UploadStatus"
+        rejectionReason:
+          type: string
+          nullable: true
+          maxLength: 500
+        uploadedAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DriverDocumentsListResponse:
+      type: object
+      required: [documents]
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/DriverDocumentResponse"
+
+    # ── Payments ────────────────────────────────────────────────────────────
+
+    PaymentMethod:
+      type: string
+      enum: [cash, card]
+
+    PaymentStatus:
+      type: string
+      enum: [pending, completed, failed, refunded]
+
+    PaymentResponse:
+      type: object
+      required: [id, rideId, amount, currency, method, status, processedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        rideId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: "USD"
+        method:
+          $ref: "#/components/schemas/PaymentMethod"
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        gatewayTransactionId:
+          type: string
+          nullable: true
+          description: External payment gateway reference (e.g., Stripe PaymentIntent ID)
+        failureReason:
+          type: string
+          nullable: true
+          description: Error message or code when payment fails
+        processedAt:
+          type: string
+          format: date-time
+
+    PaymentFailureResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [PAYMENT_FAILED]
+        message:
+          type: string
+          description: Human-readable failure reason
+        gatewayErrorCode:
+          type: string
+          nullable: true
+          description: Original error code from payment gateway
+
+    ReceiptResponse:
+      type: object
+      required:
+        [
+          rideId,
+          passengerName,
+          driverName,
+          amount,
+          currency,
+          paymentMethod,
+          paymentStatus,
+        ]
+      properties:
+        rideId:
+          type: string
+          format: uuid
+        passengerName:
+          type: string
+        driverName:
+          type: string
+        pickupAddress:
+          type: string
+        destinationAddress:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        completedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ── Tips ────────────────────────────────────────────────────────────────
+
+    AddRideTipRequest:
+      type: object
+      required: [tipAmount]
+      properties:
+        tipAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: Tip amount in ride currency (max 50% of base fare)
+
+    TipResponse:
+      type: object
+      required:
+        [
+          rideId,
+          baseFare,
+          tipAmount,
+          finalTotal,
+          currency,
+          paymentMethod,
+          transactionId,
+        ]
+      properties:
+        rideId:
+          type: string
+          format: uuid
+        baseFare:
+          type: number
+          format: double
+          description: Original base fare amount
+        tipAmount:
+          type: number
+          format: double
+          description: Tip amount added
+        finalTotal:
+          type: number
+          format: double
+          description: Total amount including tip
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: "USD"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        transactionId:
+          type: string
+          description: Payment gateway transaction ID
+        processedAt:
+          type: string
+          format: date-time
+
+    # ── Ratings ─────────────────────────────────────────────────────────────
+
+    RatingResponse:
+      type: object
+      required: [id, rideId, raterId, rateeId, stars, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        rideId:
+          type: string
+          format: uuid
+        raterId:
+          type: string
+          format: uuid
+          description: User who gave the rating
+        rateeId:
+          type: string
+          format: uuid
+          description: User who received the rating
+        stars:
+          type: integer
+          minimum: 1
+          maximum: 5
+        feedback:
+          type: string
+          nullable: true
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+
+    UserRatingResponse:
+      type: object
+      required: [userId, averageRating, ratingCount]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        averageRating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 5
+          example: 4.75
+        ratingCount:
+          type: integer
+          minimum: 0
+          description: Total number of ratings received
+        lastUpdated:
+          type: string
+          format: date-time

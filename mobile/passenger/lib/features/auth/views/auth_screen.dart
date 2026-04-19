@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../../../app/router.dart';
+import '../../../app/routes.dart';
 import '../view_models/login_notifier.dart';
 import '../view_models/register_notifier.dart';
 import 'widgets/login_form.dart';
