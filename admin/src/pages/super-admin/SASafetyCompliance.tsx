@@ -140,9 +140,9 @@ export function SASafetyCompliance() {
 
   async function handleKycConfirm() {
     const status = kycConfirm.action === 'approve' ? 'approved' : 'rejected';
-    const updated = await safetyApi.updateKyc(kycConfirm.entryId, status);
+    await safetyApi.updateKyc(kycConfirm.entryId, status);
     setKycQueue((prev) =>
-      prev.map((k) => (k.id === updated.id ? updated : k))
+      prev.map((k) => (k.id === kycConfirm.entryId ? { ...k, status } : k))
     );
   }
 
@@ -164,7 +164,7 @@ export function SASafetyCompliance() {
   }
 
   function handleGenerateReport() {
-    reportsApi.exportCsv('ltfrb').then(url => {
+    reportsApi.exportCsv('ltfrb').then(({ url }) => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   }

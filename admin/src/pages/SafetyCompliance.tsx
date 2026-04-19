@@ -135,7 +135,7 @@ export function SafetyCompliance() {
   };
 
   const handleGenerateLtfrb = () => {
-    reportsApi.exportCsv('ltfrb').then(url => {
+    reportsApi.exportCsv('ltfrb').then(({ url }) => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };

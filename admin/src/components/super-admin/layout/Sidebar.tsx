@@ -85,7 +85,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-text-main truncate">{user?.name ?? 'Super Admin'}</p>
-            <p className="text-xs text-text-muted truncate">{user?.role ?? 'super_admin'}</p>
+            <p className="text-xs text-text-muted truncate">{user?.role ?? 'superadmin'}</p>
           </div>
         </div>
       </div>

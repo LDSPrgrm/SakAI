@@ -62,8 +62,6 @@ async function fetchRolePermissions(roleId: string): Promise<Role> {
   const json = await res.json();
   // Unwrap the standard envelope if present
   const role = (json?.data ?? json) as Role;
-  // Normalize backend "superadmin" → "super_admin"
-  if (role?.name === 'superadmin') role.name = 'super_admin';
   return role;
 }
 
@@ -102,9 +100,9 @@ export function usePermissions() {
     usePermissionsStore();
 
   const can = (key: PermissionKey, scope: PermissionScope): boolean => {
-    // super_admin is immutable and always allowed — check both the auth context
+    // superadmin is immutable and always allowed — check both the auth context
     // (available immediately from the JWT) and the loaded role (from the permissions API)
-    if (user?.role === 'super_admin' || role?.name === 'super_admin') return true;
+    if (user?.role === 'superadmin' || role?.name === 'superadmin') return true;
     const entry = permissions.find((p) => p.permission_key === key);
     if (!entry) return false;
     return scope === 'read' ? entry.read || entry.write : entry.write;

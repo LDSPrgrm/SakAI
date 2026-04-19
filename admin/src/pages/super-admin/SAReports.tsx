@@ -42,8 +42,8 @@ interface ReportItem {
 // ── Export helper ─────────────────────────────────────────────────────────────
 
 async function handleExport(type: string) {
-  const csv = await reportsApi.exportCsv(type);
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const { data } = await reportsApi.exportCsv(type);
+  const blob = new Blob([data], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

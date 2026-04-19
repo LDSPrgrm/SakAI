@@ -1,4 +1,4 @@
-import { adminRequest, extractArray } from './_request';
+import { adminRequest, adminRequestVoid, extractArray } from './_request';
 import type { Role, RolePermission } from '@/types/super-admin';
 
 export type { Role, RolePermission };
@@ -13,6 +13,10 @@ export const rolesApi = {
   list: () =>
     adminRequest<unknown>('GET', '/roles').then(extractArray<Role>),
 
+  /** GET /admin/roles/{id} — fetch a single role definition (M2). */
+  get: (id: string) =>
+    adminRequest<Role>('GET', `/roles/${id}`),
+
   getPermissions: (id: string) =>
     adminRequest<unknown>('GET', `/roles/${id}/permissions`)
       .then(extractArray<RolePermission>),
@@ -24,8 +28,9 @@ export const rolesApi = {
     adminRequest<Role>('PUT', `/roles/${id}`, data),
 
   delete: (id: string) =>
-    adminRequest<void>('DELETE', `/roles/${id}`),
+    adminRequestVoid('DELETE', `/roles/${id}`),
 
+  // TODO(spec, M3): POST /admin/roles/{id}/duplicate not in swagger.yaml v1.2.0 — coordinate with backend
   duplicate: (id: string) =>
     adminRequest<Role>('POST', `/roles/${id}/duplicate`),
 

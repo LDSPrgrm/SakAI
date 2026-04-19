@@ -61,8 +61,8 @@ function RootRedirect() {
   if (isLoading || permsLoading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
 
-  // super_admin always goes to the super-admin portal regardless of permissions load state
-  if (user.role === 'super_admin' || can('dashboard', 'read')) {
+  // superadmin always goes to the super-admin portal regardless of permissions load state
+  if (user.role === 'superadmin' || can('dashboard', 'read')) {
     return <Navigate to="/super-admin/dashboard" replace />;
   }
   return <Navigate to="/admin/dashboard" replace />;

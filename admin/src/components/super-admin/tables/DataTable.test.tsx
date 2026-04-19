@@ -12,7 +12,7 @@ const columns: ColumnDef<Person>[] = [
 ];
 
 const data: Person[] = [
-  { id: 1, name: 'Alice',   role: 'super_admin' },
+  { id: 1, name: 'Alice',   role: 'superadmin'  },
   { id: 2, name: 'Bob',     role: 'finance'     },
   { id: 3, name: 'Charlie', role: 'support'     },
 ];

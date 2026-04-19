@@ -2,10 +2,9 @@ import type { Transaction, DriverPayout } from '@/types/super-admin';
 
 export const summary = {
   total_revenue: 4520000,
-  driver_payouts: 3616000,
+  payouts: 3616000,
   commission: 904000,
   pending_settlements: 125000,
-  failed_transactions: 12,
 };
 
 export const transactions: Transaction[] = [

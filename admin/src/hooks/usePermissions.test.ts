@@ -63,19 +63,19 @@ describe('usePermissions — can()', () => {
     expect(result.current.can('reports', 'read')).toBe(true);
   });
 
-  it('super_admin bypasses permission checks via auth user role', () => {
-    mockUseAuth.mockReturnValue({ user: { role: 'super_admin' } } as ReturnType<typeof useAuth>);
+  it('superadmin bypasses permission checks via auth user role', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'superadmin' } } as ReturnType<typeof useAuth>);
     usePermissionsStore.setState({ permissions: [], role: null, loading: false, error: null });
     const { result } = renderHook(() => usePermissions());
     expect(result.current.can('role_management', 'write')).toBe(true);
     expect(result.current.can('system_config', 'write')).toBe(true);
   });
 
-  it('super_admin bypasses checks via loaded role name', () => {
+  it('superadmin bypasses checks via loaded role name', () => {
     mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
     usePermissionsStore.setState({
       permissions: [],
-      role: { id: '1', name: 'super_admin', permissions: [] },
+      role: { id: '1', name: 'superadmin', permissions: [] },
       loading: false,
       error: null,
     });

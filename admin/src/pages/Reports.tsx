@@ -39,13 +39,13 @@ export function Reports() {
   }, []);
 
   const handleExportAll = () => {
-    reportsApi.exportCsv('all').then(url => {
+    reportsApi.exportCsv('all').then(({ url }) => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };
 
   const handleDownload = (reportId: string) => {
-    reportsApi.exportCsv(reportId).then(url => {
+    reportsApi.exportCsv(reportId).then(({ url }) => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };

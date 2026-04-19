@@ -32,17 +32,19 @@ type AdminFormValues = z.infer<typeof adminSchema>;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const ROLE_BADGE: Record<string, 'danger' | 'info' | 'warning' | 'default'> = {
-  super_admin: 'danger',
+  admin:      'info',
+  superadmin: 'danger',
   operations: 'info',
-  finance: 'warning',
-  support: 'default',
+  finance:    'warning',
+  support:    'default',
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin',
+  admin:      'Admin',
+  superadmin: 'Super Admin',
   operations: 'Operations',
-  finance: 'Finance',
-  support: 'Support',
+  finance:    'Finance',
+  support:    'Support',
 };
 
 function roleLabel(role: string): string {
@@ -62,12 +64,6 @@ function formatDate(iso: string | null): string {
 
 // Hardcoded current user ID (replace with auth context if available)
 const CURRENT_USER_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-
-/** Convert backend ENUM role ("superadmin") to roles-table name ("super_admin"). */
-function toFormRole(role: string): string {
-  if (role === 'superadmin') return 'super_admin';
-  return role;
-}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -123,7 +119,7 @@ export function SAAdminManagement() {
     reset({
       name: admin.name,
       email: admin.email,
-      role: toFormRole(admin.role),
+      role: admin.role,
       status: admin.status ?? 'active',
       password: '',
     });
@@ -137,9 +133,7 @@ export function SAAdminManagement() {
 
     try {
       if (editingAdmin) {
-        // Compare normalized forms so "superadmin" == "super_admin" doesn't trigger a spurious confirm
-        const currentRole = toFormRole(editingAdmin.role);
-        if (currentRole !== values.role) {
+        if (editingAdmin.role !== values.role) {
           setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
           return;
         }
@@ -186,7 +180,7 @@ export function SAAdminManagement() {
     setConfirmModal({ open: false, type: 'suspend', admin: null });
   }
 
-  const superAdminCount = admins.filter((a) => a.role === 'super_admin').length;
+  const superAdminCount = admins.filter((a) => a.role === 'superadmin').length;
 
   const filtered = admins.filter((a) => {
     const q = search.toLowerCase();
@@ -251,7 +245,7 @@ export function SAAdminManagement() {
                 {filtered.map((admin) => {
                   const isSelf = admin.id === CURRENT_USER_ID;
                   const isLastSuperAdmin =
-                    admin.role === 'super_admin' && superAdminCount === 1;
+                    admin.role === 'superadmin' && superAdminCount === 1;
                   const canAct = !isSelf && !isLastSuperAdmin;
 
                   return (
@@ -449,7 +443,8 @@ export function SAAdminManagement() {
                         ))
                       ) : (
                         <>
-                          <option value="super_admin">Super Admin</option>
+                          <option value="admin">Admin</option>
+                          <option value="superadmin">Super Admin</option>
                           <option value="operations">Operations</option>
                           <option value="finance">Finance</option>
                           <option value="support">Support</option>

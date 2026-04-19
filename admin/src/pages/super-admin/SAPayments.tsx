@@ -23,20 +23,10 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { paymentsApi } from '@/api/super-admin/payments';
+import { paymentsApi, type PaymentSummary } from '@/api/super-admin/payments';
 import { systemApi } from '@/api/super-admin/system';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-interface PaymentSummary {
-  total_revenue: number;
-  driver_payouts: number;
-  commission: number;
-  pending_settlements: number;
-  failed_transactions: number;
-}
 
 interface GatewayProvider {
   id: string;
@@ -106,10 +96,9 @@ export function SAPayments() {
   const [payouts, setPayouts] = useState<DriverPayout[]>([]);
   const [summary, setSummary] = useState<PaymentSummary>({
     total_revenue: 0,
-    driver_payouts: 0,
+    payouts: 0,
     commission: 0,
     pending_settlements: 0,
-    failed_transactions: 0,
   });
   const [search, setSearch] = useState('');
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
@@ -135,7 +124,7 @@ export function SAPayments() {
       ]);
       setTransactions(txns);
       setPayouts(pouts);
-      setSummary(sum as unknown as PaymentSummary);
+      setSummary(sum);
       setCommissionConfig(comm);
     }
     void load();
@@ -234,28 +223,23 @@ export function SAPayments() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <SummaryCard
           title="Total Revenue"
-          value={formatPHP(summary.total_revenue)}
+          value={formatPHP(summary.total_revenue ?? 0)}
           icon={<Wallet className="w-5 h-5 text-primary" />}
         />
         <SummaryCard
           title="Driver Payouts"
-          value={formatPHP(summary.driver_payouts)}
+          value={formatPHP(summary.payouts ?? 0)}
           icon={<ArrowUpRight className="w-5 h-5 text-danger" />}
         />
         <SummaryCard
           title="Platform Commission"
-          value={formatPHP(summary.commission)}
+          value={formatPHP(summary.commission ?? 0)}
           icon={<ArrowDownRight className="w-5 h-5 text-success" />}
         />
         <SummaryCard
           title="Pending Settlements"
-          value={formatPHP(summary.pending_settlements)}
+          value={formatPHP(summary.pending_settlements ?? 0)}
           icon={<Clock className="w-5 h-5 text-warning" />}
-        />
-        <SummaryCard
-          title="Failed Transactions"
-          value={(summary.failed_transactions ?? 0).toString()}
-          icon={<AlertCircle className="w-5 h-5 text-danger" />}
         />
       </div>
 

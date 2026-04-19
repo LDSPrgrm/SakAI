@@ -8,6 +8,8 @@ import { Search, Map } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
 import { ridesApi } from '@/api/admin/rides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
+import type { PaginationMeta } from '@/api/super-admin/_request';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { label: 'All Statuses', value: '' },
@@ -46,19 +48,29 @@ function paymentBadgeLabel(method: string | null): string {
   }
 }
 
+const PAGE_SIZE = 20;
+
 export function RideManagement() {
   const [rides, setRides] = useState<AdminRideItem[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | undefined>();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setLoading(true);
-    ridesApi.list(statusFilter || undefined)
-      .then(r => setRides(r as unknown as AdminRideItem[]))
-      .catch(() => setRides([]))
+    ridesApi.list({ status: statusFilter || undefined, page, limit: PAGE_SIZE })
+      .then(({ items, meta }) => {
+        setRides(items);
+        setMeta(meta);
+      })
+      .catch(() => { setRides([]); setMeta(undefined); })
       .finally(() => setLoading(false));
-  }, [statusFilter]);
+  }, [statusFilter, page]);
+
+  // Reset to page 1 when filter changes.
+  useEffect(() => { setPage(1); }, [statusFilter]);
 
   const q = search.toLowerCase();
   const filtered = rides.filter(ride => {
@@ -102,6 +114,7 @@ export function RideManagement() {
           </div>
         </div>
         <CardContent className="p-0 overflow-x-auto">
+          <PaginationFooter meta={meta} page={page} onPageChange={setPage} />
           <Table>
             <TableHeader>
               <TableRow>
@@ -165,8 +178,50 @@ export function RideManagement() {
               ))}
             </TableBody>
           </Table>
+          <PaginationFooter meta={meta} page={page} onPageChange={setPage} />
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function PaginationFooter({
+  meta,
+  page,
+  onPageChange,
+}: {
+  meta?: PaginationMeta;
+  page: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = meta?.total_pages ?? 1;
+  const totalItems = meta?.total_items ?? 0;
+  if (totalPages <= 1 && totalItems === 0) return null;
+  return (
+    <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border text-sm text-text-muted">
+      <span>
+        Page {page} of {totalPages} · {totalItems} rides
+      </span>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={page <= 1}
+          aria-label="Previous page"
+          onClick={() => onPageChange(page - 1)}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={page >= totalPages}
+          aria-label="Next page"
+          onClick={() => onPageChange(page + 1)}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }

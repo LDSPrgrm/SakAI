@@ -5,9 +5,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { Search, Eye, Ban, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Search, Eye, Ban, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usersApi } from '@/api/admin/users';
 import type { PassengerUser, DriverUser, AdminStatus } from '@/types/super-admin';
+import type { PaginationMeta } from '@/api/super-admin/_request';
+
+const PAGE_SIZE = 20;
 
 function vehicleLabel(v: DriverUser['vehicle']): string {
   if (!v) return '—';
@@ -57,19 +60,25 @@ export function UserManagement() {
   const [search, setSearch] = useState('');
   const [riderList, setRiderList] = useState<PassengerUser[]>([]);
   const [driverList, setDriverList] = useState<DriverUser[]>([]);
+  const [riderMeta, setRiderMeta] = useState<PaginationMeta | undefined>();
+  const [driverMeta, setDriverMeta] = useState<PaginationMeta | undefined>();
+  const [riderPage, setRiderPage] = useState(1);
+  const [driverPage, setDriverPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, title: '', message: '', onConfirm: () => {} });
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      usersApi.getPassengers(),
-      usersApi.getDrivers(),
+      usersApi.getPassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined }),
+      usersApi.getDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined }),
     ]).then(([passengers, drivers]) => {
-      setRiderList(passengers);
-      setDriverList(drivers);
+      setRiderList(passengers.items);
+      setRiderMeta(passengers.meta);
+      setDriverList(drivers.items);
+      setDriverMeta(drivers.meta);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  }, [riderPage, driverPage, search]);
 
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
@@ -89,6 +98,8 @@ export function UserManagement() {
     });
   };
 
+  // Server already applies `q` as a filter; keep client-side narrowing for name/vehicle
+  // fields the backend may not cover.
   const q = search.toLowerCase();
 
   const filteredRiders = riderList.filter(r =>
@@ -191,6 +202,7 @@ export function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
+              <UserPaginationFooter meta={riderMeta} page={riderPage} onPageChange={setRiderPage} label="riders" />
             </TabsContent>
 
             <TabsContent value="drivers" className="m-0 overflow-x-auto">
@@ -256,10 +268,54 @@ export function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
+              <UserPaginationFooter meta={driverMeta} page={driverPage} onPageChange={setDriverPage} label="drivers" />
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function UserPaginationFooter({
+  meta,
+  page,
+  onPageChange,
+  label,
+}: {
+  meta?: PaginationMeta;
+  page: number;
+  onPageChange: (page: number) => void;
+  label: string;
+}) {
+  const totalPages = meta?.total_pages ?? 1;
+  const totalItems = meta?.total_items ?? 0;
+  if (totalPages <= 1 && totalItems === 0) return null;
+  return (
+    <div className="flex items-center justify-between px-4 md:px-6 py-3 border-t border-border text-sm text-text-muted">
+      <span>
+        Page {page} of {totalPages} · {totalItems} {label}
+      </span>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={page <= 1}
+          aria-label="Previous page"
+          onClick={() => onPageChange(page - 1)}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={page >= totalPages}
+          aria-label="Next page"
+          onClick={() => onPageChange(page + 1)}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }
