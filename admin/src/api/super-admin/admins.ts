@@ -33,7 +33,6 @@ export const adminsApi = {
   deactivate: (id: string) =>
     adminRequestVoid('DELETE', `/users/${id}`),
 
-  // TODO(spec, M4): PUT /admin/users/{id}/password not in swagger.yaml v1.2.0 — coordinate with backend
   resetPassword: (id: string, password: string) =>
     adminRequestVoid('PUT', `/users/${id}/password`, { password }),
 

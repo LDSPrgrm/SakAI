@@ -23,7 +23,6 @@ export function enrichAuditLog(
 }
 
 export const auditApi = {
-  // TODO(spec): document limit/offset/actor_id query params on GET /admin/audit (H10)
   getLogs: (params?: { limit?: number; offset?: number; actor_id?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit)    qs.set('limit',    String(params.limit));

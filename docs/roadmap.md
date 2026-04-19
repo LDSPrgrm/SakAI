@@ -29,7 +29,7 @@ This roadmap is structured around two key milestones:
 
 ---
 
-## 🛡️ Phase 2: Security & Bug Fixes (Current)
+## 🛡️ Phase 2: Security & Bug Fixes ✅
 
 > **Goal:** Address system audit findings to make the backend safe for real client connections.
 
@@ -47,15 +47,13 @@ This roadmap is structured around two key milestones:
 - [x] JWT weak-secret panic guard for production
 - [x] Logging for critical async failures
 
-### 🚧 To Do — Critical (Blocks Phase 3 / MVP)
+### ✅ Completed — Critical
 
-> These must be completed before Flutter mobile development begins.
-
-- [ ] **C1:** Notify passenger via WebSocket when offer expires — inject Hub into expiry worker, emit `ride.offer_expired` ([REQ-2.1](requirements.md#req-21-expired-offer-passenger-notification))
-- [ ] **C2:** Exclude drivers with active rides from `FindNearbyOnline` — add `NOT EXISTS` subquery ([REQ-2.2](requirements.md#req-22-exclude-busy-drivers-from-matching))
-- [ ] **L3:** `GetByID` — verify caller is ride participant, return `403` otherwise ([REQ-2.3](requirements.md#req-23-ride-participant-authorization))
-- [ ] **H4:** Request body size limit middleware (`MaxBytesReader`, 1 MiB) ([REQ-2.4](requirements.md#req-24-request-body-size-limit))
-- [ ] **SC1:** Add GIST index on `drivers.location` column (new migration `007_...`) ([REQ-2.5](requirements.md#req-25-geospatial-index))
+- [x] **C1:** Notify passenger via WebSocket when offer expires — inject Hub into expiry worker, emit `ride.offer_expired` ([REQ-2.1](requirements.md#req-21-expired-offer-passenger-notification))
+- [x] **C2:** Exclude drivers with active rides from `FindNearbyOnline` — `NOT EXISTS` subquery ([REQ-2.2](requirements.md#req-22-exclude-busy-drivers-from-matching))
+- [x] **L3:** `GetByID` — verify caller is ride participant, return `403` otherwise ([REQ-2.3](requirements.md#req-23-ride-participant-authorization))
+- [x] **H4:** Request body size limit middleware (`MaxBytesReader`, 1 MiB) ([REQ-2.4](requirements.md#req-24-request-body-size-limit))
+- [x] **SC1:** GIST index on `drivers.location` column (partial index, `WHERE status = 'online'`) ([REQ-2.5](requirements.md#req-25-geospatial-index))
 
 ### 🚧 To Do — High (Important but not blocking MVP)
 
@@ -210,7 +208,7 @@ This roadmap is structured around two key milestones:
 | Phase | Name                 | Focus            | Status         |
 | ----- | -------------------- | ---------------- | -------------- |
 | 1     | Backend Foundation   | Core API         | ✅ Complete    |
-| 2     | Security & Bug Fixes | Audit fixes      | 🚧 In Progress |
+| 2     | Security & Bug Fixes | Audit fixes      | ✅ Complete    |
 | 3     | Flutter Mobile Apps  | Client apps      | ⬜ Not Started |
 | 4     | Admin Dashboard      | Operations UI    | 🚧 In Progress |
 | —     | **MVP Milestone**    | **End-to-end**   | —              |

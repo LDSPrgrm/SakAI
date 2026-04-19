@@ -30,7 +30,6 @@ export const rolesApi = {
   delete: (id: string) =>
     adminRequestVoid('DELETE', `/roles/${id}`),
 
-  // TODO(spec, M3): POST /admin/roles/{id}/duplicate not in swagger.yaml v1.2.0 — coordinate with backend
   duplicate: (id: string) =>
     adminRequest<Role>('POST', `/roles/${id}/duplicate`),
 

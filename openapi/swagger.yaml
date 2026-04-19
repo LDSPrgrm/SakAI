@@ -1109,6 +1109,26 @@ paths:
       operationId: adminListAudit
       security:
         - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: actor_id
+          in: query
+          required: false
+          description: Filter entries to those created by this admin UUID
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Paginated audit logs
@@ -1116,6 +1136,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Write an audit log entry
+      description: |
+        Records an admin action in the audit trail. Called by the frontend after
+        high-impact mutations (fare changes, role edits, payout approvals).
+        Requires any admin role.
+      operationId: adminCreateAuditEntry
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditEntryRequest"
+      responses:
+        "204":
+          description: Audit entry recorded
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2101,6 +2146,98 @@ paths:
               schema:
                 type: string
                 format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Admin self-profile ────────────────────────────────────────────────────
+
+  /admin/users/me:
+    get:
+      tags: [Admin]
+      summary: Get the authenticated admin's own profile
+      description: |
+        Returns the current admin's profile including role_id, role_name, and status.
+        Call on admin app cold-start to re-hydrate session state.
+      operationId: adminGetMe
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Admin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Admin password reset ──────────────────────────────────────────────────
+
+  /admin/users/{id}/password:
+    put:
+      tags: [Admin]
+      summary: Reset another admin's password
+      description: |
+        Superadmin sets a new password for another admin account.
+        Distinct from `PUT /admin/auth/password` which is self-service.
+        Requires Superadmin role.
+      operationId: adminResetUserPassword
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "204":
+          description: Password reset
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Role duplication ──────────────────────────────────────────────────────
+
+  /admin/roles/{id}/duplicate:
+    post:
+      tags: [Admin]
+      summary: Duplicate a role
+      description: |
+        Creates a copy of the given role with "Copy of [name]" as the new name.
+        Permissions are copied verbatim. The new role is not a system role.
+        Requires Superadmin role.
+      operationId: adminDuplicateRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Duplicated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3257,6 +3394,39 @@ components:
           $ref: "#/components/schemas/PaginationMeta"
 
     # ── New Schemas ───────────────────────────────────────────────────────────
+
+    ResetPasswordRequest:
+      type: object
+      required: [new_password]
+      properties:
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+
+    CreateAuditEntryRequest:
+      type: object
+      required: [resource_type, resource_id, action]
+      properties:
+        resource_type:
+          type: string
+          example: fare_config
+        resource_id:
+          type: string
+        action:
+          type: string
+          enum: [create, update, delete, approve, reject, login, logout]
+        before_state:
+          type: object
+          nullable: true
+          additionalProperties: true
+        after_state:
+          type: object
+          nullable: true
+          additionalProperties: true
+        reason:
+          type: string
+          nullable: true
 
     ChangePasswordRequest:
       type: object
