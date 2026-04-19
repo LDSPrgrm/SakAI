@@ -881,7 +881,8 @@ paths:
               required: [driver_location]
               properties:
                 driver_location:
-                  $ref: "#/components/schemas/LatLng"
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
                   description: Driver's current GPS coordinates at time of arrival
       responses:
         "200":
@@ -979,7 +980,8 @@ paths:
               required: [driver_location]
               properties:
                 driver_location:
-                  $ref: "#/components/schemas/LatLng"
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
                   description: Driver's current GPS coordinates at time of completion
       responses:
         "200":
@@ -1998,6 +2000,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active rider count with trend
+      description: Returns the current number of active riders and the trend compared to the previous period.
       operationId: adminMetricsRiders
       security:
         - BearerAuth: []
@@ -2015,6 +2018,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active driver count with trend
+      description: Returns the current number of active drivers and the trend compared to the previous period.
       operationId: adminMetricsDrivers
       security:
         - BearerAuth: []
@@ -2032,6 +2036,7 @@ paths:
     get:
       tags: [Admin]
       summary: Ride count for a period
+      description: Returns the total number of rides completed within the specified period.
       operationId: adminMetricsRides
       security:
         - BearerAuth: []
@@ -2055,6 +2060,7 @@ paths:
     get:
       tags: [Admin]
       summary: Revenue for a period (PHP)
+      description: Returns the total revenue generated within the specified period in Philippine Pesos.
       operationId: adminMetricsRevenue
       security:
         - BearerAuth: []
@@ -2078,6 +2084,7 @@ paths:
     get:
       tags: [Admin]
       summary: Average wait time stats
+      description: Returns the average wait time for passengers across the platform.
       operationId: adminMetricsWaitTime
       security:
         - BearerAuth: []
@@ -2145,6 +2152,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get role with permissions
+      description: Returns the details of a specific role, including its associated permissions.
       operationId: adminGetRole
       security:
         - BearerAuth: []
@@ -2231,6 +2239,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get permission set for a role
+      description: Returns the list of permissions assigned to the specified role.
       operationId: adminGetRolePermissions
       security:
         - BearerAuth: []
@@ -2257,6 +2266,7 @@ paths:
     get:
       tags: [Admin]
       summary: List admins assigned to a role
+      description: Returns a list of administrators who have been assigned the specified role.
       operationId: adminGetRoleAdmins
       security:
         - BearerAuth: []
@@ -2285,6 +2295,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get surge pricing configuration
+      description: Returns the current global surge pricing settings and multipliers.
       operationId: adminGetSurge
       security:
         - BearerAuth: []
@@ -2392,6 +2403,7 @@ paths:
     post:
       tags: [Admin]
       summary: Batch approve or reject KYC submissions
+      description: Processes multiple driver KYC submissions in a single batch operation.
       operationId: adminBatchKyc
       security:
         - BearerAuth: []
@@ -2422,6 +2434,7 @@ paths:
     get:
       tags: [Admin]
       summary: LTFRB compliance dashboard data
+      description: Returns aggregated metrics and stats for LTFRB compliance reporting.
       operationId: adminGetCompliance
       security:
         - BearerAuth: []
@@ -3018,6 +3031,7 @@ components:
         # Authorization
         - FORBIDDEN
         # Resources
+        - NOT_FOUND
         - RIDE_NOT_FOUND
         - USER_NOT_FOUND
         - DOCUMENT_NOT_FOUND
@@ -3053,9 +3067,13 @@ components:
         # File uploads
         - FILE_TOO_LARGE
         - INVALID_FILE_FORMAT
+        - INVALID_DOCUMENT_TYPE
         # Operational
         - RATE_LIMIT_EXCEEDED
         - INTERNAL_SERVER_ERROR
+        # Proximity
+        - DRIVER_TOO_FAR
+        - DRIVER_TOO_FAR_FROM_DESTINATION
 
     ErrorResponse:
       type: object
