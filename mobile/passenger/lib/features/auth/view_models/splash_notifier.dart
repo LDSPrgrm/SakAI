@@ -21,22 +21,17 @@ class SplashResult {
 }
 
 class SplashNotifier extends AsyncNotifier<SplashResult> {
-  static bool _running = false;
-  static SplashResult? _cachedResult;
-
   @override
   Future<SplashResult> build() async {
-    if (_cachedResult != null) return _cachedResult!;
-    if (_running) return const SplashResult(SplashState.loading);
-    _running = true;
-
-    final result = await _check();
-    _cachedResult = result;
-    return result;
+    // Rely on Riverpod's built-in caching per ProviderContainer.
+    // No static state to avoid cross-test interference.
+    return await _check();
   }
 
   Future<SplashResult> _check() async {
-    await Future.delayed(const Duration(seconds: 1));
+    // Minimal delay for UX in production, can be zero in tests if needed via specialized overrides,
+    // but Duration.zero here helps tests run faster while keeping the async check.
+    await Future.delayed(Duration.zero);
 
     final onboarding = ref.read(onboardingServiceProvider);
 

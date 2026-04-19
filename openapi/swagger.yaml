@@ -4425,22 +4425,16 @@ components:
           format: uuid
         name:
           type: string
-          example: city_manager
         description:
           type: string
-        is_system:
+        center:
+          $ref: "#/components/schemas/LatLng"
+        radius:
+          type: number
+          format: float
+          description: Service radius in meters
+        is_active:
           type: boolean
-          description: True for built-in roles that cannot be deleted
-        permissions:
-          type: array
-          items:
-            $ref: "#/components/schemas/RolePermission"
-        admin_count:
-          type: integer
-          description: Number of active admins with this role
-        created_by:
-          type: string
-          format: uuid
         created_at:
           type: string
           format: date-time
@@ -4457,11 +4451,21 @@ components:
           format: uuid
         name:
           type: string
-          enum: [passenger, driver, admin, superadmin]
+        description:
+          type: string
+        is_system:
+          type: boolean
+          description: True for built-in roles that cannot be deleted
         permissions:
           type: array
           items:
             $ref: "#/components/schemas/RolePermission"
+        admin_count:
+          type: integer
+          description: Number of active admins with this role
+        created_by:
+          type: string
+          format: uuid
         created_at:
           type: string
           format: date-time

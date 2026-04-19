@@ -1,4 +1,4 @@
-name: API Contract CI
+name: CI - API Contract
 
 on:
   push:

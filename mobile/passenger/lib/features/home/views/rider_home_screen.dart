@@ -643,7 +643,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         // Destination field
         _buildLocationTile(
           icon: Icons.place,
-          label: destination?.address ?? 'Where to?',
+          label: destination?.address ?? 'Saan kayo pupunta?',
           onTap: () => _openLocationSearch(LocationSearchMode.destination),
           scheme: scheme,
         ),
