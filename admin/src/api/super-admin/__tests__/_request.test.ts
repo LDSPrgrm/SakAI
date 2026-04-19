@@ -153,3 +153,73 @@ describe('extractArray (shim)', () => {
     expect(extractArray<number>([4, 5])).toEqual([4, 5]);
   });
 });
+
+describe('401 refresh + retry', () => {
+  beforeEach(() => {
+    localStorage.setItem('sakai_refresh_token', 'test-refresh-token');
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+    global.fetch = originalFetch;
+  });
+
+  it('refreshes the token and retries on 401', async () => {
+    let callCount = 0;
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+      callCount++;
+      if (String(url).includes('/auth/refresh')) {
+        return Promise.resolve(
+          mockResponse({ status: 200, body: { access_token: 'new-access', refresh_token: 'new-refresh' } }),
+        );
+      }
+      return callCount === 1
+        ? Promise.resolve(mockResponse({ status: 401, ok: false }))
+        : Promise.resolve(mockResponse({ status: 200, body: { id: 99 } }));
+    });
+
+    const result = await adminRequest<{ id: number }>('GET', '/resource');
+    expect(result).toEqual({ id: 99 });
+    expect(callCount).toBe(3); // initial 401 + refresh + retry
+  });
+
+  it('clears tokens and throws when the refresh call fails', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(mockResponse({ status: 401, ok: false }))
+      .mockResolvedValueOnce(mockResponse({ status: 401, ok: false, body: { error: 'token expired' } }));
+
+    await expect(adminRequest('GET', '/resource')).rejects.toThrow(/Session expired/);
+    expect(localStorage.getItem('sakai_access_token')).toBeNull();
+    expect(localStorage.getItem('sakai_refresh_token')).toBeNull();
+  });
+
+  it('concurrent 401s trigger only one refresh call', async () => {
+    let callCount = 0;
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+      callCount++;
+      if (String(url).includes('/auth/refresh')) {
+        return Promise.resolve(
+          mockResponse({ status: 200, body: { access_token: 'new-access', refresh_token: 'new-refresh' } }),
+        );
+      }
+      // First two calls are the concurrent initial requests → 401; retries get 200
+      return callCount <= 2
+        ? Promise.resolve(mockResponse({ status: 401, ok: false }))
+        : Promise.resolve(mockResponse({ status: 200, body: { ok: true } }));
+    });
+
+    const [r1, r2] = await Promise.all([
+      adminRequest<{ ok: boolean }>('GET', '/a'),
+      adminRequest<{ ok: boolean }>('GET', '/b'),
+    ]);
+
+    expect(r1).toEqual({ ok: true });
+    expect(r2).toEqual({ ok: true });
+
+    const refreshCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([url]: [string]) => String(url).includes('/auth/refresh'),
+    );
+    expect(refreshCalls).toHaveLength(1);
+  });
+});
