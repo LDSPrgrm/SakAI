@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_import
@@ -44,11 +43,13 @@ import 'package:sakai_api_client/src/model/dashboard_response.dart';
 import 'package:sakai_api_client/src/model/document_type.dart';
 import 'package:sakai_api_client/src/model/driver_document_response.dart';
 import 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
+import 'package:sakai_api_client/src/model/driver_get_earnings200_response.dart';
 import 'package:sakai_api_client/src/model/driver_payout.dart';
 import 'package:sakai_api_client/src/model/driver_status_request.dart';
 import 'package:sakai_api_client/src/model/driver_status_response.dart';
 import 'package:sakai_api_client/src/model/driver_summary.dart';
 import 'package:sakai_api_client/src/model/e_wallet_details.dart';
+import 'package:sakai_api_client/src/model/earnings_item.dart';
 import 'package:sakai_api_client/src/model/error_code.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
 import 'package:sakai_api_client/src/model/fare_config.dart';
@@ -91,6 +92,7 @@ import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/refresh_request.dart';
 import 'package:sakai_api_client/src/model/register_request.dart';
 import 'package:sakai_api_client/src/model/report_definition.dart';
+import 'package:sakai_api_client/src/model/ride_arrive_request.dart';
 import 'package:sakai_api_client/src/model/ride_event_payload.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
@@ -113,6 +115,7 @@ import 'package:sakai_api_client/src/model/user_rating_response.dart';
 import 'package:sakai_api_client/src/model/user_ride_item.dart';
 import 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 import 'package:sakai_api_client/src/model/vehicle_info.dart';
+import 'package:sakai_api_client/src/model/vehicle_input.dart';
 import 'package:sakai_api_client/src/model/ws_envelope.dart';
 import 'package:sakai_api_client/src/model/ws_event_driver_location_updated.dart';
 import 'package:sakai_api_client/src/model/ws_event_no_drivers_available.dart';
@@ -156,11 +159,13 @@ part 'serializers.g.dart';
   DocumentType,
   DriverDocumentResponse,
   DriverDocumentsListResponse,
+  DriverGetEarnings200Response,
   DriverPayout,
   DriverStatusRequest,
   DriverStatusResponse,
   DriverSummary,
   EWalletDetails,
+  EarningsItem,
   ErrorCode,
   ErrorResponse,
   FareConfig,
@@ -203,6 +208,7 @@ part 'serializers.g.dart';
   RefreshRequest,
   RegisterRequest,
   ReportDefinition,
+  RideArriveRequest,
   RideEventPayload,
   RideRequestBody,
   RideResponse,$RideResponse,
@@ -225,6 +231,7 @@ part 'serializers.g.dart';
   UserRideItem,
   UserRideListResponse,
   VehicleInfo,
+  VehicleInput,
   WsEnvelope,
   WsEventDriverLocationUpdated,
   WsEventNoDriversAvailable,

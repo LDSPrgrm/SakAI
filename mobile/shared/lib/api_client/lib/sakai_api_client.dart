@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 export 'package:sakai_api_client/src/api.dart';
@@ -47,11 +46,13 @@ export 'package:sakai_api_client/src/model/dashboard_response.dart';
 export 'package:sakai_api_client/src/model/document_type.dart';
 export 'package:sakai_api_client/src/model/driver_document_response.dart';
 export 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
+export 'package:sakai_api_client/src/model/driver_get_earnings200_response.dart';
 export 'package:sakai_api_client/src/model/driver_payout.dart';
 export 'package:sakai_api_client/src/model/driver_status_request.dart';
 export 'package:sakai_api_client/src/model/driver_status_response.dart';
 export 'package:sakai_api_client/src/model/driver_summary.dart';
 export 'package:sakai_api_client/src/model/e_wallet_details.dart';
+export 'package:sakai_api_client/src/model/earnings_item.dart';
 export 'package:sakai_api_client/src/model/error_code.dart';
 export 'package:sakai_api_client/src/model/error_response.dart';
 export 'package:sakai_api_client/src/model/fare_config.dart';
@@ -94,6 +95,7 @@ export 'package:sakai_api_client/src/model/receipt_response.dart';
 export 'package:sakai_api_client/src/model/refresh_request.dart';
 export 'package:sakai_api_client/src/model/register_request.dart';
 export 'package:sakai_api_client/src/model/report_definition.dart';
+export 'package:sakai_api_client/src/model/ride_arrive_request.dart';
 export 'package:sakai_api_client/src/model/ride_event_payload.dart';
 export 'package:sakai_api_client/src/model/ride_request_body.dart';
 export 'package:sakai_api_client/src/model/ride_response.dart';
@@ -116,6 +118,7 @@ export 'package:sakai_api_client/src/model/user_rating_response.dart';
 export 'package:sakai_api_client/src/model/user_ride_item.dart';
 export 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 export 'package:sakai_api_client/src/model/vehicle_info.dart';
+export 'package:sakai_api_client/src/model/vehicle_input.dart';
 export 'package:sakai_api_client/src/model/ws_envelope.dart';
 export 'package:sakai_api_client/src/model/ws_event_driver_location_updated.dart';
 export 'package:sakai_api_client/src/model/ws_event_no_drivers_available.dart';

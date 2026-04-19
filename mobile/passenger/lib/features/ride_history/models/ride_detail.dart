@@ -42,7 +42,9 @@ class RideDetail {
     String? driverVehicle;
     if (driver != null) {
       final v = driver.vehicle;
-      driverVehicle = '${v.make} ${v.model} - ${v.plate}';
+      if (v != null) {
+        driverVehicle = '${v.make} ${v.model} - ${v.plate}';
+      }
     }
 
     return RideDetail(

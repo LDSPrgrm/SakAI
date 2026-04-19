@@ -25,6 +25,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/service-area": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get platform service areas
+         * @description Returns the list of geographic zones where SakAI currently operates.
+         *     Used by the client to restrict search radius and matching.
+         */
+        get: operations["getServiceAreas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drivers/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get nearby available drivers by ride type
+         * @description Returns a list of online drivers within the specified radius and vehicle type.
+         *     Used by the passenger app to show available ride options with driver counts.
+         */
+        get: operations["getNearbyDrivers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -132,6 +174,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List user's saved payment methods
+         * @description Returns all payment methods saved by the authenticated user.
+         *     Only `role=passenger` may call this.
+         */
+        get: operations["paymentMethodsList"];
+        put?: never;
+        /**
+         * Add a new payment method
+         * @description Adds a new payment method to the user's account.
+         *     For cards, requires a tokenized payment method ID from the payment gateway (e.g., Stripe).
+         *     Only `role=passenger` may call this.
+         */
+        post: operations["paymentMethodsAdd"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/payment-methods/{paymentMethodId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a payment method
+         * @description Removes a saved payment method. Cannot remove the last payment method.
+         *     Only `role=passenger` may call this.
+         */
+        delete: operations["paymentMethodsRemove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/payment-methods/{paymentMethodId}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set default payment method
+         * @description Sets a payment method as the default for future rides.
+         *     Only `role=passenger` may call this.
+         */
+        put: operations["paymentMethodsSetDefault"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/driver/status": {
         parameters: {
             query?: never;
@@ -203,6 +314,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/driver/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get driver earnings history
+         * @description Returns a paginated list of earnings for the authenticated driver.
+         *     Only `role=driver` may call this. Supports filtering by date range.
+         */
+        get: operations["driverGetEarnings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rides/active": {
         parameters: {
             query?: never;
@@ -234,7 +366,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List user's ride history
+         * @description Returns a paginated list of the authenticated user's past rides.
+         *     Only `role=passenger` may call this. Supports filtering by status.
+         */
+        get: operations["rideList"];
         put?: never;
         /**
          * Request a new ride
@@ -332,6 +469,7 @@ export interface paths {
          * Driver signals arrival at pickup
          * @description Transitions: `accepted` → `arrived`.
          *     Triggers: `ride.status_changed` WebSocket event → both parties.
+         *     Requires driver to be within 50 meters of pickup location.
          */
         post: operations["rideArrive"];
         delete?: never;
@@ -375,6 +513,7 @@ export interface paths {
          * @description Transitions: `in_progress` → `completed`.
          *     Driver status automatically returns to `online` after completion.
          *     Triggers: `ride.status_changed` WebSocket event → both parties.
+         *     Requires driver to be within 100 meters of destination location.
          */
         post: operations["rideComplete"];
         delete?: never;
@@ -1052,7 +1191,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Active rider count with trend */
+        /**
+         * Active rider count with trend
+         * @description Returns the current number of active riders and the trend compared to the previous period.
+         */
         get: operations["adminMetricsRiders"];
         put?: never;
         post?: never;
@@ -1069,7 +1211,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Active driver count with trend */
+        /**
+         * Active driver count with trend
+         * @description Returns the current number of active drivers and the trend compared to the previous period.
+         */
         get: operations["adminMetricsDrivers"];
         put?: never;
         post?: never;
@@ -1086,7 +1231,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ride count for a period */
+        /**
+         * Ride count for a period
+         * @description Returns the total number of rides completed within the specified period.
+         */
         get: operations["adminMetricsRides"];
         put?: never;
         post?: never;
@@ -1103,7 +1251,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Revenue for a period (PHP) */
+        /**
+         * Revenue for a period (PHP)
+         * @description Returns the total revenue generated within the specified period in Philippine Pesos.
+         */
         get: operations["adminMetricsRevenue"];
         put?: never;
         post?: never;
@@ -1120,7 +1271,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Average wait time stats */
+        /**
+         * Average wait time stats
+         * @description Returns the average wait time for passengers across the platform.
+         */
         get: operations["adminMetricsWaitTime"];
         put?: never;
         post?: never;
@@ -1161,7 +1315,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get role with permissions */
+        /**
+         * Get role with permissions
+         * @description Returns the details of a specific role, including its associated permissions.
+         */
         get: operations["adminGetRole"];
         /**
          * Update role
@@ -1186,7 +1343,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get permission set for a role */
+        /**
+         * Get permission set for a role
+         * @description Returns the list of permissions assigned to the specified role.
+         */
         get: operations["adminGetRolePermissions"];
         put?: never;
         post?: never;
@@ -1203,7 +1363,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List admins assigned to a role */
+        /**
+         * List admins assigned to a role
+         * @description Returns a list of administrators who have been assigned the specified role.
+         */
         get: operations["adminGetRoleAdmins"];
         put?: never;
         post?: never;
@@ -1220,7 +1383,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get surge pricing configuration */
+        /**
+         * Get surge pricing configuration
+         * @description Returns the current global surge pricing settings and multipliers.
+         */
         get: operations["adminGetSurge"];
         put?: never;
         post?: never;
@@ -1299,7 +1465,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Batch approve or reject KYC submissions */
+        /**
+         * Batch approve or reject KYC submissions
+         * @description Processes multiple driver KYC submissions in a single batch operation.
+         */
         post: operations["adminBatchKyc"];
         delete?: never;
         options?: never;
@@ -1314,7 +1483,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** LTFRB compliance dashboard data */
+        /**
+         * LTFRB compliance dashboard data
+         * @description Returns aggregated metrics and stats for LTFRB compliance reporting.
+         */
         get: operations["adminGetCompliance"];
         put?: never;
         post?: never;
@@ -1364,6 +1536,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/drivers/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all uploaded documents for the authenticated driver
+         * @description Returns all documents uploaded by the authenticated driver with their current verification status.
+         */
+        get: operations["driverListDocuments"];
+        put?: never;
+        /**
+         * Upload a driver verification document
+         * @description Upload a driver verification document (license, registration, or insurance).
+         *     Requires `role=driver`. Uploaded documents enter `uploaded` status and await admin review.
+         *     Images must be JPEG or PNG, max 10MB.
+         */
+        post: operations["driverUploadDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drivers/documents/{documentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get status of a specific document
+         * @description Retrieve the status and details of an uploaded document.
+         *     Only the document owner can access this endpoint.
+         */
+        get: operations["driverGetDocumentStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process a card payment for a completed ride
+         * @description Process a card payment using a tokenized payment from the mobile SDK (e.g., Stripe).
+         *     Requires `Idempotency-Key` header for safe retry handling.
+         *     Only the passenger associated with the ride can process payment.
+         */
+        post: operations["paymentProcess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rides/{rideId}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get payment receipt for a completed ride
+         * @description Retrieve the payment receipt for a completed ride.
+         *     Accessible by both the passenger and driver associated with the ride.
+         */
+        get: operations["getRideReceipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rides/{rideId}/tip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a tip to a completed ride
+         * @description Add an optional tip to a completed ride's payment.
+         *     Only the passenger associated with the ride can add a tip.
+         *     Tips can only be added after ride completion.
+         *     Maximum tip amount is 50% of base fare.
+         */
+        post: operations["addRideTip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rides/{rideId}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a rating for the other party in a ride
+         * @description Submit a rating (1-5 stars) with optional written feedback.
+         *     Each user can rate once per ride. Both passengers and drivers can rate.
+         */
+        post: operations["submitRating"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get average rating for a user
+         * @description Retrieve the average rating and rating count for any user.
+         *     Any authenticated user can access this endpoint.
+         */
+        get: operations["getUserRating"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1372,7 +1699,7 @@ export interface components {
          * @description Machine-readable error code. Flutter clients should branch on this, not on `message`.
          * @enum {string}
          */
-        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "NO_DRIVERS_AVAILABLE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR";
+        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION";
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -1442,10 +1769,26 @@ export interface components {
              */
             password: string;
             /**
-             * @example passenger
+             * @example driver
              * @enum {string}
              */
             role: "passenger" | "driver";
+            vehicle?: components["schemas"]["VehicleInput"];
+        };
+        VehicleInput: {
+            /** @example Toyota */
+            make: string;
+            /** @example Vios */
+            model: string;
+            /** @example Silver */
+            color: string;
+            /** @example ABC 1234 */
+            plate: string;
+            /**
+             * @example car
+             * @enum {string}
+             */
+            vehicle_type: "motorcycle" | "car" | "tricycle";
         };
         LoginRequest: {
             /**
@@ -1520,6 +1863,100 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * @description Type of payment method
+         * @enum {string}
+         */
+        PaymentMethodType: "card" | "e_wallet" | "cash";
+        PaymentMethodDetails: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["PaymentMethodType"];
+            /** @description Whether this is the default payment method */
+            is_default: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** @description Present only if type == "card" */
+            card?: components["schemas"]["CardDetails"] | null;
+            /** @description Present only if type == "e_wallet" */
+            e_wallet?: components["schemas"]["EWalletDetails"] | null;
+        };
+        CardDetails: {
+            /**
+             * @description Last 4 digits of card
+             * @example 1234
+             */
+            last4: string;
+            /** @example 12 */
+            expiry_month: number;
+            /** @example 2027 */
+            expiry_year: number;
+            /**
+             * @description Card brand name
+             * @example Visa
+             */
+            brand: string;
+        };
+        EWalletDetails: {
+            /**
+             * @description E-wallet provider name
+             * @example GCash
+             */
+            provider: string;
+            /**
+             * @description Account identifier (phone or account ID)
+             * @example +639171234567
+             */
+            account_id: string;
+        };
+        PaymentMethodListResponse: {
+            data: components["schemas"]["PaymentMethodDetails"][];
+        };
+        AddPaymentMethodRequest: {
+            type: components["schemas"]["PaymentMethodType"];
+            /** @description Payment gateway token for card (required if type == "card") */
+            card_token?: string | null;
+            /** @description E-wallet provider name (required if type == "e_wallet") */
+            provider?: string | null;
+            /** @description E-wallet account ID (required if type == "e_wallet") */
+            account_id?: string | null;
+            /**
+             * @description Set as default payment method
+             * @default false
+             */
+            set_as_default: boolean;
+        };
+        UserRideItem: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["RideStatus"];
+            /** @example 123 Rizal Ave, Manila */
+            origin_address: string;
+            /** @example BGC, Taguig City */
+            destination_address: string;
+            /**
+             * Format: double
+             * @description Final fare (null if not completed)
+             * @example 250
+             */
+            fare?: number | null;
+            /**
+             * Format: double
+             * @example 230
+             */
+            estimated_fare: number;
+            driver?: components["schemas"]["DriverSummary"] | null;
+            /** @enum {string} */
+            payment_method: "cash" | "card";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UserRideListResponse: {
+            data: components["schemas"]["UserRideItem"][];
+            pagination: components["schemas"]["PaginationMeta"];
+        };
         /** @description Vehicle details for a driver. Displayed to passengers after match. */
         VehicleInfo: {
             /** @example Toyota */
@@ -1584,6 +2021,18 @@ export interface components {
              * @example I'll be waiting at the lobby entrance.
              */
             notes?: string;
+            /**
+             * @description Passenger's selected vehicle type
+             * @default car
+             * @enum {string}
+             */
+            ride_type: "motorcycle" | "car" | "tricycle";
+            /**
+             * @description Payment method for this ride
+             * @default cash
+             * @enum {string}
+             */
+            payment_method: "cash" | "card";
         };
         RideResponse: {
             /**
@@ -1603,10 +2052,60 @@ export interface components {
             destination_address?: string | null;
             notes?: string | null;
             /**
+             * Format: double
+             * @description Final fare amount (null if ride not completed)
+             * @example 250
+             */
+            fare?: number | null;
+            /**
+             * Format: double
+             * @description Estimated fare at request time
+             * @example 230
+             */
+            estimated_fare?: number;
+            /**
+             * Format: double
+             * @description Actual fare after completion
+             * @example 250
+             */
+            actual_fare?: number | null;
+            /**
+             * @description JSONB breakdown of fare components
+             * @example {
+             *       "base_fare": 40,
+             *       "distance_charge": 150,
+             *       "time_charge": 40,
+             *       "booking_fee": 20
+             *     }
+             */
+            fare_breakdown?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * @description Vehicle type for this ride
+             * @enum {string}
+             */
+            ride_type?: "motorcycle" | "car" | "tricycle";
+            /**
+             * @description Payment method used for ride
+             * @enum {string}
+             */
+            payment_method?: "cash" | "card";
+            /**
              * @description Set only when status is `cancelled`
              * @enum {string|null}
              */
             cancelled_by?: "passenger" | "driver" | null;
+            /**
+             * @description Predefined cancellation reason code
+             * @example driver_too_far
+             */
+            cancellation_reason?: string | null;
+            /**
+             * @description Free-text cancellation reason
+             * @example Driver was too far away
+             */
+            cancellation_reason_text?: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -1618,15 +2117,61 @@ export interface components {
             id: string;
             /** @example Juan dela Cruz */
             name: string;
-            vehicle: components["schemas"]["VehicleInfo"];
+            /** @description Null if driver has no vehicle record yet. */
+            vehicle?: components["schemas"]["VehicleInfo"] | null;
             current_location?: components["schemas"]["LatLng"];
+        };
+        /** @description A single ride's earnings contribution for a driver. */
+        EarningsItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            ride_id: string;
+            /**
+             * Format: double
+             * @description Driver's share of the fare (before commission)
+             */
+            fare_amount: number;
+            /**
+             * Format: double
+             * @description Tip amount (0 if no tip)
+             */
+            tip_amount: number;
+            /**
+             * Format: double
+             * @description Total earnings for this ride (fare + tip)
+             */
+            total_amount: number;
+            /**
+             * @description ISO 4217 currency code
+             * @default USD
+             */
+            currency: string;
+            /**
+             * Format: date-time
+             * @description When the ride was completed
+             */
+            completed_at: string;
+        };
+        /** @description Consistent payload for ride WebSocket events */
+        RideEventPayload: {
+            /** Format: uuid */
+            ride_id?: string;
+            /** @enum {string} */
+            status?: "requested" | "accepted" | "arrived" | "in_progress" | "completed" | "cancelled";
+            /** Format: uuid */
+            driver_id?: string | null;
+            /** Format: uuid */
+            passenger_id?: string | null;
         };
         CancelRequest: {
             /**
-             * @description Optional cancellation reason
-             * @example Change of plans
+             * @description Predefined cancellation reason
+             * @enum {string}
              */
-            reason?: string;
+            reason_code: "driver_too_far" | "changed_plans" | "wrong_pickup" | "driver_not_moving" | "safety_concern" | "other";
+            /** @description Free-text explanation when reason_code is "other" */
+            reason_text?: string | null;
         };
         /** @description Wrapper for all WebSocket messages */
         WsEnvelope: {
@@ -2006,15 +2551,49 @@ export interface components {
             /** @enum {string} */
             trend?: "up" | "down" | "flat";
         };
+        /**
+         * @example {
+         *       "areas": [
+         *         {
+         *           "id": "550e8400-e29b-41d4-a716-446655440000",
+         *           "name": "Northern Luzon Service Area",
+         *           "center": {
+         *             "lat": 16.607538,
+         *             "lng": 120.2693932
+         *           },
+         *           "radius": 100000
+         *         }
+         *       ]
+         *     }
+         */
+        ServiceAreaResponse: {
+            areas?: components["schemas"]["ServiceArea"][];
+        };
+        ServiceArea: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string;
+            center: components["schemas"]["LatLng"];
+            /**
+             * Format: float
+             * @description Service radius in meters
+             */
+            radius: number;
+            is_active?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
         Role: {
             /** Format: uuid */
-            id?: string;
-            /** @example city_manager */
-            name?: string;
+            id: string;
+            name: string;
             description?: string;
             /** @description True for built-in roles that cannot be deleted */
             is_system?: boolean;
-            permissions?: components["schemas"]["RolePermission"][];
+            permissions: components["schemas"]["RolePermission"][];
             /** @description Number of active admins with this role */
             admin_count?: number;
             /** Format: uuid */
@@ -2044,17 +2623,74 @@ export interface components {
             ids: string[];
         };
         PaymentGatewayConfig: {
+            /** @example Metro Manila */
+            name?: string;
+            center?: components["schemas"]["LatLng"];
+            /**
+             * Format: float
+             * @description Service radius in meters
+             * @example 15000
+             */
+            radius?: number;
+        };
+        /**
+         * @example {
+         *       "drivers": [
+         *         {
+         *           "id": "550e8400-e29b-41d4-a716-446655440001",
+         *           "name": "Juan",
+         *           "location": {
+         *             "lat": 16.608,
+         *             "lng": 120.269
+         *           },
+         *           "heading": 45,
+         *           "vehicle_type": "motorcycle"
+         *         },
+         *         {
+         *           "id": "550e8400-e29b-41d4-a716-446655440002",
+         *           "name": "Pedro",
+         *           "location": {
+         *             "lat": 16.612,
+         *             "lng": 120.272
+         *           },
+         *           "heading": 180,
+         *           "vehicle_type": "car"
+         *         },
+         *         {
+         *           "id": "550e8400-e29b-41d4-a716-446655440003",
+         *           "name": "Maria",
+         *           "location": {
+         *             "lat": 16.605,
+         *             "lng": 120.262
+         *           },
+         *           "heading": 270,
+         *           "vehicle_type": "tricycle"
+         *         }
+         *       ]
+         *     }
+         */
+        NearbyDriversResponse: {
+            drivers?: components["schemas"]["NearbyDriver"][];
+        };
+        NearbyDriver: {
             /** Format: uuid */
-            id?: string;
+            id: string;
+            name: string;
+            vehicle_make?: string;
+            vehicle_model?: string;
+            vehicle_plate?: string;
             /** @enum {string} */
-            provider?: "gcash" | "paymaya" | "card" | "cash";
-            /** @description API keys and settings — sensitive fields shown masked (last 4 chars) */
-            config_fields?: {
-                [key: string]: string;
-            };
-            is_active?: boolean;
-            /** Format: date-time */
-            updated_at?: string;
+            vehicle_type: "motorcycle" | "car" | "tricycle";
+            /** Format: double */
+            rating?: number | null;
+            /** Format: double */
+            distance_m?: number | null;
+            location: components["schemas"]["LatLng"];
+            /**
+             * Format: double
+             * @description Compass bearing in degrees
+             */
+            heading?: number | null;
         };
         UpdatePaymentConfigRequest: {
             config_fields?: {
@@ -2094,6 +2730,157 @@ export interface components {
             created_by?: string;
             /** Format: date-time */
             last_login_at?: string | null;
+        };
+        /**
+         * @description Type of driver verification document
+         * @enum {string}
+         */
+        DocumentType: "license" | "registration" | "insurance";
+        /**
+         * @description Current status of document verification
+         * @enum {string}
+         */
+        UploadStatus: "uploaded" | "under_review" | "approved" | "rejected";
+        DriverDocumentResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            driverId: string;
+            documentType: components["schemas"]["DocumentType"];
+            /** @description Document identifier (license */
+            documentNumber: string;
+            /**
+             * Format: uri
+             * @description URL of uploaded document image
+             */
+            imageUrl: string;
+            /**
+             * Format: date
+             * @description Document expiration date
+             */
+            expiryDate?: string | null;
+            uploadStatus: components["schemas"]["UploadStatus"];
+            rejectionReason?: string | null;
+            /** Format: date-time */
+            uploadedAt: string;
+            /** Format: date-time */
+            reviewedAt?: string | null;
+        };
+        DriverDocumentsListResponse: {
+            documents: components["schemas"]["DriverDocumentResponse"][];
+        };
+        /** @enum {string} */
+        PaymentMethod: "cash" | "card";
+        /** @enum {string} */
+        PaymentStatus: "pending" | "completed" | "failed" | "refunded";
+        PaymentResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rideId: string;
+            /** Format: double */
+            amount: number;
+            /** @example USD */
+            currency: string;
+            method: components["schemas"]["PaymentMethod"];
+            status: components["schemas"]["PaymentStatus"];
+            /** @description External payment gateway reference (e.g., Stripe PaymentIntent ID) */
+            gatewayTransactionId?: string | null;
+            /** @description Error message or code when payment fails */
+            failureReason?: string | null;
+            /** Format: date-time */
+            processedAt: string;
+        };
+        PaymentFailureResponse: {
+            /** @enum {string} */
+            code: "PAYMENT_FAILED";
+            /** @description Human-readable failure reason */
+            message: string;
+            /** @description Original error code from payment gateway */
+            gatewayErrorCode?: string | null;
+        };
+        ReceiptResponse: {
+            /** Format: uuid */
+            rideId: string;
+            passengerName: string;
+            driverName: string;
+            pickupAddress?: string;
+            destinationAddress?: string;
+            /** Format: double */
+            amount: number;
+            currency: string;
+            paymentMethod: components["schemas"]["PaymentMethod"];
+            paymentStatus: components["schemas"]["PaymentStatus"];
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: date-time */
+            processedAt?: string | null;
+        };
+        AddRideTipRequest: {
+            /**
+             * Format: double
+             * @description Tip amount in ride currency (max 50% of base fare)
+             */
+            tipAmount: number;
+        };
+        TipResponse: {
+            /** Format: uuid */
+            rideId: string;
+            /**
+             * Format: double
+             * @description Original base fare amount
+             */
+            baseFare: number;
+            /**
+             * Format: double
+             * @description Tip amount added
+             */
+            tipAmount: number;
+            /**
+             * Format: double
+             * @description Total amount including tip
+             */
+            finalTotal: number;
+            /** @example USD */
+            currency: string;
+            paymentMethod: components["schemas"]["PaymentMethod"];
+            /** @description Payment gateway transaction ID */
+            transactionId: string;
+            /** Format: date-time */
+            processedAt?: string;
+        };
+        RatingResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rideId: string;
+            /**
+             * Format: uuid
+             * @description User who gave the rating
+             */
+            raterId: string;
+            /**
+             * Format: uuid
+             * @description User who received the rating
+             */
+            rateeId: string;
+            stars: number;
+            feedback?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UserRatingResponse: {
+            /** Format: uuid */
+            userId: string;
+            /**
+             * Format: double
+             * @example 4.75
+             */
+            averageRating: number;
+            /** @description Total number of ratings received */
+            ratingCount: number;
+            /** Format: date-time */
+            lastUpdated?: string;
         };
     };
     responses: {
@@ -2223,6 +3010,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    getServiceAreas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of service areas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceAreaResponse"];
+                };
+            };
+        };
+    };
+    getNearbyDrivers: {
+        parameters: {
+            query: {
+                lat: number;
+                lng: number;
+                radius_m?: number;
+                ride_type: "motorcycle" | "car" | "tricycle";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of nearby drivers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        drivers?: components["schemas"]["NearbyDriver"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description No drivers available */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NO_DRIVERS_AVAILABLE",
+                     *       "message": "No drivers of requested type within range"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -2390,6 +3242,163 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    paymentMethodsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of payment methods */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    paymentMethodsAdd: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddPaymentMethodRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment method added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodDetails"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Duplicate payment method */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENT_METHOD_DUPLICATE",
+                     *       "message": "This payment method is already saved to your account"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    paymentMethodsRemove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the payment method to remove */
+                paymentMethodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment method removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Payment method not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENT_METHOD_NOT_FOUND",
+                     *       "message": "Payment method not found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Cannot remove last payment method */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENT_METHOD_LAST_METHOD",
+                     *       "message": "Cannot remove your only payment method"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    paymentMethodsSetDefault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the payment method to set as default */
+                paymentMethodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodDetails"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Payment method not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENT_METHOD_NOT_FOUND",
+                     *       "message": "Payment method not found"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     driverSetStatus: {
         parameters: {
             query?: never;
@@ -2487,6 +3496,40 @@ export interface operations {
             };
         };
     };
+    driverGetEarnings: {
+        parameters: {
+            query?: {
+                /** @description Start date (YYYY-MM-DD). Defaults to 30 days ago. */
+                from?: string;
+                /** @description End date (YYYY-MM-DD). Defaults to today. */
+                to?: string;
+                /** @description Page number (1-based) */
+                page?: number;
+                /** @description Items per page (max 50) */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated earnings history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["EarningsItem"][];
+                        pagination?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     rideGetActive: {
         parameters: {
             query?: never;
@@ -2513,6 +3556,35 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    rideList: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-based) */
+                page?: number;
+                /** @description Items per page (max 50) */
+                limit?: number;
+                /** @description Filter by status (comma-separated): completed,cancelled */
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated ride history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRideListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     rideRequest: {
@@ -2545,7 +3617,15 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
+            /** @description Forbidden — or passenger has an unresolved failed payment older than 24 hours (code: UNPAID_RIDE_BLOCKED) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Passenger already has an active ride */
             409: {
                 headers: {
@@ -2681,7 +3761,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Driver's current GPS coordinates at time of arrival */
+                    driver_location: components["schemas"]["LatLng"];
+                };
+            };
+        };
         responses: {
             /** @description Driver arrived at pickup */
             200: {
@@ -2692,21 +3779,30 @@ export interface operations {
                     "application/json": components["schemas"]["RideResponse"];
                 };
             };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            /** @description Ride is not in `accepted` state */
-            409: {
+            /** @description Invalid driver location or missing required field */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     /**
                      * @example {
-                     *       "code": "RIDE_INVALID_STATE_TRANSITION",
-                     *       "message": "Ride must be in 'accepted' state to mark arrival"
+                     *       "code": "VALIDATION_ERROR",
+                     *       "message": "driver_location is required"
                      *     }
                      */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Ride is not in `accepted` state or driver too far from pickup */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -2763,7 +3859,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Driver's current GPS coordinates at time of completion */
+                    driver_location: components["schemas"]["LatLng"];
+                };
+            };
+        };
         responses: {
             /** @description Ride completed */
             200: {
@@ -2774,21 +3877,30 @@ export interface operations {
                     "application/json": components["schemas"]["RideResponse"];
                 };
             };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            /** @description Ride is not in `in_progress` state */
-            409: {
+            /** @description Invalid driver location or missing required field */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     /**
                      * @example {
-                     *       "code": "RIDE_INVALID_STATE_TRANSITION",
-                     *       "message": "Ride must be in 'in_progress' state to complete"
+                     *       "code": "VALIDATION_ERROR",
+                     *       "message": "driver_location is required"
                      *     }
                      */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Ride is not in `in_progress` state or driver too far from destination */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
@@ -4182,6 +5294,406 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    driverListDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of driver documents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverDocumentsListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    driverUploadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * @description Type of document being uploaded
+                     * @enum {string}
+                     */
+                    documentType: "license" | "registration" | "insurance";
+                    /** @description Document identifier (license number, registration number, etc.) */
+                    documentNumber: string;
+                    /**
+                     * Format: date
+                     * @description Document expiration date (optional)
+                     */
+                    expiryDate?: string;
+                    /**
+                     * Format: binary
+                     * @description Document image file (JPEG/PNG, max 10MB)
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Document uploaded successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverDocumentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description File too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "FILE_TOO_LARGE",
+                     *       "message": "File size exceeds 10MB limit"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid file format */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_FILE_FORMAT",
+                     *       "message": "Only JPEG and PNG images are accepted"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    driverGetDocumentStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the document */
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverDocumentResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "DOCUMENT_NOT_FOUND",
+                     *       "message": "Document not found or you do not have access"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    paymentProcess: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description Client-generated UUID to prevent duplicate ride creation on retries.
+                 *     Generate once per request attempt and store until a definitive response is received.
+                 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: uuid
+                     * @description UUID of the completed ride
+                     */
+                    rideId: string;
+                    /** @description Tokenized payment method from mobile SDK (e.g., Stripe PaymentIntent token) */
+                    paymentMethodToken: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Payment processed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description Payment failed (card declined, insufficient funds) */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentFailureResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            /** @description Duplicate request (idempotency key conflict) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "DUPLICATE_PAYMENT",
+                     *       "message": "A payment with this idempotency key already exists"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ride not in completed state */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RIDE_NOT_COMPLETED",
+                     *       "message": "Cannot process payment for a ride that is not in completed state"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getRideReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the ride */
+                rideId: components["parameters"]["RideId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment receipt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addRideTip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the ride */
+                rideId: components["parameters"]["RideId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Format: double
+                     * @description Tip amount in ride currency
+                     */
+                    tipAmount: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Tip added successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Tip already added to this ride */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "TIP_ALREADY_ADDED",
+                     *       "message": "A tip has already been added to this ride"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ride not in completed state */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RIDE_NOT_COMPLETED",
+                     *       "message": "Cannot add tip for a ride that is not in completed state"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submitRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the ride */
+                rideId: components["parameters"]["RideId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Star rating (1-5) */
+                    stars: number;
+                    /** @description Optional written feedback (max 500 characters) */
+                    feedback?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Rating submitted successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description User has already rated this ride */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "ALREADY_RATED",
+                     *       "message": "You have already rated this ride"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ride not in completed state */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RIDE_NOT_COMPLETED",
+                     *       "message": "Cannot rate a ride that is not in completed state"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getUserRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the user */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User rating summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRatingResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

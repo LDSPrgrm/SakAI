@@ -12,16 +12,16 @@ class _$WsEventNoDriversAvailable extends WsEventNoDriversAvailable {
   @override
   final String? message;
 
-  factory _$WsEventNoDriversAvailable(
-          [void Function(WsEventNoDriversAvailableBuilder)? updates]) =>
-      (WsEventNoDriversAvailableBuilder()..update(updates))._build();
+  factory _$WsEventNoDriversAvailable([
+    void Function(WsEventNoDriversAvailableBuilder)? updates,
+  ]) => (WsEventNoDriversAvailableBuilder()..update(updates))._build();
 
   _$WsEventNoDriversAvailable._({required this.rideId, this.message})
-      : super._();
+    : super._();
   @override
   WsEventNoDriversAvailable rebuild(
-          void Function(WsEventNoDriversAvailableBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(WsEventNoDriversAvailableBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   WsEventNoDriversAvailableBuilder toBuilder() =>
@@ -94,10 +94,14 @@ class WsEventNoDriversAvailableBuilder
   WsEventNoDriversAvailable build() => _build();
 
   _$WsEventNoDriversAvailable _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$WsEventNoDriversAvailable._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-              rideId, r'WsEventNoDriversAvailable', 'rideId'),
+            rideId,
+            r'WsEventNoDriversAvailable',
+            'rideId',
+          ),
           message: message,
         );
     replace(_$result);

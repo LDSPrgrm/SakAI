@@ -29,17 +29,17 @@ class _$ServiceArea extends ServiceArea {
   factory _$ServiceArea([void Function(ServiceAreaBuilder)? updates]) =>
       (ServiceAreaBuilder()..update(updates))._build();
 
-  _$ServiceArea._(
-      {required this.id,
-      required this.name,
-      this.description,
-      this.isSystem,
-      this.permissions,
-      this.adminCount,
-      this.createdBy,
-      this.createdAt,
-      this.updatedAt})
-      : super._();
+  _$ServiceArea._({
+    required this.id,
+    required this.name,
+    this.description,
+    this.isSystem,
+    this.permissions,
+    this.adminCount,
+    this.createdBy,
+    this.createdAt,
+    this.updatedAt,
+  }) : super._();
   @override
   ServiceArea rebuild(void Function(ServiceAreaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -172,11 +172,15 @@ class ServiceAreaBuilder implements Builder<ServiceArea, ServiceAreaBuilder> {
   _$ServiceArea _build() {
     _$ServiceArea _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$ServiceArea._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'ServiceArea', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'ServiceArea', 'name'),
+              name,
+              r'ServiceArea',
+              'name',
+            ),
             description: description,
             isSystem: isSystem,
             permissions: _permissions?.build(),
@@ -192,7 +196,10 @@ class ServiceAreaBuilder implements Builder<ServiceArea, ServiceAreaBuilder> {
         _permissions?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ServiceArea', _$failedField, e.toString());
+          r'ServiceArea',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

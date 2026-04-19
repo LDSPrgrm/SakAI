@@ -1,4 +1,4 @@
-import { FareConfig, SurgeConfig } from '@/lib/admin-api';
+import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 
 export const fareConfigs: FareConfig[] = [
   {

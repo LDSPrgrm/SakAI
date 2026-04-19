@@ -182,7 +182,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                       // Vehicle Type Dropdown
                       DropdownButtonFormField<RegVehicleType>(
-                        value: state.selectedVehicleType,
+                        initialValue: state.selectedVehicleType,
                         decoration: InputDecoration(
                           labelText: 'Vehicle Type',
                           border: OutlineInputBorder(

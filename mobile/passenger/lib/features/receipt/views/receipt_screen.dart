@@ -52,10 +52,12 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
         '${tempDir.path}/receipt_${widget.rideId}.png',
       ).writeAsBytes(pngBytes);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'SakAI Ride Receipt',
-        text: 'Receipt for your SakAI ride',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'SakAI Ride Receipt',
+          text: 'Receipt for your SakAI ride',
+        ),
       );
     } catch (e) {
       if (mounted) {

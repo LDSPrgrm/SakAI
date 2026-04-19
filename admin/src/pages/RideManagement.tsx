@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Search, Map } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { adminApi, AdminRideItem, RideStatus } from '@/lib/admin-api';
+import { ridesApi } from '@/api/admin/rides';
+import type { AdminRideItem, RideStatus } from '@/types/super-admin';
 
 const STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { label: 'All Statuses', value: '' },
@@ -53,8 +54,8 @@ export function RideManagement() {
 
   useEffect(() => {
     setLoading(true);
-    adminApi.rides.list(statusFilter || undefined)
-      .then(setRides)
+    ridesApi.list(statusFilter || undefined)
+      .then(r => setRides(r as unknown as AdminRideItem[]))
       .catch(() => setRides([]))
       .finally(() => setLoading(false));
   }, [statusFilter]);
@@ -150,7 +151,7 @@ export function RideManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(ride.status) as any}>{statusLabel(ride.status)}</Badge>
+                    <Badge variant={getStatusVariant(ride.status as RideStatus) as any}>{statusLabel(ride.status as RideStatus)}</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-text-muted">
                     {ride.created_at ? new Date(ride.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : '—'}

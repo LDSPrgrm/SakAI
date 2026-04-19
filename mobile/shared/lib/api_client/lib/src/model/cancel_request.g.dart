@@ -13,7 +13,7 @@ const CancelRequestReasonCodeEnum _$cancelRequestReasonCodeEnum_changedPlans =
 const CancelRequestReasonCodeEnum _$cancelRequestReasonCodeEnum_wrongPickup =
     const CancelRequestReasonCodeEnum._('wrongPickup');
 const CancelRequestReasonCodeEnum
-    _$cancelRequestReasonCodeEnum_driverNotMoving =
+_$cancelRequestReasonCodeEnum_driverNotMoving =
     const CancelRequestReasonCodeEnum._('driverNotMoving');
 const CancelRequestReasonCodeEnum _$cancelRequestReasonCodeEnum_safetyConcern =
     const CancelRequestReasonCodeEnum._('safetyConcern');
@@ -40,18 +40,18 @@ CancelRequestReasonCodeEnum _$cancelRequestReasonCodeEnumValueOf(String name) {
 }
 
 final BuiltSet<CancelRequestReasonCodeEnum>
-    _$cancelRequestReasonCodeEnumValues =
+_$cancelRequestReasonCodeEnumValues =
     BuiltSet<CancelRequestReasonCodeEnum>(const <CancelRequestReasonCodeEnum>[
-  _$cancelRequestReasonCodeEnum_driverTooFar,
-  _$cancelRequestReasonCodeEnum_changedPlans,
-  _$cancelRequestReasonCodeEnum_wrongPickup,
-  _$cancelRequestReasonCodeEnum_driverNotMoving,
-  _$cancelRequestReasonCodeEnum_safetyConcern,
-  _$cancelRequestReasonCodeEnum_other,
-]);
+      _$cancelRequestReasonCodeEnum_driverTooFar,
+      _$cancelRequestReasonCodeEnum_changedPlans,
+      _$cancelRequestReasonCodeEnum_wrongPickup,
+      _$cancelRequestReasonCodeEnum_driverNotMoving,
+      _$cancelRequestReasonCodeEnum_safetyConcern,
+      _$cancelRequestReasonCodeEnum_other,
+    ]);
 
 Serializer<CancelRequestReasonCodeEnum>
-    _$cancelRequestReasonCodeEnumSerializer =
+_$cancelRequestReasonCodeEnumSerializer =
     _$CancelRequestReasonCodeEnumSerializer();
 
 class _$CancelRequestReasonCodeEnumSerializer
@@ -79,16 +79,20 @@ class _$CancelRequestReasonCodeEnumSerializer
   final String wireName = 'CancelRequestReasonCodeEnum';
 
   @override
-  Object serialize(Serializers serializers, CancelRequestReasonCodeEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    CancelRequestReasonCodeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   CancelRequestReasonCodeEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      CancelRequestReasonCodeEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => CancelRequestReasonCodeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$CancelRequest extends CancelRequest {
@@ -175,10 +179,14 @@ class CancelRequestBuilder
   CancelRequest build() => _build();
 
   _$CancelRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$CancelRequest._(
           reasonCode: BuiltValueNullFieldError.checkNotNull(
-              reasonCode, r'CancelRequest', 'reasonCode'),
+            reasonCode,
+            r'CancelRequest',
+            'reasonCode',
+          ),
           reasonText: reasonText,
         );
     replace(_$result);

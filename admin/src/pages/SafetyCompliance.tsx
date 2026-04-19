@@ -4,7 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
-import { adminApi, Incident, KycEntry } from '@/lib/admin-api';
+import { safetyApi } from '@/api/super-admin/safety';
+import { reportsApi } from '@/api/super-admin/reports';
+import type { Incident, KycEntry } from '@/types/super-admin';
 
 function incidentTypeLabel(type: string): string {
   switch (type) {
@@ -88,13 +90,13 @@ export function SafetyCompliance() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.safety.getIncidents(),
-      adminApi.safety.getKycQueue(),
-      adminApi.safety.getLtfrbCompliance(),
+      safetyApi.getIncidents() as unknown as Promise<Incident[]>,
+      safetyApi.getKycQueue() as unknown as Promise<KycEntry[]>,
+      safetyApi.getLtfrbCompliance(),
     ]).then(([inc, kyc, comp]) => {
       setIncidents(inc);
       setKycQueue(kyc);
-      setCompliance(comp);
+      setCompliance(comp as any);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -107,8 +109,8 @@ export function SafetyCompliance() {
       message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
       onConfirm: () => {
-        adminApi.safety.updateKyc(id, 'approved').catch(() => {});
-        setKycQueue(prev => prev.filter(d => d.id !== id));
+        safetyApi.updateKyc(id, 'approved').catch(() => {});
+        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'approved' } : k));
       },
     });
   };
@@ -120,20 +122,20 @@ export function SafetyCompliance() {
       message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
       onConfirm: () => {
-        adminApi.safety.updateKyc(id, 'rejected').catch(() => {});
-        setKycQueue(prev => prev.filter(d => d.id !== id));
+        safetyApi.updateKyc(id, 'rejected').catch(() => {});
+        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'rejected' } : k));
       },
     });
   };
 
   const handleResolveIncident = (id: string) => {
-    adminApi.safety.updateIncident(id, { resolution_notes: 'Resolved by admin' }).then(() => {
+    safetyApi.resolveIncident(id, 'Resolved via admin panel').then(() => {
       setIncidents(prev => prev.map(i => i.id === id ? { ...i, status: 'resolved' as any } : i));
     }).catch(() => {});
   };
 
   const handleGenerateLtfrb = () => {
-    adminApi.reports.exportCsv('ltfrb').then(url => {
+    reportsApi.exportCsv('ltfrb').then(url => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };

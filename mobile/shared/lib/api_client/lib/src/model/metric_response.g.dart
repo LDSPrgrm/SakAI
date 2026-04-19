@@ -28,10 +28,10 @@ MetricResponseTrendEnum _$metricResponseTrendEnumValueOf(String name) {
 
 final BuiltSet<MetricResponseTrendEnum> _$metricResponseTrendEnumValues =
     BuiltSet<MetricResponseTrendEnum>(const <MetricResponseTrendEnum>[
-  _$metricResponseTrendEnum_up,
-  _$metricResponseTrendEnum_down,
-  _$metricResponseTrendEnum_flat,
-]);
+      _$metricResponseTrendEnum_up,
+      _$metricResponseTrendEnum_down,
+      _$metricResponseTrendEnum_flat,
+    ]);
 
 Serializer<MetricResponseTrendEnum> _$metricResponseTrendEnumSerializer =
     _$MetricResponseTrendEnumSerializer();
@@ -55,16 +55,20 @@ class _$MetricResponseTrendEnumSerializer
   final String wireName = 'MetricResponseTrendEnum';
 
   @override
-  Object serialize(Serializers serializers, MetricResponseTrendEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    MetricResponseTrendEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   MetricResponseTrendEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      MetricResponseTrendEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => MetricResponseTrendEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$MetricResponse extends MetricResponse {
@@ -80,9 +84,12 @@ class _$MetricResponse extends MetricResponse {
   factory _$MetricResponse([void Function(MetricResponseBuilder)? updates]) =>
       (MetricResponseBuilder()..update(updates))._build();
 
-  _$MetricResponse._(
-      {this.current, this.previous, this.changePercent, this.trend})
-      : super._();
+  _$MetricResponse._({
+    this.current,
+    this.previous,
+    this.changePercent,
+    this.trend,
+  }) : super._();
   @override
   MetricResponse rebuild(void Function(MetricResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -173,7 +180,8 @@ class MetricResponseBuilder
   MetricResponse build() => _build();
 
   _$MetricResponse _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$MetricResponse._(
           current: current,
           previous: previous,

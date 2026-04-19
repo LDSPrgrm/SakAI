@@ -35,9 +35,11 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
   @override
   void initState() {
     super.initState();
-    // Load on first build
-    final vm = ref.read(_cancelledRideViewModelProvider(widget.rideId));
-    vm.loadCancellation(widget.rideId);
+    // Defer loading to avoid modifying provider state during widget build.
+    Future.microtask(() {
+      final vm = ref.read(_cancelledRideViewModelProvider(widget.rideId));
+      vm.loadCancellation(widget.rideId);
+    });
   }
 
   @override

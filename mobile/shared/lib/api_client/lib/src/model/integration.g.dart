@@ -28,10 +28,10 @@ IntegrationStatusEnum _$integrationStatusEnumValueOf(String name) {
 
 final BuiltSet<IntegrationStatusEnum> _$integrationStatusEnumValues =
     BuiltSet<IntegrationStatusEnum>(const <IntegrationStatusEnum>[
-  _$integrationStatusEnum_active,
-  _$integrationStatusEnum_degraded,
-  _$integrationStatusEnum_offline,
-]);
+      _$integrationStatusEnum_active,
+      _$integrationStatusEnum_degraded,
+      _$integrationStatusEnum_offline,
+    ]);
 
 Serializer<IntegrationStatusEnum> _$integrationStatusEnumSerializer =
     _$IntegrationStatusEnumSerializer();
@@ -55,15 +55,20 @@ class _$IntegrationStatusEnumSerializer
   final String wireName = 'IntegrationStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, IntegrationStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    IntegrationStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  IntegrationStatusEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      IntegrationStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  IntegrationStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => IntegrationStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$Integration extends Integration {
@@ -80,7 +85,7 @@ class _$Integration extends Integration {
       (IntegrationBuilder()..update(updates))._build();
 
   _$Integration._({this.service, this.status, this.lastSync, this.config})
-      : super._();
+    : super._();
   @override
   Integration rebuild(void Function(IntegrationBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -172,7 +177,8 @@ class IntegrationBuilder implements Builder<Integration, IntegrationBuilder> {
   _$Integration _build() {
     _$Integration _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$Integration._(
             service: service,
             status: status,
@@ -186,7 +192,10 @@ class IntegrationBuilder implements Builder<Integration, IntegrationBuilder> {
         _config?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'Integration', _$failedField, e.toString());
+          r'Integration',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

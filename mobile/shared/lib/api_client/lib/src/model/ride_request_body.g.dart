@@ -27,12 +27,12 @@ RideRequestBodyRideTypeEnum _$rideRequestBodyRideTypeEnumValueOf(String name) {
 }
 
 final BuiltSet<RideRequestBodyRideTypeEnum>
-    _$rideRequestBodyRideTypeEnumValues =
+_$rideRequestBodyRideTypeEnumValues =
     BuiltSet<RideRequestBodyRideTypeEnum>(const <RideRequestBodyRideTypeEnum>[
-  _$rideRequestBodyRideTypeEnum_motorcycle,
-  _$rideRequestBodyRideTypeEnum_car,
-  _$rideRequestBodyRideTypeEnum_tricycle,
-]);
+      _$rideRequestBodyRideTypeEnum_motorcycle,
+      _$rideRequestBodyRideTypeEnum_car,
+      _$rideRequestBodyRideTypeEnum_tricycle,
+    ]);
 
 const RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnum_cash =
     const RideRequestBodyPaymentMethodEnum._('cash');
@@ -40,7 +40,8 @@ const RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnum_card =
     const RideRequestBodyPaymentMethodEnum._('card');
 
 RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'cash':
       return _$rideRequestBodyPaymentMethodEnum_cash;
@@ -52,17 +53,19 @@ RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnumValueOf(
 }
 
 final BuiltSet<RideRequestBodyPaymentMethodEnum>
-    _$rideRequestBodyPaymentMethodEnumValues = BuiltSet<
-        RideRequestBodyPaymentMethodEnum>(const <RideRequestBodyPaymentMethodEnum>[
-  _$rideRequestBodyPaymentMethodEnum_cash,
-  _$rideRequestBodyPaymentMethodEnum_card,
-]);
+_$rideRequestBodyPaymentMethodEnumValues =
+    BuiltSet<RideRequestBodyPaymentMethodEnum>(
+      const <RideRequestBodyPaymentMethodEnum>[
+        _$rideRequestBodyPaymentMethodEnum_cash,
+        _$rideRequestBodyPaymentMethodEnum_card,
+      ],
+    );
 
 Serializer<RideRequestBodyRideTypeEnum>
-    _$rideRequestBodyRideTypeEnumSerializer =
+_$rideRequestBodyRideTypeEnumSerializer =
     _$RideRequestBodyRideTypeEnumSerializer();
 Serializer<RideRequestBodyPaymentMethodEnum>
-    _$rideRequestBodyPaymentMethodEnumSerializer =
+_$rideRequestBodyPaymentMethodEnumSerializer =
     _$RideRequestBodyPaymentMethodEnumSerializer();
 
 class _$RideRequestBodyRideTypeEnumSerializer
@@ -84,16 +87,20 @@ class _$RideRequestBodyRideTypeEnumSerializer
   final String wireName = 'RideRequestBodyRideTypeEnum';
 
   @override
-  Object serialize(Serializers serializers, RideRequestBodyRideTypeEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RideRequestBodyRideTypeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   RideRequestBodyRideTypeEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideRequestBodyRideTypeEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideRequestBodyRideTypeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$RideRequestBodyPaymentMethodEnumSerializer
@@ -114,16 +121,19 @@ class _$RideRequestBodyPaymentMethodEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, RideRequestBodyPaymentMethodEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    RideRequestBodyPaymentMethodEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   RideRequestBodyPaymentMethodEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideRequestBodyPaymentMethodEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideRequestBodyPaymentMethodEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$RideRequestBody extends RideRequestBody {
@@ -145,15 +155,15 @@ class _$RideRequestBody extends RideRequestBody {
   factory _$RideRequestBody([void Function(RideRequestBodyBuilder)? updates]) =>
       (RideRequestBodyBuilder()..update(updates))._build();
 
-  _$RideRequestBody._(
-      {required this.origin,
-      required this.destination,
-      this.originAddress,
-      this.destinationAddress,
-      this.notes,
-      required this.rideType,
-      this.paymentMethod})
-      : super._();
+  _$RideRequestBody._({
+    required this.origin,
+    required this.destination,
+    this.originAddress,
+    this.destinationAddress,
+    this.notes,
+    required this.rideType,
+    this.paymentMethod,
+  }) : super._();
   @override
   RideRequestBody rebuild(void Function(RideRequestBodyBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -274,7 +284,8 @@ class RideRequestBodyBuilder
   _$RideRequestBody _build() {
     _$RideRequestBody _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$RideRequestBody._(
             origin: origin.build(),
             destination: destination.build(),
@@ -282,7 +293,10 @@ class RideRequestBodyBuilder
             destinationAddress: destinationAddress,
             notes: notes,
             rideType: BuiltValueNullFieldError.checkNotNull(
-                rideType, r'RideRequestBody', 'rideType'),
+              rideType,
+              r'RideRequestBody',
+              'rideType',
+            ),
             paymentMethod: paymentMethod,
           );
     } catch (_) {
@@ -294,7 +308,10 @@ class RideRequestBodyBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'RideRequestBody', _$failedField, e.toString());
+          r'RideRequestBody',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

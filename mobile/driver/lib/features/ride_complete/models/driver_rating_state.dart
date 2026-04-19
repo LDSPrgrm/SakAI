@@ -1,13 +1,16 @@
-/// State model for the driver's rating selection UI.
+/// State model for the driver's rating selection UI with auto-close support.
 class DriverRatingState {
   const DriverRatingState({
-    required this.rideId,
-    required this.passengerName,
+    this.rideId = '',
+    this.passengerName = '',
     this.stars = 0,
     this.feedback,
     this.isSubmitted = false,
     this.isSubmitting = false,
     this.error,
+    this.countdownActive = false,
+    this.secondsRemaining = 0,
+    this.shouldNavigateHome = false,
   });
 
   final String rideId;
@@ -18,6 +21,11 @@ class DriverRatingState {
   final bool isSubmitting;
   final String? error;
 
+  // Auto-close fields
+  final bool countdownActive;
+  final int secondsRemaining;
+  final bool shouldNavigateHome;
+
   DriverRatingState copyWith({
     String? rideId,
     String? passengerName,
@@ -26,6 +34,9 @@ class DriverRatingState {
     bool? isSubmitted,
     bool? isSubmitting,
     String? error,
+    bool? countdownActive,
+    int? secondsRemaining,
+    bool? shouldNavigateHome,
   }) {
     return DriverRatingState(
       rideId: rideId ?? this.rideId,
@@ -35,6 +46,9 @@ class DriverRatingState {
       isSubmitted: isSubmitted ?? this.isSubmitted,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error,
+      countdownActive: countdownActive ?? this.countdownActive,
+      secondsRemaining: secondsRemaining ?? this.secondsRemaining,
+      shouldNavigateHome: shouldNavigateHome ?? this.shouldNavigateHome,
     );
   }
 }

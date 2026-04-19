@@ -41,23 +41,6 @@ final BuiltSet<RideStatus> _$values = BuiltSet<RideStatus>(const <RideStatus>[
   _$cancelled,
 ]);
 
-class _$RideStatusMeta {
-  const _$RideStatusMeta();
-  RideStatus get requested => _$requested;
-  RideStatus get accepted => _$accepted;
-  RideStatus get arrived => _$arrived;
-  RideStatus get inProgress => _$inProgress;
-  RideStatus get completed => _$completed;
-  RideStatus get cancelled => _$cancelled;
-  RideStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<RideStatus> get values => _$values;
-}
-
-abstract class _$RideStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$RideStatusMeta get RideStatus => const _$RideStatusMeta();
-}
-
 Serializer<RideStatus> _$rideStatusSerializer = _$RideStatusSerializer();
 
 class _$RideStatusSerializer implements PrimitiveSerializer<RideStatus> {
@@ -84,15 +67,20 @@ class _$RideStatusSerializer implements PrimitiveSerializer<RideStatus> {
   final String wireName = 'RideStatus';
 
   @override
-  Object serialize(Serializers serializers, RideStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RideStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  RideStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideStatus.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  RideStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideStatus.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

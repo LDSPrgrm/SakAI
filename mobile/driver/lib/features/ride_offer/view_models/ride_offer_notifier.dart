@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
@@ -72,6 +73,22 @@ class RideOfferManager extends ChangeNotifier {
         onAccepted?.call(_offer.rideId);
         notifyListeners();
         return;
+      } on DioException catch (e) {
+        final statusCode = e.response?.statusCode;
+        if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+          _accepting = false;
+          onAccepted?.call(_offer.rideId);
+          notifyListeners();
+          return;
+        }
+        attempts++;
+        if (attempts >= 3) {
+          _accepting = false;
+          _error = 'Accept failed — please wait for the next offer.';
+          notifyListeners();
+          return;
+        }
+        await Future.delayed(const Duration(seconds: 1));
       } catch (_) {
         attempts++;
         if (attempts >= 3) {
@@ -94,6 +111,17 @@ class RideOfferManager extends ChangeNotifier {
       await _apiClient.getRidesApi().rideDecline(rideId: _offer.rideId);
       _declining = false;
       onDeclined?.call();
+      notifyListeners();
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        _declining = false;
+        onDeclined?.call();
+        notifyListeners();
+        return;
+      }
+      _declining = false;
+      _error = 'Failed to decline. Please try again.';
       notifyListeners();
     } catch (_) {
       _declining = false;

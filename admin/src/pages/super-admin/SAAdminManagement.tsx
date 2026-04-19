@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { adminApi, AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/lib/admin-api';
 import { adminsApi } from '@/api/super-admin/admins';
+import { rolesApi } from '@/api/super-admin/roles';
+import type { AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/types/super-admin';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -91,13 +92,13 @@ export function SAAdminManagement() {
     useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
 
   async function loadAdmins() {
-    const list = await adminApi.admins.list();
+    const list = await adminsApi.list() as unknown as AdminUser[];
     setAdmins(list);
   }
 
   useEffect(() => {
     loadAdmins();
-    adminApi.roles.list().then(setRoleDefs).catch(() => {});
+    rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
   }, []);
 
   function generatePassword() {
@@ -112,7 +113,7 @@ export function SAAdminManagement() {
     setApiError(null); // Clear any previous errors
     reset({ name: '', email: '', role: 'support', status: 'active', password: generatePassword() });
     // Refresh roleDefs to include any newly created custom roles
-    await adminApi.roles.list().then(setRoleDefs).catch(() => {});
+    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
     setModalOpen(true);
   }
 
@@ -127,7 +128,7 @@ export function SAAdminManagement() {
       password: '',
     });
     // Refresh roleDefs to include any newly created custom roles
-    await adminApi.roles.list().then(setRoleDefs).catch(() => {});
+    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
     setModalOpen(true);
   }
 
@@ -143,7 +144,7 @@ export function SAAdminManagement() {
           return;
         }
         // update() only sends { role } — role_id not needed here
-        await adminApi.admins.update(editingAdmin.id, { role: values.role as AdminRole });
+        await adminsApi.update(editingAdmin.id, { role: values.role } as any);
       } else {
         // Create needs role_id to link the new user to the roles table
         const selectedRoleDef = roleDefs.find(r => r.name === values.role);
@@ -171,13 +172,13 @@ export function SAAdminManagement() {
     const admin = confirmModal.admin;
 
     if (confirmModal.type === 'suspend' || confirmModal.type === 'deactivate') {
-      await adminApi.admins.deactivate(admin.id);
+      await adminsApi.deactivate(admin.id);
     } else if (confirmModal.type === 'reset_password') {
       const newPass = generatePassword();
-      await adminApi.admins.resetPassword(admin.id, newPass);
+      await adminsApi.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminApi.admins.update(admin.id, { role: confirmModal.pendingData.role as AdminRole });
+      await adminsApi.update(admin.id, { role: confirmModal.pendingData.role } as any);
       setModalOpen(false);
     }
 

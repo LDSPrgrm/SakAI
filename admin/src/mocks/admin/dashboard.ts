@@ -1,4 +1,4 @@
-import { DashboardMetrics } from '@/lib/admin-api';
+import type { DashboardMetrics } from '@/types/super-admin';
 
 export const metrics: DashboardMetrics = {
   total_riders: 24592,

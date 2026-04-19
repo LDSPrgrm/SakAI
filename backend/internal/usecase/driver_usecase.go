@@ -67,3 +67,16 @@ func (uc *driverUseCase) GetActiveRide(ctx context.Context, driverID uuid.UUID) 
 func (uc *driverUseCase) GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
 	return uc.driverRepo.FindNearbyOnlineByType(ctx, lat, lng, radiusM, rideType)
 }
+
+// GetNearbyDriversAllTypes returns online drivers grouped by vehicle type.
+func (uc *driverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, lng float64, radiusM float64) (map[domain.RideType][]domain.NearbyDriver, error) {
+	result := make(map[domain.RideType][]domain.NearbyDriver)
+	for _, rt := range []domain.RideType{domain.RideTypeCar, domain.RideTypeMotorcycle, domain.RideTypeTricycle} {
+		drivers, err := uc.driverRepo.FindNearbyOnlineByType(ctx, lat, lng, radiusM, rt)
+		if err != nil {
+			return nil, err
+		}
+		result[rt] = drivers
+	}
+	return result, nil
+}

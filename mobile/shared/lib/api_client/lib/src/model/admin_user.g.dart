@@ -8,8 +8,9 @@ part of 'admin_user.dart';
 
 const AdminUserRoleEnum _$adminUserRoleEnum_passenger =
     const AdminUserRoleEnum._('passenger');
-const AdminUserRoleEnum _$adminUserRoleEnum_driver =
-    const AdminUserRoleEnum._('driver');
+const AdminUserRoleEnum _$adminUserRoleEnum_driver = const AdminUserRoleEnum._(
+  'driver',
+);
 
 AdminUserRoleEnum _$adminUserRoleEnumValueOf(String name) {
   switch (name) {
@@ -24,9 +25,9 @@ AdminUserRoleEnum _$adminUserRoleEnumValueOf(String name) {
 
 final BuiltSet<AdminUserRoleEnum> _$adminUserRoleEnumValues =
     BuiltSet<AdminUserRoleEnum>(const <AdminUserRoleEnum>[
-  _$adminUserRoleEnum_passenger,
-  _$adminUserRoleEnum_driver,
-]);
+      _$adminUserRoleEnum_passenger,
+      _$adminUserRoleEnum_driver,
+    ]);
 
 const AdminUserStatusEnum _$adminUserStatusEnum_active =
     const AdminUserStatusEnum._('active');
@@ -50,10 +51,10 @@ AdminUserStatusEnum _$adminUserStatusEnumValueOf(String name) {
 
 final BuiltSet<AdminUserStatusEnum> _$adminUserStatusEnumValues =
     BuiltSet<AdminUserStatusEnum>(const <AdminUserStatusEnum>[
-  _$adminUserStatusEnum_active,
-  _$adminUserStatusEnum_suspended,
-  _$adminUserStatusEnum_deactivated,
-]);
+      _$adminUserStatusEnum_active,
+      _$adminUserStatusEnum_suspended,
+      _$adminUserStatusEnum_deactivated,
+    ]);
 
 Serializer<AdminUserRoleEnum> _$adminUserRoleEnumSerializer =
     _$AdminUserRoleEnumSerializer();
@@ -77,15 +78,20 @@ class _$AdminUserRoleEnumSerializer
   final String wireName = 'AdminUserRoleEnum';
 
   @override
-  Object serialize(Serializers serializers, AdminUserRoleEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    AdminUserRoleEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  AdminUserRoleEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      AdminUserRoleEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  AdminUserRoleEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminUserRoleEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$AdminUserStatusEnumSerializer
@@ -107,15 +113,20 @@ class _$AdminUserStatusEnumSerializer
   final String wireName = 'AdminUserStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, AdminUserStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    AdminUserStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  AdminUserStatusEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      AdminUserStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  AdminUserStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AdminUserStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$AdminUser extends AdminUser {
@@ -145,19 +156,19 @@ class _$AdminUser extends AdminUser {
   factory _$AdminUser([void Function(AdminUserBuilder)? updates]) =>
       (AdminUserBuilder()..update(updates))._build();
 
-  _$AdminUser._(
-      {this.lastLoginAt,
-      this.createdBy,
-      this.roleId,
-      this.roleName,
-      this.status,
-      required this.id,
-      required this.name,
-      required this.email,
-      required this.role,
-      this.vehicle,
-      required this.createdAt})
-      : super._();
+  _$AdminUser._({
+    this.lastLoginAt,
+    this.createdBy,
+    this.roleId,
+    this.roleName,
+    this.status,
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.vehicle,
+    required this.createdAt,
+  }) : super._();
   @override
   AdminUser rebuild(void Function(AdminUserBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -307,7 +318,8 @@ class AdminUserBuilder
   _$AdminUser _build() {
     _$AdminUser _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$AdminUser._(
             lastLoginAt: lastLoginAt,
             createdBy: createdBy,
@@ -316,14 +328,26 @@ class AdminUserBuilder
             status: status,
             id: BuiltValueNullFieldError.checkNotNull(id, r'AdminUser', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'AdminUser', 'name'),
+              name,
+              r'AdminUser',
+              'name',
+            ),
             email: BuiltValueNullFieldError.checkNotNull(
-                email, r'AdminUser', 'email'),
+              email,
+              r'AdminUser',
+              'email',
+            ),
             role: BuiltValueNullFieldError.checkNotNull(
-                role, r'AdminUser', 'role'),
+              role,
+              r'AdminUser',
+              'role',
+            ),
             vehicle: _vehicle?.build(),
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'AdminUser', 'createdAt'),
+              createdAt,
+              r'AdminUser',
+              'createdAt',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -332,7 +356,10 @@ class AdminUserBuilder
         _vehicle?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'AdminUser', _$failedField, e.toString());
+          r'AdminUser',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

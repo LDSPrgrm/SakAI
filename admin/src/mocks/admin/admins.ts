@@ -1,4 +1,4 @@
-import { AdminUser } from '@/lib/admin-api';
+import type { AdminUser } from '@/types/super-admin';
 
 export const admins: AdminUser[] = [
   {

@@ -1,9 +1,9 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/vehicle_input.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -16,6 +16,7 @@ part 'register_request.g.dart';
 /// * [email] 
 /// * [password] 
 /// * [role] 
+/// * [vehicle] 
 @BuiltValue()
 abstract class RegisterRequest implements Built<RegisterRequest, RegisterRequestBuilder> {
   @BuiltValueField(wireName: r'name')
@@ -30,6 +31,9 @@ abstract class RegisterRequest implements Built<RegisterRequest, RegisterRequest
   @BuiltValueField(wireName: r'role')
   RegisterRequestRoleEnum get role;
   // enum roleEnum {  passenger,  driver,  };
+
+  @BuiltValueField(wireName: r'vehicle')
+  VehicleInput? get vehicle;
 
   RegisterRequest._();
 
@@ -74,6 +78,13 @@ class _$RegisterRequestSerializer implements PrimitiveSerializer<RegisterRequest
       object.role,
       specifiedType: const FullType(RegisterRequestRoleEnum),
     );
+    if (object.vehicle != null) {
+      yield r'vehicle';
+      yield serializers.serialize(
+        object.vehicle,
+        specifiedType: const FullType(VehicleInput),
+      );
+    }
   }
 
   @override
@@ -124,6 +135,13 @@ class _$RegisterRequestSerializer implements PrimitiveSerializer<RegisterRequest
             specifiedType: const FullType(RegisterRequestRoleEnum),
           ) as RegisterRequestRoleEnum;
           result.role = valueDes;
+          break;
+        case r'vehicle':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(VehicleInput),
+          ) as VehicleInput;
+          result.vehicle.replace(valueDes);
           break;
         default:
           unhandled.add(key);

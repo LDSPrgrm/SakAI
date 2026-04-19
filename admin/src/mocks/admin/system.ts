@@ -1,4 +1,4 @@
-import { FeatureFlag, SystemService } from '@/lib/admin-api';
+import type { FeatureFlag, SystemService } from '@/types/super-admin';
 
 export const integrations = [
   { service: 'google_maps', label: 'Google Maps', api_key: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXX1234', status: 'ok', last_used: '2026-04-02T09:10:00Z' },

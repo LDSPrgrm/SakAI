@@ -27,15 +27,15 @@ NearbyDriverVehicleTypeEnum _$nearbyDriverVehicleTypeEnumValueOf(String name) {
 }
 
 final BuiltSet<NearbyDriverVehicleTypeEnum>
-    _$nearbyDriverVehicleTypeEnumValues =
+_$nearbyDriverVehicleTypeEnumValues =
     BuiltSet<NearbyDriverVehicleTypeEnum>(const <NearbyDriverVehicleTypeEnum>[
-  _$nearbyDriverVehicleTypeEnum_motorcycle,
-  _$nearbyDriverVehicleTypeEnum_car,
-  _$nearbyDriverVehicleTypeEnum_tricycle,
-]);
+      _$nearbyDriverVehicleTypeEnum_motorcycle,
+      _$nearbyDriverVehicleTypeEnum_car,
+      _$nearbyDriverVehicleTypeEnum_tricycle,
+    ]);
 
 Serializer<NearbyDriverVehicleTypeEnum>
-    _$nearbyDriverVehicleTypeEnumSerializer =
+_$nearbyDriverVehicleTypeEnumSerializer =
     _$NearbyDriverVehicleTypeEnumSerializer();
 
 class _$NearbyDriverVehicleTypeEnumSerializer
@@ -57,16 +57,20 @@ class _$NearbyDriverVehicleTypeEnumSerializer
   final String wireName = 'NearbyDriverVehicleTypeEnum';
 
   @override
-  Object serialize(Serializers serializers, NearbyDriverVehicleTypeEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    NearbyDriverVehicleTypeEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   NearbyDriverVehicleTypeEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      NearbyDriverVehicleTypeEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NearbyDriverVehicleTypeEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$NearbyDriver extends NearbyDriver {
@@ -94,18 +98,18 @@ class _$NearbyDriver extends NearbyDriver {
   factory _$NearbyDriver([void Function(NearbyDriverBuilder)? updates]) =>
       (NearbyDriverBuilder()..update(updates))._build();
 
-  _$NearbyDriver._(
-      {required this.id,
-      required this.name,
-      this.vehicleMake,
-      this.vehicleModel,
-      this.vehiclePlate,
-      required this.vehicleType,
-      this.rating,
-      this.distanceM,
-      required this.location,
-      this.heading})
-      : super._();
+  _$NearbyDriver._({
+    required this.id,
+    required this.name,
+    this.vehicleMake,
+    this.vehicleModel,
+    this.vehiclePlate,
+    required this.vehicleType,
+    this.rating,
+    this.distanceM,
+    required this.location,
+    this.heading,
+  }) : super._();
   @override
   NearbyDriver rebuild(void Function(NearbyDriverBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -246,17 +250,27 @@ class NearbyDriverBuilder
   _$NearbyDriver _build() {
     _$NearbyDriver _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$NearbyDriver._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'NearbyDriver', 'id'),
+              id,
+              r'NearbyDriver',
+              'id',
+            ),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'NearbyDriver', 'name'),
+              name,
+              r'NearbyDriver',
+              'name',
+            ),
             vehicleMake: vehicleMake,
             vehicleModel: vehicleModel,
             vehiclePlate: vehiclePlate,
             vehicleType: BuiltValueNullFieldError.checkNotNull(
-                vehicleType, r'NearbyDriver', 'vehicleType'),
+              vehicleType,
+              r'NearbyDriver',
+              'vehicleType',
+            ),
             rating: rating,
             distanceM: distanceM,
             location: location.build(),
@@ -269,7 +283,10 @@ class NearbyDriverBuilder
         location.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'NearbyDriver', _$failedField, e.toString());
+          r'NearbyDriver',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

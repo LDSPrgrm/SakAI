@@ -96,7 +96,9 @@ class CancellationDetails {
     String? driverVehicle;
     if (driver != null) {
       final v = driver.vehicle;
-      driverVehicle = '${v.make} ${v.model} - ${v.plate}';
+      if (v != null) {
+        driverVehicle = '${v.make} ${v.model} - ${v.plate}';
+      }
     }
 
     final cancelledBy = CancelledBy.fromApiEnum(r.cancelledBy);

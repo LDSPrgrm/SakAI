@@ -14,19 +14,19 @@ class _$FareSimulationRequest extends FareSimulationRequest {
   @override
   final LatLng destination;
 
-  factory _$FareSimulationRequest(
-          [void Function(FareSimulationRequestBuilder)? updates]) =>
-      (FareSimulationRequestBuilder()..update(updates))._build();
+  factory _$FareSimulationRequest([
+    void Function(FareSimulationRequestBuilder)? updates,
+  ]) => (FareSimulationRequestBuilder()..update(updates))._build();
 
-  _$FareSimulationRequest._(
-      {required this.vehicleType,
-      required this.origin,
-      required this.destination})
-      : super._();
+  _$FareSimulationRequest._({
+    required this.vehicleType,
+    required this.origin,
+    required this.destination,
+  }) : super._();
   @override
   FareSimulationRequest rebuild(
-          void Function(FareSimulationRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(FareSimulationRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   FareSimulationRequestBuilder toBuilder() =>
@@ -109,10 +109,14 @@ class FareSimulationRequestBuilder
   _$FareSimulationRequest _build() {
     _$FareSimulationRequest _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$FareSimulationRequest._(
             vehicleType: BuiltValueNullFieldError.checkNotNull(
-                vehicleType, r'FareSimulationRequest', 'vehicleType'),
+              vehicleType,
+              r'FareSimulationRequest',
+              'vehicleType',
+            ),
             origin: origin.build(),
             destination: destination.build(),
           );
@@ -125,7 +129,10 @@ class FareSimulationRequestBuilder
         destination.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'FareSimulationRequest', _$failedField, e.toString());
+          r'FareSimulationRequest',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

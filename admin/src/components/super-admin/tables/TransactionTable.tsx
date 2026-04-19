@@ -5,7 +5,7 @@ import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { CurrencyDisplay } from '../shared/CurrencyDisplay';
 import { DateDisplay } from '../shared/DateDisplay';
-import type { Transaction } from '@/lib/admin-api';
+import type { Transaction } from '@/types/super-admin';
 
 const COLUMNS: ColumnDef<Transaction>[] = [
   { accessorKey: 'id',             header: 'Txn ID',          cell: ({ getValue }) => <span className="font-mono text-xs text-text-muted">{String(getValue()).slice(0, 8)}…</span> },

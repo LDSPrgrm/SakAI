@@ -5,8 +5,10 @@ import 'package:sakai_shared/sakai_shared.dart';
 enum ActiveRideStep {
   /// Driver accepted ride — en route to pickup.
   enRoute,
+
   /// Driver arrived at pickup location.
   arrived,
+
   /// Ride in progress — heading to destination.
   inProgress;
 
@@ -86,8 +88,10 @@ class ActiveRideState {
     if (driver != null) {
       driverName = driver.name;
       final vehicle = driver.vehicle;
-      driverVehicle =
-          '${vehicle.make} ${vehicle.model} · ${vehicle.plate} · ${vehicle.color}';
+      if (vehicle != null) {
+        driverVehicle =
+            '${vehicle.make} ${vehicle.model} · ${vehicle.plate} · ${vehicle.color}';
+      }
     }
 
     gmaps.LatLng? driverLocation;

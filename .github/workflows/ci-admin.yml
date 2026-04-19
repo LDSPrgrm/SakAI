@@ -1,0 +1,106 @@
+name: CI - Admin Panel
+
+on:
+  push:
+    branches: [main, admin]
+    paths:
+      - "admin/**"
+      - "openapi/**"
+      - ".github/workflows/ci-admin.yml"
+  pull_request:
+    paths:
+      - "admin/**"
+      - "openapi/**"
+      - ".github/workflows/ci-admin.yml"
+
+concurrency:
+  group: ci-admin-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: admin
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Type check — generate OpenAPI types then run tsc --noEmit
+  # ---------------------------------------------------------------------------
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate OpenAPI types
+        run: npm run generate:types
+
+      - name: Type check
+        run: npm run lint
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Unit tests — vitest --run
+  # ---------------------------------------------------------------------------
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate OpenAPI types
+        run: npm run generate:types
+
+      - name: Run tests
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Production build — must pass typecheck + test first
+  # ---------------------------------------------------------------------------
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [typecheck, test]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate OpenAPI types
+        run: npm run generate:types
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: admin-dist
+          path: admin/dist/
+          retention-days: 7

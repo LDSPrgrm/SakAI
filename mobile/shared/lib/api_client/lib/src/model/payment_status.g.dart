@@ -26,28 +26,9 @@ PaymentStatus _$valueOf(String name) {
   }
 }
 
-final BuiltSet<PaymentStatus> _$values =
-    BuiltSet<PaymentStatus>(const <PaymentStatus>[
-  _$pending,
-  _$completed,
-  _$failed,
-  _$refunded,
-]);
-
-class _$PaymentStatusMeta {
-  const _$PaymentStatusMeta();
-  PaymentStatus get pending => _$pending;
-  PaymentStatus get completed => _$completed;
-  PaymentStatus get failed => _$failed;
-  PaymentStatus get refunded => _$refunded;
-  PaymentStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<PaymentStatus> get values => _$values;
-}
-
-abstract class _$PaymentStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$PaymentStatusMeta get PaymentStatus => const _$PaymentStatusMeta();
-}
+final BuiltSet<PaymentStatus> _$values = BuiltSet<PaymentStatus>(
+  const <PaymentStatus>[_$pending, _$completed, _$failed, _$refunded],
+);
 
 Serializer<PaymentStatus> _$paymentStatusSerializer =
     _$PaymentStatusSerializer();
@@ -72,15 +53,20 @@ class _$PaymentStatusSerializer implements PrimitiveSerializer<PaymentStatus> {
   final String wireName = 'PaymentStatus';
 
   @override
-  Object serialize(Serializers serializers, PaymentStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    PaymentStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  PaymentStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      PaymentStatus.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  PaymentStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PaymentStatus.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

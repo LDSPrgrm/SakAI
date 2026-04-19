@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -15,7 +14,7 @@ part 'driver_summary.g.dart';
 /// Properties:
 /// * [id] 
 /// * [name] 
-/// * [vehicle] 
+/// * [vehicle] - Null if driver has no vehicle record yet.
 /// * [currentLocation] 
 @BuiltValue()
 abstract class DriverSummary implements Built<DriverSummary, DriverSummaryBuilder> {
@@ -25,8 +24,9 @@ abstract class DriverSummary implements Built<DriverSummary, DriverSummaryBuilde
   @BuiltValueField(wireName: r'name')
   String get name;
 
+  /// Null if driver has no vehicle record yet.
   @BuiltValueField(wireName: r'vehicle')
-  VehicleInfo get vehicle;
+  VehicleInfo? get vehicle;
 
   @BuiltValueField(wireName: r'current_location')
   LatLng? get currentLocation;
@@ -64,11 +64,13 @@ class _$DriverSummarySerializer implements PrimitiveSerializer<DriverSummary> {
       object.name,
       specifiedType: const FullType(String),
     );
-    yield r'vehicle';
-    yield serializers.serialize(
-      object.vehicle,
-      specifiedType: const FullType(VehicleInfo),
-    );
+    if (object.vehicle != null) {
+      yield r'vehicle';
+      yield serializers.serialize(
+        object.vehicle,
+        specifiedType: const FullType.nullable(VehicleInfo),
+      );
+    }
     if (object.currentLocation != null) {
       yield r'current_location';
       yield serializers.serialize(
@@ -116,8 +118,9 @@ class _$DriverSummarySerializer implements PrimitiveSerializer<DriverSummary> {
         case r'vehicle':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(VehicleInfo),
-          ) as VehicleInfo;
+            specifiedType: const FullType.nullable(VehicleInfo),
+          ) as VehicleInfo?;
+          if (valueDes == null) continue;
           result.vehicle.replace(valueDes);
           break;
         case r'current_location':

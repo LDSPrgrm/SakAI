@@ -28,10 +28,10 @@ HealthResponseStatusEnum _$healthResponseStatusEnumValueOf(String name) {
 
 final BuiltSet<HealthResponseStatusEnum> _$healthResponseStatusEnumValues =
     BuiltSet<HealthResponseStatusEnum>(const <HealthResponseStatusEnum>[
-  _$healthResponseStatusEnum_ok,
-  _$healthResponseStatusEnum_degraded,
-  _$healthResponseStatusEnum_down,
-]);
+      _$healthResponseStatusEnum_ok,
+      _$healthResponseStatusEnum_degraded,
+      _$healthResponseStatusEnum_down,
+    ]);
 
 Serializer<HealthResponseStatusEnum> _$healthResponseStatusEnumSerializer =
     _$HealthResponseStatusEnumSerializer();
@@ -55,16 +55,20 @@ class _$HealthResponseStatusEnumSerializer
   final String wireName = 'HealthResponseStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, HealthResponseStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    HealthResponseStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   HealthResponseStatusEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      HealthResponseStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => HealthResponseStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$HealthResponse extends HealthResponse {
@@ -79,7 +83,7 @@ class _$HealthResponse extends HealthResponse {
       (HealthResponseBuilder()..update(updates))._build();
 
   _$HealthResponse._({required this.status, this.version, this.dependencies})
-      : super._();
+    : super._();
   @override
   HealthResponse rebuild(void Function(HealthResponseBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -165,10 +169,14 @@ class HealthResponseBuilder
   _$HealthResponse _build() {
     _$HealthResponse _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$HealthResponse._(
             status: BuiltValueNullFieldError.checkNotNull(
-                status, r'HealthResponse', 'status'),
+              status,
+              r'HealthResponse',
+              'status',
+            ),
             version: version,
             dependencies: _dependencies?.build(),
           );
@@ -179,7 +187,10 @@ class HealthResponseBuilder
         _dependencies?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'HealthResponse', _$failedField, e.toString());
+          r'HealthResponse',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

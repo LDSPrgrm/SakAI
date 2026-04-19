@@ -119,7 +119,7 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 		       updated_at   = NOW()
 		WHERE  status     = 'requested'
 		  AND  updated_at < NOW() - $2::interval
-		RETURNING id, passenger_id`
+		RETURNING id, passenger_id, driver_id`
 
 	intervalStr := fmt.Sprintf("%d seconds", int(timeout.Seconds()))
 	rows, err := r.db.Query(ctx, q, domain.CancelledBySystem, intervalStr)
@@ -131,7 +131,7 @@ func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duratio
 	var expired []domain.ExpiredOffer
 	for rows.Next() {
 		var offer domain.ExpiredOffer
-		if err := rows.Scan(&offer.RideID, &offer.PassengerID); err != nil {
+		if err := rows.Scan(&offer.RideID, &offer.PassengerID, &offer.DriverID); err != nil {
 			return nil, err
 		}
 		expired = append(expired, offer)
@@ -233,6 +233,71 @@ func (r *rideRepo) ListByPassengerID(ctx context.Context, passengerID uuid.UUID,
 	// Build WHERE clause dynamically.
 	args := []any{passengerID}
 	where := "WHERE passenger_id = $1"
+	if len(f.Statuses) > 0 {
+		where += " AND status = ANY($2)"
+		// Convert []RideStatus to []string for pgx
+		statusStrs := make([]string, len(f.Statuses))
+		for i, s := range f.Statuses {
+			statusStrs[i] = string(s)
+		}
+		args = append(args, statusStrs)
+	}
+
+	// Count query
+	countQ := "SELECT COUNT(*) FROM rides " + where
+	var total int
+	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return nil, 0, nil
+	}
+
+	// Append LIMIT / OFFSET
+	limitIdx := len(args) + 1
+	offsetIdx := limitIdx + 1
+	args = append(args, f.Limit, offset)
+
+	dataQ := fmt.Sprintf(`
+		SELECT id, passenger_id, driver_id, status,
+		       origin_lat, origin_lng, destination_lat, destination_lng,
+		       origin_address, destination_address, notes,
+		       cancelled_by, created_at, updated_at
+		FROM rides
+		%s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, where, limitIdx, offsetIdx)
+
+	rows, err := r.db.Query(ctx, dataQ, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var rides []*domain.Ride
+	for rows.Next() {
+		ride, err := r.scanRide(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		rides = append(rides, ride)
+	}
+	return rides, total, rows.Err()
+}
+
+// ListByDriverID returns a paginated list of rides for a specific driver.
+func (r *rideRepo) ListByDriverID(ctx context.Context, driverID uuid.UUID, f domain.UserRideFilter) ([]*domain.Ride, int, error) {
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Limit < 1 {
+		f.Limit = 20
+	}
+	offset := (f.Page - 1) * f.Limit
+
+	// Build WHERE clause dynamically.
+	args := []any{driverID}
+	where := "WHERE driver_id = $1"
 	if len(f.Statuses) > 0 {
 		where += " AND status = ANY($2)"
 		// Convert []RideStatus to []string for pgx

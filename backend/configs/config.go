@@ -29,6 +29,9 @@ type Config struct {
 
 	// Rate Limiting
 	LocationRateLimitPerMin int
+
+	// Stripe (Payments)
+	StripeSecretKey string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -45,6 +48,7 @@ func Load() *Config {
 		RefreshTokenExpiry:      getDuration("REFRESH_TOKEN_EXPIRY", 30*24*time.Hour),
 		WSPingInterval:          getDuration("WS_PING_INTERVAL", 30*time.Second),
 		LocationRateLimitPerMin: getInt("LOCATION_RATE_LIMIT_PER_MIN", 30),
+		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
 	}
 
 	// Security: refuse to start with the default JWT secret outside of local dev.

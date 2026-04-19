@@ -14,9 +14,9 @@ class SplashScreen extends ConsumerWidget {
     final splashAsync = ref.watch(splashProvider);
 
     // React to state changes and route once resolved.
-    ref.listen<AsyncValue<SplashState>>(splashProvider, (_, next) {
-      next.whenData((state) {
-        switch (state) {
+    ref.listen<AsyncValue<SplashResult>>(splashProvider, (_, next) {
+      next.whenData((result) {
+        switch (result.state) {
           case SplashState.welcome:
             context.go(Routes.welcome);
           case SplashState.unauthenticated:
@@ -24,7 +24,7 @@ class SplashScreen extends ConsumerWidget {
           case SplashState.home:
             context.go(Routes.home);
           case SplashState.activeRide:
-            context.go(Routes.rideActive);
+            context.go(Routes.rideActive, extra: result.activeRideId);
           case SplashState.transientError:
             break;
           case SplashState.loading:
@@ -36,7 +36,7 @@ class SplashScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return splashAsync.when(
-      data: (state) => state == SplashState.transientError
+      data: (result) => result.state == SplashState.transientError
           ? _ErrorBody(onRetry: () => ref.invalidate(splashProvider))
           : _SplashBody(scheme: scheme),
       loading: () => _SplashBody(scheme: scheme),

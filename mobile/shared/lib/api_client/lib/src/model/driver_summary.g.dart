@@ -12,19 +12,19 @@ class _$DriverSummary extends DriverSummary {
   @override
   final String name;
   @override
-  final VehicleInfo vehicle;
+  final VehicleInfo? vehicle;
   @override
   final LatLng? currentLocation;
 
   factory _$DriverSummary([void Function(DriverSummaryBuilder)? updates]) =>
       (DriverSummaryBuilder()..update(updates))._build();
 
-  _$DriverSummary._(
-      {required this.id,
-      required this.name,
-      required this.vehicle,
-      this.currentLocation})
-      : super._();
+  _$DriverSummary._({
+    required this.id,
+    required this.name,
+    this.vehicle,
+    this.currentLocation,
+  }) : super._();
   @override
   DriverSummary rebuild(void Function(DriverSummaryBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -95,7 +95,7 @@ class DriverSummaryBuilder
     if ($v != null) {
       _id = $v.id;
       _name = $v.name;
-      _vehicle = $v.vehicle.toBuilder();
+      _vehicle = $v.vehicle?.toBuilder();
       _currentLocation = $v.currentLocation?.toBuilder();
       _$v = null;
     }
@@ -118,25 +118,35 @@ class DriverSummaryBuilder
   _$DriverSummary _build() {
     _$DriverSummary _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$DriverSummary._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'DriverSummary', 'id'),
+              id,
+              r'DriverSummary',
+              'id',
+            ),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'DriverSummary', 'name'),
-            vehicle: vehicle.build(),
+              name,
+              r'DriverSummary',
+              'name',
+            ),
+            vehicle: _vehicle?.build(),
             currentLocation: _currentLocation?.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'vehicle';
-        vehicle.build();
+        _vehicle?.build();
         _$failedField = 'currentLocation';
         _currentLocation?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'DriverSummary', _$failedField, e.toString());
+          r'DriverSummary',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

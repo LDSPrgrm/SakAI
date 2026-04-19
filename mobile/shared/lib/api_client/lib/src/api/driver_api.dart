@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 import 'dart:async';
@@ -12,6 +11,7 @@ import 'package:sakai_api_client/src/api_util.dart';
 import 'package:sakai_api_client/src/model/date.dart';
 import 'package:sakai_api_client/src/model/driver_document_response.dart';
 import 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
+import 'package:sakai_api_client/src/model/driver_get_earnings200_response.dart';
 import 'package:sakai_api_client/src/model/driver_status_request.dart';
 import 'package:sakai_api_client/src/model/driver_status_response.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
@@ -97,6 +97,101 @@ class DriverApi {
     }
 
     return Response<DriverDocumentResponse>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Get driver earnings history
+  /// Returns a paginated list of earnings for the authenticated driver. Only &#x60;role&#x3D;driver&#x60; may call this. Supports filtering by date range. 
+  ///
+  /// Parameters:
+  /// * [from] - Start date (YYYY-MM-DD). Defaults to 30 days ago.
+  /// * [to] - End date (YYYY-MM-DD). Defaults to today.
+  /// * [page] - Page number (1-based)
+  /// * [limit] - Items per page (max 50)
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [DriverGetEarnings200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<DriverGetEarnings200Response>> driverGetEarnings({ 
+    Date? from,
+    Date? to,
+    int? page = 1,
+    int? limit = 20,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/driver/earnings';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (from != null) r'from': encodeQueryParameter(_serializers, from, const FullType(Date)),
+      if (to != null) r'to': encodeQueryParameter(_serializers, to, const FullType(Date)),
+      if (page != null) r'page': encodeQueryParameter(_serializers, page, const FullType(int)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(int)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    DriverGetEarnings200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(DriverGetEarnings200Response),
+      ) as DriverGetEarnings200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<DriverGetEarnings200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

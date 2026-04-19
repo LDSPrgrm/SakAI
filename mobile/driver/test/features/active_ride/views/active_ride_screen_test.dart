@@ -9,13 +9,13 @@ import 'package:driver/app/providers.dart';
 
 class _MockActiveRideRepository implements ActiveRideRepository {
   @override
-  Future<void> arriveAtPickup(String rideId) async {}
+  Future<void> arriveAtPickup(String rideId, LatLng driverLocation) async {}
 
   @override
   Future<void> startRide(String rideId) async {}
 
   @override
-  Future<void> completeRide(String rideId) async {}
+  Future<void> completeRide(String rideId, LatLng driverLocation) async {}
 
   @override
   Future<void> cancelRide(String rideId) async {}
@@ -27,10 +27,10 @@ class _MockActiveRideRepository implements ActiveRideRepository {
 }
 
 void main() {
-  final _mockRepo = _MockActiveRideRepository();
-  final _themeConfig = SakaiThemeConfig.driver();
+  final mockRepo = _MockActiveRideRepository();
+  final themeConfig = SakaiThemeConfig.driver();
 
-  $RideResponse _createMockRide(RideStatus status) {
+  $RideResponse createMockRide(RideStatus status) {
     return $RideResponse(
       (b) => b
         ..id = 'ride-123'
@@ -62,14 +62,12 @@ void main() {
 
   group('ActiveRideScreen', () {
     testWidgets('shows en route state with correct buttons', (tester) async {
-      final ride = _createMockRide(RideStatus.accepted);
+      final ride = createMockRide(RideStatus.accepted);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            activeRideRepositoryProvider.overrideWithValue(_mockRepo),
-          ],
+          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
           child: MaterialApp(
-            theme: SakaiTheme.light(_themeConfig),
+            theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),
           ),
         ),
@@ -85,14 +83,12 @@ void main() {
     });
 
     testWidgets('shows arrived state with correct buttons', (tester) async {
-      final ride = _createMockRide(RideStatus.arrived);
+      final ride = createMockRide(RideStatus.arrived);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            activeRideRepositoryProvider.overrideWithValue(_mockRepo),
-          ],
+          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
           child: MaterialApp(
-            theme: SakaiTheme.light(_themeConfig),
+            theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),
           ),
         ),
@@ -108,14 +104,12 @@ void main() {
     testWidgets('shows in progress state with complete button only', (
       tester,
     ) async {
-      final ride = _createMockRide(RideStatus.inProgress);
+      final ride = createMockRide(RideStatus.inProgress);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            activeRideRepositoryProvider.overrideWithValue(_mockRepo),
-          ],
+          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
           child: MaterialApp(
-            theme: SakaiTheme.light(_themeConfig),
+            theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),
           ),
         ),

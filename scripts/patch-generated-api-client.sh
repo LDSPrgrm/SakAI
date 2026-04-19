@@ -36,4 +36,21 @@ for name in ("error_code.dart", "ride_status.dart"):
     if n:
         path.write_text(new_text)
         print(f"patched {path.name}")
+
+# Strip bare "//" language version override from first line of all .dart files.
+# openapi-generator puts "//\n" on line 1 which Dart interprets as a language
+# version override (null), causing mismatch with build_runner-generated .g.dart.
+fixed = 0
+for p in root.rglob("*.dart"):
+    if p.name.endswith(".g.dart"):
+        continue
+    text = p.read_text()
+    if text.startswith("//\r\n"):
+        p.write_text(text[4:], encoding="utf-8")
+        fixed += 1
+    elif text.startswith("//\n"):
+        p.write_text(text[3:], encoding="utf-8")
+        fixed += 1
+if fixed:
+    print(f"stripped bare '// ' from {fixed} .dart files")
 PY

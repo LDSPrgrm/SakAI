@@ -10,15 +10,15 @@ class _$DriverDocumentsListResponse extends DriverDocumentsListResponse {
   @override
   final BuiltList<DriverDocumentResponse> documents;
 
-  factory _$DriverDocumentsListResponse(
-          [void Function(DriverDocumentsListResponseBuilder)? updates]) =>
-      (DriverDocumentsListResponseBuilder()..update(updates))._build();
+  factory _$DriverDocumentsListResponse([
+    void Function(DriverDocumentsListResponseBuilder)? updates,
+  ]) => (DriverDocumentsListResponseBuilder()..update(updates))._build();
 
   _$DriverDocumentsListResponse._({required this.documents}) : super._();
   @override
   DriverDocumentsListResponse rebuild(
-          void Function(DriverDocumentsListResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(DriverDocumentsListResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   DriverDocumentsListResponseBuilder toBuilder() =>
@@ -40,16 +40,18 @@ class _$DriverDocumentsListResponse extends DriverDocumentsListResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'DriverDocumentsListResponse')
-          ..add('documents', documents))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'DriverDocumentsListResponse',
+    )..add('documents', documents)).toString();
   }
 }
 
 class DriverDocumentsListResponseBuilder
     implements
-        Builder<DriverDocumentsListResponse,
-            DriverDocumentsListResponseBuilder> {
+        Builder<
+          DriverDocumentsListResponse,
+          DriverDocumentsListResponseBuilder
+        > {
   _$DriverDocumentsListResponse? _$v;
 
   ListBuilder<DriverDocumentResponse>? _documents;
@@ -87,10 +89,8 @@ class DriverDocumentsListResponseBuilder
   _$DriverDocumentsListResponse _build() {
     _$DriverDocumentsListResponse _$result;
     try {
-      _$result = _$v ??
-          _$DriverDocumentsListResponse._(
-            documents: documents.build(),
-          );
+      _$result =
+          _$v ?? _$DriverDocumentsListResponse._(documents: documents.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -98,7 +98,10 @@ class DriverDocumentsListResponseBuilder
         documents.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'DriverDocumentsListResponse', _$failedField, e.toString());
+          r'DriverDocumentsListResponse',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Search, Eye, Ban, CheckCircle, AlertTriangle } from 'lucide-react';
-import { adminApi, PassengerUser, DriverUser, AdminStatus } from '@/lib/admin-api';
+import { usersApi } from '@/api/admin/users';
+import type { PassengerUser, DriverUser, AdminStatus } from '@/types/super-admin';
 
 function vehicleLabel(v: DriverUser['vehicle']): string {
   if (!v) return '—';
@@ -62,8 +63,8 @@ export function UserManagement() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.users.getPassengers(),
-      adminApi.users.getDrivers(),
+      usersApi.getPassengers(),
+      usersApi.getDrivers(),
     ]).then(([passengers, drivers]) => {
       setRiderList(passengers);
       setDriverList(drivers);
@@ -78,7 +79,7 @@ export function UserManagement() {
       title: `Suspend ${type}`,
       message: `Are you sure you want to suspend ${name}? They will no longer be able to ${type === 'Rider' ? 'book rides' : 'accept rides'}.`,
       onConfirm: () => {
-        adminApi.users.updateStatus(id, { status: 'suspended' }).catch(() => {});
+        usersApi.updateStatus(id, { status: 'suspended' }).catch(() => {});
         if (type === 'Rider') {
           setRiderList(prev => prev.map(r => r.id === id ? { ...r, status: 'suspended' as any } : r));
         } else {

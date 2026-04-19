@@ -7,17 +7,17 @@ part of 'compliance_data.dart';
 // **************************************************************************
 
 const ComplianceDataAccreditationStatusEnum
-    _$complianceDataAccreditationStatusEnum_active =
+_$complianceDataAccreditationStatusEnum_active =
     const ComplianceDataAccreditationStatusEnum._('active');
 const ComplianceDataAccreditationStatusEnum
-    _$complianceDataAccreditationStatusEnum_expiring =
+_$complianceDataAccreditationStatusEnum_expiring =
     const ComplianceDataAccreditationStatusEnum._('expiring');
 const ComplianceDataAccreditationStatusEnum
-    _$complianceDataAccreditationStatusEnum_expired =
+_$complianceDataAccreditationStatusEnum_expired =
     const ComplianceDataAccreditationStatusEnum._('expired');
 
 ComplianceDataAccreditationStatusEnum
-    _$complianceDataAccreditationStatusEnumValueOf(String name) {
+_$complianceDataAccreditationStatusEnumValueOf(String name) {
   switch (name) {
     case 'active':
       return _$complianceDataAccreditationStatusEnum_active;
@@ -31,15 +31,17 @@ ComplianceDataAccreditationStatusEnum
 }
 
 final BuiltSet<ComplianceDataAccreditationStatusEnum>
-    _$complianceDataAccreditationStatusEnumValues = BuiltSet<
-        ComplianceDataAccreditationStatusEnum>(const <ComplianceDataAccreditationStatusEnum>[
-  _$complianceDataAccreditationStatusEnum_active,
-  _$complianceDataAccreditationStatusEnum_expiring,
-  _$complianceDataAccreditationStatusEnum_expired,
-]);
+_$complianceDataAccreditationStatusEnumValues =
+    BuiltSet<ComplianceDataAccreditationStatusEnum>(
+      const <ComplianceDataAccreditationStatusEnum>[
+        _$complianceDataAccreditationStatusEnum_active,
+        _$complianceDataAccreditationStatusEnum_expiring,
+        _$complianceDataAccreditationStatusEnum_expired,
+      ],
+    );
 
 Serializer<ComplianceDataAccreditationStatusEnum>
-    _$complianceDataAccreditationStatusEnumSerializer =
+_$complianceDataAccreditationStatusEnumSerializer =
     _$ComplianceDataAccreditationStatusEnumSerializer();
 
 class _$ComplianceDataAccreditationStatusEnumSerializer
@@ -57,23 +59,26 @@ class _$ComplianceDataAccreditationStatusEnumSerializer
 
   @override
   final Iterable<Type> types = const <Type>[
-    ComplianceDataAccreditationStatusEnum
+    ComplianceDataAccreditationStatusEnum,
   ];
   @override
   final String wireName = 'ComplianceDataAccreditationStatusEnum';
 
   @override
   Object serialize(
-          Serializers serializers, ComplianceDataAccreditationStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    ComplianceDataAccreditationStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   ComplianceDataAccreditationStatusEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      ComplianceDataAccreditationStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => ComplianceDataAccreditationStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$ComplianceData extends ComplianceData {
@@ -89,12 +94,12 @@ class _$ComplianceData extends ComplianceData {
   factory _$ComplianceData([void Function(ComplianceDataBuilder)? updates]) =>
       (ComplianceDataBuilder()..update(updates))._build();
 
-  _$ComplianceData._(
-      {this.accreditationStatus,
-      this.accreditationExpiry,
-      this.driverComplianceRate,
-      this.violationCount})
-      : super._();
+  _$ComplianceData._({
+    this.accreditationStatus,
+    this.accreditationExpiry,
+    this.driverComplianceRate,
+    this.violationCount,
+  }) : super._();
   @override
   ComplianceData rebuild(void Function(ComplianceDataBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -142,8 +147,8 @@ class ComplianceDataBuilder
   ComplianceDataAccreditationStatusEnum? get accreditationStatus =>
       _$this._accreditationStatus;
   set accreditationStatus(
-          ComplianceDataAccreditationStatusEnum? accreditationStatus) =>
-      _$this._accreditationStatus = accreditationStatus;
+    ComplianceDataAccreditationStatusEnum? accreditationStatus,
+  ) => _$this._accreditationStatus = accreditationStatus;
 
   DateTime? _accreditationExpiry;
   DateTime? get accreditationExpiry => _$this._accreditationExpiry;
@@ -190,7 +195,8 @@ class ComplianceDataBuilder
   ComplianceData build() => _build();
 
   _$ComplianceData _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ComplianceData._(
           accreditationStatus: accreditationStatus,
           accreditationExpiry: accreditationExpiry,

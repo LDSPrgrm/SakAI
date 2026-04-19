@@ -4,7 +4,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { DateDisplay } from '../shared/DateDisplay';
-import type { KycEntry } from '@/lib/admin-api';
+import type { KycEntry } from '@/types/super-admin';
 
 interface KYCQueueProps {
   data: KycEntry[];

@@ -1,5 +1,4 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
+﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -96,6 +95,10 @@ class ErrorCode extends EnumClass {
   /// Machine-readable error code. Flutter clients should branch on this, not on `message`.
   @BuiltValueEnumConst(wireName: r'DUPLICATE_PAYMENT')
   static const ErrorCode DUPLICATE_PAYMENT = _$DUPLICATE_PAYMENT;
+
+  /// Machine-readable error code. Flutter clients should branch on this, not on `message`.
+  @BuiltValueEnumConst(wireName: r'UNPAID_RIDE_BLOCKED')
+  static const ErrorCode UNPAID_RIDE_BLOCKED = _$UNPAID_RIDE_BLOCKED;
 
   /// Machine-readable error code. Flutter clients should branch on this, not on `message`.
   @BuiltValueEnumConst(wireName: r'PAYMENT_METHOD_UNSUPPORTED')

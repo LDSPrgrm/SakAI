@@ -6,7 +6,7 @@ import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { RoleBadge } from '../shared/RoleBadge';
 import { DateDisplay } from '../shared/DateDisplay';
-import type { AdminUser } from '@/lib/admin-api';
+import type { AdminUser } from '@/types/super-admin';
 
 interface AdminTableProps {
   data: AdminUser[];

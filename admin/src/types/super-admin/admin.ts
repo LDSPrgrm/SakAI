@@ -1,10 +1,15 @@
-// Admin user types — re-exported from the generated OpenAPI contract.
-// Source: src/types/openapi.d.ts (run `npm run generate:types` to refresh)
-
+// Admin user types — override the openapi-generated AdminUser so the role
+// field accepts super-admin role values instead of the UserProfile union.
 import type { components } from '@/types/openapi';
 
-export type AdminUser   = components['schemas']['AdminUser'];
 export type AdminStatus = 'active' | 'suspended' | 'deactivated';
 export type AdminRole   = 'super_admin' | 'operations' | 'finance' | 'support';
+
+type BaseAdminUser = components['schemas']['AdminUser'];
+
+export type AdminUser = Omit<BaseAdminUser, 'role' | 'status'> & {
+  role: AdminRole;
+  status?: AdminStatus;
+};
 
 export type { AdminUser as default };

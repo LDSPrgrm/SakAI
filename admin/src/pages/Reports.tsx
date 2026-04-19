@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Download, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { adminApi } from '@/lib/admin-api';
+import { metricsApi } from '@/api/super-admin/metrics';
+import { reportsApi } from '@/api/super-admin/reports';
 
 const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335'];
 
@@ -27,24 +28,24 @@ export function Reports() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.dashboard.getVehicleDistribution().catch(() => [] as ChartDataPoint[]),
-      adminApi.reports.getChartData('payment-methods').catch(() => [] as ChartDataPoint[]),
-      adminApi.reports.getReportList().catch(() => [] as ReportDef[]),
+      metricsApi.getVehicleDistribution().catch(() => [] as ChartDataPoint[]),
+      reportsApi.getChartData('payment-methods').catch(() => [] as ChartDataPoint[]),
+      reportsApi.getReportList().catch(() => [] as ReportDef[]),
     ]).then(([vehicles, payments, reports]) => {
-      if (vehicles.length > 0) setVehicleData(vehicles);
-      if (payments.length > 0) setPaymentData(payments);
-      if (reports.length > 0) setReportList(reports);
+      if (vehicles.length > 0) setVehicleData(vehicles as unknown as ChartDataPoint[]);
+      if (payments.length > 0) setPaymentData(payments as unknown as ChartDataPoint[]);
+      if (reports.length > 0) setReportList(reports as unknown as ReportDef[]);
     }).finally(() => setLoading(false));
   }, []);
 
   const handleExportAll = () => {
-    adminApi.reports.exportCsv('all').then(url => {
+    reportsApi.exportCsv('all').then(url => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };
 
   const handleDownload = (reportId: string) => {
-    adminApi.reports.exportCsv(reportId).then(url => {
+    reportsApi.exportCsv(reportId).then(url => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };

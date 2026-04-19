@@ -26,28 +26,9 @@ UploadStatus _$valueOf(String name) {
   }
 }
 
-final BuiltSet<UploadStatus> _$values =
-    BuiltSet<UploadStatus>(const <UploadStatus>[
-  _$uploaded,
-  _$underReview,
-  _$approved,
-  _$rejected,
-]);
-
-class _$UploadStatusMeta {
-  const _$UploadStatusMeta();
-  UploadStatus get uploaded => _$uploaded;
-  UploadStatus get underReview => _$underReview;
-  UploadStatus get approved => _$approved;
-  UploadStatus get rejected => _$rejected;
-  UploadStatus valueOf(String name) => _$valueOf(name);
-  BuiltSet<UploadStatus> get values => _$values;
-}
-
-abstract class _$UploadStatusMixin {
-  // ignore: non_constant_identifier_names
-  _$UploadStatusMeta get UploadStatus => const _$UploadStatusMeta();
-}
+final BuiltSet<UploadStatus> _$values = BuiltSet<UploadStatus>(
+  const <UploadStatus>[_$uploaded, _$underReview, _$approved, _$rejected],
+);
 
 Serializer<UploadStatus> _$uploadStatusSerializer = _$UploadStatusSerializer();
 
@@ -71,15 +52,20 @@ class _$UploadStatusSerializer implements PrimitiveSerializer<UploadStatus> {
   final String wireName = 'UploadStatus';
 
   @override
-  Object serialize(Serializers serializers, UploadStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    UploadStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  UploadStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      UploadStatus.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  UploadStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UploadStatus.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

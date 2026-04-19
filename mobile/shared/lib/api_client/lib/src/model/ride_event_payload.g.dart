@@ -40,13 +40,13 @@ RideEventPayloadStatusEnum _$rideEventPayloadStatusEnumValueOf(String name) {
 
 final BuiltSet<RideEventPayloadStatusEnum> _$rideEventPayloadStatusEnumValues =
     BuiltSet<RideEventPayloadStatusEnum>(const <RideEventPayloadStatusEnum>[
-  _$rideEventPayloadStatusEnum_requested,
-  _$rideEventPayloadStatusEnum_accepted,
-  _$rideEventPayloadStatusEnum_arrived,
-  _$rideEventPayloadStatusEnum_inProgress,
-  _$rideEventPayloadStatusEnum_completed,
-  _$rideEventPayloadStatusEnum_cancelled,
-]);
+      _$rideEventPayloadStatusEnum_requested,
+      _$rideEventPayloadStatusEnum_accepted,
+      _$rideEventPayloadStatusEnum_arrived,
+      _$rideEventPayloadStatusEnum_inProgress,
+      _$rideEventPayloadStatusEnum_completed,
+      _$rideEventPayloadStatusEnum_cancelled,
+    ]);
 
 Serializer<RideEventPayloadStatusEnum> _$rideEventPayloadStatusEnumSerializer =
     _$RideEventPayloadStatusEnumSerializer();
@@ -76,16 +76,20 @@ class _$RideEventPayloadStatusEnumSerializer
   final String wireName = 'RideEventPayloadStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, RideEventPayloadStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    RideEventPayloadStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   RideEventPayloadStatusEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      RideEventPayloadStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => RideEventPayloadStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$RideEventPayload extends RideEventPayload {
@@ -98,13 +102,16 @@ class _$RideEventPayload extends RideEventPayload {
   @override
   final String? passengerId;
 
-  factory _$RideEventPayload(
-          [void Function(RideEventPayloadBuilder)? updates]) =>
-      (RideEventPayloadBuilder()..update(updates))._build();
+  factory _$RideEventPayload([
+    void Function(RideEventPayloadBuilder)? updates,
+  ]) => (RideEventPayloadBuilder()..update(updates))._build();
 
-  _$RideEventPayload._(
-      {this.rideId, this.status, this.driverId, this.passengerId})
-      : super._();
+  _$RideEventPayload._({
+    this.rideId,
+    this.status,
+    this.driverId,
+    this.passengerId,
+  }) : super._();
   @override
   RideEventPayload rebuild(void Function(RideEventPayloadBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -195,7 +202,8 @@ class RideEventPayloadBuilder
   RideEventPayload build() => _build();
 
   _$RideEventPayload _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$RideEventPayload._(
           rideId: rideId,
           status: status,

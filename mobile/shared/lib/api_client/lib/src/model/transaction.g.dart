@@ -16,7 +16,8 @@ const TransactionPaymentMethodEnum _$transactionPaymentMethodEnum_card =
     const TransactionPaymentMethodEnum._('card');
 
 TransactionPaymentMethodEnum _$transactionPaymentMethodEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'cash':
       return _$transactionPaymentMethodEnum_cash;
@@ -32,13 +33,13 @@ TransactionPaymentMethodEnum _$transactionPaymentMethodEnumValueOf(
 }
 
 final BuiltSet<TransactionPaymentMethodEnum>
-    _$transactionPaymentMethodEnumValues =
+_$transactionPaymentMethodEnumValues =
     BuiltSet<TransactionPaymentMethodEnum>(const <TransactionPaymentMethodEnum>[
-  _$transactionPaymentMethodEnum_cash,
-  _$transactionPaymentMethodEnum_gcash,
-  _$transactionPaymentMethodEnum_paymaya,
-  _$transactionPaymentMethodEnum_card,
-]);
+      _$transactionPaymentMethodEnum_cash,
+      _$transactionPaymentMethodEnum_gcash,
+      _$transactionPaymentMethodEnum_paymaya,
+      _$transactionPaymentMethodEnum_card,
+    ]);
 
 const TransactionStatusEnum _$transactionStatusEnum_settled =
     const TransactionStatusEnum._('settled');
@@ -66,14 +67,14 @@ TransactionStatusEnum _$transactionStatusEnumValueOf(String name) {
 
 final BuiltSet<TransactionStatusEnum> _$transactionStatusEnumValues =
     BuiltSet<TransactionStatusEnum>(const <TransactionStatusEnum>[
-  _$transactionStatusEnum_settled,
-  _$transactionStatusEnum_pending,
-  _$transactionStatusEnum_failed,
-  _$transactionStatusEnum_refunded,
-]);
+      _$transactionStatusEnum_settled,
+      _$transactionStatusEnum_pending,
+      _$transactionStatusEnum_failed,
+      _$transactionStatusEnum_refunded,
+    ]);
 
 Serializer<TransactionPaymentMethodEnum>
-    _$transactionPaymentMethodEnumSerializer =
+_$transactionPaymentMethodEnumSerializer =
     _$TransactionPaymentMethodEnumSerializer();
 Serializer<TransactionStatusEnum> _$transactionStatusEnumSerializer =
     _$TransactionStatusEnumSerializer();
@@ -99,16 +100,20 @@ class _$TransactionPaymentMethodEnumSerializer
   final String wireName = 'TransactionPaymentMethodEnum';
 
   @override
-  Object serialize(Serializers serializers, TransactionPaymentMethodEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    TransactionPaymentMethodEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   TransactionPaymentMethodEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      TransactionPaymentMethodEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => TransactionPaymentMethodEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$TransactionStatusEnumSerializer
@@ -132,15 +137,20 @@ class _$TransactionStatusEnumSerializer
   final String wireName = 'TransactionStatusEnum';
 
   @override
-  Object serialize(Serializers serializers, TransactionStatusEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    TransactionStatusEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  TransactionStatusEnum deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      TransactionStatusEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  TransactionStatusEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => TransactionStatusEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$Transaction extends Transaction {
@@ -166,17 +176,17 @@ class _$Transaction extends Transaction {
   factory _$Transaction([void Function(TransactionBuilder)? updates]) =>
       (TransactionBuilder()..update(updates))._build();
 
-  _$Transaction._(
-      {this.id,
-      this.rideId,
-      this.riderName,
-      this.driverName,
-      this.amount,
-      this.paymentMethod,
-      this.status,
-      this.commission,
-      this.createdAt})
-      : super._();
+  _$Transaction._({
+    this.id,
+    this.rideId,
+    this.riderName,
+    this.driverName,
+    this.amount,
+    this.paymentMethod,
+    this.status,
+    this.commission,
+    this.createdAt,
+  }) : super._();
   @override
   Transaction rebuild(void Function(TransactionBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -306,7 +316,8 @@ class TransactionBuilder implements Builder<Transaction, TransactionBuilder> {
   Transaction build() => _build();
 
   _$Transaction _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$Transaction._(
           id: id,
           rideId: rideId,

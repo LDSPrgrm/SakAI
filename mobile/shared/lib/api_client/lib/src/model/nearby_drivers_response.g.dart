@@ -10,15 +10,15 @@ class _$NearbyDriversResponse extends NearbyDriversResponse {
   @override
   final BuiltList<NearbyDriver>? drivers;
 
-  factory _$NearbyDriversResponse(
-          [void Function(NearbyDriversResponseBuilder)? updates]) =>
-      (NearbyDriversResponseBuilder()..update(updates))._build();
+  factory _$NearbyDriversResponse([
+    void Function(NearbyDriversResponseBuilder)? updates,
+  ]) => (NearbyDriversResponseBuilder()..update(updates))._build();
 
   _$NearbyDriversResponse._({this.drivers}) : super._();
   @override
   NearbyDriversResponse rebuild(
-          void Function(NearbyDriversResponseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(NearbyDriversResponseBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   NearbyDriversResponseBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$NearbyDriversResponse extends NearbyDriversResponse {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'NearbyDriversResponse')
-          ..add('drivers', drivers))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'NearbyDriversResponse',
+    )..add('drivers', drivers)).toString();
   }
 }
 
@@ -84,10 +84,7 @@ class NearbyDriversResponseBuilder
   _$NearbyDriversResponse _build() {
     _$NearbyDriversResponse _$result;
     try {
-      _$result = _$v ??
-          _$NearbyDriversResponse._(
-            drivers: _drivers?.build(),
-          );
+      _$result = _$v ?? _$NearbyDriversResponse._(drivers: _drivers?.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -95,7 +92,10 @@ class NearbyDriversResponseBuilder
         _drivers?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'NearbyDriversResponse', _$failedField, e.toString());
+          r'NearbyDriversResponse',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

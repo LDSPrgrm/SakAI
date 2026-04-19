@@ -19,9 +19,12 @@ class _$PaginationMeta extends PaginationMeta {
   factory _$PaginationMeta([void Function(PaginationMetaBuilder)? updates]) =>
       (PaginationMetaBuilder()..update(updates))._build();
 
-  _$PaginationMeta._(
-      {this.currentPage, this.limit, this.totalItems, this.totalPages})
-      : super._();
+  _$PaginationMeta._({
+    this.currentPage,
+    this.limit,
+    this.totalItems,
+    this.totalPages,
+  }) : super._();
   @override
   PaginationMeta rebuild(void Function(PaginationMetaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -111,7 +114,8 @@ class PaginationMetaBuilder
   PaginationMeta build() => _build();
 
   _$PaginationMeta _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$PaginationMeta._(
           currentPage: currentPage,
           limit: limit,

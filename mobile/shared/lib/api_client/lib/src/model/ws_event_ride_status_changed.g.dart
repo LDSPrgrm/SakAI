@@ -14,17 +14,19 @@ class _$WsEventRideStatusChanged extends WsEventRideStatusChanged {
   @override
   final DateTime updatedAt;
 
-  factory _$WsEventRideStatusChanged(
-          [void Function(WsEventRideStatusChangedBuilder)? updates]) =>
-      (WsEventRideStatusChangedBuilder()..update(updates))._build();
+  factory _$WsEventRideStatusChanged([
+    void Function(WsEventRideStatusChangedBuilder)? updates,
+  ]) => (WsEventRideStatusChangedBuilder()..update(updates))._build();
 
-  _$WsEventRideStatusChanged._(
-      {required this.rideId, required this.status, required this.updatedAt})
-      : super._();
+  _$WsEventRideStatusChanged._({
+    required this.rideId,
+    required this.status,
+    required this.updatedAt,
+  }) : super._();
   @override
   WsEventRideStatusChanged rebuild(
-          void Function(WsEventRideStatusChangedBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(WsEventRideStatusChangedBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideStatusChangedBuilder toBuilder() =>
@@ -105,14 +107,24 @@ class WsEventRideStatusChangedBuilder
   WsEventRideStatusChanged build() => _build();
 
   _$WsEventRideStatusChanged _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$WsEventRideStatusChanged._(
           rideId: BuiltValueNullFieldError.checkNotNull(
-              rideId, r'WsEventRideStatusChanged', 'rideId'),
+            rideId,
+            r'WsEventRideStatusChanged',
+            'rideId',
+          ),
           status: BuiltValueNullFieldError.checkNotNull(
-              status, r'WsEventRideStatusChanged', 'status'),
+            status,
+            r'WsEventRideStatusChanged',
+            'status',
+          ),
           updatedAt: BuiltValueNullFieldError.checkNotNull(
-              updatedAt, r'WsEventRideStatusChanged', 'updatedAt'),
+            updatedAt,
+            r'WsEventRideStatusChanged',
+            'updatedAt',
+          ),
         );
     replace(_$result);
     return _$result;

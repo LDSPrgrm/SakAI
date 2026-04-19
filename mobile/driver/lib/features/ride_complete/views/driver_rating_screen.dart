@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide DriverRatingState;
 
 import '../../../app/router.dart';
-import '../models/driver_rating_state.dart';
-import '../repositories/driver_rating_repository.dart';
-import '../view_models/driver_rating_notifier.dart';
-import 'driver_rating_repository_provider.dart';
+import '../view_models/driver_rating_notifier.dart'
+    show driverRatingNotifierProvider;
 
 /// Driver rating screen — 5-star rating UI with optional feedback.
-class DriverRatingScreen extends StatefulWidget {
+///
+/// Features auto-close with visible countdown timer.
+class DriverRatingScreen extends ConsumerStatefulWidget {
   const DriverRatingScreen({
     super.key,
     required this.rideId,
@@ -20,218 +21,455 @@ class DriverRatingScreen extends StatefulWidget {
   final String passengerName;
 
   @override
-  State<DriverRatingScreen> createState() => _DriverRatingScreenState();
+  ConsumerState<DriverRatingScreen> createState() => _DriverRatingScreenState();
 }
 
-class _DriverRatingScreenState extends State<DriverRatingScreen> {
-  late final DriverRatingNotifier _notifier;
+class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
+    with TickerProviderStateMixin {
   final _feedbackController = TextEditingController();
+  late AnimationController _completionController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _notifier = DriverRatingNotifier(
-      repository: DriverRatingRepositoryProvider.of(context),
-      initialState: DriverRatingState(
-        rideId: widget.rideId,
-        passengerName: widget.passengerName,
+    _completionController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _completionController, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _completionController,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
       ),
     );
-    _feedbackController.addListener(() {
-      _notifier.setFeedback(_feedbackController.text);
+
+    // Defer initialization until after widget build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref
+            .read(driverRatingNotifierProvider.notifier)
+            .init(rideId: widget.rideId, passengerName: widget.passengerName);
+      }
     });
+
+    _completionController.forward();
   }
 
   @override
   void dispose() {
     _feedbackController.dispose();
-    _notifier.dispose();
+    _completionController.dispose();
     super.dispose();
   }
 
   Future<void> _submitRating() async {
-    final success = await _notifier.submitRating();
+    final notifier = ref.read(driverRatingNotifierProvider.notifier);
+    final success = await notifier.submitRating();
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thank you for your rating!')),
+        const SnackBar(
+          content: Text('Thank you for your rating!'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
-  }
-
-  void _onDone() {
-    context.go(Routes.home);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _notifier,
-      builder: (context, _) => _buildUI(context),
-    );
-  }
-
-  Widget _buildUI(BuildContext context) {
-    final state = _notifier.state;
+    final state = ref.watch(driverRatingNotifierProvider);
     final theme = Theme.of(context);
     final tokens = SakaiDesignTokens.of(context);
 
-    if (state.isSubmitted) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Rating Submitted'),
-          actions: [TextButton(onPressed: _onDone, child: const Text('Home'))],
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.check_circle,
-                size: 72,
-                color: theme.colorScheme.primary,
-              ),
-              SizedBox(height: tokens.spaceMd),
-              Text('Thank you!', style: theme.textTheme.headlineSmall),
-              SizedBox(height: tokens.spaceSm),
-              Text(
-                'Your feedback helps improve SakAI.',
-                style: theme.textTheme.bodyMedium,
-              ),
-              SizedBox(height: tokens.spaceLg),
-              ElevatedButton.icon(
-                onPressed: _onDone,
-                icon: const Icon(Icons.home),
-                label: const Text('Go Home'),
-              ),
-            ],
-          ),
-        ),
-      );
+    // Auto-navigate home when timer completes
+    if (state.shouldNavigateHome && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go(Routes.home);
+      });
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rate Your Passenger'),
-        actions: [TextButton(onPressed: _onDone, child: const Text('Skip'))],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(tokens.spaceLg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(tokens.spaceMd),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.person,
-                      size: 64,
-                      color: theme.colorScheme.primary,
+    // Success state after submission
+    if (state.isSubmitted) {
+      return Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 180,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
                     ),
-                    SizedBox(height: tokens.spaceSm),
-                    Text(
-                      state.passengerName,
-                      style: theme.textTheme.titleMedium,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_rounded,
+                              size: 64,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Text(
+                            'Rating Submitted!',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'How was this passenger?',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-
-            SizedBox(height: tokens.spaceLg),
-
-            Card(
+            SliverFillRemaining(
+              hasScrollBody: false,
               child: Padding(
-                padding: EdgeInsets.all(tokens.spaceMd),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Rate this passenger',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                    SizedBox(height: tokens.spaceMd),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (int i = 1; i <= 5; i++)
-                          GestureDetector(
-                            onTap: () => _notifier.setStars(i),
-                            child: Semantics(
-                              label: 'Rate $i star${i > 1 ? 's' : ''}',
-                              child: Icon(
-                                i <= state.stars
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                size: 48,
-                                color: i <= state.stars
-                                    ? Colors.amber
-                                    : Colors.grey,
+                padding: EdgeInsets.all(tokens.spaceXl),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _ModernCard(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 72,
+                              color: theme.colorScheme.primary,
+                            ),
+                            SizedBox(height: tokens.spaceMd),
+                            Text(
+                              'Thank you!',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    if (state.stars > 0) ...[
-                      SizedBox(height: tokens.spaceMd),
-                      TextField(
-                        controller: _feedbackController,
-                        maxLength: 500,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Share feedback (optional)',
-                          border: OutlineInputBorder(),
+                            SizedBox(height: tokens.spaceSm),
+                            Text(
+                              'Your feedback helps improve SakAI.',
+                              style: theme.textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: tokens.spaceLg),
+                            if (state.countdownActive &&
+                                state.secondsRemaining > 0) ...[
+                              LinearProgressIndicator(
+                                value: state.secondsRemaining / 15.0,
+                                minHeight: 6,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              SizedBox(height: tokens.spaceSm),
+                              Text(
+                                'Going home in ${state.secondsRemaining} seconds...',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              SizedBox(height: tokens.spaceMd),
+                            ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () => ref
+                                      .read(
+                                        driverRatingNotifierProvider.notifier,
+                                      )
+                                      .navigateHome(),
+                                  icon: const Icon(Icons.home),
+                                  label: const Text('Go Home Now'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                    SizedBox(height: tokens.spaceMd),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => _notifier.skipRating(),
-                          child: const Text('Skip'),
-                        ),
-                        SizedBox(width: tokens.spaceSm),
-                        ElevatedButton(
-                          onPressed: state.stars > 0 && !state.isSubmitting
-                              ? _submitRating
-                              : null,
-                          child: state.isSubmitting
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Submit Rating'),
-                        ),
-                      ],
-                    ),
-                    if (state.error != null)
-                      Padding(
-                        padding: EdgeInsets.only(top: tokens.spaceSm),
-                        child: Text(
-                          state.error!,
-                          style: TextStyle(color: theme.colorScheme.error),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
+      );
+    }
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          // Modern gradient app bar
+          SliverAppBar(
+            expandedHeight: 180,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Text(
+                          'Rate Your Passenger',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(tokens.spaceLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Passenger info card
+                  _ModernCard(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            size: 64,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        SizedBox(height: tokens.spaceMd),
+                        Text(
+                          state.passengerName,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: tokens.spaceSm),
+                        Text(
+                          'How was this passenger?',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: tokens.spaceLg),
+
+                  // Rating card
+                  _ModernCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star_rate_rounded,
+                              color: Colors.amber[700],
+                            ),
+                            SizedBox(width: tokens.spaceSm),
+                            Text(
+                              'Rate this passenger',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: tokens.spaceLg),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            for (int i = 1; i <= 5; i++)
+                              GestureDetector(
+                                onTap: () => ref
+                                    .read(driverRatingNotifierProvider.notifier)
+                                    .setStars(i),
+                                child: AnimatedContainer(
+                                  duration: Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                  padding: EdgeInsets.all(
+                                    i <= state.stars ? 4 : 0,
+                                  ),
+                                  child: Semantics(
+                                    label: 'Rate $i star${i > 1 ? 's' : ''}',
+                                    child: Icon(
+                                      i <= state.stars
+                                          ? Icons.star_rounded
+                                          : Icons.star_border_rounded,
+                                      size: 52,
+                                      color: i <= state.stars
+                                          ? Colors.amber[700]
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (state.stars > 0) ...[
+                          SizedBox(height: tokens.spaceMd),
+                          TextField(
+                            controller: _feedbackController,
+                            maxLength: 500,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              labelText: 'Share feedback (optional)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: tokens.spaceMd),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => ref
+                                  .read(driverRatingNotifierProvider.notifier)
+                                  .skipRating(),
+                              child: const Text('Skip'),
+                            ),
+                            SizedBox(width: tokens.spaceSm),
+                            ElevatedButton(
+                              onPressed: state.stars > 0 && !state.isSubmitting
+                                  ? _submitRating
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: state.isSubmitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Submit Rating'),
+                            ),
+                          ],
+                        ),
+                        if (state.error != null)
+                          Padding(
+                            padding: EdgeInsets.only(top: tokens.spaceSm),
+                            child: Text(
+                              state.error!,
+                              style: TextStyle(color: theme.colorScheme.error),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: tokens.spaceXl),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+/// Modern card with subtle shadow and rounded corners.
+class _ModernCard extends StatelessWidget {
+  const _ModernCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: child,
     );
   }
 }

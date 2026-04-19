@@ -77,6 +77,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			driverOnly.PUT("/status", d.Driver.SetStatus)
 			driverOnly.PUT("/location", d.Driver.UpdateLocation)
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
+			driverOnly.GET("/rides", d.Ride.ListDriverRides)
 		}
 
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
@@ -194,6 +195,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 		// Nearby drivers (passenger only)
 		authed.GET("/drivers/nearby", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDrivers)
+		authed.GET("/drivers/nearby/all", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDriversAllTypes)
 
 		// Payment method routes (passenger only)
 		paymentMethods := authed.Group("/users/me/payment-methods")

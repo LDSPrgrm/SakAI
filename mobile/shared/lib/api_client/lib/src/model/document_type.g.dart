@@ -23,26 +23,9 @@ DocumentType _$valueOf(String name) {
   }
 }
 
-final BuiltSet<DocumentType> _$values =
-    BuiltSet<DocumentType>(const <DocumentType>[
-  _$license,
-  _$registration,
-  _$insurance,
-]);
-
-class _$DocumentTypeMeta {
-  const _$DocumentTypeMeta();
-  DocumentType get license => _$license;
-  DocumentType get registration => _$registration;
-  DocumentType get insurance => _$insurance;
-  DocumentType valueOf(String name) => _$valueOf(name);
-  BuiltSet<DocumentType> get values => _$values;
-}
-
-abstract class _$DocumentTypeMixin {
-  // ignore: non_constant_identifier_names
-  _$DocumentTypeMeta get DocumentType => const _$DocumentTypeMeta();
-}
+final BuiltSet<DocumentType> _$values = BuiltSet<DocumentType>(
+  const <DocumentType>[_$license, _$registration, _$insurance],
+);
 
 Serializer<DocumentType> _$documentTypeSerializer = _$DocumentTypeSerializer();
 
@@ -64,15 +47,20 @@ class _$DocumentTypeSerializer implements PrimitiveSerializer<DocumentType> {
   final String wireName = 'DocumentType';
 
   @override
-  Object serialize(Serializers serializers, DocumentType object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+  Object serialize(
+    Serializers serializers,
+    DocumentType object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
-  DocumentType deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      DocumentType.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+  DocumentType deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => DocumentType.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint

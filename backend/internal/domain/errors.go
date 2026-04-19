@@ -40,8 +40,13 @@ var (
 	ErrPaymentGatewayError      = errors.New("payment gateway error")
 	ErrPaymentMethodNotFound    = errors.New("payment method not found")
 	ErrPaymentMethodLastMethod  = errors.New("cannot remove last payment method")
+	// Unpaid ride block
+	ErrUnpaidRideBlocked        = errors.New("unpaid ride blocks new request")
 	// Ride type errors
 	ErrInvalidRideType = errors.New("invalid ride type: must be motorcycle, car, or tricycle")
 	// Tip errors (additional)
 	ErrTipExceedsLimit = errors.New("tip exceeds 50% of base fare")
+	// Proximity validation errors
+	ErrDriverTooFarFromPickup = errors.New("driver must be within 50 meters of pickup location")
+	ErrDriverTooFarFromDestination = errors.New("driver must be within 100 meters of destination")
 )

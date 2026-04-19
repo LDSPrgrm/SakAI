@@ -16,74 +16,56 @@ class DriverRepository {
           client ??
           SakaiApiSupport.createClient(authInterceptor: authInterceptor);
 
-  Future<List<NearbyDriver>> fetchNearbyDrivers(
-    LatLng location, {
-    String rideType = 'car',
-  }) async {
+  /// Fetches nearby drivers for all vehicle types in a single call.
+  /// Returns a map of ride type → driver list.
+  Future<Map<String, List<NearbyDriver>>> fetchNearbyDriversAll(
+    LatLng location,
+  ) async {
     try {
       final resp = await _client.dio.get(
-        '/drivers/nearby',
+        '/drivers/nearby/all',
         queryParameters: {
           'lat': location.latitude,
           'lng': location.longitude,
-          'ride_type': rideType,
           'radius_m': 5000,
         },
       );
 
       final data = resp.data;
+      if (data == null) return {};
+
+      final outer = data is Map<String, dynamic> ? data['data'] : null;
+      if (outer is! Map<String, dynamic>) return {};
+
+      final result = <String, List<NearbyDriver>>{};
+      for (final entry in outer.entries) {
+        final driversList = entry.value is List ? entry.value as List : [];
+        result[entry.key] = driversList.map((d) {
+          final m = d as Map<String, dynamic>;
+          final loc = m['location'] as Map<String, dynamic>? ?? {};
+          return NearbyDriver(
+            id: m['id'] as String? ?? '',
+            name: m['name'] as String? ?? 'Driver',
+            location: LatLng(
+              (loc['lat'] as num?)?.toDouble() ?? 0.0,
+              (loc['lng'] as num?)?.toDouble() ?? 0.0,
+            ),
+            heading: (m['heading'] as num?)?.toDouble() ?? 0.0,
+            vehicleType: _parseVehicleType(m['vehicle_type']),
+          );
+        }).toList();
+      }
+
+      final total = result.values.fold<int>(0, (a, b) => a + b.length);
       debugPrint(
-        '[DriverRepository] rideType=$rideType, response type: ${data.runtimeType}',
+        '[DriverRepository] Fetched $total nearby drivers (car=${result['car']?.length ?? 0}, '
+        'motorcycle=${result['motorcycle']?.length ?? 0}, tricycle=${result['tricycle']?.length ?? 0})',
       );
-
-      if (data == null) {
-        return [];
-      }
-
-      // Backend returns: { "data": [ {...driver...}, ... ] }
-      // where "data" is a list of NearbyDriver structs
-      List<dynamic>? driversList;
-
-      if (data is Map<String, dynamic>) {
-        final inner = data['data'];
-        if (inner is List) {
-          driversList = inner;
-        } else if (inner is Map<String, dynamic> && inner['drivers'] is List) {
-          driversList = inner['drivers'] as List;
-        }
-      } else if (data is List) {
-        driversList = data;
-      }
-
-      if (driversList == null || driversList.isEmpty) {
-        debugPrint('[DriverRepository] rideType=$rideType, 0 drivers');
-        return [];
-      }
-
-      debugPrint(
-        '[DriverRepository] rideType=$rideType, found ${driversList.length} drivers',
-      );
-
-      return driversList.map((d) {
-        final m = d as Map<String, dynamic>;
-        // The backend NearbyDriver now has: id, name, vehicle_make, vehicle_model,
-        // vehicle_plate, vehicle_type, rating, distance_m, location (lat/lng), heading
-        final loc = m['location'] as Map<String, dynamic>? ?? {};
-        return NearbyDriver(
-          id: m['id'] as String? ?? '',
-          name: m['name'] as String? ?? 'Driver',
-          location: LatLng(
-            (loc['lat'] as num?)?.toDouble() ?? 0.0,
-            (loc['lng'] as num?)?.toDouble() ?? 0.0,
-          ),
-          heading: (m['heading'] as num?)?.toDouble() ?? 0.0,
-          vehicleType: _parseVehicleType(m['vehicle_type']),
-        );
-      }).toList();
+      return result;
     } catch (e, st) {
-      debugPrint('DriverRepository.fetchNearbyDrivers error: $e');
+      debugPrint('DriverRepository.fetchNearbyDriversAll error: $e');
       debugPrint('$st');
-      return [];
+      return {};
     }
   }
 

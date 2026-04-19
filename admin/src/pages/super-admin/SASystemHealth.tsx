@@ -3,7 +3,8 @@ import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { adminApi, SystemService } from '@/lib/admin-api';
+import { systemApi } from '@/api/super-admin/system';
+import type { SystemService } from '@/types/super-admin';
 import { cn } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ export function SASystemHealth() {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const data = await adminApi.system.getServices();
+      const data = await systemApi.getServices() as unknown as SystemService[];
       setServices(data);
       setLastRefreshed(new Date());
     } finally {

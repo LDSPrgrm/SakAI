@@ -23,12 +23,9 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import {
-  adminApi,
-  Transaction,
-  DriverPayout,
-  PaymentMethod,
-} from '@/lib/admin-api';
+import { paymentsApi } from '@/api/super-admin/payments';
+import { systemApi } from '@/api/super-admin/system';
+import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -131,14 +128,14 @@ export function SAPayments() {
   useEffect(() => {
     async function load() {
       const [txns, pouts, sum, comm] = await Promise.all([
-        adminApi.payments.getTransactions(),
-        adminApi.payments.getPayouts(),
-        adminApi.payments.getSummary(),
-        adminApi.payments.getCommissionConfig(),
+        paymentsApi.getTransactions(),
+        paymentsApi.getPayouts(),
+        paymentsApi.getSummary(),
+        paymentsApi.getCommissionConfig(),
       ]);
       setTransactions(txns);
       setPayouts(pouts);
-      setSummary(sum as PaymentSummary);
+      setSummary(sum as unknown as PaymentSummary);
       setCommissionConfig(comm);
     }
     void load();
@@ -163,7 +160,7 @@ export function SAPayments() {
   }
 
   async function handleApprovePayout() {
-    await adminApi.payments.approvePayout(confirmModal.payoutId);
+    await paymentsApi.approvePayout(confirmModal.payoutId);
     setPayouts((prev) =>
       prev.map((p) =>
         p.id === confirmModal.payoutId ? { ...p, status: 'approved' } : p
@@ -195,14 +192,14 @@ export function SAPayments() {
       if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
       if (provider.secretKey) fields.secret_key = provider.secretKey;
       if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
-      await adminApi.system.updateIntegration(id, fields).catch(() => {});
+      await systemApi.updateIntegration(id, fields).catch(() => {});
     }
     setSavingProvider(null);
   }
 
   async function saveCommission() {
     setSavingCommission(true);
-    await adminApi.payments.updateCommissionConfig(commissionConfig).catch(() => {});
+    await paymentsApi.updateCommissionConfig(commissionConfig).catch(() => {});
     setSavingCommission(false);
   }
 

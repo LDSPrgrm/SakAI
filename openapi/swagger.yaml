@@ -38,13 +38,33 @@ info:
 
     See **WebSocket Event Schemas** in `components/schemas` for all payload definitions.
 
-  version: "1.1.0"
+  version: "1.2.0"
   contact:
     name: SakAI Engineering
+  x-ci:
+    workflows:
+      - name: CI — Admin Panel
+        file: .github/workflows/ci-admin.yml
+        jobs: [typecheck, test, build]
+        triggers: [admin/**, openapi/**]
+      - name: CI — Backend
+        file: .github/workflows/ci-backend.yml
+        jobs: [test, vuln, build]
+        triggers: [backend/**, migrations/**, openapi/**]
+      - name: CI — API Contract
+        file: .github/workflows/ci-api-contract.yml
+        jobs: [validate]
+        triggers: [openapi/**]
+      - name: CI — Mobile
+        file: .github/workflows/ci-mobile.yml
+        jobs: [detect, shared, passenger, driver, summary]
+        triggers: [mobile/**, openapi/**]
 
 servers:
   - url: http://localhost:8080/api
     description: Local development
+  - url: http://192.168.100.43/api
+    description: Local network (admin panel target)
 
 tags:
   - name: System
@@ -548,6 +568,67 @@ paths:
         "404":
           description: No pending ride offer at this time
 
+  /driver/earnings:
+    get:
+      tags: [Driver]
+      summary: Get driver earnings history
+      description: |
+        Returns a paginated list of earnings for the authenticated driver.
+        Only `role=driver` may call this. Supports filtering by date range.
+      operationId: driverGetEarnings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD). Defaults to 30 days ago.
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD). Defaults to today.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          description: Items per page (max 50)
+      responses:
+        "200":
+          description: Paginated earnings history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EarningsItem"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Rides ─────────────────────────────────────────────────────────────────
 
   /rides/active:
@@ -655,7 +736,22 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          description: "Forbidden — or passenger has an unresolved failed payment older than 24 hours (code: UNPAID_RIDE_BLOCKED)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  summary: Standard forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: "Access denied"
+                unpaid_block:
+                  summary: Unpaid ride block
+                  value:
+                    code: UNPAID_RIDE_BLOCKED
+                    message: "You have an unpaid ride. Please settle your balance before requesting a new ride."
         "409":
           description: Passenger already has an active ride
           content:
@@ -770,11 +866,24 @@ paths:
       description: |
         Transitions: `accepted` → `arrived`.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 50 meters of pickup location.
       operationId: rideArrive
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of arrival
       responses:
         "200":
           description: Driver arrived at pickup
@@ -782,6 +891,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -789,14 +907,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `accepted` state
+          description: Ride is not in `accepted` state or driver too far from pickup
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'accepted' state to mark arrival"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'accepted' state to mark arrival"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR
+                    message: "Driver must be within 50 meters of pickup location"
 
   /rides/{rideId}/start:
     post:
@@ -841,11 +965,24 @@ paths:
         Transitions: `in_progress` → `completed`.
         Driver status automatically returns to `online` after completion.
         Triggers: `ride.status_changed` WebSocket event → both parties.
+        Requires driver to be within 100 meters of destination location.
       operationId: rideComplete
       security:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_location]
+              properties:
+                driver_location:
+                  allOf:
+                    - $ref: "#/components/schemas/LatLng"
+                  description: Driver's current GPS coordinates at time of completion
       responses:
         "200":
           description: Ride completed
@@ -853,6 +990,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RideResponse"
+        "400":
+          description: Invalid driver location or missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: VALIDATION_ERROR
+                message: "driver_location is required"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -860,14 +1006,20 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Ride is not in `in_progress` state
+          description: Ride is not in `in_progress` state or driver too far from destination
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: RIDE_INVALID_STATE_TRANSITION
-                message: "Ride must be in 'in_progress' state to complete"
+              examples:
+                invalid_state:
+                  value:
+                    code: RIDE_INVALID_STATE_TRANSITION
+                    message: "Ride must be in 'in_progress' state to complete"
+                too_far:
+                  value:
+                    code: DRIVER_TOO_FAR_FROM_DESTINATION
+                    message: "Driver must be within 100 meters of destination"
 
   /rides/{rideId}/cancel:
     post:
@@ -1848,6 +2000,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active rider count with trend
+      description: Returns the current number of active riders and the trend compared to the previous period.
       operationId: adminMetricsRiders
       security:
         - BearerAuth: []
@@ -1865,6 +2018,7 @@ paths:
     get:
       tags: [Admin]
       summary: Active driver count with trend
+      description: Returns the current number of active drivers and the trend compared to the previous period.
       operationId: adminMetricsDrivers
       security:
         - BearerAuth: []
@@ -1882,6 +2036,7 @@ paths:
     get:
       tags: [Admin]
       summary: Ride count for a period
+      description: Returns the total number of rides completed within the specified period.
       operationId: adminMetricsRides
       security:
         - BearerAuth: []
@@ -1905,6 +2060,7 @@ paths:
     get:
       tags: [Admin]
       summary: Revenue for a period (PHP)
+      description: Returns the total revenue generated within the specified period in Philippine Pesos.
       operationId: adminMetricsRevenue
       security:
         - BearerAuth: []
@@ -1928,6 +2084,7 @@ paths:
     get:
       tags: [Admin]
       summary: Average wait time stats
+      description: Returns the average wait time for passengers across the platform.
       operationId: adminMetricsWaitTime
       security:
         - BearerAuth: []
@@ -1995,6 +2152,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get role with permissions
+      description: Returns the details of a specific role, including its associated permissions.
       operationId: adminGetRole
       security:
         - BearerAuth: []
@@ -2081,6 +2239,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get permission set for a role
+      description: Returns the list of permissions assigned to the specified role.
       operationId: adminGetRolePermissions
       security:
         - BearerAuth: []
@@ -2107,6 +2266,7 @@ paths:
     get:
       tags: [Admin]
       summary: List admins assigned to a role
+      description: Returns a list of administrators who have been assigned the specified role.
       operationId: adminGetRoleAdmins
       security:
         - BearerAuth: []
@@ -2135,6 +2295,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get surge pricing configuration
+      description: Returns the current global surge pricing settings and multipliers.
       operationId: adminGetSurge
       security:
         - BearerAuth: []
@@ -2242,6 +2403,7 @@ paths:
     post:
       tags: [Admin]
       summary: Batch approve or reject KYC submissions
+      description: Processes multiple driver KYC submissions in a single batch operation.
       operationId: adminBatchKyc
       security:
         - BearerAuth: []
@@ -2272,6 +2434,7 @@ paths:
     get:
       tags: [Admin]
       summary: LTFRB compliance dashboard data
+      description: Returns aggregated metrics and stats for LTFRB compliance reporting.
       operationId: adminGetCompliance
       security:
         - BearerAuth: []
@@ -2868,6 +3031,7 @@ components:
         # Authorization
         - FORBIDDEN
         # Resources
+        - NOT_FOUND
         - RIDE_NOT_FOUND
         - USER_NOT_FOUND
         - DOCUMENT_NOT_FOUND
@@ -2886,6 +3050,7 @@ components:
         - PAYMENT_FAILED
         - INVALID_PAYMENT_TOKEN
         - DUPLICATE_PAYMENT
+        - UNPAID_RIDE_BLOCKED
         # Payment Methods
         - PAYMENT_METHOD_UNSUPPORTED
         - PAYMENT_METHOD_DUPLICATE
@@ -2902,9 +3067,13 @@ components:
         # File uploads
         - FILE_TOO_LARGE
         - INVALID_FILE_FORMAT
+        - INVALID_DOCUMENT_TYPE
         # Operational
         - RATE_LIMIT_EXCEEDED
         - INTERNAL_SERVER_ERROR
+        # Proximity
+        - DRIVER_TOO_FAR
+        - DRIVER_TOO_FAR_FROM_DESTINATION
 
     ErrorResponse:
       type: object
@@ -3467,7 +3636,7 @@ components:
     DriverSummary:
       type: object
       description: Minimal driver info embedded in ride responses and WebSocket events.
-      required: [id, name, vehicle]
+      required: [id, name]
       properties:
         id:
           type: string
@@ -3476,9 +3645,45 @@ components:
           type: string
           example: "Juan dela Cruz"
         vehicle:
-          $ref: "#/components/schemas/VehicleInfo"
+          description: Null if driver has no vehicle record yet.
+          allOf:
+            - $ref: "#/components/schemas/VehicleInfo"
+          nullable: true
         current_location:
           $ref: "#/components/schemas/LatLng"
+
+    EarningsItem:
+      type: object
+      description: A single ride's earnings contribution for a driver.
+      required:
+        [id, ride_id, fare_amount, tip_amount, total_amount, completed_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ride_id:
+          type: string
+          format: uuid
+        fare_amount:
+          type: number
+          format: double
+          description: Driver's share of the fare (before commission)
+        tip_amount:
+          type: number
+          format: double
+          description: Tip amount (0 if no tip)
+        total_amount:
+          type: number
+          format: double
+          description: Total earnings for this ride (fare + tip)
+        currency:
+          type: string
+          default: USD
+          description: ISO 4217 currency code
+        completed_at:
+          type: string
+          format: date-time
+          description: When the ride was completed
 
     RideEventPayload:
       type: object
@@ -4220,22 +4425,16 @@ components:
           format: uuid
         name:
           type: string
-          example: city_manager
         description:
           type: string
-        is_system:
+        center:
+          $ref: "#/components/schemas/LatLng"
+        radius:
+          type: number
+          format: float
+          description: Service radius in meters
+        is_active:
           type: boolean
-          description: True for built-in roles that cannot be deleted
-        permissions:
-          type: array
-          items:
-            $ref: "#/components/schemas/RolePermission"
-        admin_count:
-          type: integer
-          description: Number of active admins with this role
-        created_by:
-          type: string
-          format: uuid
         created_at:
           type: string
           format: date-time
@@ -4252,11 +4451,21 @@ components:
           format: uuid
         name:
           type: string
-          enum: [passenger, driver, admin, superadmin]
+        description:
+          type: string
+        is_system:
+          type: boolean
+          description: True for built-in roles that cannot be deleted
         permissions:
           type: array
           items:
             $ref: "#/components/schemas/RolePermission"
+        admin_count:
+          type: integer
+          description: Number of active admins with this role
+        created_by:
+          type: string
+          format: uuid
         created_at:
           type: string
           format: date-time
@@ -4584,6 +4793,10 @@ components:
           type: string
           nullable: true
           description: External payment gateway reference (e.g., Stripe PaymentIntent ID)
+        failureReason:
+          type: string
+          nullable: true
+          description: Error message or code when payment fails
         processedAt:
           type: string
           format: date-time

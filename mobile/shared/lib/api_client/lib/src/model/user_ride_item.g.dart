@@ -12,7 +12,8 @@ const UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnum_card =
     const UserRideItemPaymentMethodEnum._('card');
 
 UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnumValueOf(
-    String name) {
+  String name,
+) {
   switch (name) {
     case 'cash':
       return _$userRideItemPaymentMethodEnum_cash;
@@ -24,14 +25,15 @@ UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnumValueOf(
 }
 
 final BuiltSet<UserRideItemPaymentMethodEnum>
-    _$userRideItemPaymentMethodEnumValues = BuiltSet<
-        UserRideItemPaymentMethodEnum>(const <UserRideItemPaymentMethodEnum>[
-  _$userRideItemPaymentMethodEnum_cash,
-  _$userRideItemPaymentMethodEnum_card,
-]);
+_$userRideItemPaymentMethodEnumValues = BuiltSet<UserRideItemPaymentMethodEnum>(
+  const <UserRideItemPaymentMethodEnum>[
+    _$userRideItemPaymentMethodEnum_cash,
+    _$userRideItemPaymentMethodEnum_card,
+  ],
+);
 
 Serializer<UserRideItemPaymentMethodEnum>
-    _$userRideItemPaymentMethodEnumSerializer =
+_$userRideItemPaymentMethodEnumSerializer =
     _$UserRideItemPaymentMethodEnumSerializer();
 
 class _$UserRideItemPaymentMethodEnumSerializer
@@ -52,16 +54,19 @@ class _$UserRideItemPaymentMethodEnumSerializer
 
   @override
   Object serialize(
-          Serializers serializers, UserRideItemPaymentMethodEnum object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      _toWire[object.name] ?? object.name;
+    Serializers serializers,
+    UserRideItemPaymentMethodEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
 
   @override
   UserRideItemPaymentMethodEnum deserialize(
-          Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      UserRideItemPaymentMethodEnum.valueOf(
-          _fromWire[serialized] ?? (serialized is String ? serialized : ''));
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => UserRideItemPaymentMethodEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
 }
 
 class _$UserRideItem extends UserRideItem {
@@ -89,18 +94,18 @@ class _$UserRideItem extends UserRideItem {
   factory _$UserRideItem([void Function(UserRideItemBuilder)? updates]) =>
       (UserRideItemBuilder()..update(updates))._build();
 
-  _$UserRideItem._(
-      {required this.id,
-      required this.status,
-      required this.originAddress,
-      required this.destinationAddress,
-      this.fare,
-      required this.estimatedFare,
-      this.driver,
-      required this.paymentMethod,
-      required this.createdAt,
-      required this.updatedAt})
-      : super._();
+  _$UserRideItem._({
+    required this.id,
+    required this.status,
+    required this.originAddress,
+    required this.destinationAddress,
+    this.fare,
+    required this.estimatedFare,
+    this.driver,
+    required this.paymentMethod,
+    required this.createdAt,
+    required this.updatedAt,
+  }) : super._();
   @override
   UserRideItem rebuild(void Function(UserRideItemBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -244,26 +249,51 @@ class UserRideItemBuilder
   _$UserRideItem _build() {
     _$UserRideItem _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$UserRideItem._(
             id: BuiltValueNullFieldError.checkNotNull(
-                id, r'UserRideItem', 'id'),
+              id,
+              r'UserRideItem',
+              'id',
+            ),
             status: BuiltValueNullFieldError.checkNotNull(
-                status, r'UserRideItem', 'status'),
+              status,
+              r'UserRideItem',
+              'status',
+            ),
             originAddress: BuiltValueNullFieldError.checkNotNull(
-                originAddress, r'UserRideItem', 'originAddress'),
+              originAddress,
+              r'UserRideItem',
+              'originAddress',
+            ),
             destinationAddress: BuiltValueNullFieldError.checkNotNull(
-                destinationAddress, r'UserRideItem', 'destinationAddress'),
+              destinationAddress,
+              r'UserRideItem',
+              'destinationAddress',
+            ),
             fare: fare,
             estimatedFare: BuiltValueNullFieldError.checkNotNull(
-                estimatedFare, r'UserRideItem', 'estimatedFare'),
+              estimatedFare,
+              r'UserRideItem',
+              'estimatedFare',
+            ),
             driver: _driver?.build(),
             paymentMethod: BuiltValueNullFieldError.checkNotNull(
-                paymentMethod, r'UserRideItem', 'paymentMethod'),
+              paymentMethod,
+              r'UserRideItem',
+              'paymentMethod',
+            ),
             createdAt: BuiltValueNullFieldError.checkNotNull(
-                createdAt, r'UserRideItem', 'createdAt'),
+              createdAt,
+              r'UserRideItem',
+              'createdAt',
+            ),
             updatedAt: BuiltValueNullFieldError.checkNotNull(
-                updatedAt, r'UserRideItem', 'updatedAt'),
+              updatedAt,
+              r'UserRideItem',
+              'updatedAt',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -272,7 +302,10 @@ class UserRideItemBuilder
         _driver?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'UserRideItem', _$failedField, e.toString());
+          r'UserRideItem',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

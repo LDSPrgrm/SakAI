@@ -26,6 +26,14 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
       }
       return RideReceipt.fromApiResponse(data);
     } on DioException catch (e) {
+      // 2xx = success even if body parsing fails.
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        throw ReceiptException(
+          userMessage: 'Could not parse receipt data. Please try again.',
+          machineCode: ErrorCode.INTERNAL_SERVER_ERROR.name,
+        );
+      }
       throw _fromDio(e);
     }
   }

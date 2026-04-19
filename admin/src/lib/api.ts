@@ -3,7 +3,7 @@
 // Base URL: http://localhost:8080/api  (override via VITE_API_URL)
 // ---------------------------------------------------------------------------
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.22:8080/api';
+const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
 
 // ── Token storage ────────────────────────────────────────────────────────────
 

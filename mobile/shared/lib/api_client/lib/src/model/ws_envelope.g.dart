@@ -88,12 +88,19 @@ class WsEnvelopeBuilder implements Builder<WsEnvelope, WsEnvelopeBuilder> {
   WsEnvelope build() => _build();
 
   _$WsEnvelope _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$WsEnvelope._(
           event: BuiltValueNullFieldError.checkNotNull(
-              event, r'WsEnvelope', 'event'),
+            event,
+            r'WsEnvelope',
+            'event',
+          ),
           payload: BuiltValueNullFieldError.checkNotNull(
-              payload, r'WsEnvelope', 'payload'),
+            payload,
+            r'WsEnvelope',
+            'payload',
+          ),
         );
     replace(_$result);
     return _$result;

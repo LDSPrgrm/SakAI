@@ -12,16 +12,16 @@ class _$WsEventRideAccepted extends WsEventRideAccepted {
   @override
   final DriverSummary driver;
 
-  factory _$WsEventRideAccepted(
-          [void Function(WsEventRideAcceptedBuilder)? updates]) =>
-      (WsEventRideAcceptedBuilder()..update(updates))._build();
+  factory _$WsEventRideAccepted([
+    void Function(WsEventRideAcceptedBuilder)? updates,
+  ]) => (WsEventRideAcceptedBuilder()..update(updates))._build();
 
   _$WsEventRideAccepted._({required this.rideId, required this.driver})
-      : super._();
+    : super._();
   @override
   WsEventRideAccepted rebuild(
-          void Function(WsEventRideAcceptedBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(WsEventRideAcceptedBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   WsEventRideAcceptedBuilder toBuilder() =>
@@ -95,10 +95,14 @@ class WsEventRideAcceptedBuilder
   _$WsEventRideAccepted _build() {
     _$WsEventRideAccepted _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$WsEventRideAccepted._(
             rideId: BuiltValueNullFieldError.checkNotNull(
-                rideId, r'WsEventRideAccepted', 'rideId'),
+              rideId,
+              r'WsEventRideAccepted',
+              'rideId',
+            ),
             driver: driver.build(),
           );
     } catch (_) {
@@ -108,7 +112,10 @@ class WsEventRideAcceptedBuilder
         driver.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'WsEventRideAccepted', _$failedField, e.toString());
+          r'WsEventRideAccepted',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

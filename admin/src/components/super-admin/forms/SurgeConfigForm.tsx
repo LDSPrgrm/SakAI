@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { SurgeConfig } from '@/lib/admin-api';
+import type { SurgeConfig } from '@/types/super-admin';
 
 const surgeSchema = z.object({
   enabled:       z.boolean(),
