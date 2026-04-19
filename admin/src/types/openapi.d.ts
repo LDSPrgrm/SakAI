@@ -813,7 +813,13 @@ export interface paths {
          */
         get: operations["adminListAudit"];
         put?: never;
-        post?: never;
+        /**
+         * Write an audit log entry
+         * @description Records an admin action in the audit trail. Called by the frontend after
+         *     high-impact mutations (fare changes, role edits, payout approvals).
+         *     Requires any admin role.
+         */
+        post: operations["adminCreateAuditEntry"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1530,6 +1536,71 @@ export interface paths {
         get: operations["adminAuditExport"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated admin's own profile
+         * @description Returns the current admin's profile including role_id, role_name, and status.
+         *     Call on admin app cold-start to re-hydrate session state.
+         */
+        get: operations["adminGetMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reset another admin's password
+         * @description Superadmin sets a new password for another admin account.
+         *     Distinct from `PUT /admin/auth/password` which is self-service.
+         *     Requires Superadmin role.
+         */
+        put: operations["adminResetUserPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/roles/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a role
+         * @description Creates a copy of the given role with "Copy of [name]" as the new name.
+         *     Permissions are copied verbatim. The new role is not a system role.
+         *     Requires Superadmin role.
+         */
+        post: operations["adminDuplicateRole"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2534,6 +2605,24 @@ export interface components {
         AdminUserListResponse: {
             items?: components["schemas"]["UserProfile"][];
             meta?: components["schemas"]["PaginationMeta"];
+        };
+        ResetPasswordRequest: {
+            /** Format: password */
+            new_password: string;
+        };
+        CreateAuditEntryRequest: {
+            /** @example fare_config */
+            resource_type: string;
+            resource_id: string;
+            /** @enum {string} */
+            action: "create" | "update" | "delete" | "approve" | "reject" | "login" | "logout";
+            before_state?: {
+                [key: string]: unknown;
+            } | null;
+            after_state?: {
+                [key: string]: unknown;
+            } | null;
+            reason?: string | null;
         };
         ChangePasswordRequest: {
             /** Format: password */
@@ -4328,7 +4417,12 @@ export interface operations {
     };
     adminListAudit: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+                /** @description Filter entries to those created by this admin UUID */
+                actor_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4344,6 +4438,31 @@ export interface operations {
                     "application/json": components["schemas"]["AuditLogResponse"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminCreateAuditEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAuditEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Audit entry recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
         };
@@ -5292,6 +5411,79 @@ export interface operations {
                     "text/csv": string;
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminGetMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminResetUserPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Password reset */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminDuplicateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Duplicated role */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
         };

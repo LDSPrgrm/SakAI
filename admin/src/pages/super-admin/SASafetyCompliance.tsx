@@ -95,6 +95,8 @@ export function SASafetyCompliance() {
     driverName: '',
     action: 'approve',
   });
+  const [selectedKycIds, setSelectedKycIds] = useState<Set<string>>(new Set());
+  const [batchKycLoading, setBatchKycLoading] = useState(false);
 
   // ── Load data ──────────────────────────────────────────────────────────────
 
@@ -144,6 +146,21 @@ export function SASafetyCompliance() {
     setKycQueue((prev) =>
       prev.map((k) => (k.id === kycConfirm.entryId ? { ...k, status } : k))
     );
+  }
+
+  async function handleBatchKyc(action: KycAction) {
+    const ids = [...selectedKycIds];
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    setBatchKycLoading(true);
+    try {
+      await safetyApi.batchKyc({ ids, status });
+      setKycQueue((prev) =>
+        prev.map((k) => selectedKycIds.has(k.id) ? { ...k, status } : k)
+      );
+      setSelectedKycIds(new Set());
+    } finally {
+      setBatchKycLoading(false);
+    }
   }
 
   // ── LTFRB helpers ─────────────────────────────────────────────────────────
@@ -305,6 +322,31 @@ export function SASafetyCompliance() {
         {/* ── Tab 2: KYC Queue ─────────────────────────────────────────────── */}
         <TabsContent value="kyc">
           <div className="space-y-3">
+            {/* Bulk action toolbar */}
+            {selectedKycIds.size > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-surface-hover rounded-lg border border-border">
+                <span className="text-sm text-text-muted flex-1">
+                  {selectedKycIds.size} selected
+                </span>
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => handleBatchKyc('approve')}
+                  disabled={batchKycLoading}
+                >
+                  {batchKycLoading ? 'Processing…' : `Approve Selected (${selectedKycIds.size})`}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleBatchKyc('reject')}
+                  disabled={batchKycLoading}
+                >
+                  {batchKycLoading ? 'Processing…' : `Reject Selected (${selectedKycIds.size})`}
+                </Button>
+              </div>
+            )}
+
             {kycQueue.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center text-text-muted">
@@ -319,11 +361,29 @@ export function SASafetyCompliance() {
                 >
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-text-main">{entry.driver_name ?? 'Unknown Driver'}</p>
-                      <p className="text-xs text-text-muted mt-0.5">
-                        Submitted {entry.submitted_at ? fmtDate(entry.submitted_at) : '—'}
-                      </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {entry.status === 'pending' && (
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 flex-shrink-0 rounded border-border accent-primary"
+                          checked={selectedKycIds.has(entry.id)}
+                          onChange={(e) => {
+                            setSelectedKycIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(entry.id);
+                              else next.delete(entry.id);
+                              return next;
+                            });
+                          }}
+                          aria-label={`Select KYC entry for ${entry.driver_name ?? 'driver'}`}
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium text-text-main">{entry.driver_name ?? 'Unknown Driver'}</p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          Submitted {entry.submitted_at ? fmtDate(entry.submitted_at) : '—'}
+                        </p>
+                      </div>
                     </div>
                     <StatusBadge status={entry.status} />
                   </div>

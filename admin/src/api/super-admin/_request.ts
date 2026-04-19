@@ -38,17 +38,83 @@ async function parseOrThrow(res: Response): Promise<unknown> {
   return json;
 }
 
+// ── Token refresh ─────────────────────────────────────────────────────────────
+// Prevents concurrent 401s from each spawning their own refresh call.
+let isRefreshing = false;
+let pendingResolvers: Array<(token: string) => void> = [];
+let pendingRejectors: Array<(err: Error) => void> = [];
+
+async function refreshAccessToken(): Promise<string> {
+  if (isRefreshing) {
+    return new Promise<string>((resolve, reject) => {
+      pendingResolvers.push(resolve);
+      pendingRejectors.push(reject);
+    });
+  }
+
+  isRefreshing = true;
+  const refreshToken = tokenStore.getRefresh();
+
+  if (!refreshToken) {
+    isRefreshing = false;
+    throw new Error('No refresh token — please log in again.');
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) {
+      tokenStore.clear();
+      throw new Error('Session expired — please log in again.');
+    }
+
+    const json = await res.json().catch(() => ({}));
+    const data = ((json as Record<string, unknown>)?.data ?? json) as Record<string, string>;
+    const newAccess: string = data.access_token;
+    const newRefresh: string = data.refresh_token ?? refreshToken;
+
+    if (!newAccess) throw new Error('Invalid refresh response from server.');
+
+    tokenStore.set(newAccess, newRefresh);
+    pendingResolvers.forEach((r) => r(newAccess));
+    return newAccess;
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    pendingRejectors.forEach((r) => r(error));
+    throw error;
+  } finally {
+    isRefreshing = false;
+    pendingResolvers = [];
+    pendingRejectors = [];
+  }
+}
+
 /** JSON request returning a parsed body. Use for 200 responses with payloads. */
 export async function adminRequest<T>(
   method: string,
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const res = await fetch(buildUrl(path), {
+  const serializedBody = body !== undefined ? JSON.stringify(body) : undefined;
+  let res = await fetch(buildUrl(path), {
     method,
     headers: authHeaders(),
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: serializedBody,
   });
+
+  if (res.status === 401) {
+    await refreshAccessToken();
+    res = await fetch(buildUrl(path), {
+      method,
+      headers: authHeaders(),
+      body: serializedBody,
+    });
+  }
+
   if (res.status === 204) {
     throw new Error(`Unexpected 204 for ${method} ${path} — use adminRequestVoid instead`);
   }
@@ -61,11 +127,22 @@ export async function adminRequestVoid(
   path: string,
   body?: unknown,
 ): Promise<void> {
-  const res = await fetch(buildUrl(path), {
+  const serializedBody = body !== undefined ? JSON.stringify(body) : undefined;
+  let res = await fetch(buildUrl(path), {
     method,
     headers: authHeaders(),
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: serializedBody,
   });
+
+  if (res.status === 401) {
+    await refreshAccessToken();
+    res = await fetch(buildUrl(path), {
+      method,
+      headers: authHeaders(),
+      body: serializedBody,
+    });
+  }
+
   if (res.status === 204) return;
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
@@ -80,10 +157,19 @@ export async function adminRequestBlob(
   path: string,
   accept = 'text/csv',
 ): Promise<Blob> {
-  const res = await fetch(buildUrl(path), {
+  let res = await fetch(buildUrl(path), {
     method,
     headers: authHeaders({ Accept: accept }),
   });
+
+  if (res.status === 401) {
+    await refreshAccessToken();
+    res = await fetch(buildUrl(path), {
+      method,
+      headers: authHeaders({ Accept: accept }),
+    });
+  }
+
   if (!res.ok) {
     throw new Error(`Request failed (${res.status})`);
   }

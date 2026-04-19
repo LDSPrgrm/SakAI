@@ -10,6 +10,7 @@ import { adminsApi } from '@/api/super-admin/admins';
 import { rolesApi } from '@/api/super-admin/roles';
 import { systemApi } from '@/api/super-admin/system';
 import { paymentsApi } from '@/api/super-admin/payments';
+import { ConfirmationModal } from '@/components/super-admin/modals/ConfirmationModal';
 import type { AdminRole, AdminRoleDefinition, AdminUser } from '@/types/super-admin';
 
 function roleVariant(role: string): 'info' | 'default' {
@@ -267,6 +268,8 @@ export function Settings() {
     | { mode: 'edit'; admin: AdminUser }
     | null
   >(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
 
   // Notifications tab
   const [templates, setTemplates] = useState<NotifTemplate[]>([]);
@@ -423,9 +426,7 @@ export function Settings() {
                             size="sm"
                             className="text-danger"
                             disabled={admin.status === 'deactivated'}
-                            onClick={() => adminsApi.deactivate(admin.id).then(() =>
-                              setAdmins(prev => prev.map(a => a.id === admin.id ? { ...a, status: 'deactivated' } : a))
-                            ).catch(() => {})}
+                            onClick={() => setConfirmDeactivate(admin)}
                           >
                             {admin.status === 'deactivated' ? 'Removed' : 'Remove'}
                           </Button>
@@ -561,6 +562,31 @@ export function Settings() {
           onSave={handleAdminSaved}
         />
       )}
+
+      <ConfirmationModal
+        open={confirmDeactivate !== null}
+        title="Deactivate Admin"
+        description={`Are you sure you want to deactivate ${confirmDeactivate?.name}? They will lose access immediately.`}
+        confirmLabel="Deactivate"
+        variant="danger"
+        loading={deactivating}
+        onCancel={() => setConfirmDeactivate(null)}
+        onConfirm={async () => {
+          if (!confirmDeactivate) return;
+          setDeactivating(true);
+          try {
+            await adminsApi.deactivate(confirmDeactivate.id);
+            setAdmins(prev =>
+              prev.map(a => a.id === confirmDeactivate.id ? { ...a, status: 'deactivated' } : a),
+            );
+          } catch {
+            // silent — API error doesn't revert optimistic UI since the admin isn't changed yet
+          } finally {
+            setDeactivating(false);
+            setConfirmDeactivate(null);
+          }
+        }}
+      />
     </div>
   );
 }

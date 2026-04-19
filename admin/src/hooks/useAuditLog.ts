@@ -67,7 +67,6 @@ export function useAuditedMutation<TData, TVars, TBefore = unknown>(
       }
       const after = await mutationFn(vars);
       // Fire-and-forget audit log write.
-      // TODO(spec): POST /admin/audit not in swagger.yaml v1.2.0 — coordinate with backend (C3).
       void adminRequestVoid('POST', '/audit', {
         resource_type: ctx.resourceType,
         resource_id: ctx.resourceId,
