@@ -112,6 +112,9 @@ export function SAPayments() {
   const [commissionConfig, setCommissionConfig] = useState<any>(null);
   const [savingCommission, setSavingCommission] = useState(false);
 
+  const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
+  const [batchApproving, setBatchApproving] = useState(false);
+
   // ── Load data on mount ─────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -155,6 +158,20 @@ export function SAPayments() {
         p.id === confirmModal.payoutId ? { ...p, status: 'approved' } : p
       )
     );
+  }
+
+  async function handleBatchApprove() {
+    const ids = [...selectedPayoutIds];
+    setBatchApproving(true);
+    try {
+      await paymentsApi.batchApprovePayouts(ids);
+      setPayouts((prev) =>
+        prev.map((p) => selectedPayoutIds.has(p.id) ? { ...p, status: 'approved' } : p)
+      );
+      setSelectedPayoutIds(new Set());
+    } finally {
+      setBatchApproving(false);
+    }
   }
 
   // ── Gateway provider helpers ───────────────────────────────────────────────
@@ -370,7 +387,19 @@ export function SAPayments() {
         {/* Pending Driver Payouts */}
         <Card>
           <CardHeader>
-            <CardTitle>Pending Driver Payouts</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Pending Driver Payouts</CardTitle>
+              {selectedPayoutIds.size > 0 && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleBatchApprove}
+                  disabled={batchApproving}
+                >
+                  {batchApproving ? 'Approving…' : `Approve Selected (${selectedPayoutIds.size})`}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {payouts.length === 0 ? (
@@ -384,9 +413,27 @@ export function SAPayments() {
                   className="p-3 bg-surface-hover rounded-lg border border-border space-y-2"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-text-main">
-                      {payout.batch}
-                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {payout.status === 'pending' && (
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 flex-shrink-0 rounded border-border accent-primary"
+                          checked={selectedPayoutIds.has(payout.id)}
+                          onChange={(e) => {
+                            setSelectedPayoutIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(payout.id);
+                              else next.delete(payout.id);
+                              return next;
+                            });
+                          }}
+                          aria-label={`Select payout ${payout.batch}`}
+                        />
+                      )}
+                      <span className="text-sm font-medium text-text-main">
+                        {payout.batch}
+                      </span>
+                    </div>
                     <StatusBadge status={payout.status} />
                   </div>
                   <p className="text-xs text-text-muted">
