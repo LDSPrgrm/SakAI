@@ -5,7 +5,7 @@ export const admins: AdminUser[] = [
     id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     name: 'Eduardo Reyes',
     email: 'eduardo@sakai.ph',
-    role: 'super_admin',
+    role: 'superadmin',
     status: 'active',
     created_by: 'system',
     created_at: '2025-11-01T08:00:00Z',

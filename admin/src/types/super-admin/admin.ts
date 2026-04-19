@@ -1,9 +1,9 @@
 // Admin user types — override the openapi-generated AdminUser so the role
-// field accepts super-admin role values instead of the UserProfile union.
+// field accepts admin role values instead of the UserProfile (passenger|driver) union.
 import type { components } from '@/types/openapi';
 
 export type AdminStatus = 'active' | 'suspended' | 'deactivated';
-export type AdminRole   = 'super_admin' | 'operations' | 'finance' | 'support';
+export type AdminRole   = 'admin' | 'superadmin' | 'operations' | 'finance' | 'support';
 
 type BaseAdminUser = components['schemas']['AdminUser'];
 

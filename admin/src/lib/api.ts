@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// SakAI API Client — typed wrapper for all endpoints in swagger.yaml v1.1.0
+// SakAI API Client — typed wrapper for all endpoints in swagger.yaml v1.2.0
 // Base URL: http://localhost:8080/api  (override via VITE_API_URL)
 // ---------------------------------------------------------------------------
 

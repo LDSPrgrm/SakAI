@@ -1,10 +1,11 @@
 import { cn } from '@/lib/utils';
 import { ROLE_LABELS } from '@/constants/roles';
 
-type AdminRole = 'super_admin' | 'operations' | 'finance' | 'support' | string;
+type AdminRole = 'admin' | 'superadmin' | 'operations' | 'finance' | 'support' | string;
 
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: 'bg-warning/10 text-warning border-warning/20',
+  admin:       'bg-primary/10 text-primary border-primary/20',
+  superadmin:  'bg-warning/10 text-warning border-warning/20',
   operations:  'bg-primary/10 text-primary border-primary/20',
   finance:     'bg-success/10 text-success border-success/20',
   support:     'bg-surface text-text-muted border-border',
@@ -20,7 +21,7 @@ interface RoleBadgeProps {
 export function RoleBadge({ role, showSystemTag, className }: RoleBadgeProps) {
   const color  = ROLE_COLORS[role] ?? 'bg-surface text-text-muted border-border';
   const label  = ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role.replace(/_/g, ' ');
-  const isSystem = role === 'super_admin';
+  const isSystem = role === 'superadmin';
 
   return (
     <span className="inline-flex items-center gap-1">

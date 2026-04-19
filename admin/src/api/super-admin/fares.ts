@@ -1,4 +1,4 @@
-import { adminRequest, extractArray } from './_request';
+import { adminRequest, adminRequestVoid, extractArray } from './_request';
 import type { components } from '@/types/openapi';
 
 export type FareConfig  = components['schemas']['FareConfig'];
@@ -11,17 +11,16 @@ export const faresApi = {
       return extractArray<FareConfig>(r['fares'] ?? res);
     }),
 
-  getSurge: () =>
-    adminRequest<unknown>('GET', '/fares').then((res) => {
-      const r = res as Record<string, unknown>;
-      return (r['surge'] ?? {}) as SurgeConfig;
-    }),
+  /** GET /admin/fares/surge — dedicated surge endpoint (M1). */
+  getSurge: () => adminRequest<SurgeConfig>('GET', '/fares/surge'),
 
+  /** PUT /admin/fares — returns 204. */
   updateConfigs: (fares: Partial<FareConfig>[]) =>
-    adminRequest<FareConfig[]>('PUT', '/fares', fares),
+    adminRequestVoid('PUT', '/fares', fares),
 
+  /** PUT /admin/surge — returns 204. */
   updateSurge: (data: Partial<SurgeConfig>) =>
-    adminRequest<SurgeConfig>('PUT', '/surge', data),
+    adminRequestVoid('PUT', '/surge', data),
 
   simulate: (vehicle_type: string, origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) =>
     adminRequest<{ estimated_fare: number }>('POST', '/fares/simulate', {

@@ -1,29 +1,28 @@
-import { adminRequest, extractArray } from './_request';
+import { adminRequest, adminRequestVoid, extractArray } from './_request';
 import type { components } from '@/types/openapi';
 
 export type Incident = components['schemas']['Incident'];
-
-export interface KycEntry {
-  id: string;
-  driver_id: string;
-  driver_name: string;
-  submitted_at: string;
-  docs: string[];
-  status: 'pending' | 'approved' | 'rejected';
-}
+export type KycEntry = components['schemas']['KycEntry'];
+export type KycBatchRequest = components['schemas']['KycBatchRequest'];
 
 export const safetyApi = {
   getIncidents: () =>
     adminRequest<unknown>('GET', '/incidents').then(extractArray<Incident>),
 
+  /** PUT /admin/incidents/{id}/resolve — returns 204. */
   resolveIncident: (id: string, notes: string) =>
-    adminRequest<Incident>('PUT', `/incidents/${id}/resolve`, { notes }),
+    adminRequestVoid('PUT', `/incidents/${id}/resolve`, { notes }),
 
   getKycQueue: () =>
     adminRequest<unknown>('GET', '/safety/kyc').then(extractArray<KycEntry>),
 
+  /** PUT /admin/safety/kyc/{id} — returns 204. */
   updateKyc: (id: string, status: 'approved' | 'rejected') =>
-    adminRequest<KycEntry>('PUT', `/safety/kyc/${id}`, { status }),
+    adminRequestVoid('PUT', `/safety/kyc/${id}`, { status }),
+
+  /** POST /admin/safety/kyc/batch — bulk approve/reject KYC entries (M5). */
+  batchKyc: (payload: KycBatchRequest) =>
+    adminRequestVoid('POST', '/safety/kyc/batch', payload),
 
   getLtfrbCompliance: () =>
     adminRequest<unknown>('GET', '/safety/compliance'),

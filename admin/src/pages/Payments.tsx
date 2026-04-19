@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { paymentsApi } from '@/api/super-admin/payments';
+import { paymentsApi, type PaymentSummary } from '@/api/super-admin/payments';
 import { reportsApi } from '@/api/super-admin/reports';
 import type { Transaction, DriverPayout } from '@/types/super-admin';
-import type { PaymentSummary } from '@/api/super-admin/payments';
 
 function txnStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
   switch (status) {
@@ -35,15 +34,15 @@ export function Payments() {
   const [search, setSearch] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [payouts, setPayouts] = useState<DriverPayout[]>([]);
-  const [summary, setSummary] = useState<{ total_revenue?: number; payouts?: number; commission?: number; pending_settlements?: number } | null>(null);
+  const [summary, setSummary] = useState<PaymentSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      paymentsApi.getSummary() as unknown as Promise<PaymentSummary>,
-      paymentsApi.getTransactions() as unknown as Promise<Transaction[]>,
-      paymentsApi.getPayouts() as unknown as Promise<DriverPayout[]>,
+      paymentsApi.getSummary(),
+      paymentsApi.getTransactions(),
+      paymentsApi.getPayouts(),
     ]).then(([sum, tx, po]) => {
       setTransactions(tx);
       setPayouts(po);
@@ -57,7 +56,7 @@ export function Payments() {
   };
 
   const handleExport = () => {
-    reportsApi.exportCsv('financial').then(url => {
+    reportsApi.exportCsv('financial').then(({ url }) => {
       if (url) window.open(url, '_blank');
     }).catch(() => {});
   };

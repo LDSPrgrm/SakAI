@@ -189,12 +189,13 @@ export function SAFareConfig() {
   async function saveSurge() {
     if (!surgeConfig) return;
     setSurgeSaving(true);
-    const updated = await faresApi.updateSurge({
+    const payload = {
       enabled: surgeEnabled,
       max_multiplier: parseFloat(maxMultiplier) || surgeConfig.max_multiplier,
       trigger_ratio: parseFloat(triggerRatio) || surgeConfig.trigger_ratio,
-    });
-    setSurgeConfig(updated);
+    };
+    await faresApi.updateSurge(payload);
+    setSurgeConfig({ ...surgeConfig, ...payload });
     setSurgeSaving(false);
     showBanner();
   }

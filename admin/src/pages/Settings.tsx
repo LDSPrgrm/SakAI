@@ -13,15 +13,16 @@ import { paymentsApi } from '@/api/super-admin/payments';
 import type { AdminRole, AdminRoleDefinition, AdminUser } from '@/types/super-admin';
 
 function roleVariant(role: string): 'info' | 'default' {
-  return role === 'super_admin' ? 'info' : 'default';
+  return role === 'superadmin' || role === 'admin' ? 'info' : 'default';
 }
 
 function roleLabel(role: string): string {
   switch (role) {
-    case 'super_admin': return 'Super Admin';
+    case 'admin':      return 'Admin';
+    case 'superadmin': return 'Super Admin';
     case 'operations': return 'Operations';
-    case 'finance': return 'Finance';
-    case 'support': return 'Support';
+    case 'finance':    return 'Finance';
+    case 'support':    return 'Support';
     default: return role;
   }
 }
@@ -37,10 +38,11 @@ function SaveBanner({ show }: { show: boolean }) {
 
 // ── Fallback hardcoded roles (shown when API hasn't loaded yet) ───────────────
 const FALLBACK_ROLES: { value: string; label: string }[] = [
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'operations',  label: 'Operations'  },
-  { value: 'finance',     label: 'Finance'     },
-  { value: 'support',     label: 'Support'     },
+  { value: 'admin',      label: 'Admin'       },
+  { value: 'superadmin', label: 'Super Admin' },
+  { value: 'operations', label: 'Operations'  },
+  { value: 'finance',    label: 'Finance'     },
+  { value: 'support',    label: 'Support'     },
 ];
 
 function roleOptionsFromDefinitions(defs: AdminRoleDefinition[]): { value: string; label: string }[] {

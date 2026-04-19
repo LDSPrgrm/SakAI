@@ -2,6 +2,7 @@ import { adminRequest, extractArray } from './_request';
 import type { components } from '@/types/openapi';
 
 export type DashboardResponse = components['schemas']['DashboardResponse'];
+export type MetricResponse    = components['schemas']['MetricResponse'];
 
 export interface DashboardMetrics {
   total_riders: number;
@@ -35,22 +36,24 @@ export interface ActivityItem {
   isAlert: boolean;
 }
 
+// TODO(spec, L1): DashboardResponse has ambiguous dual fields
+// (total_riders|active_riders, avg_wait_time_seconds|avg_wait_minutes,
+// system_uptime|platform_uptime). Clarify the spec to a single canonical field
+// per metric; the fallback chains have been removed per audit L1.
 export const metricsApi = {
   getDashboard: () =>
     adminRequest<DashboardResponse>('GET', '/dashboard').then((raw) => ({
-      total_riders:    raw.total_riders  ?? raw.active_riders  ?? 0,
-      riders_trend:    raw.riders_trend  ?? '',
-      total_drivers:   raw.total_drivers ?? raw.active_drivers ?? 0,
-      drivers_trend:   raw.drivers_trend ?? '',
-      rides_today:     raw.rides_today   ?? 0,
-      rides_trend:     raw.rides_trend   ?? '',
-      revenue_today:   raw.revenue_today ?? 0,
-      revenue_trend:   '',
-      avg_wait_minutes: raw.avg_wait_time_seconds != null
-        ? Math.round(raw.avg_wait_time_seconds / 60)
-        : 0,
-      wait_trend:      '',
-      platform_uptime: raw.system_uptime ?? 0,
+      total_riders:    raw.total_riders    ?? 0,
+      riders_trend:    raw.riders_trend    ?? '',
+      total_drivers:   raw.total_drivers   ?? 0,
+      drivers_trend:   raw.drivers_trend   ?? '',
+      rides_today:     raw.rides_today     ?? 0,
+      rides_trend:     raw.rides_trend     ?? '',
+      revenue_today:   raw.revenue_today   ?? 0,
+      revenue_trend:   raw.revenue_trend   ?? '',
+      avg_wait_minutes: raw.avg_wait_minutes ?? 0,
+      wait_trend:      raw.wait_trend      ?? '',
+      platform_uptime: raw.platform_uptime ?? 0,
     } satisfies DashboardMetrics)),
 
   getRidesChart: () =>
@@ -61,6 +64,13 @@ export const metricsApi = {
 
   getVehicleDistribution: () =>
     adminRequest<{ name: string; value: number }[]>('GET', '/reports/chart/vehicles'),
+
+  // Individual metric endpoints — spec §Metrics (M7). Use for per-KPI refresh.
+  getRiderMetric:   () => adminRequest<MetricResponse>('GET', '/metrics/riders'),
+  getDriverMetric:  () => adminRequest<MetricResponse>('GET', '/metrics/drivers'),
+  getRidesMetric:   () => adminRequest<MetricResponse>('GET', '/metrics/rides'),
+  getRevenueMetric: () => adminRequest<MetricResponse>('GET', '/metrics/revenue'),
+  getWaitTimeMetric: () => adminRequest<MetricResponse>('GET', '/metrics/wait-time'),
 
   getActivityFeed: () =>
     adminRequest<unknown>('GET', '/audit?limit=10').then((raw) => {
