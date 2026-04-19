@@ -110,17 +110,20 @@ This roadmap is structured around two key milestones:
 
 ---
 
-## 🖥️ Phase 4: Admin Dashboard (MVP Baseline)
+## 🖥️ Phase 4: Admin Dashboard 🚧
 
 > **Goal:** Basic web dashboard for operational visibility. Lightweight — enough to manage the MVP.
+>
+> **Status:** Frontend feature-complete. API contract alignment in progress (see `docs/audit_check.md`).
 
-- [ ] Choose framework (React or Vue.js)
-- [ ] Auth flow (admin-only role or super-user JWT)
-- [ ] **Dashboard overview:** Active rides count, online drivers count, total users
-- [x] **Ride list:** Searchable table with status filters, ride details view (Backend Done)
-- [x] **User list:** Browse passengers and drivers, view profiles (Backend Done)
-- [ ] **Driver management:** Approve/suspend drivers, view vehicle info
-- [ ] **Driver management:** Approve/suspend drivers, view vehicle info
+- [x] Choose framework (React + TypeScript + Vite)
+- [x] Auth flow (JWT with dynamic RBAC via `usePermissions` + Zustand)
+- [x] **Dashboard overview:** KPI cards, rides/revenue charts, activity feed, real-time refresh
+- [x] **Ride list:** Searchable table with status filters, pagination, ride details view
+- [x] **User list:** Passengers and drivers tabs, profiles, search, pagination
+- [x] **Driver management:** Approve/suspend/deactivate drivers, view vehicle info
+- [x] **Super Admin panel:** Fare config, payments, safety/KYC, reports, system health, audit log, role management
+- [ ] API contract alignment — undocumented endpoints need spec additions: `GET /admin/users/me`, `POST /admin/audit`, `POST /admin/roles/{id}/duplicate`, `PUT /admin/users/{id}/password`
 
 ### Definition of Done — Phase 4
 
@@ -209,7 +212,7 @@ This roadmap is structured around two key milestones:
 | 1     | Backend Foundation   | Core API         | ✅ Complete    |
 | 2     | Security & Bug Fixes | Audit fixes      | 🚧 In Progress |
 | 3     | Flutter Mobile Apps  | Client apps      | ⬜ Not Started |
-| 4     | Admin Dashboard      | Operations UI    | ⬜ Not Started |
+| 4     | Admin Dashboard      | Operations UI    | 🚧 In Progress |
 | —     | **MVP Milestone**    | **End-to-end**   | —              |
 | 5     | Real-Time Resilience | WS reliability   | ⬜ Not Started |
 | 6     | Polish & UX          | Production UX    | ⬜ Not Started |
