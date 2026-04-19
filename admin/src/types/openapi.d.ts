@@ -1542,11 +1542,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-<<<<<<< HEAD
     "/admin/users/me": {
-=======
-    "/drivers/documents": {
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         parameters: {
             query?: never;
             header?: never;
@@ -1554,13 +1550,71 @@ export interface paths {
             cookie?: never;
         };
         /**
-<<<<<<< HEAD
          * Get the authenticated admin's own profile
          * @description Returns the current admin's profile including role_id, role_name, and status.
          *     Call on admin app cold-start to re-hydrate session state.
          */
         get: operations["adminGetMe"];
-=======
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reset another admin's password
+         * @description Superadmin sets a new password for another admin account.
+         *     Distinct from `PUT /admin/auth/password` which is self-service.
+         *     Requires Superadmin role.
+         */
+        put: operations["adminResetUserPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/roles/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a role
+         * @description Creates a copy of the given role with "Copy of [name]" as the new name.
+         *     Permissions are copied verbatim. The new role is not a system role.
+         *     Requires Superadmin role.
+         */
+        post: operations["adminDuplicateRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drivers/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
          * List all uploaded documents for the authenticated driver
          * @description Returns all documents uploaded by the authenticated driver with their current verification status.
          */
@@ -1592,7 +1646,6 @@ export interface paths {
          *     Only the document owner can access this endpoint.
          */
         get: operations["driverGetDocumentStatus"];
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         put?: never;
         post?: never;
         delete?: never;
@@ -1601,33 +1654,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-<<<<<<< HEAD
-    "/admin/users/{id}/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Reset another admin's password
-         * @description Superadmin sets a new password for another admin account.
-         *     Distinct from `PUT /admin/auth/password` which is self-service.
-         *     Requires Superadmin role.
-         */
-        put: operations["adminResetUserPassword"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/roles/{id}/duplicate": {
-=======
     "/payments/process": {
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         parameters: {
             query?: never;
             header?: never;
@@ -1637,14 +1664,6 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-<<<<<<< HEAD
-         * Duplicate a role
-         * @description Creates a copy of the given role with "Copy of [name]" as the new name.
-         *     Permissions are copied verbatim. The new role is not a system role.
-         *     Requires Superadmin role.
-         */
-        post: operations["adminDuplicateRole"];
-=======
          * Process a card payment for a completed ride
          * @description Process a card payment using a tokenized payment from the mobile SDK (e.g., Stripe).
          *     Requires `Idempotency-Key` header for safe retry handling.
@@ -1737,7 +1756,6 @@ export interface paths {
         get: operations["getUserRating"];
         put?: never;
         post?: never;
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         delete?: never;
         options?: never;
         head?: never;
@@ -5397,11 +5415,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
-<<<<<<< HEAD
     adminGetMe: {
-=======
-    driverListDocuments: {
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         parameters: {
             query?: never;
             header?: never;
@@ -5410,17 +5424,12 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-<<<<<<< HEAD
             /** @description Admin profile */
-=======
-            /** @description List of driver documents */
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-<<<<<<< HEAD
                     "application/json": components["schemas"]["AdminUser"];
                 };
             };
@@ -5466,7 +5475,34 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Duplicated role */
-=======
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    driverListDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of driver documents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["DriverDocumentsListResponse"];
                 };
             };
@@ -5506,24 +5542,17 @@ export interface operations {
         };
         responses: {
             /** @description Document uploaded successfully */
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-<<<<<<< HEAD
-                    "application/json": components["schemas"]["Role"];
-=======
                     "application/json": components["schemas"]["DriverDocumentResponse"];
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
                 };
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-<<<<<<< HEAD
-=======
             /** @description File too large */
             413: {
                 headers: {
@@ -5857,7 +5886,6 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         };
     };
 }

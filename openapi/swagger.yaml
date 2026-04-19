@@ -2553,8 +2553,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-<<<<<<< HEAD
-  # ── Admin self-profile ────────────────────────────────────────────────────
+  # ── Admin self-profile ─────────────────────────────────────────────────────────────────────────
 
   /admin/users/me:
     get:
@@ -2564,8 +2563,89 @@ paths:
         Returns the current admin's profile including role_id, role_name, and status.
         Call on admin app cold-start to re-hydrate session state.
       operationId: adminGetMe
-=======
-  # ── Driver Documents ──────────────────────────────────────────────────────
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Admin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Admin password reset ───────────────────────────────────────────────────────────────────────────
+
+  /admin/users/{id}/password:
+    put:
+      tags: [Admin]
+      summary: Reset another admin's password
+      description: |
+        Superadmin sets a new password for another admin account.
+        Distinct from `PUT /admin/auth/password` which is self-service.
+        Requires Superadmin role.
+      operationId: adminResetUserPassword
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "204":
+          description: Password reset
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Role duplication ────────────────────────────────────────────────────────────────────────────────────
+
+  /admin/roles/{id}/duplicate:
+    post:
+      tags: [Admin]
+      summary: Duplicate a role
+      description: |
+        Creates a copy of the given role with "Copy of [name]" as the new name.
+        Permissions are copied verbatim. The new role is not a system role.
+        Requires Superadmin role.
+      operationId: adminDuplicateRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Duplicated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Driver Documents ──────────────────────────────────────────────────────────────────────────────────────────
 
   /drivers/documents:
     post:
@@ -2641,41 +2721,10 @@ paths:
       description: |
         Returns all documents uploaded by the authenticated driver with their current verification status.
       operationId: driverListDocuments
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
       security:
         - BearerAuth: []
       responses:
         "200":
-<<<<<<< HEAD
-          description: Admin profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminUser"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  # ── Admin password reset ──────────────────────────────────────────────────
-
-  /admin/users/{id}/password:
-    put:
-      tags: [Admin]
-      summary: Reset another admin's password
-      description: |
-        Superadmin sets a new password for another admin account.
-        Distinct from `PUT /admin/auth/password` which is self-service.
-        Requires Superadmin role.
-      operationId: adminResetUserPassword
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-=======
           description: List of driver documents
           content:
             application/json:
@@ -2725,7 +2774,7 @@ paths:
                 code: DOCUMENT_NOT_FOUND
                 message: "Document not found or you do not have access"
 
-  # ── Payments ──────────────────────────────────────────────────────────────
+  # ── Payments ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   /payments/process:
     post:
@@ -2740,18 +2789,11 @@ paths:
         - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
       requestBody:
         required: true
         content:
           application/json:
             schema:
-<<<<<<< HEAD
-              $ref: "#/components/schemas/ResetPasswordRequest"
-      responses:
-        "204":
-          description: Password reset
-=======
               type: object
               required: [rideId, paymentMethodToken]
               properties:
@@ -2860,33 +2902,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TipResponse"
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-<<<<<<< HEAD
-
-  # ── Role duplication ──────────────────────────────────────────────────────
-
-  /admin/roles/{id}/duplicate:
-    post:
-      tags: [Admin]
-      summary: Duplicate a role
-      description: |
-        Creates a copy of the given role with "Copy of [name]" as the new name.
-        Permissions are copied verbatim. The new role is not a system role.
-        Requires Superadmin role.
-      operationId: adminDuplicateRole
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-=======
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -2908,7 +2929,7 @@ paths:
                 code: RIDE_NOT_COMPLETED
                 message: "Cannot add tip for a ride that is not in completed state"
 
-  # ── Ratings ───────────────────────────────────────────────────────────────
+  # ── Ratings ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
   /rides/{rideId}/rating:
     post:
@@ -2986,25 +3007,10 @@ paths:
           in: path
           required: true
           description: UUID of the user
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
           schema:
             type: string
             format: uuid
       responses:
-<<<<<<< HEAD
-        "201":
-          description: Duplicated role
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Role"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-=======
         "200":
           description: User rating summary
           content:
@@ -3015,7 +3021,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
->>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 # ---------------------------------------------------------------------------
 # COMPONENTS
