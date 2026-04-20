@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -155,6 +156,27 @@ func (h *AdminHandler) GetAdminActivity(c *gin.Context) {
 		return
 	}
 	respondOK(c, logs)
+}
+
+// ResetUserPassword lets a superadmin set another admin's password
+// (PUT /admin/users/:id/password). Matches swagger adminResetUserPassword.
+func (h *AdminHandler) ResetUserPassword(c *gin.Context) {
+	actorID := c.MustGet("userID").(uuid.UUID)
+	targetID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid user id"})
+		return
+	}
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	if err := h.uc.ResetUserPassword(c.Request.Context(), actorID, targetID, req.NewPassword); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (h *AdminHandler) ListRides(c *gin.Context) {
@@ -328,4 +350,41 @@ func (h *AuditHandler) Export(c *gin.Context) {
 	}
 	c.Header("Content-Disposition", "attachment; filename=audit-log.csv")
 	c.Data(http.StatusOK, "text/csv", csvData)
+}
+
+// Create records an admin action in the audit trail.
+// Called by the frontend after high-impact mutations (fare changes, role edits, payout approvals).
+// Matches swagger operationId adminCreateAuditEntry (POST /admin/audit).
+func (h *AuditHandler) Create(c *gin.Context) {
+	actorID := c.MustGet("userID").(uuid.UUID)
+	var req dto.CreateAuditEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+
+	entry := &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       req.Action,
+		ResourceType: req.ResourceType,
+		ResourceID:   req.ResourceID,
+		Reason:       req.Reason,
+		IPAddress:    c.ClientIP(),
+	}
+	if req.BeforeState != nil {
+		if b, err := json.Marshal(req.BeforeState); err == nil {
+			entry.BeforeState = b
+		}
+	}
+	if req.AfterState != nil {
+		if b, err := json.Marshal(req.AfterState); err == nil {
+			entry.AfterState = b
+		}
+	}
+
+	if err := h.uc.LogAction(c.Request.Context(), entry); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

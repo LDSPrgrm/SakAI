@@ -102,6 +102,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
 			admin.DELETE("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.DeactivateAdmin)
 			admin.GET("/users/:id/activity", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.GetAdminActivity)
+			admin.PUT("/users/:id/password", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ResetUserPassword)
 
 			// Role Management
 			admin.GET("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.ListRoles)
@@ -111,11 +112,12 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.DELETE("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DeleteRole)
 			admin.GET("/roles/:id/permissions", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRolePermissions)
 			admin.GET("/roles/:id/admins", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRoleAdmins)
+			admin.POST("/roles/:id/duplicate", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DuplicateRole)
 
 			// Ride & User browsing
 			admin.GET("/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.ListRides)
-			admin.GET("/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
-			admin.GET("/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
+			admin.GET("/users/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
+			admin.GET("/users/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
 
 			// Fare & Surge
 			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
@@ -132,8 +134,8 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.POST("/payments/payouts/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.BatchApprovePayouts)
 			admin.GET("/payments/config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.GetGatewayConfigs)
 			admin.PUT("/payments/config/:provider", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateGatewayConfig)
-			admin.GET("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
-			admin.PUT("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
+			admin.GET("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
+			admin.PUT("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
 
 			// Safety & Incidents
 			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
@@ -163,6 +165,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			// Audit Log
 			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
 			admin.GET("/audit/export", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.Export)
+			admin.POST("/audit", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Audit.Create)
 		}
 
 

@@ -111,3 +111,42 @@ func (uc *roleUseCase) GetRolePermissions(ctx context.Context, roleID uuid.UUID)
 func (uc *roleUseCase) GetRoleAdmins(ctx context.Context, roleID uuid.UUID) ([]*domain.User, error) {
 	return uc.roleRepo.GetAdminsByRole(ctx, roleID)
 }
+
+// DuplicateRole clones an existing role with "Copy of <name>" and identical permissions.
+// The duplicate is never a system role, regardless of the source.
+func (uc *roleUseCase) DuplicateRole(ctx context.Context, actorID, roleID uuid.UUID) (*domain.Role, error) {
+	src, err := uc.roleRepo.GetRoleByID(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+
+	perms, err := uc.roleRepo.GetRolePermissions(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+	if len(perms) == 0 {
+		perms = src.Permissions
+	}
+
+	now := time.Now()
+	clone := &domain.Role{
+		ID:          uuid.New(),
+		Name:        "Copy of " + src.Name,
+		Description: src.Description,
+		IsSystem:    false,
+		Permissions: perms,
+		CreatedBy:   actorID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	if err := uc.roleRepo.CreateRole(ctx, clone); err != nil {
+		return nil, err
+	}
+
+	after, _ := json.Marshal(clone)
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID: actorID, Action: "DUPLICATE", ResourceType: "role",
+		ResourceID: clone.ID.String(), AfterState: after, IPAddress: "internal",
+	})
+	return clone, nil
+}

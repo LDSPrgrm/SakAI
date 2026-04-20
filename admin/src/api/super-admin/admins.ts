@@ -34,7 +34,7 @@ export const adminsApi = {
     adminRequestVoid('DELETE', `/users/${id}`),
 
   resetPassword: (id: string, password: string) =>
-    adminRequestVoid('PUT', `/users/${id}/password`, { password }),
+    adminRequestVoid('PUT', `/users/${id}/password`, { new_password: password }),
 
   getActivity: (id: string) =>
     adminRequest<unknown>('GET', `/users/${id}/activity`),

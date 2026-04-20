@@ -2354,6 +2354,20 @@ func (mr *MockAdminUseCaseMockRecorder) UpdateAdminStatus(ctx, actorID, targetID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminStatus", reflect.TypeOf((*MockAdminUseCase)(nil).UpdateAdminStatus), ctx, actorID, targetID, status)
 }
 
+// ResetUserPassword mocks base method.
+func (m *MockAdminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID uuid.UUID, newPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetUserPassword", ctx, actorID, targetID, newPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetUserPassword indicates an expected call of ResetUserPassword.
+func (mr *MockAdminUseCaseMockRecorder) ResetUserPassword(ctx, actorID, targetID, newPassword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetUserPassword", reflect.TypeOf((*MockAdminUseCase)(nil).ResetUserPassword), ctx, actorID, targetID, newPassword)
+}
+
 // MockFareUseCase is a mock of FareUseCase interface.
 type MockFareUseCase struct {
 	ctrl     *gomock.Controller
@@ -2632,6 +2646,21 @@ func (m *MockRoleUseCase) UpdateRole(ctx context.Context, actorID, roleID uuid.U
 func (mr *MockRoleUseCaseMockRecorder) UpdateRole(ctx, actorID, roleID, name, description, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRole", reflect.TypeOf((*MockRoleUseCase)(nil).UpdateRole), ctx, actorID, roleID, name, description, permissions)
+}
+
+// DuplicateRole mocks base method.
+func (m *MockRoleUseCase) DuplicateRole(ctx context.Context, actorID, roleID uuid.UUID) (*domain.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DuplicateRole", ctx, actorID, roleID)
+	ret0, _ := ret[0].(*domain.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DuplicateRole indicates an expected call of DuplicateRole.
+func (mr *MockRoleUseCaseMockRecorder) DuplicateRole(ctx, actorID, roleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateRole", reflect.TypeOf((*MockRoleUseCase)(nil).DuplicateRole), ctx, actorID, roleID)
 }
 
 // MockPaymentUseCase is a mock of PaymentUseCase interface.
