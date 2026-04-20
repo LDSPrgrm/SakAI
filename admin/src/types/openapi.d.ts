@@ -2572,9 +2572,17 @@ export interface components {
             driver_name?: string;
             /** Format: date-time */
             submitted_at?: string;
-            docs?: string[];
+            docs?: components["schemas"]["KycDocument"][];
             /** @enum {string} */
             status?: "pending" | "approved" | "rejected";
+        };
+        KycDocument: {
+            /** @description Machine-readable document type (e.g. drivers_license, vehicle_registration, insurance). */
+            type?: string;
+            /** @description Human-readable name displayed in the UI. */
+            label?: string;
+            /** @description Signed URL to the uploaded image/PDF. Absent when not yet uploaded. */
+            url?: string;
         };
         ReportDefinition: {
             id?: string;

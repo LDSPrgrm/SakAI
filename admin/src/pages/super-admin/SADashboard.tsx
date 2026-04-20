@@ -173,12 +173,18 @@ export function SADashboard() {
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
                   tickFormatter={(v) => `₱${v / 1000}k`}
                 />
-                <Tooltip {...TOOLTIP_STYLE} />
-                <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
-                <Bar dataKey="gcash" stackId="a" fill={COLORS[0]} name="GCash" />
-                <Bar dataKey="cash" stackId="a" fill={COLORS[1]} name="Cash" />
-                <Bar dataKey="paymaya" stackId="a" fill={COLORS[2]} name="PayMaya" />
-                <Bar dataKey="card" stackId="a" fill={COLORS[3]} name="Card" radius={[4, 4, 0, 0]} />
+                <Tooltip {...TOOLTIP_STYLE} cursor={false} />
+                {revenueChart.some((p) => p.gcash != null || p.cash != null || p.paymaya != null || p.card != null) ? (
+                  <>
+                    <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
+                    <Bar dataKey="gcash" stackId="a" fill={COLORS[0]} name="GCash" />
+                    <Bar dataKey="cash" stackId="a" fill={COLORS[1]} name="Cash" />
+                    <Bar dataKey="paymaya" stackId="a" fill={COLORS[2]} name="PayMaya" />
+                    <Bar dataKey="card" stackId="a" fill={COLORS[3]} name="Card" radius={[4, 4, 0, 0]} />
+                  </>
+                ) : (
+                  <Bar dataKey="revenue" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
+                )}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

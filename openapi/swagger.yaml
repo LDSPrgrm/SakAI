@@ -4443,10 +4443,23 @@ components:
         docs:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/KycDocument"
         status:
           type: string
           enum: [pending, approved, rejected]
+
+    KycDocument:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Machine-readable document type (e.g. drivers_license, vehicle_registration, insurance).
+        label:
+          type: string
+          description: Human-readable name displayed in the UI.
+        url:
+          type: string
+          description: Signed URL to the uploaded image/PDF. Absent when not yet uploaded.
 
     ReportDefinition:
       type: object

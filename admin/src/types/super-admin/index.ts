@@ -19,7 +19,7 @@ export type { FareConfig, SurgeConfig, FareSimulationRequest, FareSimulationResp
 export type { Transaction, DriverPayout, PaymentSummary, CommissionConfig, PaymentGatewayConfig, BatchApproveRequest } from './payment';
 
 // Incidents / Safety
-export type { Incident, KycEntry, ComplianceData, IncidentResolveRequest } from './incident';
+export type { Incident, KycEntry, KycDocument, ComplianceData, IncidentResolveRequest } from './incident';
 
 // Audit
 export type { AuditLog, AuditLogResponse } from './audit';

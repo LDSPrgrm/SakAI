@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
+import { SaveBanner } from '@/components/shared/SaveBanner';
+import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
 import {
   useIncidents, useKycQueue, useLtfrbCompliance,
   useResolveIncident, useUpdateKyc,
@@ -99,13 +101,31 @@ export function SafetyCompliance() {
   });
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
+  const [banner, setBanner] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: '',
+  });
+  const flashBanner = (message: string) => {
+    setBanner({ visible: true, message });
+    setTimeout(() => setBanner(s => ({ ...s, visible: false })), 3000);
+  };
+
+  const runUpdateKyc = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      await updateKyc.mutateAsync({ id, status });
+      flashBanner(status === 'approved' ? 'KYC approved' : 'KYC rejected');
+    } catch {
+      flashBanner('Failed to update KYC');
+    }
+  };
+
   const approveDriver = (id: string, name: string) => {
     setConfirm({
       open: true,
       title: 'Approve KYC',
       message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
-      onConfirm: () => updateKyc.mutate({ id, status: 'approved' }),
+      onConfirm: () => runUpdateKyc(id, 'approved'),
     });
   };
 
@@ -115,7 +135,7 @@ export function SafetyCompliance() {
       title: 'Reject KYC',
       message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
-      onConfirm: () => updateKyc.mutate({ id, status: 'rejected' }),
+      onConfirm: () => runUpdateKyc(id, 'rejected'),
     });
   };
 
@@ -132,8 +152,9 @@ export function SafetyCompliance() {
     <div className="space-y-6">
       <ConfirmModal dialog={confirm} onClose={closeConfirm} />
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+        <SaveBanner visible={banner.visible} message={banner.message} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -235,16 +256,14 @@ export function SafetyCompliance() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {driver.docs.map(doc => (
-                          <Badge key={doc} variant="default" className="text-[10px]">{doc}</Badge>
-                        ))}
+                      <div className="mb-3">
+                        <KycDocPreview docs={driver.docs ?? []} />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="success" className="w-full" onClick={() => approveDriver(driver.id, driver.driver_name)}>
+                        <Button size="sm" variant="success" className="w-full" disabled={updateKyc.isPending} onClick={() => approveDriver(driver.id, driver.driver_name)}>
                           Approve
                         </Button>
-                        <Button size="sm" variant="danger" className="w-full" onClick={() => rejectDriver(driver.id, driver.driver_name)}>
+                        <Button size="sm" variant="danger" className="w-full" disabled={updateKyc.isPending} onClick={() => rejectDriver(driver.id, driver.driver_name)}>
                           Reject
                         </Button>
                       </div>

@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import type { PaymentSummary } from '@/api/super-admin/payments';
+import type { CommissionConfig, PaymentSummary } from '@/api/super-admin/payments';
 import {
   useTransactions, usePayouts, usePaymentSummary,
   useCommissionConfig, useApprovePayout,
@@ -64,6 +64,14 @@ function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'paymaya') return 'warning';
   return 'default';
 }
+
+const DEFAULT_COMMISSION: Required<CommissionConfig> & {
+  rates: Required<NonNullable<CommissionConfig['rates']>>;
+} = {
+  rates: { motorcycle: 0, tricycle: 0, car: 0, other: 0 },
+  minimum_commission: 0,
+  promotional_override: 0,
+};
 
 const DEFAULT_PROVIDERS: GatewayProvider[] = [
   {
@@ -124,9 +132,15 @@ export function SAPayments() {
   const [providers, setProviders] = useState<GatewayProvider[]>(DEFAULT_PROVIDERS);
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
-  const [commissionConfig, setCommissionConfig] = useState<any>(null);
+  const [commissionConfig, setCommissionConfig] = useState<typeof DEFAULT_COMMISSION | null>(null);
   useEffect(() => {
-    if (commissionQuery.data) setCommissionConfig(commissionQuery.data);
+    if (!commissionQuery.data) return;
+    const data = commissionQuery.data;
+    setCommissionConfig({
+      ...DEFAULT_COMMISSION,
+      ...data,
+      rates: { ...DEFAULT_COMMISSION.rates, ...(data.rates ?? {}) },
+    });
   }, [commissionQuery.data]);
   const savingCommission = updateCommissionConfig.isPending;
 

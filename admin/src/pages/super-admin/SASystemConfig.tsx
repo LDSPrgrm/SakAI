@@ -13,23 +13,32 @@ import {
   useUpdateIntegration, useTestIntegration, useUpdateTemplate, useToggleFlag,
 } from '@/hooks/useSystem';
 import { authApi } from '@/api/super-admin/auth';
-import type { IntegrationTestResult } from '@/api/super-admin/system';
+import type { Integration, IntegrationTestResult } from '@/api/super-admin/system';
 import type { FeatureFlag } from '@/types/super-admin';
 
 // ── Local types ───────────────────────────────────────────────────────────────
-
-interface Integration {
-  service: string;
-  label: string;
-  api_key: string;
-  status: string;
-  last_used: string;
-}
 
 interface NotificationTemplate {
   event: string;
   channel: string;
   body: string;
+}
+
+const SERVICE_LABELS: Record<string, string> = {
+  google_maps: 'Google Maps',
+  twilio: 'Twilio SMS',
+  firebase: 'Firebase FCM',
+  background_check: 'Background Check',
+  cloud_storage: 'Cloud Storage (S3)',
+};
+
+function labelForService(service: string | undefined): string {
+  if (!service) return '—';
+  if (SERVICE_LABELS[service]) return SERVICE_LABELS[service];
+  return service
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,13 +85,16 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<IntegrationTestResult | null>(null);
 
+  const service = integration.service ?? '';
+  const apiKey = integration.config?.api_key;
+
   const handleSaveClick = () => {
     if (!newKey.trim()) return;
     setConfirmOpen(true);
   };
 
   const handleConfirm = () => {
-    onSave(integration.service, newKey.trim());
+    onSave(service, newKey.trim());
     setNewKey('');
     setConfirmOpen(false);
   };
@@ -91,7 +103,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await onTest(integration.service);
+      const r = await onTest(service);
       setTestResult(r);
     } finally {
       setTesting(false);
@@ -102,9 +114,9 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
     <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-text-main">{integration.label}</span>
+        <span className="font-medium text-text-main">{labelForService(integration.service)}</span>
         <div className="flex items-center gap-2">
-          <StatusBadge status={integration.status} />
+          <StatusBadge status={integration.status ?? 'unknown'} />
           <Button variant="ghost" size="sm" disabled={testing} onClick={handleTest}>
             {testing && <Loader2 className="w-3 h-3 animate-spin mr-1.5" />}
             Test Connection
@@ -136,7 +148,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
           <p className="text-xs text-text-muted mb-1">API Key</p>
           <div className="flex items-center gap-2">
             <code className="text-sm text-text-main font-mono">
-              {revealed ? integration.api_key : maskedKey(integration.api_key)}
+              {revealed ? (apiKey ?? '—') : maskedKey(apiKey)}
             </code>
             <button
               onClick={() => setRevealed((r) => !r)}
@@ -149,7 +161,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
         </div>
         <div>
           <p className="text-xs text-text-muted mb-1">Last Used</p>
-          <p className="text-sm text-text-muted">{formatDate(integration.last_used)}</p>
+          <p className="text-sm text-text-muted">{formatDate(integration.last_sync)}</p>
         </div>
       </div>
 
@@ -373,7 +385,7 @@ export function SASystemConfig() {
               <div className="space-y-4">
                 {integrations.map((integration) => (
                   <IntegrationCard
-                    key={integration.service}
+                    key={integration.service ?? Math.random()}
                     integration={integration}
                     onSave={handleUpdateIntegration}
                     onTest={handleTestIntegration}

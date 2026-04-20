@@ -14,7 +14,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
 import {
   useIncidents, useKycQueue, useLtfrbCompliance,
   useUpdateKyc, useBatchKyc,
@@ -108,6 +110,15 @@ export function SASafetyCompliance() {
   });
   const [selectedKycIds, setSelectedKycIds] = useState<Set<string>>(new Set());
   const batchKycLoading = batchKyc.isPending;
+  const [banner, setBanner] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: '',
+  });
+
+  function flashBanner(message: string) {
+    setBanner({ visible: true, message });
+    setTimeout(() => setBanner((s) => ({ ...s, visible: false })), 3000);
+  }
 
   // ── Derived counts ─────────────────────────────────────────────────────────
 
@@ -137,7 +148,13 @@ export function SASafetyCompliance() {
 
   async function handleKycConfirm() {
     const status = kycConfirm.action === 'approve' ? 'approved' : 'rejected';
-    await updateKyc.mutateAsync({ id: kycConfirm.entryId, status });
+    try {
+      await updateKyc.mutateAsync({ id: kycConfirm.entryId, status });
+      flashBanner(kycConfirm.action === 'approve' ? 'KYC approved' : 'KYC rejected');
+    } catch (err) {
+      console.error('[updateKyc]', err);
+      flashBanner('Failed to update KYC');
+    }
   }
 
   async function handleBatchKyc(action: KycAction) {
@@ -146,8 +163,10 @@ export function SASafetyCompliance() {
     try {
       await batchKyc.mutateAsync({ ids, status });
       setSelectedKycIds(new Set());
+      flashBanner(action === 'approve' ? `Approved ${ids.length} KYC entries` : `Rejected ${ids.length} KYC entries`);
     } catch (err) {
       console.error('[batchKyc]', err);
+      flashBanner('Batch KYC update failed');
     }
   }
 
@@ -177,7 +196,10 @@ export function SASafetyCompliance() {
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+        <SaveBanner visible={banner.visible} message={banner.message} />
+      </div>
 
       <Tabs defaultValue="incidents">
         <TabsList className="mb-4">
@@ -376,13 +398,7 @@ export function SASafetyCompliance() {
                   </div>
 
                   {/* Documents */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {(entry.docs ?? []).map((doc) => (
-                      <Badge key={doc} variant="default">
-                        {doc}
-                      </Badge>
-                    ))}
-                  </div>
+                  <KycDocPreview docs={entry.docs ?? []} />
 
                   {/* Actions — only show when pending */}
                   {entry.status === 'pending' && (
@@ -390,6 +406,7 @@ export function SASafetyCompliance() {
                       <Button
                         variant="success"
                         size="sm"
+                        disabled={updateKyc.isPending}
                         onClick={() => openKycConfirm(entry, 'approve')}
                       >
                         Approve
@@ -397,6 +414,7 @@ export function SASafetyCompliance() {
                       <Button
                         variant="danger"
                         size="sm"
+                        disabled={updateKyc.isPending}
                         onClick={() => openKycConfirm(entry, 'reject')}
                       >
                         Reject

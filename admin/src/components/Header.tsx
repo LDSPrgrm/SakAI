@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Search, LogOut, Menu } from 'lucide-react';
+import { Search, LogOut, Menu } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,13 +32,6 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-        <button aria-label="Notifications" className="relative p-2 text-text-muted hover:text-text-main transition-colors rounded-full hover:bg-surface-hover">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border-2 border-surface"></span>
-        </button>
-
-        <div className="h-8 w-px bg-border mx-1 hidden sm:block"></div>
-
         <Button
           variant="ghost"
           size="sm"
