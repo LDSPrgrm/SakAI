@@ -340,10 +340,27 @@ export function Settings() {
     const gw = gateways[idx];
     const updated = { ...gw, is_active: !gw.is_active };
     setGateways(prev => prev.map((g, i) => i === idx ? updated : g));
-    systemApi.updateIntegration(gw.provider, { is_active: String(updated.is_active) }).catch(() => {});
+    paymentsApi.updateConfig(gw.provider, { is_active: updated.is_active }).catch(() => {});
   };
 
-  const handleSaveSystem = () => {
+  // Local map of edited API keys keyed by provider. Only providers with an entry
+  // here are persisted on Save — prevents blanking out keys the admin didn't touch.
+  const [editedKeys, setEditedKeys] = useState<Record<string, { field: string; value: string }>>({});
+
+  const handleKeyChange = (provider: string, field: string, value: string) => {
+    setEditedKeys(prev => ({ ...prev, [provider]: { field, value } }));
+  };
+
+  const handleSaveSystem = async () => {
+    const entries = Object.entries(editedKeys);
+    await Promise.all(
+      entries.map(([provider, { field, value }]) =>
+        paymentsApi
+          .updateConfig(provider, { config_fields: { [field]: value } })
+          .catch(() => {}),
+      ),
+    );
+    setEditedKeys({});
     setSystemSaved(true);
     setTimeout(() => setSystemSaved(false), 3000);
   };
@@ -497,49 +514,41 @@ export function Settings() {
                     <p className="text-sm text-text-muted">Loading...</p>
                   ) : gateways.length > 0 ? (
                     <div className="space-y-3">
-                      {gateways.map((gw, idx) => (
-                        <div key={gw.id ?? gw.provider} className="flex items-center justify-between gap-4">
-                          <div className="flex-1 space-y-1">
-                            <label className="text-sm text-text-muted capitalize">{gw.provider} API Key</label>
-                            <Input
-                              type="password"
-                              defaultValue={Object.values(gw.config_fields ?? {})[0] ?? '************************'}
-                            />
+                      {gateways.map((gw, idx) => {
+                        const entries = Object.entries(gw.config_fields ?? {});
+                        const [firstField, firstValue] = entries[0] ?? ['api_key', ''];
+                        const edited = editedKeys[gw.provider];
+                        const inputValue = edited?.field === firstField ? edited.value : firstValue;
+                        return (
+                          <div key={gw.id ?? gw.provider} className="flex items-center justify-between gap-4">
+                            <div className="flex-1 space-y-1">
+                              <label className="text-sm text-text-muted capitalize">{gw.provider} API Key</label>
+                              <Input
+                                type="password"
+                                value={inputValue}
+                                placeholder="Enter API key"
+                                onChange={(e) => handleKeyChange(gw.provider, firstField, e.target.value)}
+                              />
+                            </div>
+                            <button
+                              aria-label={`${gw.is_active ? 'Disable' : 'Enable'} ${gw.provider}`}
+                              onClick={() => handleToggleGateway(idx)}
+                              className="flex-shrink-0"
+                            >
+                              {gw.is_active
+                                ? <ToggleRight className="w-8 h-8 text-success" />
+                                : <ToggleLeft className="w-8 h-8 text-text-muted" />
+                              }
+                            </button>
                           </div>
-                          <button
-                            aria-label={`${gw.is_active ? 'Disable' : 'Enable'} ${gw.provider}`}
-                            onClick={() => handleToggleGateway(idx)}
-                            className="flex-shrink-0"
-                          >
-                            {gw.is_active
-                              ? <ToggleRight className="w-8 h-8 text-success" />
-                              : <ToggleLeft className="w-8 h-8 text-text-muted" />
-                            }
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-sm text-text-muted">GCash API Key</label>
-                        <Input type="password" defaultValue="************************" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm text-text-muted">PayMaya API Key</label>
-                        <Input type="password" defaultValue="************************" />
-                      </div>
-                    </>
+                    <p className="text-sm text-text-muted">
+                      No payment gateways configured. Gateways are provisioned by the platform team.
+                    </p>
                   )}
-                </div>
-
-                {/* Maps Integration */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
-                  <h4 className="font-medium">Maps Integration</h4>
-                  <div className="space-y-2">
-                    <label className="text-sm text-text-muted">Google Maps API Key</label>
-                    <Input type="password" defaultValue="************************" />
-                  </div>
                 </div>
 
                 <Button onClick={handleSaveSystem}>Save Configuration</Button>

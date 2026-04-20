@@ -15,6 +15,7 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { adminsApi } from '@/api/super-admin/admins';
 import { rolesApi } from '@/api/super-admin/roles';
+import { useAuth } from '@/hooks/useAuth';
 import type { AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/types/super-admin';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
@@ -62,12 +63,11 @@ function formatDate(iso: string | null): string {
   });
 }
 
-// Hardcoded current user ID (replace with auth context if available)
-const CURRENT_USER_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SAAdminManagement() {
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? '';
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [roleDefs, setRoleDefs] = useState<AdminRoleDefinition[]>([]);
   const [search, setSearch] = useState('');
@@ -243,7 +243,7 @@ export function SAAdminManagement() {
                   </TableRow>
                 )}
                 {filtered.map((admin) => {
-                  const isSelf = admin.id === CURRENT_USER_ID;
+                  const isSelf = admin.id === currentUserId;
                   const isLastSuperAdmin =
                     admin.role === 'superadmin' && superAdminCount === 1;
                   const canAct = !isSelf && !isLastSuperAdmin;

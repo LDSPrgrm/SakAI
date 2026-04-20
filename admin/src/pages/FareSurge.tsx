@@ -267,7 +267,6 @@ export function FareSurge() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full">Manage Surge Zones</Button>
             </CardContent>
           </Card>
 

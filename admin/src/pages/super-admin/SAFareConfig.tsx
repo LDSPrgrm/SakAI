@@ -361,10 +361,6 @@ export function SAFareConfig() {
               >
                 {surgeSaving ? 'Saving…' : 'Save Surge Settings'}
               </Button>
-
-              <Button variant="outline" className="w-full">
-                Manage Surge Zones
-              </Button>
             </CardContent>
           </Card>
 

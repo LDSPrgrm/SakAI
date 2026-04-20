@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Search, Map } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
 import { ridesApi } from '@/api/admin/rides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
@@ -124,17 +124,16 @@ export function RideManagement() {
                 <TableHead>Fare & Payment</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date & Time</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-text-muted">Loading...</TableCell>
+                  <TableCell colSpan={6} className="text-center py-10 text-text-muted">Loading...</TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-text-muted">
+                  <TableCell colSpan={6} className="text-center py-10 text-text-muted">
                     No rides match your search or filter.
                   </TableCell>
                 </TableRow>
@@ -168,11 +167,6 @@ export function RideManagement() {
                   </TableCell>
                   <TableCell className="text-sm text-text-muted">
                     {ride.created_at ? new Date(ride.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" aria-label="View map route">
-                      <Map className="w-4 h-4" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -155,7 +155,6 @@ export function SafetyCompliance() {
               <ShieldAlert className="w-5 h-5 text-danger" />
               Emergency & Incident Log
             </CardTitle>
-            <Button variant="outline" size="sm">View All</Button>
           </CardHeader>
           <CardContent className="p-0">
             <Table>

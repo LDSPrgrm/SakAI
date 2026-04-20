@@ -116,7 +116,6 @@ export function UserManagement() {
 
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-text-main">User Management</h1>
-        <Button>Add New User</Button>
       </div>
 
       <Card>
