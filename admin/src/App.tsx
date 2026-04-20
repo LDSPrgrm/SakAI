@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
+import type { AdminRole } from '@/lib/permissions';
 
 // Layouts
 import { AdminShell } from '@/components/layout/AdminShell';
@@ -46,11 +47,20 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+function ProtectedRoute({
+  children,
+  requireRole,
+}: {
+  children: React.ReactNode;
+  requireRole?: AdminRole;
+}) {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (requireRole && user?.role !== requireRole) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return <>{children}</>;
 }
@@ -94,7 +104,7 @@ export default function App() {
           </Route>
 
           <Route path="/super-admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="superadmin">
               <SuperAdminShell />
             </ProtectedRoute>
           }>

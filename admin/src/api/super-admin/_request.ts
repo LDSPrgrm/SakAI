@@ -8,7 +8,7 @@ import type { components } from '@/types/openapi';
 export type PaginationMeta = components['schemas']['PaginationMeta'];
 
 export const BASE_URL =
-  (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
+  (import.meta.env.VITE_API_URL as string) || '/api';
 
 function buildUrl(path: string): string {
   return `${BASE_URL}/admin${path}`;

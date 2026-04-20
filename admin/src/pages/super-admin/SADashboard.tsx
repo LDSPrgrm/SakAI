@@ -14,12 +14,10 @@ import {
   useVehicleDistribution, useActivityFeed,
 } from '@/hooks/useMetrics';
 import { formatPHP } from '@/lib/utils';
+import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
 
-const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335', '#9C27B0'];
-
-const TOOLTIP_STYLE = {
-  contentStyle: { backgroundColor: '#1E1E1E', borderColor: '#333', color: '#FFF' },
-};
+const COLORS = CHART_COLORS;
+const TOOLTIP_STYLE = DARK_TOOLTIP_STYLE;
 
 export function SADashboard() {
   const qc = useQueryClient();

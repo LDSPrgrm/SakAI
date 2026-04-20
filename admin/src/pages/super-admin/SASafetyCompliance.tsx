@@ -22,6 +22,7 @@ import {
   useUpdateKyc, useBatchKyc,
 } from '@/hooks/useSafety';
 import { useExportReport } from '@/hooks/useReports';
+import { formatDate } from '@/utils/formatDate';
 import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -151,8 +152,7 @@ export function SASafetyCompliance() {
     try {
       await updateKyc.mutateAsync({ id: kycConfirm.entryId, status });
       flashBanner(kycConfirm.action === 'approve' ? 'KYC approved' : 'KYC rejected');
-    } catch (err) {
-      console.error('[updateKyc]', err);
+    } catch {
       flashBanner('Failed to update KYC');
     }
   }
@@ -164,8 +164,7 @@ export function SASafetyCompliance() {
       await batchKyc.mutateAsync({ ids, status });
       setSelectedKycIds(new Set());
       flashBanner(action === 'approve' ? `Approved ${ids.length} KYC entries` : `Rejected ${ids.length} KYC entries`);
-    } catch (err) {
-      console.error('[batchKyc]', err);
+    } catch {
       flashBanner('Batch KYC update failed');
     }
   }
@@ -177,14 +176,6 @@ export function SASafetyCompliance() {
     const now = new Date();
     const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return diffDays <= 30;
-  }
-
-  function fmtDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('en-PH', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   }
 
   async function handleGenerateReport() {
@@ -283,7 +274,7 @@ export function SASafetyCompliance() {
                             {inc.id}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted whitespace-nowrap">
-                            {inc.created_at ? fmtDate(inc.created_at) : '—'}
+                            {inc.created_at ? formatDate(inc.created_at) : '—'}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
                             {inc.ride_id}
@@ -390,7 +381,7 @@ export function SASafetyCompliance() {
                       <div>
                         <p className="font-medium text-text-main">{entry.driver_name ?? 'Unknown Driver'}</p>
                         <p className="text-xs text-text-muted mt-0.5">
-                          Submitted {entry.submitted_at ? fmtDate(entry.submitted_at) : '—'}
+                          Submitted {entry.submitted_at ? formatDate(entry.submitted_at) : '—'}
                         </p>
                       </div>
                     </div>
@@ -447,7 +438,7 @@ export function SASafetyCompliance() {
                   <div className="flex items-center gap-2 mt-1">
                     <StatusBadge status={ltfrbData.accreditation_status} />
                     <span className="text-sm text-text-muted">
-                      Expires {fmtDate(ltfrbData.accreditation_expiry)}
+                      Expires {formatDate(ltfrbData.accreditation_expiry)}
                     </span>
                   </div>
                 </div>
@@ -499,7 +490,7 @@ export function SASafetyCompliance() {
                     <div className="flex justify-between text-sm">
                       <span className="text-text-muted">Last Submitted</span>
                       <span className="text-text-main">
-                        {fmtDate(ltfrbData.last_report_submitted)}
+                        {formatDate(ltfrbData.last_report_submitted)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -511,7 +502,7 @@ export function SASafetyCompliance() {
                             : 'text-text-main'
                         }
                       >
-                        {fmtDate(ltfrbData.next_report_due)}
+                        {formatDate(ltfrbData.next_report_due)}
                         {isReportDueSoon(ltfrbData.next_report_due) && (
                           <span className="ml-1.5 text-xs">(Due soon)</span>
                         )}

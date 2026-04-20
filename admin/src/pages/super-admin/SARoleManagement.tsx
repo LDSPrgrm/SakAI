@@ -14,6 +14,7 @@ import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import {
   useRoles, useCreateRole, useUpdateRole, useDeleteRole, useDuplicateRole,
 } from '@/hooks/useRoles';
+import { formatDate } from '@/utils/formatDate';
 import type { AdminRoleDefinition, RolePermission, RolePermissionKey } from '@/types/super-admin';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -84,12 +85,6 @@ function permSummary(perms: RolePermission[]): string {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-PH', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
-}
 
 function displayName(name: string): string {
   return name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

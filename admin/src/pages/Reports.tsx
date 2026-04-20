@@ -5,8 +5,9 @@ import { Download, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { useVehicleDistribution } from '@/hooks/useMetrics';
 import { useReportChart, useReportList, useExportReport } from '@/hooks/useReports';
+import { CHART_COLORS } from '@/utils/chartColors';
 
-const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335'];
+const COLORS = CHART_COLORS;
 
 interface ChartDataPoint {
   name: string;

@@ -15,6 +15,7 @@ import {
 import { authApi } from '@/api/super-admin/auth';
 import type { Integration, IntegrationTestResult } from '@/api/super-admin/system';
 import type { FeatureFlag } from '@/types/super-admin';
+import { maskApiKey } from '@/utils/maskApiKey';
 
 // ── Local types ───────────────────────────────────────────────────────────────
 
@@ -42,12 +43,6 @@ function labelForService(service: string | undefined): string {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function maskedKey(key: string | null | undefined): string {
-  if (!key) return '—';
-  const last4 = key.slice(-4);
-  return `••••••••${last4}`;
-}
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -148,7 +143,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
           <p className="text-xs text-text-muted mb-1">API Key</p>
           <div className="flex items-center gap-2">
             <code className="text-sm text-text-main font-mono">
-              {revealed ? (apiKey ?? '—') : maskedKey(apiKey)}
+              {revealed ? (apiKey ?? '—') : apiKey ? maskApiKey(apiKey) : '—'}
             </code>
             <button
               onClick={() => setRevealed((r) => !r)}
@@ -383,9 +378,9 @@ export function SASystemConfig() {
             {/* Tab 1 — Integrations */}
             <TabsContent value="integrations">
               <div className="space-y-4">
-                {integrations.map((integration) => (
+                {integrations.map((integration, idx) => (
                   <IntegrationCard
-                    key={integration.service ?? Math.random()}
+                    key={integration.service ?? idx}
                     integration={integration}
                     onSave={handleUpdateIntegration}
                     onTest={handleTestIntegration}

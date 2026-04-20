@@ -2,12 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { systemApi } from '@/api/super-admin/system';
+import { api, type HealthResponse } from '@/lib/api';
 
 const SYSTEM_KEY = ['admin', 'system'] as const;
 const INTEGRATIONS_KEY = [...SYSTEM_KEY, 'integrations'] as const;
 const TEMPLATES_KEY = [...SYSTEM_KEY, 'notification-templates'] as const;
 const FLAGS_KEY = [...SYSTEM_KEY, 'feature-flags'] as const;
 const SERVICES_KEY = [...SYSTEM_KEY, 'services'] as const;
+
+export function useHealth() {
+  return useQuery<HealthResponse>({
+    queryKey: ['system', 'health'],
+    queryFn: () => api.health.check(),
+    refetchInterval: 30_000,
+    retry: false,
+  });
+}
 
 export function useIntegrations() {
   return useQuery({

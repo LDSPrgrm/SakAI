@@ -18,18 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
 import { useReportList, useReportChart, useExportReport } from '@/hooks/useReports';
+import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335', '#9C27B0'];
-
-const DARK_TOOLTIP = {
-  contentStyle: {
-    backgroundColor: '#1E1E1E',
-    borderColor: '#333',
-    color: '#FFF',
-  },
-};
+const COLORS = CHART_COLORS;
+const DARK_TOOLTIP = DARK_TOOLTIP_STYLE;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

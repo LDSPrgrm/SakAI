@@ -19,16 +19,17 @@ import { rolesApi } from '@/api/super-admin/roles';
 import { useAdmins } from '@/hooks/useAdmins';
 import { useRoles } from '@/hooks/useRoles';
 import { useAuth } from '@/hooks/useAuth';
+import { formatDate } from '@/utils/formatDate';
 import type { AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/types/super-admin';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
 const adminSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Must be a valid email address'),
-  role: z.string().min(1, 'Role is required'),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(255, 'Name is too long'),
+  email: z.string().email('Must be a valid email address').max(255, 'Email is too long'),
+  role: z.string().min(1, 'Role is required').max(100, 'Role is too long'),
   status: z.enum(['active', 'suspended', 'deactivated']),
-  password: z.string().min(8, 'Must be at least 8 characters').optional().or(z.literal('')),
+  password: z.string().min(8, 'Must be at least 8 characters').max(128, 'Password is too long').optional().or(z.literal('')),
 });
 
 type AdminFormValues = z.infer<typeof adminSchema>;
@@ -57,13 +58,6 @@ function roleLabel(role: string): string {
 
 function roleBadgeVariant(role: string): 'danger' | 'info' | 'warning' | 'default' {
   return ROLE_BADGE[role] ?? 'default';
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return 'Never';
-  return new Date(iso).toLocaleDateString('en-PH', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -153,8 +147,10 @@ export function SAAdminManagement() {
       }
       setModalOpen(false);
       invalidateAdmins();
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to save admin. Please try again.';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to save admin. Please try again.';
       setApiError(errorMessage);
     }
   }

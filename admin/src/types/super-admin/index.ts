@@ -57,13 +57,17 @@ export interface AdminApiResponse<T> {
 }
 
 // User types (passenger/driver)
+export type EndUserStatus = 'active' | 'suspended' | 'deactivated';
+
 export interface PassengerUser {
   id: string; name: string; email: string; role: 'passenger';
   created_at: string; phone?: string;
+  status?: EndUserStatus;
 }
 export interface DriverUser {
   id: string; name: string; email: string; role: 'driver';
   created_at: string; phone?: string;
+  status?: EndUserStatus;
   vehicle?: { make: string; model: string; color: string; plate: string } | null;
 }
 

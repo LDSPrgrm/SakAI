@@ -32,6 +32,7 @@ import {
 import { useUpdateIntegration } from '@/hooks/useSystem';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
+import { maskApiKey } from '@/utils/maskApiKey';
 
 interface GatewayProvider {
   id: string;
@@ -54,11 +55,6 @@ interface ConfirmState {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function maskKey(k?: string): string {
-  if (!k || k.length <= 4) return k || '';
-  return '••••••••' + k.slice(-4);
-}
-
 function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'gcash') return 'info';
   if (method === 'paymaya') return 'warning';
@@ -72,35 +68,6 @@ const DEFAULT_COMMISSION: Required<CommissionConfig> & {
   minimum_commission: 0,
   promotional_override: 0,
 };
-
-const DEFAULT_PROVIDERS: GatewayProvider[] = [
-  {
-    id: 'gcash',
-    label: 'GCash',
-    type: 'ewallet',
-    apiKey: 'gcash_live_xK9mP2qR7nL4wT1yZ5vA8sD',
-    secret: 'gsec_live_9384jsdf83',
-    merchantId: 'M-12345',
-    webhookUrl: 'https://api.sakai.ph/webhooks/gcash',
-  },
-  {
-    id: 'paymaya',
-    label: 'PayMaya',
-    type: 'ewallet',
-    apiKey: 'pm_live_3bN8cX6hJ0eQ4uI2oW7fY9kM',
-    secret: 'pm_sec_live_9jdf934f',
-    merchantId: 'P-98765',
-    webhookUrl: 'https://api.sakai.ph/webhooks/paymaya',
-  },
-  {
-    id: 'card',
-    label: 'Stripe (Cards)',
-    type: 'card',
-    publishableKey: 'pk_live_5aG1dV4jR8mU3oS7pL9wB2xZ',
-    secretKey: 'sk_live_39dsf93kdfvj94jg',
-    webhookSecret: 'whsec_38sjd8fu4ndsf',
-  },
-];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -129,7 +96,7 @@ export function SAPayments() {
     payoutId: '',
     batchName: '',
   });
-  const [providers, setProviders] = useState<GatewayProvider[]>(DEFAULT_PROVIDERS);
+  const [providers, setProviders] = useState<GatewayProvider[]>([]);
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
   const [commissionConfig, setCommissionConfig] = useState<typeof DEFAULT_COMMISSION | null>(null);
@@ -174,8 +141,8 @@ export function SAPayments() {
     try {
       await batchApprovePayouts.mutateAsync(ids);
       setSelectedPayoutIds(new Set());
-    } catch (err) {
-      console.error('[batchApprovePayouts]', err);
+    } catch {
+      // Error surfaced via batchApprovePayouts.isError / .error in the UI.
     }
   }
 
@@ -477,6 +444,11 @@ export function SAPayments() {
             </div>
 
             <div className="space-y-4">
+              {providers.length === 0 && (
+                <p className="text-sm text-text-muted text-center py-6">
+                  No payment gateways configured. Configure via Settings → System Config.
+                </p>
+              )}
               {providers.map((provider) => (
                 <div key={provider.id} className="p-4 bg-surface-hover rounded-lg border border-border">
                   <h4 className="text-sm font-semibold text-text-main mb-3">{provider.label}</h4>
@@ -485,11 +457,11 @@ export function SAPayments() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs text-text-muted mb-1">API Key</label>
-                        <Input value={maskKey(provider.apiKey)} onChange={e => updateProvider(provider.id, 'apiKey', e.target.value)} />
+                        <Input value={maskApiKey(provider.apiKey ?? '')} onChange={e => updateProvider(provider.id, 'apiKey', e.target.value)} />
                       </div>
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Secret</label>
-                        <Input value={maskKey(provider.secret)} type="password" onChange={e => updateProvider(provider.id, 'secret', e.target.value)} />
+                        <Input value={maskApiKey(provider.secret ?? '')} type="password" onChange={e => updateProvider(provider.id, 'secret', e.target.value)} />
                       </div>
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Merchant ID</label>
@@ -504,15 +476,15 @@ export function SAPayments() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-xs text-text-muted mb-1">Publishable Key</label>
-                        <Input value={maskKey(provider.publishableKey)} onChange={e => updateProvider(provider.id, 'publishableKey', e.target.value)} />
+                        <Input value={maskApiKey(provider.publishableKey ?? '')} onChange={e => updateProvider(provider.id, 'publishableKey', e.target.value)} />
                       </div>
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Secret Key</label>
-                        <Input value={maskKey(provider.secretKey)} type="password" onChange={e => updateProvider(provider.id, 'secretKey', e.target.value)} />
+                        <Input value={maskApiKey(provider.secretKey ?? '')} type="password" onChange={e => updateProvider(provider.id, 'secretKey', e.target.value)} />
                       </div>
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Webhook Secret</label>
-                        <Input value={maskKey(provider.webhookSecret)} type="password" onChange={e => updateProvider(provider.id, 'webhookSecret', e.target.value)} />
+                        <Input value={maskApiKey(provider.webhookSecret ?? '')} type="password" onChange={e => updateProvider(provider.id, 'webhookSecret', e.target.value)} />
                       </div>
                     </div>
                   )}
