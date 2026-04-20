@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { paymentsApi, type PaymentSummary } from '@/api/super-admin/payments';
-import { reportsApi } from '@/api/super-admin/reports';
+import {
+  usePaymentSummary, useTransactions, usePayouts, useApprovePayout,
+} from '@/hooks/usePayments';
+import { useExportReport } from '@/hooks/useReports';
 import type { Transaction, DriverPayout } from '@/types/super-admin';
 
 function txnStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
@@ -32,33 +34,24 @@ function paymentMethodLabel(method: string): string {
 
 export function Payments() {
   const [search, setSearch] = useState('');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [payouts, setPayouts] = useState<DriverPayout[]>([]);
-  const [summary, setSummary] = useState<PaymentSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const summaryQuery = usePaymentSummary();
+  const transactionsQuery = useTransactions();
+  const payoutsQuery = usePayouts();
+  const approvePayout = useApprovePayout();
+  const exportReport = useExportReport();
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      paymentsApi.getSummary(),
-      paymentsApi.getTransactions(),
-      paymentsApi.getPayouts(),
-    ]).then(([sum, tx, po]) => {
-      setTransactions(tx);
-      setPayouts(po);
-      setSummary(sum);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  const transactions = (transactionsQuery.data ?? []) as Transaction[];
+  const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
+  const summary = summaryQuery.data;
+  const loading = summaryQuery.isPending || transactionsQuery.isPending || payoutsQuery.isPending;
 
   const handleApprovePayout = (id: string) => {
-    paymentsApi.approvePayout(id).catch(() => {});
-    setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: 'processing' } : p));
+    approvePayout.mutate(id);
   };
 
-  const handleExport = () => {
-    reportsApi.exportCsv('financial').then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  const handleExport = async () => {
+    const res = await exportReport.mutateAsync('financial').catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   };
 
   const q = search.toLowerCase();

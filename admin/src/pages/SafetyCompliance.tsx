@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
-import { safetyApi } from '@/api/super-admin/safety';
-import { reportsApi } from '@/api/super-admin/reports';
+import {
+  useIncidents, useKycQueue, useLtfrbCompliance,
+  useResolveIncident, useUpdateKyc,
+} from '@/hooks/useSafety';
+import { useExportReport } from '@/hooks/useReports';
 import type { Incident, KycEntry } from '@/types/super-admin';
 
 function incidentTypeLabel(type: string): string {
@@ -74,32 +77,26 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 }
 
 export function SafetyCompliance() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [kycQueue, setKycQueue] = useState<KycEntry[]>([]);
-  const [compliance, setCompliance] = useState<{
+  const incidentsQuery = useIncidents();
+  const kycQuery = useKycQueue();
+  const complianceQuery = useLtfrbCompliance();
+  const resolveIncident = useResolveIncident();
+  const updateKyc = useUpdateKyc();
+  const exportReport = useExportReport();
+
+  const incidents = (incidentsQuery.data ?? []) as Incident[];
+  const kycQueue = (kycQuery.data ?? []) as KycEntry[];
+  const compliance = complianceQuery.data as {
     accreditation_status: string;
     accreditation_expiry: string | null;
     driver_compliance_rate: number;
     violation_count: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  } | undefined;
+  const loading = incidentsQuery.isPending || kycQuery.isPending || complianceQuery.isPending;
+
   const [confirm, setConfirm] = useState<ConfirmDialog>({
     open: false, title: '', message: '', variant: 'danger', onConfirm: () => {},
   });
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      safetyApi.getIncidents() as unknown as Promise<Incident[]>,
-      safetyApi.getKycQueue() as unknown as Promise<KycEntry[]>,
-      safetyApi.getLtfrbCompliance(),
-    ]).then(([inc, kyc, comp]) => {
-      setIncidents(inc);
-      setKycQueue(kyc);
-      setCompliance(comp as any);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
   const approveDriver = (id: string, name: string) => {
@@ -108,10 +105,7 @@ export function SafetyCompliance() {
       title: 'Approve KYC',
       message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
-      onConfirm: () => {
-        safetyApi.updateKyc(id, 'approved').catch(() => {});
-        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'approved' } : k));
-      },
+      onConfirm: () => updateKyc.mutate({ id, status: 'approved' }),
     });
   };
 
@@ -121,23 +115,17 @@ export function SafetyCompliance() {
       title: 'Reject KYC',
       message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
-      onConfirm: () => {
-        safetyApi.updateKyc(id, 'rejected').catch(() => {});
-        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'rejected' } : k));
-      },
+      onConfirm: () => updateKyc.mutate({ id, status: 'rejected' }),
     });
   };
 
   const handleResolveIncident = (id: string) => {
-    safetyApi.resolveIncident(id, 'Resolved via admin panel').then(() => {
-      setIncidents(prev => prev.map(i => i.id === id ? { ...i, status: 'resolved' as any } : i));
-    }).catch(() => {});
+    resolveIncident.mutate({ id, notes: 'Resolved via admin panel' });
   };
 
-  const handleGenerateLtfrb = () => {
-    reportsApi.exportCsv('ltfrb').then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  const handleGenerateLtfrb = async () => {
+    const res = await exportReport.mutateAsync('ltfrb').catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   };
 
   return (

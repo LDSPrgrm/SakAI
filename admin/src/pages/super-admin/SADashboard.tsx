@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -8,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { SummaryCard } from '@/components/shared/SummaryCard';
-import { metricsApi } from '@/api/super-admin/metrics';
-import type { DashboardMetrics } from '@/types/super-admin';
+import {
+  useDashboardMetrics, useRidesChart, useRevenueChart,
+  useVehicleDistribution, useActivityFeed,
+} from '@/hooks/useMetrics';
 import { formatPHP } from '@/lib/utils';
-import type { ActivityItem } from '@/mocks/admin/dashboard';
 
 const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335', '#9C27B0'];
 
@@ -20,35 +22,18 @@ const TOOLTIP_STYLE = {
 };
 
 export function SADashboard() {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [ridesChart, setRidesChart] = useState<any[] | null>(null);
-  const [revenueChart, setRevenueChart] = useState<any[] | null>(null);
-  const [vehicleData, setVehicleData] = useState<any[] | null>(null);
-  const [activity, setActivity] = useState<any[] | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const qc = useQueryClient();
+  const metricsQuery = useDashboardMetrics();
+  const ridesChartQuery = useRidesChart();
+  const revenueChartQuery = useRevenueChart();
+  const vehicleQuery = useVehicleDistribution();
+  const activityQuery = useActivityFeed();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      const [m, rc, rev, vd, af] = await Promise.all([
-        metricsApi.getDashboard(),
-        metricsApi.getRidesChart(),
-        metricsApi.getRevenueChart(),
-        metricsApi.getVehicleDistribution(),
-        metricsApi.getActivityFeed(),
-      ]);
-      if (cancelled) return;
-      setMetrics(m);
-      setRidesChart(rc);
-      setRevenueChart(rev);
-      setVehicleData(vd);
-      setActivity(af);
-    }
-
-    load();
-    return () => { cancelled = true; };
-  }, [refreshKey]);
+  const metrics = metricsQuery.data;
+  const ridesChart = ridesChartQuery.data;
+  const revenueChart = revenueChartQuery.data;
+  const vehicleData = vehicleQuery.data;
+  const activity = activityQuery.data;
 
   const isLoading = !metrics || !ridesChart || !revenueChart || !vehicleData || !activity;
 
@@ -68,10 +53,7 @@ export function SADashboard() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            setMetrics(null);
-            setRefreshKey(k => k + 1);
-          }}
+          onClick={() => qc.invalidateQueries({ queryKey: ['admin', 'metrics'] })}
           className="flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />

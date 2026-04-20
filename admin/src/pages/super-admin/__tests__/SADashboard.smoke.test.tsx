@@ -1,7 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SADashboard } from '../SADashboard';
+
+function renderWithClient(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  );
+}
 
 // Prevent recharts from throwing in jsdom (SVG not fully supported)
 vi.mock('recharts', () => {
@@ -35,12 +45,12 @@ describe('SADashboard smoke test', () => {
   });
 
   it('renders loading state initially', () => {
-    render(<SADashboard />);
+    renderWithClient(<SADashboard />);
     expect(screen.getByText('Loading...')).toBeTruthy();
   });
 
   it('renders KPI cards after data loads', async () => {
-    render(<SADashboard />);
+    renderWithClient(<SADashboard />);
     await waitFor(() =>
       expect(screen.getByText('Super Admin Dashboard')).toBeTruthy(),
     );

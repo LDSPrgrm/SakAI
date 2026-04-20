@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { systemApi } from '@/api/super-admin/system';
+import {
+  useIntegrations, useNotificationTemplates, useFeatureFlags,
+  useUpdateIntegration, useTestIntegration, useUpdateTemplate, useToggleFlag,
+} from '@/hooks/useSystem';
 import { authApi } from '@/api/super-admin/auth';
 import type { IntegrationTestResult } from '@/api/super-admin/system';
 import type { FeatureFlag } from '@/types/super-admin';
@@ -278,9 +281,18 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SASystemConfig() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
+  const integrationsQuery = useIntegrations();
+  const templatesQuery = useNotificationTemplates();
+  const flagsQuery = useFeatureFlags();
+  const updateIntegrationMut = useUpdateIntegration();
+  const testIntegrationMut = useTestIntegration();
+  const updateTemplateMut = useUpdateTemplate();
+  const toggleFlagMut = useToggleFlag();
+
+  const integrations = (integrationsQuery.data ?? []) as Integration[];
+  const templates = (templatesQuery.data ?? []) as NotificationTemplate[];
+  const featureFlags = (flagsQuery.data ?? []) as unknown as FeatureFlag[];
+
   const [saveBannerVisible, setSaveBannerVisible] = useState(false);
 
   // Change password state
@@ -291,45 +303,26 @@ export function SASystemConfig() {
   const [cpError, setCpError] = useState('');
   const [cpSuccess, setCpSuccess] = useState(false);
 
-  useEffect(() => {
-    systemApi.getIntegrations().then((data) =>
-      setIntegrations(data as Integration[])
-    );
-    systemApi.getNotificationTemplates().then((data) =>
-      setTemplates(data as NotificationTemplate[])
-    );
-    systemApi.getFeatureFlags().then(f => setFeatureFlags(f as unknown as FeatureFlag[]));
-  }, []);
-
   const showSaveBanner = () => {
     setSaveBannerVisible(true);
     setTimeout(() => setSaveBannerVisible(false), 3000);
   };
 
   const handleUpdateIntegration = async (service: string, newKey: string) => {
-    await systemApi.updateIntegration(service, { api_key: newKey });
-    setIntegrations((prev) =>
-      prev.map((i) => (i.service === service ? { ...i, api_key: newKey } : i))
-    );
+    await updateIntegrationMut.mutateAsync({ service, data: { api_key: newKey } });
     showSaveBanner();
   };
 
   const handleTestIntegration = (service: string) =>
-    systemApi.testIntegration(service);
+    testIntegrationMut.mutateAsync(service);
 
   const handleUpdateTemplate = async (event: string, body: string) => {
-    await systemApi.updateTemplate(event, body);
-    setTemplates((prev) =>
-      prev.map((t) => (t.event === event ? { ...t, body } : t))
-    );
+    await updateTemplateMut.mutateAsync({ event, body });
     showSaveBanner();
   };
 
   const handleToggleFlag = async (key: string, next: boolean) => {
-    const updated = await systemApi.toggleFlag(key, next) as unknown as FeatureFlag;
-    setFeatureFlags((prev) =>
-      prev.map((f) => (f.key === key ? { ...f, enabled: updated.enabled } : f))
-    );
+    await toggleFlagMut.mutateAsync({ key, enabled: next });
     showSaveBanner();
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,8 +13,11 @@ import {
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { useQueryClient } from '@tanstack/react-query';
 import { adminsApi } from '@/api/super-admin/admins';
 import { rolesApi } from '@/api/super-admin/roles';
+import { useAdmins } from '@/hooks/useAdmins';
+import { useRoles } from '@/hooks/useRoles';
 import { useAuth } from '@/hooks/useAuth';
 import type { AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/types/super-admin';
 
@@ -68,8 +71,12 @@ function formatDate(iso: string | null): string {
 export function SAAdminManagement() {
   const { user } = useAuth();
   const currentUserId = user?.id ?? '';
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [roleDefs, setRoleDefs] = useState<AdminRoleDefinition[]>([]);
+  const qc = useQueryClient();
+  const adminsQuery = useAdmins();
+  const rolesQuery = useRoles();
+  const admins = (adminsQuery.data ?? []) as unknown as AdminUser[];
+  const roleDefs = (rolesQuery.data ?? []) as unknown as AdminRoleDefinition[];
+  const invalidateAdmins = () => qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -87,15 +94,6 @@ export function SAAdminManagement() {
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } =
     useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
 
-  async function loadAdmins() {
-    const list = await adminsApi.list() as unknown as AdminUser[];
-    setAdmins(list);
-  }
-
-  useEffect(() => {
-    loadAdmins();
-    rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
-  }, []);
 
   function generatePassword() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -108,8 +106,8 @@ export function SAAdminManagement() {
     setEditingAdmin(null);
     setApiError(null); // Clear any previous errors
     reset({ name: '', email: '', role: 'support', status: 'active', password: generatePassword() });
-    // Refresh roleDefs to include any newly created custom roles
-    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
+    // Refresh roles query to include any newly created custom roles
+    await qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
     setModalOpen(true);
   }
 
@@ -123,8 +121,8 @@ export function SAAdminManagement() {
       status: admin.status ?? 'active',
       password: '',
     });
-    // Refresh roleDefs to include any newly created custom roles
-    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
+    // Refresh roles query to include any newly created custom roles
+    await qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
     setModalOpen(true);
   }
 
@@ -138,7 +136,7 @@ export function SAAdminManagement() {
           return;
         }
         // update() only sends { role } — role_id not needed here
-        await adminsApi.update(editingAdmin.id, { role: values.role } as any);
+        await adminsApi.update(editingAdmin.id, { role: values.role as AdminRole });
       } else {
         // Create needs role_id to link the new user to the roles table
         const selectedRoleDef = roleDefs.find(r => r.name === values.role);
@@ -154,7 +152,7 @@ export function SAAdminManagement() {
         });
       }
       setModalOpen(false);
-      await loadAdmins();
+      invalidateAdmins();
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to save admin. Please try again.';
       setApiError(errorMessage);
@@ -172,11 +170,11 @@ export function SAAdminManagement() {
       await adminsApi.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminsApi.update(admin.id, { role: confirmModal.pendingData.role } as any);
+      await adminsApi.update(admin.id, { role: confirmModal.pendingData.role as AdminRole });
       setModalOpen(false);
     }
 
-    await loadAdmins();
+    invalidateAdmins();
     setConfirmModal({ open: false, type: 'suspend', admin: null });
   }
 

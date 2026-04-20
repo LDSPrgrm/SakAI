@@ -23,8 +23,13 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { paymentsApi, type PaymentSummary } from '@/api/super-admin/payments';
-import { systemApi } from '@/api/super-admin/system';
+import type { PaymentSummary } from '@/api/super-admin/payments';
+import {
+  useTransactions, usePayouts, usePaymentSummary,
+  useCommissionConfig, useApprovePayout,
+  useBatchApprovePayouts, useUpdateCommissionConfig,
+} from '@/hooks/usePayments';
+import { useUpdateIntegration } from '@/hooks/useSystem';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 
@@ -92,14 +97,24 @@ const DEFAULT_PROVIDERS: GatewayProvider[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SAPayments() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [payouts, setPayouts] = useState<DriverPayout[]>([]);
-  const [summary, setSummary] = useState<PaymentSummary>({
+  const transactionsQuery = useTransactions();
+  const payoutsQuery = usePayouts();
+  const summaryQuery = usePaymentSummary();
+  const commissionQuery = useCommissionConfig();
+  const approvePayout = useApprovePayout();
+  const batchApprovePayouts = useBatchApprovePayouts();
+  const updateCommissionConfig = useUpdateCommissionConfig();
+  const updateIntegration = useUpdateIntegration();
+
+  const transactions = (transactionsQuery.data ?? []) as Transaction[];
+  const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
+  const summary: PaymentSummary = summaryQuery.data ?? {
     total_revenue: 0,
     payouts: 0,
     commission: 0,
     pending_settlements: 0,
-  });
+  };
+
   const [search, setSearch] = useState('');
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
@@ -110,28 +125,13 @@ export function SAPayments() {
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
   const [commissionConfig, setCommissionConfig] = useState<any>(null);
-  const [savingCommission, setSavingCommission] = useState(false);
+  useEffect(() => {
+    if (commissionQuery.data) setCommissionConfig(commissionQuery.data);
+  }, [commissionQuery.data]);
+  const savingCommission = updateCommissionConfig.isPending;
 
   const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
-  const [batchApproving, setBatchApproving] = useState(false);
-
-  // ── Load data on mount ─────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function load() {
-      const [txns, pouts, sum, comm] = await Promise.all([
-        paymentsApi.getTransactions(),
-        paymentsApi.getPayouts(),
-        paymentsApi.getSummary(),
-        paymentsApi.getCommissionConfig(),
-      ]);
-      setTransactions(txns);
-      setPayouts(pouts);
-      setSummary(sum);
-      setCommissionConfig(comm);
-    }
-    void load();
-  }, []);
+  const batchApproving = batchApprovePayouts.isPending;
 
   // ── Filtered transactions ──────────────────────────────────────────────────
 
@@ -152,25 +152,16 @@ export function SAPayments() {
   }
 
   async function handleApprovePayout() {
-    await paymentsApi.approvePayout(confirmModal.payoutId);
-    setPayouts((prev) =>
-      prev.map((p) =>
-        p.id === confirmModal.payoutId ? { ...p, status: 'approved' } : p
-      )
-    );
+    await approvePayout.mutateAsync(confirmModal.payoutId);
   }
 
   async function handleBatchApprove() {
     const ids = [...selectedPayoutIds];
-    setBatchApproving(true);
     try {
-      await paymentsApi.batchApprovePayouts(ids);
-      setPayouts((prev) =>
-        prev.map((p) => selectedPayoutIds.has(p.id) ? { ...p, status: 'approved' } : p)
-      );
+      await batchApprovePayouts.mutateAsync(ids);
       setSelectedPayoutIds(new Set());
-    } finally {
-      setBatchApproving(false);
+    } catch (err) {
+      console.error('[batchApprovePayouts]', err);
     }
   }
 
@@ -198,15 +189,13 @@ export function SAPayments() {
       if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
       if (provider.secretKey) fields.secret_key = provider.secretKey;
       if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
-      await systemApi.updateIntegration(id, fields).catch(() => {});
+      await updateIntegration.mutateAsync({ service: id, data: fields }).catch(() => {});
     }
     setSavingProvider(null);
   }
 
   async function saveCommission() {
-    setSavingCommission(true);
-    await paymentsApi.updateCommissionConfig(commissionConfig).catch(() => {});
-    setSavingCommission(false);
+    await updateCommissionConfig.mutateAsync(commissionConfig).catch(() => {});
   }
 
   // ── CSV download ───────────────────────────────────────────────────────────

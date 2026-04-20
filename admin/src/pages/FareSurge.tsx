@@ -5,7 +5,10 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Settings2, Zap, Calculator, CheckCircle } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { faresApi } from '@/api/super-admin/fares';
+import {
+  useFareConfigs, useSurgeConfig,
+  useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
+} from '@/hooks/useFareConfig';
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 
 type VehicleType = 'motorcycle' | 'tricycle' | 'car';
@@ -68,6 +71,12 @@ const DEFAULT_FARE: FareConfig = {
 };
 
 export function FareSurge() {
+  const fareQuery = useFareConfigs();
+  const surgeQuery = useSurgeConfig();
+  const updateFares = useUpdateFareConfig();
+  const updateSurge = useUpdateSurgeConfig();
+  const simulateFare = useSimulateFare();
+
   const [configs, setConfigs] = useState<Record<VehicleType, FareConfig>>({
     motorcycle: { ...DEFAULT_FARE, vehicle_type: 'motorcycle' },
     tricycle: { ...DEFAULT_FARE, vehicle_type: 'tricycle', base_fare: 40, minimum_fare: 40, per_km_rate: 8, per_min_rate: 1.5 },
@@ -76,7 +85,7 @@ export function FareSurge() {
   const [surgeConfig, setSurgeConfig] = useState<Partial<SurgeConfig>>({ enabled: true, max_multiplier: 2.5, trigger_ratio: 1.5 });
   const [validationErrors, setValidationErrors] = useState<Record<string, Partial<Record<string, string>>>>({});
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const loading = fareQuery.isPending || surgeQuery.isPending;
 
   const [simDistance, setSimDistance] = useState('');
   const [simTime, setSimTime] = useState('');
@@ -84,24 +93,25 @@ export function FareSurge() {
   const [simResult, setSimResult] = useState<number | null>(null);
   const [simError, setSimError] = useState('');
 
+  // Sync server-loaded fare configs into editable local state once on load.
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      faresApi.getConfigs() as unknown as Promise<FareConfig[]>,
-      faresApi.getSurge() as unknown as Promise<SurgeConfig>,
-    ]).then(([fareList, surge]) => {
-      const mapped: Record<VehicleType, FareConfig> = { ...configs };
+    const fareList = fareQuery.data as FareConfig[] | undefined;
+    if (!fareList) return;
+    setConfigs(prev => {
+      const next = { ...prev };
       for (const fc of fareList) {
         if (fc.vehicle_type === 'motorcycle' || fc.vehicle_type === 'tricycle' || fc.vehicle_type === 'car') {
-          mapped[fc.vehicle_type as VehicleType] = fc;
+          next[fc.vehicle_type as VehicleType] = fc;
         }
       }
-      setConfigs(mapped);
-      if (surge && Object.keys(surge).length > 0) {
-        setSurgeConfig(surge);
-      }
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+      return next;
+    });
+  }, [fareQuery.data]);
+
+  useEffect(() => {
+    const surge = surgeQuery.data as SurgeConfig | undefined;
+    if (surge && Object.keys(surge).length > 0) setSurgeConfig(surge);
+  }, [surgeQuery.data]);
 
   const handleConfigChange = (vehicle: VehicleType, field: keyof FareConfig, value: number) => {
     setConfigs(prev => ({ ...prev, [vehicle]: { ...prev[vehicle], [field]: value } }));
@@ -126,12 +136,9 @@ export function FareSurge() {
 
     const fareUpdates = Object.values(configs);
     Promise.all([
-      faresApi.updateConfigs(fareUpdates),
-      faresApi.updateSurge(surgeConfig as SurgeConfig),
-    ]).then(() => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }).catch(() => {
+      updateFares.mutateAsync(fareUpdates),
+      updateSurge.mutateAsync(surgeConfig as SurgeConfig),
+    ]).finally(() => {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     });
@@ -146,11 +153,11 @@ export function FareSurge() {
     if (!simTime || isNaN(time) || time < 0) { setSimError('Enter a valid time.'); return; }
 
     try {
-      const result = await faresApi.simulate(
-        simVehicle, 
-        { lat: 14.5995, lng: 120.9842 }, 
-        { lat: 14.5995 + dist * 0.01, lng: 120.9842 }
-      );
+      const result = await simulateFare.mutateAsync({
+        vehicle: simVehicle,
+        origin: { lat: 14.5995, lng: 120.9842 },
+        destination: { lat: 14.5995 + dist * 0.01, lng: 120.9842 },
+      });
       setSimResult(result);
     } catch {
       // Fallback: local calculation

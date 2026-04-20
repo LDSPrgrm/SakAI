@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Search, Eye, Ban, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { usersApi } from '@/api/admin/users';
-import type { PassengerUser, DriverUser, AdminStatus } from '@/types/super-admin';
+import { usePassengers, useDrivers, useUpdateUserStatus } from '@/hooks/useUsers';
+import type { PassengerUser, DriverUser } from '@/types/super-admin';
 import type { PaginationMeta } from '@/api/super-admin/_request';
 
 const PAGE_SIZE = 20;
@@ -58,27 +58,19 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 
 export function UserManagement() {
   const [search, setSearch] = useState('');
-  const [riderList, setRiderList] = useState<PassengerUser[]>([]);
-  const [driverList, setDriverList] = useState<DriverUser[]>([]);
-  const [riderMeta, setRiderMeta] = useState<PaginationMeta | undefined>();
-  const [driverMeta, setDriverMeta] = useState<PaginationMeta | undefined>();
   const [riderPage, setRiderPage] = useState(1);
   const [driverPage, setDriverPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, title: '', message: '', onConfirm: () => {} });
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      usersApi.getPassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined }),
-      usersApi.getDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined }),
-    ]).then(([passengers, drivers]) => {
-      setRiderList(passengers.items);
-      setRiderMeta(passengers.meta);
-      setDriverList(drivers.items);
-      setDriverMeta(drivers.meta);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [riderPage, driverPage, search]);
+  const passengersQuery = usePassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined });
+  const driversQuery = useDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined });
+  const updateStatus = useUpdateUserStatus();
+
+  const riderList = (passengersQuery.data?.items ?? []) as PassengerUser[];
+  const driverList = (driversQuery.data?.items ?? []) as DriverUser[];
+  const riderMeta = passengersQuery.data?.meta;
+  const driverMeta = driversQuery.data?.meta;
+  const loading = passengersQuery.isPending || driversQuery.isPending;
 
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
@@ -88,12 +80,7 @@ export function UserManagement() {
       title: `Suspend ${type}`,
       message: `Are you sure you want to suspend ${name}? They will no longer be able to ${type === 'Rider' ? 'book rides' : 'accept rides'}.`,
       onConfirm: () => {
-        usersApi.updateStatus(id, { status: 'suspended' }).catch(() => {});
-        if (type === 'Rider') {
-          setRiderList(prev => prev.map(r => r.id === id ? { ...r, status: 'suspended' as any } : r));
-        } else {
-          setDriverList(prev => prev.map(d => d.id === id ? { ...d, status: 'suspended' as any } : d));
-        }
+        updateStatus.mutate({ id, status: 'suspended' });
       },
     });
   };

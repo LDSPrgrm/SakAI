@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { systemApi } from '@/api/super-admin/system';
+import { useSystemServices } from '@/hooks/useSystem';
 import type { SystemService } from '@/types/super-admin';
 import { cn } from '@/lib/utils';
 
@@ -87,34 +87,20 @@ function ServiceCard({ service }: { service: SystemService }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SASystemHealth() {
-  const [services, setServices] = useState<SystemService[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const servicesQuery = useSystemServices({ refetchInterval: 30_000 });
+  const services = (servicesQuery.data ?? []) as unknown as SystemService[];
+  const loading = servicesQuery.isFetching;
+  const lastRefreshed = servicesQuery.dataUpdatedAt
+    ? new Date(servicesQuery.dataUpdatedAt)
+    : new Date();
   const [, tick] = useState(0); // force re-render every second for "X seconds ago"
 
-  const fetchServices = async () => {
-    setLoading(true);
-    try {
-      const data = await systemApi.getServices() as unknown as SystemService[];
-      setServices(data);
-      setLastRefreshed(new Date());
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchServices = () => { void servicesQuery.refetch(); };
 
   useEffect(() => {
-    fetchServices();
-    intervalRef.current = setInterval(fetchServices, 30_000);
-
     // Tick every second to keep "last updated" text fresh
     const tickInterval = setInterval(() => tick((n) => n + 1), 1000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      clearInterval(tickInterval);
-    };
+    return () => clearInterval(tickInterval);
   }, []);
 
   // Derived counts

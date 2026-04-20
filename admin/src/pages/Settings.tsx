@@ -6,10 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { CheckCircle, Loader2, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { adminsApi } from '@/api/super-admin/admins';
-import { rolesApi } from '@/api/super-admin/roles';
-import { systemApi } from '@/api/super-admin/system';
-import { paymentsApi } from '@/api/super-admin/payments';
+import { useAdmins } from '@/hooks/useAdmins';
+import { useRoles } from '@/hooks/useRoles';
+import { useNotificationTemplates, useUpdateTemplate } from '@/hooks/useSystem';
+import { useGatewayConfigs, useUpdatePaymentConfig } from '@/hooks/usePayments';
 import { ConfirmationModal } from '@/components/super-admin/modals/ConfirmationModal';
 import type { AdminRole, AdminRoleDefinition, AdminUser } from '@/types/super-admin';
 
@@ -259,10 +261,13 @@ interface GatewayConfig {
 }
 
 export function Settings() {
+  const qc = useQueryClient();
   // Admin Users tab
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [adminsLoading, setAdminsLoading] = useState(true);
-  const [roleDefinitions, setRoleDefinitions] = useState<AdminRoleDefinition[]>([]);
+  const adminsQuery = useAdmins();
+  const rolesQuery = useRoles();
+  const admins = (adminsQuery.data ?? []) as unknown as AdminUser[];
+  const adminsLoading = adminsQuery.isPending;
+  const roleDefinitions = (rolesQuery.data ?? []) as unknown as AdminRoleDefinition[];
   const [adminModal, setAdminModal] = useState<
     | { mode: 'add' }
     | { mode: 'edit'; admin: AdminUser }
@@ -272,75 +277,54 @@ export function Settings() {
   const [deactivating, setDeactivating] = useState(false);
 
   // Notifications tab
+  const templatesQuery = useNotificationTemplates();
+  const updateTemplate = useUpdateTemplate();
   const [templates, setTemplates] = useState<NotifTemplate[]>([]);
-  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const templatesLoading = templatesQuery.isPending;
   const [notifSaved, setNotifSaved] = useState(false);
   const [notifErrors, setNotifErrors] = useState<Record<string, string>>({});
 
-  // System Config tab
-  const [gateways, setGateways] = useState<GatewayConfig[]>([]);
-  const [systemSaved, setSystemSaved] = useState(false);
-  const [systemLoading, setSystemLoading] = useState(true);
-
+  // Sync loaded templates into editable local state (shape differs from raw API).
   useEffect(() => {
-    adminsApi.list()
-      .then(r => setAdmins(r as unknown as AdminUser[]))
-      .catch(() => {})
-      .finally(() => setAdminsLoading(false));
+    const raw = templatesQuery.data as unknown as any[] | undefined;
+    if (!raw) return;
+    setTemplates(raw.map(t => ({
+      event: t.event ?? '',
+      channel: t.channel ?? 'push',
+      subject: t.subject ?? '',
+      body: t.body ?? '',
+    })));
+  }, [templatesQuery.data]);
 
-    rolesApi.list()
-      .then(r => setRoleDefinitions(r as unknown as AdminRoleDefinition[]))
-      .catch(() => {});
-
-    systemApi.getNotificationTemplates()
-      .then((raw: any[]) => {
-        const mapped: NotifTemplate[] = raw.map(t => ({
-          event: t.event ?? '',
-          channel: t.channel ?? 'push',
-          subject: t.subject ?? '',
-          body: t.body ?? '',
-        }));
-        setTemplates(mapped);
-      })
-      .catch(() => {})
-      .finally(() => setTemplatesLoading(false));
-
-    systemApi.getIntegrations()
-      .then((raw: any[]) => {
-        // Map integrations (gcash/paymaya/card configs) from system integrations or payment configs
-        return paymentsApi.getGatewayConfigs()
-          .then((configs) => setGateways(configs as unknown as GatewayConfig[]))
-          .catch(() => {});
-      })
-      .catch(() => {})
-      .finally(() => setSystemLoading(false));
-  }, []);
+  // System Config tab
+  const gatewaysQuery = useGatewayConfigs();
+  const updatePaymentConfig = useUpdatePaymentConfig();
+  const gateways = (gatewaysQuery.data ?? []) as unknown as GatewayConfig[];
+  const systemLoading = gatewaysQuery.isPending;
+  const [systemSaved, setSystemSaved] = useState(false);
 
   const handleTemplateChange = (idx: number, field: keyof NotifTemplate, value: string) => {
     setTemplates(prev => prev.map((t, i) => i === idx ? { ...t, [field]: value } : t));
     setNotifErrors(prev => ({ ...prev, [idx]: '' }));
   };
 
-  const handleSaveNotif = () => {
+  const handleSaveNotif = async () => {
     const errs: Record<string, string> = {};
     templates.forEach((t, i) => {
       if (!t.body.trim()) errs[String(i)] = 'Template body cannot be empty.';
     });
     if (Object.keys(errs).length > 0) { setNotifErrors(errs); return; }
     setNotifErrors({});
-    Promise.all(
-      templates.map(t => systemApi.updateTemplate(t.event, t.body).catch(() => {}))
-    ).then(() => {
-      setNotifSaved(true);
-      setTimeout(() => setNotifSaved(false), 3000);
-    });
+    await Promise.all(
+      templates.map(t => updateTemplate.mutateAsync({ event: t.event, body: t.body }).catch(() => {})),
+    );
+    setNotifSaved(true);
+    setTimeout(() => setNotifSaved(false), 3000);
   };
 
   const handleToggleGateway = (idx: number) => {
     const gw = gateways[idx];
-    const updated = { ...gw, is_active: !gw.is_active };
-    setGateways(prev => prev.map((g, i) => i === idx ? updated : g));
-    paymentsApi.updateConfig(gw.provider, { is_active: updated.is_active }).catch(() => {});
+    updatePaymentConfig.mutate({ provider: gw.provider, payload: { is_active: !gw.is_active } });
   };
 
   // Local map of edited API keys keyed by provider. Only providers with an entry
@@ -355,9 +339,7 @@ export function Settings() {
     const entries = Object.entries(editedKeys);
     await Promise.all(
       entries.map(([provider, { field, value }]) =>
-        paymentsApi
-          .updateConfig(provider, { config_fields: { [field]: value } })
-          .catch(() => {}),
+        updatePaymentConfig.mutateAsync({ provider, payload: { config_fields: { [field]: value } } }).catch(() => {}),
       ),
     );
     setEditedKeys({});
@@ -365,12 +347,8 @@ export function Settings() {
     setTimeout(() => setSystemSaved(false), 3000);
   };
 
-  function handleAdminSaved(saved: AdminUser) {
-    if (adminModal?.mode === 'add') {
-      setAdmins(prev => [saved, ...prev]);
-    } else {
-      setAdmins(prev => prev.map(a => a.id === saved.id ? saved : a));
-    }
+  function handleAdminSaved(_saved: AdminUser) {
+    qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
   }
 
   return (
@@ -585,9 +563,7 @@ export function Settings() {
           setDeactivating(true);
           try {
             await adminsApi.deactivate(confirmDeactivate.id);
-            setAdmins(prev =>
-              prev.map(a => a.id === confirmDeactivate.id ? { ...a, status: 'deactivated' } : a),
-            );
+            qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
           } catch {
             // silent — API error doesn't revert optimistic UI since the admin isn't changed yet
           } finally {

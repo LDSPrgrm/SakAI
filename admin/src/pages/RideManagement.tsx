@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { ridesApi } from '@/api/admin/rides';
+import { useRides } from '@/hooks/useRides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
 import type { PaginationMeta } from '@/api/super-admin/_request';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -51,23 +51,14 @@ function paymentBadgeLabel(method: string | null): string {
 const PAGE_SIZE = 20;
 
 export function RideManagement() {
-  const [rides, setRides] = useState<AdminRideItem[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta | undefined>();
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    setLoading(true);
-    ridesApi.list({ status: statusFilter || undefined, page, limit: PAGE_SIZE })
-      .then(({ items, meta }) => {
-        setRides(items);
-        setMeta(meta);
-      })
-      .catch(() => { setRides([]); setMeta(undefined); })
-      .finally(() => setLoading(false));
-  }, [statusFilter, page]);
+  const ridesQuery = useRides({ status: statusFilter || undefined, page, limit: PAGE_SIZE });
+  const rides = (ridesQuery.data?.items ?? []) as AdminRideItem[];
+  const meta = ridesQuery.data?.meta;
+  const loading = ridesQuery.isPending;
 
   // Reset to page 1 when filter changes.
   useEffect(() => { setPage(1); }, [statusFilter]);

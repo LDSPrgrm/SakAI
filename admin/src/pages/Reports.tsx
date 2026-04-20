@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Download, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { metricsApi } from '@/api/super-admin/metrics';
-import { reportsApi } from '@/api/super-admin/reports';
+import { useVehicleDistribution } from '@/hooks/useMetrics';
+import { useReportChart, useReportList, useExportReport } from '@/hooks/useReports';
 
 const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335'];
 
@@ -20,35 +20,23 @@ interface ReportDef {
 }
 
 export function Reports() {
-  const [vehicleData, setVehicleData] = useState<ChartDataPoint[]>([]);
-  const [paymentData, setPaymentData] = useState<ChartDataPoint[]>([]);
-  const [reportList, setReportList] = useState<ReportDef[]>([]);
-  const [loading, setLoading] = useState(true);
+  const vehicleQuery = useVehicleDistribution();
+  const paymentQuery = useReportChart('payment-methods');
+  const reportsQuery = useReportList();
+  const exportReport = useExportReport();
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      metricsApi.getVehicleDistribution().catch(() => [] as ChartDataPoint[]),
-      reportsApi.getChartData('payment-methods').catch(() => [] as ChartDataPoint[]),
-      reportsApi.getReportList().catch(() => [] as ReportDef[]),
-    ]).then(([vehicles, payments, reports]) => {
-      if (vehicles.length > 0) setVehicleData(vehicles as unknown as ChartDataPoint[]);
-      if (payments.length > 0) setPaymentData(payments as unknown as ChartDataPoint[]);
-      if (reports.length > 0) setReportList(reports as unknown as ReportDef[]);
-    }).finally(() => setLoading(false));
-  }, []);
+  const vehicleData = (vehicleQuery.data ?? []) as ChartDataPoint[];
+  const paymentData = (paymentQuery.data ?? []) as ChartDataPoint[];
+  const reportList = (reportsQuery.data ?? []) as ReportDef[];
+  const loading = reportsQuery.isPending;
 
-  const handleExportAll = () => {
-    reportsApi.exportCsv('all').then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  const openExportedCsv = async (type: string) => {
+    const res = await exportReport.mutateAsync(type).catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   };
 
-  const handleDownload = (reportId: string) => {
-    reportsApi.exportCsv(reportId).then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
-  };
+  const handleExportAll = () => openExportedCsv('all');
+  const handleDownload = (reportId: string) => openExportedCsv(reportId);
 
   const displayVehicleData = vehicleData.length > 0 ? vehicleData : [
     { name: 'Motorcycle', value: 65 },

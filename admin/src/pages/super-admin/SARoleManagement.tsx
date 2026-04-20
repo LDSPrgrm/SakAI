@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
-import { rolesApi } from '@/api/super-admin/roles';
+import {
+  useRoles, useCreateRole, useUpdateRole, useDeleteRole, useDuplicateRole,
+} from '@/hooks/useRoles';
 import type { AdminRoleDefinition, RolePermission, RolePermissionKey } from '@/types/super-admin';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -178,7 +180,13 @@ function PermissionGrid({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SARoleManagement() {
-  const [roles, setRoles] = useState<AdminRoleDefinition[]>([]);
+  const rolesQuery = useRoles();
+  const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
+  const deleteRole = useDeleteRole();
+  const duplicateRole = useDuplicateRole();
+  const roles = (rolesQuery.data ?? []) as unknown as AdminRoleDefinition[];
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<AdminRoleDefinition | null>(null);
   const [viewingRole, setViewingRole] = useState<AdminRoleDefinition | null>(null);
@@ -192,13 +200,6 @@ export function SARoleManagement() {
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
     useForm<RoleFormValues>({ resolver: zodResolver(roleSchema) });
-
-  async function loadRoles() {
-    const list = await rolesApi.list() as unknown as AdminRoleDefinition[];
-    setRoles(list);
-  }
-
-  useEffect(() => { loadRoles().catch(() => {}); }, []);
 
   // ── Open helpers ──────────────────────────────────────────────────────────
 
@@ -240,11 +241,9 @@ export function SARoleManagement() {
     };
 
     if (editingRole) {
-      const updated = await rolesApi.update(editingRole.id, body) as unknown as AdminRoleDefinition;
-      setRoles((prev) => prev.map((r) => r.id === editingRole.id ? updated : r));
+      await updateRole.mutateAsync({ id: editingRole.id, data: body });
     } else {
-      const created = await rolesApi.create(body) as unknown as AdminRoleDefinition;
-      setRoles((prev) => [created, ...prev]);
+      await createRole.mutateAsync(body);
     }
 
     setModalOpen(false);
@@ -288,15 +287,12 @@ export function SARoleManagement() {
   // ── Duplicate / delete ────────────────────────────────────────────────────
 
   async function handleDuplicate(role: AdminRoleDefinition) {
-    const copy = await rolesApi.duplicate(role.id) as unknown as AdminRoleDefinition;
-    setRoles((prev) => [...prev, copy]);
+    await duplicateRole.mutateAsync(role.id);
   }
 
   async function handleDelete() {
     if (!deleteConfirm.role) return;
-    const id = deleteConfirm.role.id;
-    await rolesApi.delete(id);
-    setRoles((prev) => prev.filter((r) => r.id !== id));
+    await deleteRole.mutateAsync(deleteConfirm.role.id);
     setDeleteConfirm({ open: false, role: null });
   }
 

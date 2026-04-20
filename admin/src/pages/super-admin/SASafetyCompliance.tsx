@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Search, Eye, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
@@ -15,8 +15,11 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { safetyApi } from '@/api/super-admin/safety';
-import { reportsApi } from '@/api/super-admin/reports';
+import {
+  useIncidents, useKycQueue, useLtfrbCompliance,
+  useUpdateKyc, useBatchKyc,
+} from '@/hooks/useSafety';
+import { useExportReport } from '@/hooks/useReports';
 import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -84,9 +87,17 @@ const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SASafetyCompliance() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [kycQueue, setKycQueue] = useState<KycEntry[]>([]);
-  const [ltfrbData, setLtfrbData] = useState<LtfrbData | null>(null);
+  const incidentsQuery = useIncidents();
+  const kycQuery = useKycQueue();
+  const ltfrbQuery = useLtfrbCompliance();
+  const updateKyc = useUpdateKyc();
+  const batchKyc = useBatchKyc();
+  const exportReport = useExportReport();
+
+  const incidents = (incidentsQuery.data ?? []) as Incident[];
+  const kycQueue = (kycQuery.data ?? []) as KycEntry[];
+  const ltfrbData = (ltfrbQuery.data ?? null) as LtfrbData | null;
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [kycConfirm, setKycConfirm] = useState<KycConfirmState>({
@@ -96,23 +107,7 @@ export function SASafetyCompliance() {
     action: 'approve',
   });
   const [selectedKycIds, setSelectedKycIds] = useState<Set<string>>(new Set());
-  const [batchKycLoading, setBatchKycLoading] = useState(false);
-
-  // ── Load data ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function load() {
-      const [inc, kyc, ltfrb] = await Promise.all([
-        safetyApi.getIncidents(),
-        safetyApi.getKycQueue(),
-        safetyApi.getLtfrbCompliance(),
-      ]);
-      setIncidents(inc);
-      setKycQueue(kyc);
-      setLtfrbData(ltfrb as LtfrbData);
-    }
-    void load();
-  }, []);
+  const batchKycLoading = batchKyc.isPending;
 
   // ── Derived counts ─────────────────────────────────────────────────────────
 
@@ -142,24 +137,17 @@ export function SASafetyCompliance() {
 
   async function handleKycConfirm() {
     const status = kycConfirm.action === 'approve' ? 'approved' : 'rejected';
-    await safetyApi.updateKyc(kycConfirm.entryId, status);
-    setKycQueue((prev) =>
-      prev.map((k) => (k.id === kycConfirm.entryId ? { ...k, status } : k))
-    );
+    await updateKyc.mutateAsync({ id: kycConfirm.entryId, status });
   }
 
   async function handleBatchKyc(action: KycAction) {
     const ids = [...selectedKycIds];
     const status = action === 'approve' ? 'approved' : 'rejected';
-    setBatchKycLoading(true);
     try {
-      await safetyApi.batchKyc({ ids, status });
-      setKycQueue((prev) =>
-        prev.map((k) => selectedKycIds.has(k.id) ? { ...k, status } : k)
-      );
+      await batchKyc.mutateAsync({ ids, status });
       setSelectedKycIds(new Set());
-    } finally {
-      setBatchKycLoading(false);
+    } catch (err) {
+      console.error('[batchKyc]', err);
     }
   }
 
@@ -180,10 +168,9 @@ export function SASafetyCompliance() {
     });
   }
 
-  function handleGenerateReport() {
-    reportsApi.exportCsv('ltfrb').then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  async function handleGenerateReport() {
+    const res = await exportReport.mutateAsync('ltfrb').catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { useAuth } from '@/contexts/AuthContext';
-import { tokenStore } from '@/lib/api';
+import { adminRequest } from '@/api/super-admin/_request';
 import type { PermissionKey } from '@/utils/permissions';
 
 export type { PermissionKey };
@@ -33,21 +33,10 @@ interface PermissionsState {
   clear: () => void;
 }
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
-
+// Uses adminRequest so token refresh on 401 and the shared envelope-unwrap
+// logic apply. The role payload matches the `Role` shape above.
 async function fetchRolePermissions(roleId: string): Promise<Role> {
-  const token = tokenStore.getAccess();
-  const res = await fetch(`${BASE_URL}/admin/roles/${roleId}/permissions`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to load permissions (${res.status})`);
-  const json = await res.json();
-  // Unwrap the standard envelope if present
-  const role = (json?.data ?? json) as Role;
-  return role;
+  return adminRequest<Role>('GET', `/roles/${roleId}/permissions`);
 }
 
 export const usePermissionsStore = create<PermissionsState>((set) => ({
