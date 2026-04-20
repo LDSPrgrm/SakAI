@@ -22,10 +22,12 @@ import { Dashboard } from '@/pages/Dashboard';
 import { UserManagement } from '@/pages/UserManagement';
 import { RideManagement } from '@/pages/RideManagement';
 import { Payments } from '@/pages/Payments';
-import { FareSurge } from '@/pages/FareSurge';
 import { SafetyCompliance } from '@/pages/SafetyCompliance';
 import { Reports } from '@/pages/Reports';
-import { Settings } from '@/pages/Settings';
+// Pages that pull react-hook-form + zod — lazy-load so the libs don't bloat the
+// entry chunk for admins who never hit them.
+const FareSurge = lazy(() => import('@/pages/FareSurge').then(m => ({ default: m.FareSurge })));
+const Settings  = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })));
 
 // Super Admin pages
 const SADashboard = lazy(() => import('@/pages/super-admin/SADashboard').then(m => ({ default: m.SADashboard })));
@@ -97,10 +99,14 @@ export default function App() {
             <Route path="users" element={<UserManagement />} />
             <Route path="rides" element={<RideManagement />} />
             <Route path="payments" element={<Payments />} />
-            <Route path="fare" element={<FareSurge />} />
+            <Route path="fare" element={
+              <Suspense fallback={<PageLoader />}><FareSurge /></Suspense>
+            } />
             <Route path="safety" element={<SafetyCompliance />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="settings" element={
+              <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+            } />
           </Route>
 
           <Route path="/super-admin" element={

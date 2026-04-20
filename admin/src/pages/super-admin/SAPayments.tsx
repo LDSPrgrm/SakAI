@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  AlertCircle,
   Search,
   Download,
 } from 'lucide-react';
@@ -23,7 +22,7 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import type { CommissionConfig, PaymentSummary } from '@/api/super-admin/payments';
+import type { PaymentSummary } from '@/api/super-admin/payments';
 import {
   useTransactions, usePayouts, usePaymentSummary,
   useCommissionConfig, useApprovePayout,
@@ -32,20 +31,10 @@ import {
 import { useUpdateIntegration } from '@/hooks/useSystem';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
-import { maskApiKey } from '@/utils/maskApiKey';
-
-interface GatewayProvider {
-  id: string;
-  label: string;
-  type: 'ewallet' | 'card';
-  apiKey?: string;
-  secret?: string;
-  merchantId?: string;
-  webhookUrl?: string;
-  publishableKey?: string;
-  secretKey?: string;
-  webhookSecret?: string;
-}
+import {
+  GatewayProvidersSection, type GatewayProvider,
+} from '@/components/super-admin/payments/GatewayProvidersSection';
+import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
 
 interface ConfirmState {
   open: boolean;
@@ -60,14 +49,6 @@ function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'paymaya') return 'warning';
   return 'default';
 }
-
-const DEFAULT_COMMISSION: Required<CommissionConfig> & {
-  rates: Required<NonNullable<CommissionConfig['rates']>>;
-} = {
-  rates: { motorcycle: 0, tricycle: 0, car: 0, other: 0 },
-  minimum_commission: 0,
-  promotional_override: 0,
-};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -97,18 +78,6 @@ export function SAPayments() {
     batchName: '',
   });
   const [providers, setProviders] = useState<GatewayProvider[]>([]);
-  const [savingProvider, setSavingProvider] = useState<string | null>(null);
-
-  const [commissionConfig, setCommissionConfig] = useState<typeof DEFAULT_COMMISSION | null>(null);
-  useEffect(() => {
-    if (!commissionQuery.data) return;
-    const data = commissionQuery.data;
-    setCommissionConfig({
-      ...DEFAULT_COMMISSION,
-      ...data,
-      rates: { ...DEFAULT_COMMISSION.rates, ...(data.rates ?? {}) },
-    });
-  }, [commissionQuery.data]);
   const savingCommission = updateCommissionConfig.isPending;
 
   const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
@@ -148,35 +117,20 @@ export function SAPayments() {
 
   // ── Gateway provider helpers ───────────────────────────────────────────────
 
-  function updateProvider(
-    id: string,
-    field: keyof Omit<GatewayProvider, 'id' | 'label'>,
-    value: string
-  ) {
-    setProviders((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-    );
+  async function saveProvider(provider: GatewayProvider) {
+    const fields: Record<string, string> = {};
+    if (provider.apiKey) fields.api_key = provider.apiKey;
+    if (provider.secret) fields.secret = provider.secret;
+    if (provider.merchantId) fields.merchant_id = provider.merchantId;
+    if (provider.webhookUrl) fields.webhook_url = provider.webhookUrl;
+    if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
+    if (provider.secretKey) fields.secret_key = provider.secretKey;
+    if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
+    await updateIntegration.mutateAsync({ service: provider.id, data: fields }).catch(() => {});
   }
 
-  async function saveProvider(id: string) {
-    setSavingProvider(id);
-    const provider = providers.find((p) => p.id === id);
-    if (provider) {
-      const fields: Record<string, string> = {};
-      if (provider.apiKey) fields.api_key = provider.apiKey;
-      if (provider.secret) fields.secret = provider.secret;
-      if (provider.merchantId) fields.merchant_id = provider.merchantId;
-      if (provider.webhookUrl) fields.webhook_url = provider.webhookUrl;
-      if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
-      if (provider.secretKey) fields.secret_key = provider.secretKey;
-      if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
-      await updateIntegration.mutateAsync({ service: id, data: fields }).catch(() => {});
-    }
-    setSavingProvider(null);
-  }
-
-  async function saveCommission() {
-    await updateCommissionConfig.mutateAsync(commissionConfig).catch(() => {});
+  async function saveCommission(values: Parameters<typeof updateCommissionConfig.mutateAsync>[0]) {
+    await updateCommissionConfig.mutateAsync(values).catch(() => {});
   }
 
   // ── CSV download ───────────────────────────────────────────────────────────
@@ -429,148 +383,16 @@ export function SAPayments() {
 
       {/* Section 3 & 4 Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Payment Gateway Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Gateway Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-warning">
-                API keys are masked for security. Only the last 4 characters are visible.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {providers.length === 0 && (
-                <p className="text-sm text-text-muted text-center py-6">
-                  No payment gateways configured. Configure via Settings → System Config.
-                </p>
-              )}
-              {providers.map((provider) => (
-                <div key={provider.id} className="p-4 bg-surface-hover rounded-lg border border-border">
-                  <h4 className="text-sm font-semibold text-text-main mb-3">{provider.label}</h4>
-
-                  {provider.type === 'ewallet' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">API Key</label>
-                        <Input value={maskApiKey(provider.apiKey ?? '')} onChange={e => updateProvider(provider.id, 'apiKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Secret</label>
-                        <Input value={maskApiKey(provider.secret ?? '')} type="password" onChange={e => updateProvider(provider.id, 'secret', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Merchant ID</label>
-                        <Input value={provider.merchantId} onChange={e => updateProvider(provider.id, 'merchantId', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Webhook URL</label>
-                        <Input value={provider.webhookUrl || ''} onChange={e => updateProvider(provider.id, 'webhookUrl', e.target.value)} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs text-text-muted mb-1">Publishable Key</label>
-                        <Input value={maskApiKey(provider.publishableKey ?? '')} onChange={e => updateProvider(provider.id, 'publishableKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Secret Key</label>
-                        <Input value={maskApiKey(provider.secretKey ?? '')} type="password" onChange={e => updateProvider(provider.id, 'secretKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Webhook Secret</label>
-                        <Input value={maskApiKey(provider.webhookSecret ?? '')} type="password" onChange={e => updateProvider(provider.id, 'webhookSecret', e.target.value)} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 flex justify-end">
-                    <Button variant="primary" size="sm" onClick={() => saveProvider(provider.id)} disabled={savingProvider === provider.id}>
-                      {savingProvider === provider.id ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Commission Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Commission Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {commissionConfig ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
-                  <h4 className="text-sm font-semibold text-text-main">Platform Commission Rate</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Motorcycle (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.motorcycle}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, motorcycle: Number(e.target.value) } })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Tricycle (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.tricycle}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, tricycle: Number(e.target.value) } })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Other (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.other}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, other: Number(e.target.value) } })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
-                  <h4 className="text-sm font-semibold text-text-main">Pricing Floors & Promos</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Minimum Commission (₱)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.minimum_commission}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, minimum_commission: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Promotional Override (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.promotional_override}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, promotional_override: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button variant="primary" onClick={saveCommission} disabled={savingCommission}>
-                    {savingCommission ? 'Saving...' : 'Save Commission Settings'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-text-muted text-center py-6">Loading config...</div>
-            )}
-          </CardContent>
-        </Card>
+        <GatewayProvidersSection
+          providers={providers}
+          onChange={setProviders}
+          onSave={saveProvider}
+        />
+        <CommissionConfigCard
+          config={commissionQuery.data}
+          onSave={saveCommission}
+          saving={savingCommission}
+        />
       </div>
 
       {/* Approve Payout Confirm Modal */}

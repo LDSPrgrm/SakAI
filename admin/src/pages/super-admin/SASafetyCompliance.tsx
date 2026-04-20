@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Eye, FileText } from 'lucide-react';
+import { Search, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Table,
@@ -23,21 +23,10 @@ import {
 } from '@/hooks/useSafety';
 import { useExportReport } from '@/hooks/useReports';
 import { formatDate } from '@/utils/formatDate';
+import { LtfrbReportsSection, type LtfrbData } from '@/components/super-admin/safety/LtfrbReportsSection';
 import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-interface LtfrbData {
-  accreditation_status: string;
-  accreditation_expiry: string;
-  driver_compliance_rate: number;
-  insurance_compliance_rate: number;
-  inspection_compliance_rate: number;
-  violations_open: number;
-  violations_resolved: number;
-  last_report_submitted: string;
-  next_report_due: string;
-}
 
 type KycAction = 'approve' | 'reject';
 
@@ -54,29 +43,6 @@ function incidentTypeBadge(type: IncidentType) {
   if (type === 'sos_triggered') return <Badge variant="danger">SOS Triggered</Badge>;
   if (type === 'reported_incident') return <Badge variant="warning">Reported Incident</Badge>;
   return <Badge variant="default">Safety Complaint</Badge>;
-}
-
-function complianceBarColor(rate: number): string {
-  if (rate >= 90) return 'bg-success';
-  if (rate >= 75) return 'bg-warning';
-  return 'bg-danger';
-}
-
-function ComplianceBar({ label, rate }: { label: string; rate: number }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-sm">
-        <span className="text-text-muted">{label}</span>
-        <span className="font-medium text-text-main">{rate}%</span>
-      </div>
-      <div className="h-2 w-full rounded-full bg-surface-hover">
-        <div
-          className={`h-2 rounded-full transition-all ${complianceBarColor(rate)}`}
-          style={{ width: `${rate}%` }}
-        />
-      </div>
-    </div>
-  );
 }
 
 const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
@@ -170,13 +136,6 @@ export function SASafetyCompliance() {
   }
 
   // ── LTFRB helpers ─────────────────────────────────────────────────────────
-
-  function isReportDueSoon(dueDateStr: string): boolean {
-    const due = new Date(dueDateStr);
-    const now = new Date();
-    const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 30;
-  }
 
   async function handleGenerateReport() {
     const res = await exportReport.mutateAsync('ltfrb').catch(() => null);
@@ -420,107 +379,7 @@ export function SASafetyCompliance() {
 
         {/* ── Tab 3: LTFRB Compliance ──────────────────────────────────────── */}
         <TabsContent value="ltfrb">
-          {!ltfrbData ? (
-            <Card>
-              <CardContent className="py-10 text-center text-text-muted">
-                Loading compliance data...
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                {/* Accreditation Status */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-1">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Accreditation Status
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge status={ltfrbData.accreditation_status} />
-                    <span className="text-sm text-text-muted">
-                      Expires {formatDate(ltfrbData.accreditation_expiry)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Open Violations */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-1">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Violations
-                  </p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-lg font-bold text-danger">
-                      {ltfrbData.violations_open}
-                      <span className="text-xs font-normal text-text-muted ml-1">open</span>
-                    </span>
-                    <span className="text-lg font-bold text-success">
-                      {ltfrbData.violations_resolved}
-                      <span className="text-xs font-normal text-text-muted ml-1">resolved</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Driver Compliance Rate */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide mb-3">
-                    Compliance Rates
-                  </p>
-                  <div className="space-y-3">
-                    <ComplianceBar
-                      label="Driver Compliance"
-                      rate={ltfrbData.driver_compliance_rate}
-                    />
-                    <ComplianceBar
-                      label="Insurance Compliance"
-                      rate={ltfrbData.insurance_compliance_rate}
-                    />
-                    <ComplianceBar
-                      label="Vehicle Inspection"
-                      rate={ltfrbData.inspection_compliance_rate}
-                    />
-                  </div>
-                </div>
-
-                {/* Report Dates */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Report Schedule
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Last Submitted</span>
-                      <span className="text-text-main">
-                        {formatDate(ltfrbData.last_report_submitted)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Next Due</span>
-                      <span
-                        className={
-                          isReportDueSoon(ltfrbData.next_report_due)
-                            ? 'text-warning font-medium'
-                            : 'text-text-main'
-                        }
-                      >
-                        {formatDate(ltfrbData.next_report_due)}
-                        {isReportDueSoon(ltfrbData.next_report_due) && (
-                          <span className="ml-1.5 text-xs">(Due soon)</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Generate Report button */}
-              <div className="flex justify-end">
-                <Button variant="primary" onClick={handleGenerateReport}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate LTFRB Report
-                </Button>
-              </div>
-            </div>
-          )}
+          <LtfrbReportsSection data={ltfrbData} onGenerateReport={handleGenerateReport} />
         </TabsContent>
       </Tabs>
 

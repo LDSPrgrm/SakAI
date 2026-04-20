@@ -12,10 +12,10 @@ import {
   useIntegrations, useNotificationTemplates, useFeatureFlags,
   useUpdateIntegration, useTestIntegration, useUpdateTemplate, useToggleFlag,
 } from '@/hooks/useSystem';
-import { authApi } from '@/api/super-admin/auth';
 import type { Integration, IntegrationTestResult } from '@/api/super-admin/system';
 import type { FeatureFlag } from '@/types/super-admin';
 import { maskApiKey } from '@/utils/maskApiKey';
+import { ChangePasswordForm } from '@/components/super-admin/system/ChangePasswordForm';
 
 // ── Local types ───────────────────────────────────────────────────────────────
 
@@ -302,14 +302,6 @@ export function SASystemConfig() {
 
   const [saveBannerVisible, setSaveBannerVisible] = useState(false);
 
-  // Change password state
-  const [cpOldPassword, setCpOldPassword] = useState('');
-  const [cpNewPassword, setCpNewPassword] = useState('');
-  const [cpConfirmPassword, setCpConfirmPassword] = useState('');
-  const [cpLoading, setCpLoading] = useState(false);
-  const [cpError, setCpError] = useState('');
-  const [cpSuccess, setCpSuccess] = useState(false);
-
   const showSaveBanner = () => {
     setSaveBannerVisible(true);
     setTimeout(() => setSaveBannerVisible(false), 3000);
@@ -332,31 +324,6 @@ export function SASystemConfig() {
     await toggleFlagMut.mutateAsync({ key, enabled: next });
     showSaveBanner();
   };
-
-  async function handleChangePassword() {
-    if (cpNewPassword !== cpConfirmPassword) {
-      setCpError('New passwords do not match.');
-      return;
-    }
-    if (cpNewPassword.length < 8) {
-      setCpError('Password must be at least 8 characters.');
-      return;
-    }
-    setCpLoading(true);
-    setCpError('');
-    setCpSuccess(false);
-    try {
-      await authApi.changePassword({ old_password: cpOldPassword, new_password: cpNewPassword });
-      setCpSuccess(true);
-      setCpOldPassword('');
-      setCpNewPassword('');
-      setCpConfirmPassword('');
-    } catch {
-      setCpError('Failed to change password. Check your current password and try again.');
-    } finally {
-      setCpLoading(false);
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -432,65 +399,7 @@ export function SASystemConfig() {
 
             {/* Tab 4 — Account / Change Password */}
             <TabsContent value="account">
-              <div className="max-w-md space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="w-4 h-4 text-text-muted" />
-                  <h3 className="font-semibold text-text-main">Change Password</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">Current Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Enter current password"
-                      value={cpOldPassword}
-                      onChange={(e) => {
-                        setCpOldPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Min. 8 characters"
-                      value={cpNewPassword}
-                      onChange={(e) => {
-                        setCpNewPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">Confirm New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Repeat new password"
-                      value={cpConfirmPassword}
-                      onChange={(e) => {
-                        setCpConfirmPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                </div>
-                {cpError && (
-                  <p className="text-sm text-danger">{cpError}</p>
-                )}
-                {cpSuccess && (
-                  <p className="text-sm text-success">Password changed successfully.</p>
-                )}
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={cpLoading || !cpOldPassword || !cpNewPassword || !cpConfirmPassword}
-                >
-                  {cpLoading ? 'Saving…' : 'Change Password'}
-                </Button>
-              </div>
+              <ChangePasswordForm />
             </TabsContent>
           </Tabs>
         </CardContent>
