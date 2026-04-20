@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Search, Eye, Ban, CheckCircle } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 import { usePassengers, useDrivers, useUpdateUserStatus } from '@/hooks/useUsers';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
@@ -39,6 +40,9 @@ interface ConfirmDialog {
 }
 
 export function UserManagement() {
+  const { can } = usePermissions();
+  const canWrite = can('user_management', 'write');
+  const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
   const [search, setSearch] = useState('');
   const [riderPage, setRiderPage] = useState(1);
   const [driverPage, setDriverPage] = useState(1);
@@ -165,6 +169,8 @@ export function UserManagement() {
                               size="icon"
                               className="text-danger"
                               aria-label="Suspend rider"
+                              disabled={!canWrite}
+                              title={writeDisabledTitle}
                               onClick={() => suspendUser(rider.id, rider.name, 'Rider')}
                             >
                               <Ban className="w-4 h-4" />
@@ -237,6 +243,8 @@ export function UserManagement() {
                               size="icon"
                               className="text-danger"
                               aria-label="Suspend driver"
+                              disabled={!canWrite}
+                              title={writeDisabledTitle}
                               onClick={() => suspendUser(driver.id, driver.name, 'Driver')}
                             >
                               <Ban className="w-4 h-4" />

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   useIncidents, useKycQueue, useLtfrbCompliance,
   useResolveIncident, useUpdateKyc,
@@ -79,6 +80,9 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 }
 
 export function SafetyCompliance() {
+  const { can } = usePermissions();
+  const canWrite = can('safety_incidents', 'write');
+  const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
   const incidentsQuery = useIncidents();
   const kycQuery = useKycQueue();
   const complianceQuery = useLtfrbCompliance();
@@ -217,7 +221,13 @@ export function SafetyCompliance() {
                     </TableCell>
                     <TableCell className="text-right">
                       {inc.status !== 'resolved' ? (
-                        <Button size="sm" variant="secondary" onClick={() => handleResolveIncident(inc.id)}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleResolveIncident(inc.id)}
+                          disabled={!canWrite}
+                          title={writeDisabledTitle}
+                        >
                           Resolve
                         </Button>
                       ) : (
@@ -260,10 +270,24 @@ export function SafetyCompliance() {
                         <KycDocPreview docs={driver.docs ?? []} />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="success" className="w-full" disabled={updateKyc.isPending} onClick={() => approveDriver(driver.id, driver.driver_name)}>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          className="w-full"
+                          disabled={updateKyc.isPending || !canWrite}
+                          title={writeDisabledTitle}
+                          onClick={() => approveDriver(driver.id, driver.driver_name)}
+                        >
                           Approve
                         </Button>
-                        <Button size="sm" variant="danger" className="w-full" disabled={updateKyc.isPending} onClick={() => rejectDriver(driver.id, driver.driver_name)}>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          className="w-full"
+                          disabled={updateKyc.isPending || !canWrite}
+                          title={writeDisabledTitle}
+                          onClick={() => rejectDriver(driver.id, driver.driver_name)}
+                        >
                           Reject
                         </Button>
                       </div>
@@ -308,7 +332,13 @@ export function SafetyCompliance() {
                   {compliance != null ? compliance.violation_count : '—'}
                 </Badge>
               </div>
-              <Button variant="outline" className="w-full mt-2" onClick={handleGenerateLtfrb}>
+              <Button
+                variant="outline"
+                className="w-full mt-2"
+                onClick={handleGenerateLtfrb}
+                disabled={!canWrite}
+                title={writeDisabledTitle}
+              >
                 Generate LTFRB Report
               </Button>
             </CardContent>

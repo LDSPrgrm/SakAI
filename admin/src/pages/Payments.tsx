@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   usePaymentSummary, useTransactions, usePayouts, useApprovePayout,
 } from '@/hooks/usePayments';
@@ -33,6 +34,9 @@ function paymentMethodLabel(method: string): string {
 }
 
 export function Payments() {
+  const { can } = usePermissions();
+  const canWrite = can('payments', 'write');
+  const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
   const [search, setSearch] = useState('');
   const summaryQuery = usePaymentSummary();
   const transactionsQuery = useTransactions();
@@ -69,7 +73,13 @@ export function Payments() {
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-text-main">Payments & Earnings</h1>
-        <Button variant="outline" className="gap-2" onClick={handleExport}>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={handleExport}
+          disabled={!canWrite}
+          title={writeDisabledTitle}
+        >
           <Download className="w-4 h-4" /> Export Weekly Report
         </Button>
       </div>
@@ -183,7 +193,14 @@ export function Payments() {
                       <p className="text-xs text-text-muted">{payout.driver_count} Drivers • {formatPHP(payout.total_amount)}</p>
                       {payout.period && <p className="text-xs text-text-muted">{payout.period}</p>}
                     </div>
-                    <Button size="sm" onClick={() => handleApprovePayout(payout.id)}>Approve</Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprovePayout(payout.id)}
+                      disabled={!canWrite}
+                      title={writeDisabledTitle}
+                    >
+                      Approve
+                    </Button>
                   </div>
                 ))}
               </div>
