@@ -213,6 +213,40 @@ func (uc *adminUseCase) GetAdminActivity(ctx context.Context, adminID uuid.UUID)
 	return logs, err
 }
 
+// ResetUserPassword lets a superadmin set another admin's password without
+// knowing the current one. The target account must exist.
+func (uc *adminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID uuid.UUID, newPassword string) error {
+	if actorID == targetID {
+		return errors.New("use /admin/auth/password to change your own password")
+	}
+	if len(newPassword) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+
+	target, err := uc.userRepo.GetByID(ctx, targetID)
+	if err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := uc.userRepo.UpdatePassword(ctx, targetID, string(hash)); err != nil {
+		return err
+	}
+
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "RESET_PASSWORD",
+		ResourceType: "admin_user",
+		ResourceID:   targetID.String(),
+		AfterState:   []byte(fmt.Sprintf(`{"email":%q}`, target.Email)),
+		IPAddress:    "internal",
+	})
+	return nil
+}
+
 func (uc *adminUseCase) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
 	return uc.incidentRepo.ListIncidents(ctx, status)
 }

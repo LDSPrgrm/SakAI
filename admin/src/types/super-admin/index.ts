@@ -19,7 +19,7 @@ export type { FareConfig, SurgeConfig, FareSimulationRequest, FareSimulationResp
 export type { Transaction, DriverPayout, PaymentSummary, CommissionConfig, PaymentGatewayConfig, BatchApproveRequest } from './payment';
 
 // Incidents / Safety
-export type { Incident, KycEntry, ComplianceData, IncidentResolveRequest } from './incident';
+export type { Incident, KycEntry, KycDocument, ComplianceData, IncidentResolveRequest } from './incident';
 
 // Audit
 export type { AuditLog, AuditLogResponse } from './audit';
@@ -57,13 +57,17 @@ export interface AdminApiResponse<T> {
 }
 
 // User types (passenger/driver)
+export type EndUserStatus = 'active' | 'suspended' | 'deactivated';
+
 export interface PassengerUser {
   id: string; name: string; email: string; role: 'passenger';
   created_at: string; phone?: string;
+  status?: EndUserStatus;
 }
 export interface DriverUser {
   id: string; name: string; email: string; role: 'driver';
   created_at: string; phone?: string;
+  status?: EndUserStatus;
   vehicle?: { make: string; model: string; color: string; plate: string } | null;
 }
 

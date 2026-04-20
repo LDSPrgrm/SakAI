@@ -14,6 +14,7 @@ import {
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PaginationMeta } from '@/api/super-admin/_request';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
 
 export interface ServerPagination {
   meta?: PaginationMeta;
@@ -122,7 +123,12 @@ export function DataTable<TData>({
       </div>
 
       {serverPagination ? (
-        <ServerPaginationFooter state={serverPagination} />
+        <PaginationFooter
+          meta={serverPagination.meta}
+          page={serverPagination.page}
+          onPageChange={serverPagination.onPageChange}
+          label="rows"
+        />
       ) : table.getPageCount() > 1 ? (
         <div className="flex items-center justify-between text-sm text-text-muted">
           <span>
@@ -152,33 +158,3 @@ export function DataTable<TData>({
   );
 }
 
-function ServerPaginationFooter({ state }: { state: ServerPagination }) {
-  const totalPages = state.meta?.total_pages ?? 1;
-  const totalItems = state.meta?.total_items ?? 0;
-  if (totalPages <= 1 && totalItems === 0) return null;
-  return (
-    <div className="flex items-center justify-between text-sm text-text-muted">
-      <span>
-        Page {state.page} of {totalPages} · {totalItems} rows
-      </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => state.onPageChange(state.page - 1)}
-          disabled={state.page <= 1}
-          className="p-1 rounded hover:bg-surface-hover disabled:opacity-30"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => state.onPageChange(state.page + 1)}
-          disabled={state.page >= totalPages}
-          className="p-1 rounded hover:bg-surface-hover disabled:opacity-30"
-          aria-label="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}

@@ -4,51 +4,55 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Settings2, Zap, Calculator, CheckCircle } from 'lucide-react';
-import { formatPHP } from '@/lib/utils';
-import { faresApi } from '@/api/super-admin/fares';
+import {
+  useFareConfigs, useSurgeConfig,
+  useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
+} from '@/hooks/useFareConfig';
+import { FareSimulatorForm } from '@/components/forms/FareSimulatorForm';
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 
 type VehicleType = 'motorcycle' | 'tricycle' | 'car';
+type NumericFareField = Exclude<keyof FareConfig, 'vehicle_type'>;
+
+const FARE_FIELDS: { key: NumericFareField; label: string }[] = [
+  { key: 'base_fare', label: 'Base Fare (PHP)' },
+  { key: 'minimum_fare', label: 'Minimum Fare (PHP)' },
+  { key: 'per_km_rate', label: 'Per Kilometer Rate (PHP)' },
+  { key: 'per_min_rate', label: 'Per Minute Rate (PHP)' },
+  { key: 'booking_fee', label: 'Booking Fee (PHP)' },
+  { key: 'cancellation_fee', label: 'Cancellation Fee (PHP)' },
+];
 
 interface FareFormProps {
   vehicle: VehicleType;
   config: FareConfig;
-  onChange: (vehicle: VehicleType, field: keyof FareConfig, value: number) => void;
-  errors: Partial<Record<keyof FareConfig, string>>;
+  onChange: (vehicle: VehicleType, field: NumericFareField, value: number) => void;
+  errors: Partial<Record<NumericFareField, string>>;
 }
 
 function FareForm({ vehicle, config, onChange, errors }: FareFormProps) {
-  const fields: { key: keyof FareConfig; label: string }[] = [
-    { key: 'base_fare', label: 'Base Fare (PHP)' },
-    { key: 'minimum_fare', label: 'Minimum Fare (PHP)' },
-    { key: 'per_km_rate', label: 'Per Kilometer Rate (PHP)' },
-    { key: 'per_min_rate', label: 'Per Minute Rate (PHP)' },
-    { key: 'booking_fee', label: 'Booking Fee (PHP)' },
-    { key: 'cancellation_fee', label: 'Cancellation Fee (PHP)' },
-  ];
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {fields.map(({ key, label }) => (
+      {FARE_FIELDS.map(({ key, label }) => (
         <div key={key}>
           <label className="block text-sm font-medium text-text-muted mb-1">{label}</label>
           <Input
             type="number"
             min={0}
             step={0.5}
-            value={(config as any)[key] ?? 0}
+            value={config[key] ?? 0}
             onChange={(e) => onChange(vehicle, key, parseFloat(e.target.value) || 0)}
-            className={(errors as any)[key] ? 'border-danger' : ''}
+            className={errors[key] ? 'border-danger' : ''}
           />
-          {(errors as any)[key] && <p className="text-xs text-danger mt-1">{(errors as any)[key]}</p>}
+          {errors[key] && <p className="text-xs text-danger mt-1">{errors[key]}</p>}
         </div>
       ))}
     </div>
   );
 }
 
-function validateConfig(config: FareConfig): Partial<Record<string, string>> {
-  const errs: Partial<Record<string, string>> = {};
+function validateConfig(config: FareConfig): Partial<Record<NumericFareField, string>> {
+  const errs: Partial<Record<NumericFareField, string>> = {};
   if ((config.base_fare ?? 0) <= 0) errs.base_fare = 'Must be greater than 0';
   if ((config.minimum_fare ?? 0) <= 0) errs.minimum_fare = 'Must be greater than 0';
   if ((config.minimum_fare ?? 0) > (config.base_fare ?? 0)) errs.minimum_fare = 'Cannot exceed base fare';
@@ -68,96 +72,73 @@ const DEFAULT_FARE: FareConfig = {
 };
 
 export function FareSurge() {
+  const fareQuery = useFareConfigs();
+  const surgeQuery = useSurgeConfig();
+  const updateFares = useUpdateFareConfig();
+  const updateSurge = useUpdateSurgeConfig();
+  const simulateFare = useSimulateFare();
+
   const [configs, setConfigs] = useState<Record<VehicleType, FareConfig>>({
     motorcycle: { ...DEFAULT_FARE, vehicle_type: 'motorcycle' },
     tricycle: { ...DEFAULT_FARE, vehicle_type: 'tricycle', base_fare: 40, minimum_fare: 40, per_km_rate: 8, per_min_rate: 1.5 },
     car: { ...DEFAULT_FARE, vehicle_type: 'car', base_fare: 80, minimum_fare: 80, per_km_rate: 15, per_min_rate: 3 },
   });
   const [surgeConfig, setSurgeConfig] = useState<Partial<SurgeConfig>>({ enabled: true, max_multiplier: 2.5, trigger_ratio: 1.5 });
-  const [validationErrors, setValidationErrors] = useState<Record<string, Partial<Record<string, string>>>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<VehicleType, Partial<Record<NumericFareField, string>>>>({
+    motorcycle: {}, tricycle: {}, car: {},
+  });
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const [simDistance, setSimDistance] = useState('');
-  const [simTime, setSimTime] = useState('');
-  const [simVehicle, setSimVehicle] = useState<VehicleType>('motorcycle');
-  const [simResult, setSimResult] = useState<number | null>(null);
-  const [simError, setSimError] = useState('');
+  const loading = fareQuery.isPending || surgeQuery.isPending;
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      faresApi.getConfigs() as unknown as Promise<FareConfig[]>,
-      faresApi.getSurge() as unknown as Promise<SurgeConfig>,
-    ]).then(([fareList, surge]) => {
-      const mapped: Record<VehicleType, FareConfig> = { ...configs };
+    const fareList = fareQuery.data as FareConfig[] | undefined;
+    if (!fareList) return;
+    setConfigs(prev => {
+      const next = { ...prev };
       for (const fc of fareList) {
         if (fc.vehicle_type === 'motorcycle' || fc.vehicle_type === 'tricycle' || fc.vehicle_type === 'car') {
-          mapped[fc.vehicle_type as VehicleType] = fc;
+          next[fc.vehicle_type as VehicleType] = fc;
         }
       }
-      setConfigs(mapped);
-      if (surge && Object.keys(surge).length > 0) {
-        setSurgeConfig(surge);
-      }
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+      return next;
+    });
+  }, [fareQuery.data]);
 
-  const handleConfigChange = (vehicle: VehicleType, field: keyof FareConfig, value: number) => {
+  useEffect(() => {
+    const surge = surgeQuery.data as SurgeConfig | undefined;
+    if (surge && Object.keys(surge).length > 0) setSurgeConfig(surge);
+  }, [surgeQuery.data]);
+
+  const handleConfigChange = (vehicle: VehicleType, field: NumericFareField, value: number) => {
     setConfigs(prev => ({ ...prev, [vehicle]: { ...prev[vehicle], [field]: value } }));
     setSaved(false);
-    if ((validationErrors[vehicle] as any)?.[field]) {
+    if (validationErrors[vehicle]?.[field]) {
       setValidationErrors(prev => ({ ...prev, [vehicle]: { ...prev[vehicle], [field]: undefined } }));
     }
   };
 
   const handleSave = () => {
-    const allErrors: Record<string, Partial<Record<string, string>>> = {};
+    const allErrors: Record<VehicleType, Partial<Record<NumericFareField, string>>> = {
+      motorcycle: {}, tricycle: {}, car: {},
+    };
     let hasErrors = false;
-    for (const [vehicle, config] of Object.entries(configs)) {
-      const errs = validateConfig(config);
+    (Object.keys(configs) as VehicleType[]).forEach((vehicle) => {
+      const errs = validateConfig(configs[vehicle]);
       if (Object.keys(errs).length > 0) {
         allErrors[vehicle] = errs;
         hasErrors = true;
       }
-    }
+    });
     if (hasErrors) { setValidationErrors(allErrors); return; }
-    setValidationErrors({});
+    setValidationErrors({ motorcycle: {}, tricycle: {}, car: {} });
 
-    const fareUpdates = Object.values(configs);
     Promise.all([
-      faresApi.updateConfigs(fareUpdates),
-      faresApi.updateSurge(surgeConfig as SurgeConfig),
-    ]).then(() => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }).catch(() => {
+      updateFares.mutateAsync(Object.values(configs)),
+      updateSurge.mutateAsync(surgeConfig as SurgeConfig),
+    ]).finally(() => {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     });
-  };
-
-  const handleCalculate = async () => {
-    setSimError('');
-    setSimResult(null);
-    const dist = parseFloat(simDistance);
-    const time = parseFloat(simTime);
-    if (!simDistance || isNaN(dist) || dist <= 0) { setSimError('Enter a valid distance.'); return; }
-    if (!simTime || isNaN(time) || time < 0) { setSimError('Enter a valid time.'); return; }
-
-    try {
-      const result = await faresApi.simulate(
-        simVehicle, 
-        { lat: 14.5995, lng: 120.9842 }, 
-        { lat: 14.5995 + dist * 0.01, lng: 120.9842 }
-      );
-      setSimResult(result);
-    } catch {
-      // Fallback: local calculation
-      const cfg = configs[simVehicle];
-      const fare = Math.max(cfg.minimum_fare ?? 0, (cfg.base_fare ?? 0) + dist * (cfg.per_km_rate ?? 0) + time * (cfg.per_min_rate ?? 0));
-      setSimResult(fare);
-    }
   };
 
   return (
@@ -199,7 +180,7 @@ export function FareSurge() {
                       vehicle={v}
                       config={configs[v]}
                       onChange={handleConfigChange}
-                      errors={validationErrors[v] ?? {}}
+                      errors={validationErrors[v]}
                     />
                   </TabsContent>
                 ))}
@@ -223,10 +204,11 @@ export function FareSurge() {
                   <p className="text-xs text-text-muted">Based on demand/supply ratio</p>
                 </div>
                 <button
-                  aria-label={surgeConfig.enabled ? 'Disable auto-surge' : 'Enable auto-surge'}
-                  aria-checked={surgeConfig.enabled}
+                  type="button"
                   role="switch"
-                  onClick={() => setSurgeConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
+                  aria-checked={!!surgeConfig.enabled}
+                  aria-label={surgeConfig.enabled ? 'Disable auto-surge' : 'Enable auto-surge'}
+                  onClick={() => { setSurgeConfig(prev => ({ ...prev, enabled: !prev.enabled })); setSaved(false); }}
                   className={`w-11 h-6 rounded-full transition-colors relative ${surgeConfig.enabled ? 'bg-primary' : 'bg-border'}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${surgeConfig.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -244,7 +226,7 @@ export function FareSurge() {
                     max={5}
                     className="w-full"
                     disabled={!surgeConfig.enabled}
-                    onChange={(e) => setSurgeConfig(prev => ({ ...prev, max_multiplier: parseFloat(e.target.value) || 1 }))}
+                    onChange={(e) => { setSurgeConfig(prev => ({ ...prev, max_multiplier: parseFloat(e.target.value) || 1 })); setSaved(false); }}
                   />
                   <span className="text-text-muted">x</span>
                 </div>
@@ -261,13 +243,11 @@ export function FareSurge() {
                     max={10}
                     className="w-full"
                     disabled={!surgeConfig.enabled}
-                    onChange={(e) => setSurgeConfig(prev => ({ ...prev, trigger_ratio: parseFloat(e.target.value) || 1 }))}
+                    onChange={(e) => { setSurgeConfig(prev => ({ ...prev, trigger_ratio: parseFloat(e.target.value) || 1 })); setSaved(false); }}
                   />
                   <span className="text-text-muted">x</span>
                 </div>
               </div>
-
-              <Button variant="outline" className="w-full">Manage Surge Zones</Button>
             </CardContent>
           </Card>
 
@@ -278,45 +258,11 @@ export function FareSurge() {
                 Fare Simulator
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                placeholder="Distance (km)"
-                type="number"
-                min={0}
-                value={simDistance}
-                onChange={(e) => { setSimDistance(e.target.value); setSimError(''); setSimResult(null); }}
+            <CardContent>
+              <FareSimulatorForm
+                configs={configs}
+                simulate={(args) => simulateFare.mutateAsync(args)}
               />
-              <Input
-                placeholder="Estimated Time (mins)"
-                type="number"
-                min={0}
-                value={simTime}
-                onChange={(e) => { setSimTime(e.target.value); setSimError(''); setSimResult(null); }}
-              />
-              <select
-                aria-label="Vehicle type"
-                value={simVehicle}
-                onChange={(e) => { setSimVehicle(e.target.value as VehicleType); setSimResult(null); }}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="motorcycle">Motorcycle</option>
-                <option value="tricycle">Tricycle</option>
-                <option value="car">Car (4-seater)</option>
-              </select>
-              {simError && <p className="text-xs text-danger">{simError}</p>}
-              <Button className="w-full" onClick={handleCalculate}>Calculate Estimate</Button>
-
-              <div className="mt-4 p-3 bg-surface-hover rounded-lg border border-border text-center">
-                <p className="text-xs text-text-muted">Estimated Fare</p>
-                <p className="text-2xl font-bold text-text-main">
-                  {simResult !== null ? formatPHP(simResult) : '—'}
-                </p>
-                {simResult !== null && (
-                  <p className="text-xs text-text-muted mt-1">
-                    Base {formatPHP(configs[simVehicle].base_fare)} + {simDistance}km + {simTime}min
-                  </p>
-                )}
-              </div>
             </CardContent>
           </Card>
         </div>

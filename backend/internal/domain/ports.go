@@ -390,6 +390,9 @@ type AdminUseCase interface {
 	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
 	DeactivateAdmin(ctx context.Context, actorID, targetID uuid.UUID) error
 	GetAdminActivity(ctx context.Context, adminID uuid.UUID) ([]*AuditLogEntry, error)
+	// ResetUserPassword lets a superadmin set another admin's password.
+	// Distinct from AuthUseCase.ChangePassword which requires the old password.
+	ResetUserPassword(ctx context.Context, actorID, targetID uuid.UUID, newPassword string) error
 
 	// Ride browsing (admin)
 	ListRides(ctx context.Context, filter AdminRideFilter) ([]*AdminRideItem, PaginationMeta, error)
@@ -426,6 +429,8 @@ type RoleUseCase interface {
 	DeleteRole(ctx context.Context, actorID, roleID uuid.UUID) error
 	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]RolePermission, error)
 	GetRoleAdmins(ctx context.Context, roleID uuid.UUID) ([]*User, error)
+	// DuplicateRole clones an existing role ("Copy of <name>") with the same permissions.
+	DuplicateRole(ctx context.Context, actorID, roleID uuid.UUID) (*Role, error)
 }
 
 // PaymentUseCase handles payment operations.

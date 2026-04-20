@@ -17,7 +17,7 @@ export function KYCQueue({ data, onApprove, onReject, className }: KYCQueueProps
   const columns: ColumnDef<KycEntry>[] = [
     { accessorKey: 'driver_name',  header: 'Driver' },
     { accessorKey: 'submitted_at', header: 'Submitted', cell: ({ getValue }) => <DateDisplay iso={getValue() as string} format="relative" /> },
-    { accessorKey: 'docs',         header: 'Documents', cell: ({ getValue }) => <span>{(getValue() as string[]).length} docs</span> },
+    { accessorKey: 'docs',         header: 'Documents', cell: ({ getValue }) => <span>{((getValue() as unknown[] | undefined) ?? []).length} docs</span> },
     { accessorKey: 'status',       header: 'Status',    cell: ({ getValue }) => <StatusBadge status={String(getValue())} /> },
     {
       id: 'actions',

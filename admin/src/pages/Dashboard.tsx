@@ -1,27 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Users, Car, Clock, MapPin, Activity } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { formatPHP } from '@/lib/utils';
-import { api, HealthResponse } from '@/lib/api';
-import { metricsApi, type ChartPoint } from '@/api/super-admin/metrics';
-import type { DashboardMetrics } from '@/types/super-admin';
+import {
+  useDashboardMetrics, useRidesChart, useRevenueChart, useActivityFeed,
+} from '@/hooks/useMetrics';
+import { useHealth } from '@/hooks/useSystem';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AXIS_COLOR, GRID_COLOR, PRIMARY_LINE_COLOR, TOOLTIP_CURSOR_FILL, DARK_TOOLTIP_STYLE,
+} from '@/utils/chartColors';
 
 export function Dashboard() {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [ridesChart, setRidesChart] = useState<ChartPoint[]>([]);
-  const [revenueChart, setRevenueChart] = useState<ChartPoint[]>([]);
-  const [activity, setActivity] = useState<{ id: string; message: string; time: string; isAlert: boolean }[]>([]);
+  const healthQuery = useHealth();
+  const metricsQuery = useDashboardMetrics();
+  const ridesChartQuery = useRidesChart();
+  const revenueChartQuery = useRevenueChart();
+  const activityQuery = useActivityFeed();
 
-  useEffect(() => {
-    api.health.check().then(setHealth).catch(() => setHealth({ status: 'down' }));
-    metricsApi.getDashboard().then(setMetrics).catch(() => {});
-    metricsApi.getRidesChart().then(setRidesChart).catch(() => {});
-    metricsApi.getRevenueChart().then(setRevenueChart).catch(() => {});
-    metricsApi.getActivityFeed().then(setActivity).catch(() => {});
-  }, []);
+  const health = healthQuery.isError
+    ? { status: 'down' as const }
+    : healthQuery.data;
+  const metrics = metricsQuery.data;
+  const ridesChart = ridesChartQuery.data ?? [];
+  const revenueChart = revenueChartQuery.data ?? [];
+  const activity = activityQuery.data ?? [];
 
   const statusColor = health?.status === 'ok'
     ? 'text-success'
@@ -49,13 +53,13 @@ export function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <MetricCard
           title="Active Riders"
-          value={metrics ? (metrics.total_riders ?? metrics.active_riders ?? 0).toLocaleString() : '—'}
+          value={metrics ? (metrics.total_riders ?? 0).toLocaleString() : '—'}
           icon={<Users className="w-5 h-5 text-primary" />}
           trend={metrics?.riders_trend ?? ''}
         />
         <MetricCard
           title="Active Drivers"
-          value={metrics ? (metrics.total_drivers ?? metrics.active_drivers ?? 0).toLocaleString() : '—'}
+          value={metrics ? (metrics.total_drivers ?? 0).toLocaleString() : '—'}
           icon={<Car className="w-5 h-5 text-primary" />}
           trend={metrics?.drivers_trend ?? ''}
         />
@@ -81,7 +85,7 @@ export function Dashboard() {
         />
         <MetricCard
           title="Platform Uptime"
-          value={metrics ? `${metrics.platform_uptime ?? metrics.system_uptime ?? 0}%` : '—'}
+          value={metrics ? `${metrics.platform_uptime ?? 0}%` : '—'}
           icon={<Activity className="w-5 h-5 text-success" />}
           trend=""
         />
@@ -96,14 +100,14 @@ export function Dashboard() {
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={ridesChart} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                  <XAxis dataKey="name" stroke="#A0A0A0" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#A0A0A0" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+                  <XAxis dataKey="name" stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#333', color: '#FFF' }}
-                    itemStyle={{ color: '#1A73E8' }}
+                    {...DARK_TOOLTIP_STYLE}
+                    itemStyle={{ color: PRIMARY_LINE_COLOR }}
                   />
-                  <Line type="monotone" dataKey="rides" stroke="#1A73E8" strokeWidth={3} dot={{ r: 4, fill: '#1A73E8' }} activeDot={{ r: 6 }} connectNulls />
+                  <Line type="monotone" dataKey="rides" stroke={PRIMARY_LINE_COLOR} strokeWidth={3} dot={{ r: 4, fill: PRIMARY_LINE_COLOR }} activeDot={{ r: 6 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -143,21 +147,21 @@ export function Dashboard() {
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueChart} margin={{ top: 5, right: 20, bottom: 5, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                  <XAxis dataKey="name" stroke="#A0A0A0" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
+                  <XAxis dataKey="name" stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis
-                    stroke="#A0A0A0"
+                    stroke={AXIS_COLOR}
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => `₱${value / 1000}k`}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#333', color: '#FFF' }}
-                    cursor={{ fill: '#2A2A2A' }}
+                    {...DARK_TOOLTIP_STYLE}
+                    cursor={{ fill: TOOLTIP_CURSOR_FILL }}
                     formatter={(value: number) => [formatPHP(value), 'Revenue']}
                   />
-                  <Bar dataKey="revenue" fill="#1A73E8" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill={PRIMARY_LINE_COLOR} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

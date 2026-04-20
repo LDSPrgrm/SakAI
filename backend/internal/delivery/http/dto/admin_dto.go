@@ -297,3 +297,20 @@ type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
+
+// ResetPasswordRequest is the superadmin-initiated password reset payload
+// (PUT /admin/users/{id}/password).
+type ResetPasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// CreateAuditEntryRequest matches the OpenAPI CreateAuditEntryRequest schema.
+// Before/after state are arbitrary JSON objects persisted as raw bytes.
+type CreateAuditEntryRequest struct {
+	ResourceType string         `json:"resource_type" binding:"required"`
+	ResourceID   string         `json:"resource_id"   binding:"required"`
+	Action       string         `json:"action"        binding:"required,oneof=create update delete approve reject login logout"`
+	BeforeState  map[string]any `json:"before_state,omitempty"`
+	AfterState   map[string]any `json:"after_state,omitempty"`
+	Reason       string         `json:"reason,omitempty"`
+}

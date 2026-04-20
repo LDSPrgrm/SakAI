@@ -9,8 +9,8 @@ import { PERMISSION_KEYS, PERMISSION_LABELS, HAS_WRITE_SCOPE } from '@/utils/per
 import type { RolePermission, RolePermissionKey } from '@/types/super-admin';
 
 const permSchema = z.object({
-  name:        z.string().min(1, 'Role name is required'),
-  description: z.string().optional(),
+  name:        z.string().min(1, 'Role name is required').max(100, 'Role name is too long'),
+  description: z.string().max(500, 'Description is too long').optional(),
   permissions: z.array(z.object({
     permission_key: z.string(),
     read:  z.boolean(),

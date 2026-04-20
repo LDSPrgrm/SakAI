@@ -136,3 +136,19 @@ func (h *RoleHandler) GetRoleAdmins(c *gin.Context) {
 	}
 	respondOK(c, res)
 }
+
+// DuplicateRole clones a role and returns the new copy (POST /admin/roles/:id/duplicate).
+func (h *RoleHandler) DuplicateRole(c *gin.Context) {
+	actorID := c.MustGet("userID").(uuid.UUID)
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid role id"})
+		return
+	}
+	role, err := h.uc.DuplicateRole(c.Request.Context(), actorID, id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondCreated(c, dto.NewRoleResponse(role))
+}

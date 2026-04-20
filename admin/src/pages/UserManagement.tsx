@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { Search, Eye, Ban, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { usersApi } from '@/api/admin/users';
-import type { PassengerUser, DriverUser, AdminStatus } from '@/types/super-admin';
-import type { PaginationMeta } from '@/api/super-admin/_request';
+import { Search, Eye, Ban, CheckCircle } from 'lucide-react';
+import { usePassengers, useDrivers, useUpdateUserStatus } from '@/hooks/useUsers';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import type { PassengerUser, DriverUser } from '@/types/super-admin';
 
 const PAGE_SIZE = 20;
 
@@ -37,48 +38,21 @@ interface ConfirmDialog {
   onConfirm: () => void;
 }
 
-function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () => void }) {
-  if (!dialog.open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true">
-      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
-          <h2 className="text-base font-semibold text-text-main">{dialog.title}</h2>
-        </div>
-        <p className="text-sm text-text-muted">{dialog.message}</p>
-        <div className="flex gap-3 justify-end">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button variant="danger" size="sm" onClick={() => { dialog.onConfirm(); onClose(); }}>Confirm</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function UserManagement() {
   const [search, setSearch] = useState('');
-  const [riderList, setRiderList] = useState<PassengerUser[]>([]);
-  const [driverList, setDriverList] = useState<DriverUser[]>([]);
-  const [riderMeta, setRiderMeta] = useState<PaginationMeta | undefined>();
-  const [driverMeta, setDriverMeta] = useState<PaginationMeta | undefined>();
   const [riderPage, setRiderPage] = useState(1);
   const [driverPage, setDriverPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, title: '', message: '', onConfirm: () => {} });
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      usersApi.getPassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined }),
-      usersApi.getDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined }),
-    ]).then(([passengers, drivers]) => {
-      setRiderList(passengers.items);
-      setRiderMeta(passengers.meta);
-      setDriverList(drivers.items);
-      setDriverMeta(drivers.meta);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [riderPage, driverPage, search]);
+  const passengersQuery = usePassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined });
+  const driversQuery = useDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined });
+  const updateStatus = useUpdateUserStatus();
+
+  const riderList = (passengersQuery.data?.items ?? []) as PassengerUser[];
+  const driverList = (driversQuery.data?.items ?? []) as DriverUser[];
+  const riderMeta = passengersQuery.data?.meta;
+  const driverMeta = driversQuery.data?.meta;
+  const loading = passengersQuery.isPending || driversQuery.isPending;
 
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
@@ -88,12 +62,7 @@ export function UserManagement() {
       title: `Suspend ${type}`,
       message: `Are you sure you want to suspend ${name}? They will no longer be able to ${type === 'Rider' ? 'book rides' : 'accept rides'}.`,
       onConfirm: () => {
-        usersApi.updateStatus(id, { status: 'suspended' }).catch(() => {});
-        if (type === 'Rider') {
-          setRiderList(prev => prev.map(r => r.id === id ? { ...r, status: 'suspended' as any } : r));
-        } else {
-          setDriverList(prev => prev.map(d => d.id === id ? { ...d, status: 'suspended' as any } : d));
-        }
+        updateStatus.mutate({ id, status: 'suspended' });
       },
     });
   };
@@ -112,11 +81,16 @@ export function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <ConfirmModal dialog={confirm} onClose={closeConfirm} />
+      <ConfirmationModal
+        open={confirm.open}
+        title={confirm.title}
+        description={confirm.message}
+        onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+        onCancel={closeConfirm}
+      />
 
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-text-main">User Management</h1>
-        <Button>Add New User</Button>
       </div>
 
       <Card>
@@ -175,8 +149,8 @@ export function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant((rider as any).status ?? 'active')}>
-                          {statusLabel((rider as any).status ?? 'active')}
+                        <Badge variant={statusVariant(rider.status ?? 'active')}>
+                          {statusLabel(rider.status ?? 'active')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-text-muted">
@@ -185,7 +159,7 @@ export function UserManagement() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
-                          {(rider as any).status !== 'suspended' && (rider as any).status !== 'deactivated' && (
+                          {rider.status !== 'suspended' && rider.status !== 'deactivated' && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -202,7 +176,13 @@ export function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
-              <UserPaginationFooter meta={riderMeta} page={riderPage} onPageChange={setRiderPage} label="riders" />
+              <PaginationFooter
+                meta={riderMeta}
+                page={riderPage}
+                onPageChange={setRiderPage}
+                label="riders"
+                className="flex items-center justify-between px-4 md:px-6 py-3 border-t border-border text-sm text-text-muted"
+              />
             </TabsContent>
 
             <TabsContent value="drivers" className="m-0 overflow-x-auto">
@@ -243,15 +223,15 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell className="text-sm">{vehicleLabel(driver.vehicle)}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant((driver as any).status ?? 'active')}>
-                          {statusLabel((driver as any).status ?? 'active')}
+                        <Badge variant={statusVariant(driver.status ?? 'active')}>
+                          {statusLabel(driver.status ?? 'active')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" aria-label="Review Documents"><CheckCircle className="w-4 h-4 text-success" /></Button>
                           <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
-                          {(driver as any).status !== 'suspended' && (driver as any).status !== 'deactivated' && (
+                          {driver.status !== 'suspended' && driver.status !== 'deactivated' && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -268,7 +248,13 @@ export function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
-              <UserPaginationFooter meta={driverMeta} page={driverPage} onPageChange={setDriverPage} label="drivers" />
+              <PaginationFooter
+                meta={driverMeta}
+                page={driverPage}
+                onPageChange={setDriverPage}
+                label="drivers"
+                className="flex items-center justify-between px-4 md:px-6 py-3 border-t border-border text-sm text-text-muted"
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -277,45 +263,3 @@ export function UserManagement() {
   );
 }
 
-function UserPaginationFooter({
-  meta,
-  page,
-  onPageChange,
-  label,
-}: {
-  meta?: PaginationMeta;
-  page: number;
-  onPageChange: (page: number) => void;
-  label: string;
-}) {
-  const totalPages = meta?.total_pages ?? 1;
-  const totalItems = meta?.total_items ?? 0;
-  if (totalPages <= 1 && totalItems === 0) return null;
-  return (
-    <div className="flex items-center justify-between px-4 md:px-6 py-3 border-t border-border text-sm text-text-muted">
-      <span>
-        Page {page} of {totalPages} · {totalItems} {label}
-      </span>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={page <= 1}
-          aria-label="Previous page"
-          onClick={() => onPageChange(page - 1)}
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={page >= totalPages}
-          aria-label="Next page"
-          onClick={() => onPageChange(page + 1)}
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}

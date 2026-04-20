@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Search, Eye, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Table,
@@ -14,24 +14,19 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { safetyApi } from '@/api/super-admin/safety';
-import { reportsApi } from '@/api/super-admin/reports';
+import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
+import {
+  useIncidents, useKycQueue, useLtfrbCompliance,
+  useUpdateKyc, useBatchKyc,
+} from '@/hooks/useSafety';
+import { useExportReport } from '@/hooks/useReports';
+import { formatDate } from '@/utils/formatDate';
+import { LtfrbReportsSection, type LtfrbData } from '@/components/super-admin/safety/LtfrbReportsSection';
 import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-interface LtfrbData {
-  accreditation_status: string;
-  accreditation_expiry: string;
-  driver_compliance_rate: number;
-  insurance_compliance_rate: number;
-  inspection_compliance_rate: number;
-  violations_open: number;
-  violations_resolved: number;
-  last_report_submitted: string;
-  next_report_due: string;
-}
 
 type KycAction = 'approve' | 'reject';
 
@@ -50,29 +45,6 @@ function incidentTypeBadge(type: IncidentType) {
   return <Badge variant="default">Safety Complaint</Badge>;
 }
 
-function complianceBarColor(rate: number): string {
-  if (rate >= 90) return 'bg-success';
-  if (rate >= 75) return 'bg-warning';
-  return 'bg-danger';
-}
-
-function ComplianceBar({ label, rate }: { label: string; rate: number }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-sm">
-        <span className="text-text-muted">{label}</span>
-        <span className="font-medium text-text-main">{rate}%</span>
-      </div>
-      <div className="h-2 w-full rounded-full bg-surface-hover">
-        <div
-          className={`h-2 rounded-full transition-all ${complianceBarColor(rate)}`}
-          style={{ width: `${rate}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
   { label: 'All', value: '' },
   { label: 'Open', value: 'open' },
@@ -84,9 +56,17 @@ const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SASafetyCompliance() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [kycQueue, setKycQueue] = useState<KycEntry[]>([]);
-  const [ltfrbData, setLtfrbData] = useState<LtfrbData | null>(null);
+  const incidentsQuery = useIncidents();
+  const kycQuery = useKycQueue();
+  const ltfrbQuery = useLtfrbCompliance();
+  const updateKyc = useUpdateKyc();
+  const batchKyc = useBatchKyc();
+  const exportReport = useExportReport();
+
+  const incidents = (incidentsQuery.data ?? []) as Incident[];
+  const kycQueue = (kycQuery.data ?? []) as KycEntry[];
+  const ltfrbData = (ltfrbQuery.data ?? null) as LtfrbData | null;
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [kycConfirm, setKycConfirm] = useState<KycConfirmState>({
@@ -96,23 +76,16 @@ export function SASafetyCompliance() {
     action: 'approve',
   });
   const [selectedKycIds, setSelectedKycIds] = useState<Set<string>>(new Set());
-  const [batchKycLoading, setBatchKycLoading] = useState(false);
+  const batchKycLoading = batchKyc.isPending;
+  const [banner, setBanner] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: '',
+  });
 
-  // ── Load data ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function load() {
-      const [inc, kyc, ltfrb] = await Promise.all([
-        safetyApi.getIncidents(),
-        safetyApi.getKycQueue(),
-        safetyApi.getLtfrbCompliance(),
-      ]);
-      setIncidents(inc);
-      setKycQueue(kyc);
-      setLtfrbData(ltfrb as LtfrbData);
-    }
-    void load();
-  }, []);
+  function flashBanner(message: string) {
+    setBanner({ visible: true, message });
+    setTimeout(() => setBanner((s) => ({ ...s, visible: false })), 3000);
+  }
 
   // ── Derived counts ─────────────────────────────────────────────────────────
 
@@ -142,55 +115,41 @@ export function SASafetyCompliance() {
 
   async function handleKycConfirm() {
     const status = kycConfirm.action === 'approve' ? 'approved' : 'rejected';
-    await safetyApi.updateKyc(kycConfirm.entryId, status);
-    setKycQueue((prev) =>
-      prev.map((k) => (k.id === kycConfirm.entryId ? { ...k, status } : k))
-    );
+    try {
+      await updateKyc.mutateAsync({ id: kycConfirm.entryId, status });
+      flashBanner(kycConfirm.action === 'approve' ? 'KYC approved' : 'KYC rejected');
+    } catch {
+      flashBanner('Failed to update KYC');
+    }
   }
 
   async function handleBatchKyc(action: KycAction) {
     const ids = [...selectedKycIds];
     const status = action === 'approve' ? 'approved' : 'rejected';
-    setBatchKycLoading(true);
     try {
-      await safetyApi.batchKyc({ ids, status });
-      setKycQueue((prev) =>
-        prev.map((k) => selectedKycIds.has(k.id) ? { ...k, status } : k)
-      );
+      await batchKyc.mutateAsync({ ids, status });
       setSelectedKycIds(new Set());
-    } finally {
-      setBatchKycLoading(false);
+      flashBanner(action === 'approve' ? `Approved ${ids.length} KYC entries` : `Rejected ${ids.length} KYC entries`);
+    } catch {
+      flashBanner('Batch KYC update failed');
     }
   }
 
   // ── LTFRB helpers ─────────────────────────────────────────────────────────
 
-  function isReportDueSoon(dueDateStr: string): boolean {
-    const due = new Date(dueDateStr);
-    const now = new Date();
-    const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 30;
-  }
-
-  function fmtDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('en-PH', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  }
-
-  function handleGenerateReport() {
-    reportsApi.exportCsv('ltfrb').then(({ url }) => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  async function handleGenerateReport() {
+    const res = await exportReport.mutateAsync('ltfrb').catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+        <SaveBanner visible={banner.visible} message={banner.message} />
+      </div>
 
       <Tabs defaultValue="incidents">
         <TabsList className="mb-4">
@@ -274,7 +233,7 @@ export function SASafetyCompliance() {
                             {inc.id}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted whitespace-nowrap">
-                            {inc.created_at ? fmtDate(inc.created_at) : '—'}
+                            {inc.created_at ? formatDate(inc.created_at) : '—'}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
                             {inc.ride_id}
@@ -381,7 +340,7 @@ export function SASafetyCompliance() {
                       <div>
                         <p className="font-medium text-text-main">{entry.driver_name ?? 'Unknown Driver'}</p>
                         <p className="text-xs text-text-muted mt-0.5">
-                          Submitted {entry.submitted_at ? fmtDate(entry.submitted_at) : '—'}
+                          Submitted {entry.submitted_at ? formatDate(entry.submitted_at) : '—'}
                         </p>
                       </div>
                     </div>
@@ -389,13 +348,7 @@ export function SASafetyCompliance() {
                   </div>
 
                   {/* Documents */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {(entry.docs ?? []).map((doc) => (
-                      <Badge key={doc} variant="default">
-                        {doc}
-                      </Badge>
-                    ))}
-                  </div>
+                  <KycDocPreview docs={entry.docs ?? []} />
 
                   {/* Actions — only show when pending */}
                   {entry.status === 'pending' && (
@@ -403,6 +356,7 @@ export function SASafetyCompliance() {
                       <Button
                         variant="success"
                         size="sm"
+                        disabled={updateKyc.isPending}
                         onClick={() => openKycConfirm(entry, 'approve')}
                       >
                         Approve
@@ -410,6 +364,7 @@ export function SASafetyCompliance() {
                       <Button
                         variant="danger"
                         size="sm"
+                        disabled={updateKyc.isPending}
                         onClick={() => openKycConfirm(entry, 'reject')}
                       >
                         Reject
@@ -424,107 +379,7 @@ export function SASafetyCompliance() {
 
         {/* ── Tab 3: LTFRB Compliance ──────────────────────────────────────── */}
         <TabsContent value="ltfrb">
-          {!ltfrbData ? (
-            <Card>
-              <CardContent className="py-10 text-center text-text-muted">
-                Loading compliance data...
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                {/* Accreditation Status */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-1">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Accreditation Status
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge status={ltfrbData.accreditation_status} />
-                    <span className="text-sm text-text-muted">
-                      Expires {fmtDate(ltfrbData.accreditation_expiry)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Open Violations */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-1">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Violations
-                  </p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-lg font-bold text-danger">
-                      {ltfrbData.violations_open}
-                      <span className="text-xs font-normal text-text-muted ml-1">open</span>
-                    </span>
-                    <span className="text-lg font-bold text-success">
-                      {ltfrbData.violations_resolved}
-                      <span className="text-xs font-normal text-text-muted ml-1">resolved</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Driver Compliance Rate */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide mb-3">
-                    Compliance Rates
-                  </p>
-                  <div className="space-y-3">
-                    <ComplianceBar
-                      label="Driver Compliance"
-                      rate={ltfrbData.driver_compliance_rate}
-                    />
-                    <ComplianceBar
-                      label="Insurance Compliance"
-                      rate={ltfrbData.insurance_compliance_rate}
-                    />
-                    <ComplianceBar
-                      label="Vehicle Inspection"
-                      rate={ltfrbData.inspection_compliance_rate}
-                    />
-                  </div>
-                </div>
-
-                {/* Report Dates */}
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
-                  <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
-                    Report Schedule
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Last Submitted</span>
-                      <span className="text-text-main">
-                        {fmtDate(ltfrbData.last_report_submitted)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Next Due</span>
-                      <span
-                        className={
-                          isReportDueSoon(ltfrbData.next_report_due)
-                            ? 'text-warning font-medium'
-                            : 'text-text-main'
-                        }
-                      >
-                        {fmtDate(ltfrbData.next_report_due)}
-                        {isReportDueSoon(ltfrbData.next_report_due) && (
-                          <span className="ml-1.5 text-xs">(Due soon)</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Generate Report button */}
-              <div className="flex justify-end">
-                <Button variant="primary" onClick={handleGenerateReport}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate LTFRB Report
-                </Button>
-              </div>
-            </div>
-          )}
+          <LtfrbReportsSection data={ltfrbData} onGenerateReport={handleGenerateReport} />
         </TabsContent>
       </Tabs>
 

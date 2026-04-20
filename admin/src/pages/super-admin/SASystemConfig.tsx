@@ -8,20 +8,16 @@ import { Badge } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { systemApi } from '@/api/super-admin/system';
-import { authApi } from '@/api/super-admin/auth';
-import type { IntegrationTestResult } from '@/api/super-admin/system';
+import {
+  useIntegrations, useNotificationTemplates, useFeatureFlags,
+  useUpdateIntegration, useTestIntegration, useUpdateTemplate, useToggleFlag,
+} from '@/hooks/useSystem';
+import type { Integration, IntegrationTestResult } from '@/api/super-admin/system';
 import type { FeatureFlag } from '@/types/super-admin';
+import { maskApiKey } from '@/utils/maskApiKey';
+import { ChangePasswordForm } from '@/components/super-admin/system/ChangePasswordForm';
 
 // ── Local types ───────────────────────────────────────────────────────────────
-
-interface Integration {
-  service: string;
-  label: string;
-  api_key: string;
-  status: string;
-  last_used: string;
-}
 
 interface NotificationTemplate {
   event: string;
@@ -29,13 +25,24 @@ interface NotificationTemplate {
   body: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const SERVICE_LABELS: Record<string, string> = {
+  google_maps: 'Google Maps',
+  twilio: 'Twilio SMS',
+  firebase: 'Firebase FCM',
+  background_check: 'Background Check',
+  cloud_storage: 'Cloud Storage (S3)',
+};
 
-function maskedKey(key: string | null | undefined): string {
-  if (!key) return '—';
-  const last4 = key.slice(-4);
-  return `••••••••${last4}`;
+function labelForService(service: string | undefined): string {
+  if (!service) return '—';
+  if (SERVICE_LABELS[service]) return SERVICE_LABELS[service];
+  return service
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -73,13 +80,16 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<IntegrationTestResult | null>(null);
 
+  const service = integration.service ?? '';
+  const apiKey = integration.config?.api_key;
+
   const handleSaveClick = () => {
     if (!newKey.trim()) return;
     setConfirmOpen(true);
   };
 
   const handleConfirm = () => {
-    onSave(integration.service, newKey.trim());
+    onSave(service, newKey.trim());
     setNewKey('');
     setConfirmOpen(false);
   };
@@ -88,7 +98,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await onTest(integration.service);
+      const r = await onTest(service);
       setTestResult(r);
     } finally {
       setTesting(false);
@@ -99,9 +109,9 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
     <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-text-main">{integration.label}</span>
+        <span className="font-medium text-text-main">{labelForService(integration.service)}</span>
         <div className="flex items-center gap-2">
-          <StatusBadge status={integration.status} />
+          <StatusBadge status={integration.status ?? 'unknown'} />
           <Button variant="ghost" size="sm" disabled={testing} onClick={handleTest}>
             {testing && <Loader2 className="w-3 h-3 animate-spin mr-1.5" />}
             Test Connection
@@ -133,7 +143,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
           <p className="text-xs text-text-muted mb-1">API Key</p>
           <div className="flex items-center gap-2">
             <code className="text-sm text-text-main font-mono">
-              {revealed ? integration.api_key : maskedKey(integration.api_key)}
+              {revealed ? (apiKey ?? '—') : apiKey ? maskApiKey(apiKey) : '—'}
             </code>
             <button
               onClick={() => setRevealed((r) => !r)}
@@ -146,7 +156,7 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
         </div>
         <div>
           <p className="text-xs text-text-muted mb-1">Last Used</p>
-          <p className="text-sm text-text-muted">{formatDate(integration.last_used)}</p>
+          <p className="text-sm text-text-muted">{formatDate(integration.last_sync)}</p>
         </div>
       </div>
 
@@ -278,28 +288,19 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SASystemConfig() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
+  const integrationsQuery = useIntegrations();
+  const templatesQuery = useNotificationTemplates();
+  const flagsQuery = useFeatureFlags();
+  const updateIntegrationMut = useUpdateIntegration();
+  const testIntegrationMut = useTestIntegration();
+  const updateTemplateMut = useUpdateTemplate();
+  const toggleFlagMut = useToggleFlag();
+
+  const integrations = (integrationsQuery.data ?? []) as Integration[];
+  const templates = (templatesQuery.data ?? []) as NotificationTemplate[];
+  const featureFlags = (flagsQuery.data ?? []) as unknown as FeatureFlag[];
+
   const [saveBannerVisible, setSaveBannerVisible] = useState(false);
-
-  // Change password state
-  const [cpOldPassword, setCpOldPassword] = useState('');
-  const [cpNewPassword, setCpNewPassword] = useState('');
-  const [cpConfirmPassword, setCpConfirmPassword] = useState('');
-  const [cpLoading, setCpLoading] = useState(false);
-  const [cpError, setCpError] = useState('');
-  const [cpSuccess, setCpSuccess] = useState(false);
-
-  useEffect(() => {
-    systemApi.getIntegrations().then((data) =>
-      setIntegrations(data as Integration[])
-    );
-    systemApi.getNotificationTemplates().then((data) =>
-      setTemplates(data as NotificationTemplate[])
-    );
-    systemApi.getFeatureFlags().then(f => setFeatureFlags(f as unknown as FeatureFlag[]));
-  }, []);
 
   const showSaveBanner = () => {
     setSaveBannerVisible(true);
@@ -307,56 +308,22 @@ export function SASystemConfig() {
   };
 
   const handleUpdateIntegration = async (service: string, newKey: string) => {
-    await systemApi.updateIntegration(service, { api_key: newKey });
-    setIntegrations((prev) =>
-      prev.map((i) => (i.service === service ? { ...i, api_key: newKey } : i))
-    );
+    await updateIntegrationMut.mutateAsync({ service, data: { api_key: newKey } });
     showSaveBanner();
   };
 
   const handleTestIntegration = (service: string) =>
-    systemApi.testIntegration(service);
+    testIntegrationMut.mutateAsync(service);
 
   const handleUpdateTemplate = async (event: string, body: string) => {
-    await systemApi.updateTemplate(event, body);
-    setTemplates((prev) =>
-      prev.map((t) => (t.event === event ? { ...t, body } : t))
-    );
+    await updateTemplateMut.mutateAsync({ event, body });
     showSaveBanner();
   };
 
   const handleToggleFlag = async (key: string, next: boolean) => {
-    const updated = await systemApi.toggleFlag(key, next) as unknown as FeatureFlag;
-    setFeatureFlags((prev) =>
-      prev.map((f) => (f.key === key ? { ...f, enabled: updated.enabled } : f))
-    );
+    await toggleFlagMut.mutateAsync({ key, enabled: next });
     showSaveBanner();
   };
-
-  async function handleChangePassword() {
-    if (cpNewPassword !== cpConfirmPassword) {
-      setCpError('New passwords do not match.');
-      return;
-    }
-    if (cpNewPassword.length < 8) {
-      setCpError('Password must be at least 8 characters.');
-      return;
-    }
-    setCpLoading(true);
-    setCpError('');
-    setCpSuccess(false);
-    try {
-      await authApi.changePassword({ old_password: cpOldPassword, new_password: cpNewPassword });
-      setCpSuccess(true);
-      setCpOldPassword('');
-      setCpNewPassword('');
-      setCpConfirmPassword('');
-    } catch {
-      setCpError('Failed to change password. Check your current password and try again.');
-    } finally {
-      setCpLoading(false);
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -378,9 +345,9 @@ export function SASystemConfig() {
             {/* Tab 1 — Integrations */}
             <TabsContent value="integrations">
               <div className="space-y-4">
-                {integrations.map((integration) => (
+                {integrations.map((integration, idx) => (
                   <IntegrationCard
-                    key={integration.service}
+                    key={integration.service ?? idx}
                     integration={integration}
                     onSave={handleUpdateIntegration}
                     onTest={handleTestIntegration}
@@ -432,65 +399,7 @@ export function SASystemConfig() {
 
             {/* Tab 4 — Account / Change Password */}
             <TabsContent value="account">
-              <div className="max-w-md space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="w-4 h-4 text-text-muted" />
-                  <h3 className="font-semibold text-text-main">Change Password</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">Current Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Enter current password"
-                      value={cpOldPassword}
-                      onChange={(e) => {
-                        setCpOldPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Min. 8 characters"
-                      value={cpNewPassword}
-                      onChange={(e) => {
-                        setCpNewPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">Confirm New Password</label>
-                    <Input
-                      type="password"
-                      placeholder="Repeat new password"
-                      value={cpConfirmPassword}
-                      onChange={(e) => {
-                        setCpConfirmPassword(e.target.value);
-                        setCpError('');
-                        setCpSuccess(false);
-                      }}
-                    />
-                  </div>
-                </div>
-                {cpError && (
-                  <p className="text-sm text-danger">{cpError}</p>
-                )}
-                {cpSuccess && (
-                  <p className="text-sm text-success">Password changed successfully.</p>
-                )}
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={cpLoading || !cpOldPassword || !cpNewPassword || !cpConfirmPassword}
-                >
-                  {cpLoading ? 'Saving…' : 'Change Password'}
-                </Button>
-              </div>
+              <ChangePasswordForm />
             </TabsContent>
           </Tabs>
         </CardContent>

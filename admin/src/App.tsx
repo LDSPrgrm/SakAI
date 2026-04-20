@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
+import type { AdminRole } from '@/lib/permissions';
 
 // Layouts
 import { AdminShell } from '@/components/layout/AdminShell';
@@ -21,10 +22,12 @@ import { Dashboard } from '@/pages/Dashboard';
 import { UserManagement } from '@/pages/UserManagement';
 import { RideManagement } from '@/pages/RideManagement';
 import { Payments } from '@/pages/Payments';
-import { FareSurge } from '@/pages/FareSurge';
 import { SafetyCompliance } from '@/pages/SafetyCompliance';
 import { Reports } from '@/pages/Reports';
-import { Settings } from '@/pages/Settings';
+// Pages that pull react-hook-form + zod — lazy-load so the libs don't bloat the
+// entry chunk for admins who never hit them.
+const FareSurge = lazy(() => import('@/pages/FareSurge').then(m => ({ default: m.FareSurge })));
+const Settings  = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })));
 
 // Super Admin pages
 const SADashboard = lazy(() => import('@/pages/super-admin/SADashboard').then(m => ({ default: m.SADashboard })));
@@ -46,11 +49,20 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+function ProtectedRoute({
+  children,
+  requireRole,
+}: {
+  children: React.ReactNode;
+  requireRole?: AdminRole;
+}) {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (requireRole && user?.role !== requireRole) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return <>{children}</>;
 }
@@ -87,14 +99,18 @@ export default function App() {
             <Route path="users" element={<UserManagement />} />
             <Route path="rides" element={<RideManagement />} />
             <Route path="payments" element={<Payments />} />
-            <Route path="fare" element={<FareSurge />} />
+            <Route path="fare" element={
+              <Suspense fallback={<PageLoader />}><FareSurge /></Suspense>
+            } />
             <Route path="safety" element={<SafetyCompliance />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="settings" element={
+              <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+            } />
           </Route>
 
           <Route path="/super-admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="superadmin">
               <SuperAdminShell />
             </ProtectedRoute>
           }>
