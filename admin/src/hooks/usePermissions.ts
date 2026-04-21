@@ -1,5 +1,7 @@
 // Dynamic RBAC hook — caches the current admin's role + permissions in Zustand.
-// Permissions are fetched from GET /api/admin/roles/:id/permissions on auth.
+// Permissions are fetched from GET /api/admin/me/permissions on auth. The self
+// endpoint works for every admin persona (superadmin, admin, operations,
+// finance, support) so the sidebar populates regardless of role.
 // Spec: superadmin.md §3 (Dynamic RBAC)
 
 import { create } from 'zustand';
@@ -29,14 +31,14 @@ interface PermissionsState {
   permissions: RolePermission[];
   loading: boolean;
   error: string | null;
-  loadPermissions: (roleId: string) => Promise<void>;
+  loadPermissions: () => Promise<void>;
   clear: () => void;
 }
 
-// Uses adminRequest so token refresh on 401 and the shared envelope-unwrap
-// logic apply. The role payload matches the `Role` shape above.
-async function fetchRolePermissions(roleId: string): Promise<Role> {
-  return adminRequest<Role>('GET', `/roles/${roleId}/permissions`);
+// Self-scoped endpoint: backend reads the caller's userID from the JWT and
+// returns that user's own role + permissions. Safe for any admin persona.
+async function fetchMyPermissions(): Promise<Role> {
+  return adminRequest<Role>('GET', '/me/permissions');
 }
 
 export const usePermissionsStore = create<PermissionsState>((set) => ({
@@ -44,10 +46,10 @@ export const usePermissionsStore = create<PermissionsState>((set) => ({
   permissions: [],
   loading: false,
   error: null,
-  async loadPermissions(roleId: string) {
+  async loadPermissions() {
     set({ loading: true, error: null });
     try {
-      const role = await fetchRolePermissions(roleId);
+      const role = await fetchMyPermissions();
       set({ role, permissions: role.permissions ?? [], loading: false });
     } catch (err) {
       set({

@@ -150,7 +150,7 @@ func main() {
 		Admin:          handler.NewAdminHandler(adminUC, auditUC),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),
-		Role:           handler.NewRoleHandler(roleUC),
+		Role:           handler.NewRoleHandler(roleUC, authUC),
 		Payment:        handler.NewPaymentHandler(paymentUC),
 		Safety:         handler.NewSafetyHandler(safetyUC),
 		System:         handler.NewSystemHandler(systemUC),

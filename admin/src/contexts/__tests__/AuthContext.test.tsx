@@ -83,7 +83,7 @@ describe('AuthContext', () => {
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     expect(result.current.user?.email).toBe('alice@sakai.ph');
-    expect(mockLoadPermissions).toHaveBeenCalledWith('role-1');
+    expect(mockLoadPermissions).toHaveBeenCalledWith();
   });
 
   it('clears token when /users/me fails on mount', async () => {

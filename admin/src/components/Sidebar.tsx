@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  AlertTriangle,
   LayoutDashboard, Users, Car, CreditCard, ShieldAlert, BarChart3, Settings
 } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
@@ -26,10 +27,18 @@ const navItems: { path: string; label: string; icon: React.ElementType; perm: Pe
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
-  const { can } = usePermissions();
+  const { can, error } = usePermissions();
   const location = useLocation();
 
   const visibleItems = navItems.filter((item) => can(item.perm, 'read'));
+
+  // Permissions fetch failed for a non-superadmin: surface the error and keep
+  // Dashboard visible so the user isn't stranded on a blank sidebar.
+  const showFallback =
+    !!error && user?.role !== 'superadmin' && visibleItems.length === 0;
+  const itemsToRender = showFallback
+    ? navItems.filter((i) => i.perm === 'dashboard')
+    : visibleItems;
 
   return (
     <aside
@@ -47,7 +56,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {visibleItems.map((item) => {
+        {showFallback && (
+          <div
+            role="alert"
+            className="mb-3 flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+          >
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>
+              Failed to load permissions. Please retry or contact a superadmin.
+            </span>
+          </div>
+        )}
+        {itemsToRender.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname.startsWith(item.path);
           return (
