@@ -188,7 +188,7 @@ type DriverRepository interface {
 // AdminRepository defines management of admin accounts and system settings.
 type AdminRepository interface {
 	GetAdmins(ctx context.Context) ([]*User, error)
-	UpdateAdminStatus(ctx context.Context, id uuid.UUID, status UserRole) error
+	UpdateAdminProfile(ctx context.Context, id uuid.UUID, name, email string, role UserRole, roleID uuid.UUID) error
 	DeactivateAdmin(ctx context.Context, id uuid.UUID) error
 	// Extra config persistence (payments, commission)
 	GetPaymentConfigs(ctx context.Context) ([]*PaymentGatewayConfig, error)
@@ -387,7 +387,7 @@ type AdminUseCase interface {
 	GetDashboard(ctx context.Context) (*DashboardMetrics, error)
 	ListAdmins(ctx context.Context) ([]*User, error)
 	CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role UserRole, roleID *uuid.UUID) (*User, error)
-	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status UserRole) error
+	UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, name, email *string, roleID uuid.UUID) error
 	DeactivateAdmin(ctx context.Context, actorID, targetID uuid.UUID) error
 	GetAdminActivity(ctx context.Context, adminID uuid.UUID) ([]*AuditLogEntry, error)
 	// ResetUserPassword lets a superadmin set another admin's password.

@@ -2418,8 +2418,11 @@ export interface components {
             role: "admin" | "superadmin" | "operations" | "finance" | "support";
         };
         UpdateAdminStatusRequest: {
-            /** @enum {string} */
-            role: "admin" | "superadmin" | "operations" | "finance" | "support";
+            name?: string;
+            /** Format: email */
+            email?: string;
+            /** Format: uuid */
+            role_id: string;
         };
         AdminFaresResponse: {
             fares?: components["schemas"]["FareConfig"][];

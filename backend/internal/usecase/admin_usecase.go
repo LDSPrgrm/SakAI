@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -127,8 +128,8 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 	return user, nil
 }
 
-func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status domain.UserRole) error {
-	// Business Rule: Cannot modify own role/status (prevents accidental self-demotion)
+func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, name, email *string, roleID uuid.UUID) error {
+	// Cannot modify own role/profile (prevents accidental self-demotion).
 	if actorID == targetID {
 		return errors.New("cannot modify own account status")
 	}
@@ -138,8 +139,19 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		return err
 	}
 
-	// Business Rule: Cannot deactivate the last superadmin
-	if oldUser.Role == domain.RoleSuperadmin && status != domain.RoleSuperadmin {
+	// Resolve the picked role row → ENUM bucket. Custom roles bucket into
+	// RoleAdmin; system roles map to their named ENUM value.
+	role, err := uc.roleRepo.GetRoleByID(ctx, roleID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return err
+		}
+		return fmt.Errorf("invalid role_id: %w", err)
+	}
+	enumRole := roleNameToEnum(role.Name)
+
+	// Cannot remove the last superadmin.
+	if oldUser.Role == domain.RoleSuperadmin && enumRole != domain.RoleSuperadmin {
 		admins, _ := uc.adminRepo.GetAdmins(ctx)
 		superCount := 0
 		for _, a := range admins {
@@ -152,11 +164,37 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		}
 	}
 
-	if err := uc.adminRepo.UpdateAdminStatus(ctx, targetID, status); err != nil {
+	// Cannot promote a non-superadmin to superadmin via this endpoint.
+	// Superadmin provisioning must stay out-of-band (seed / direct DB).
+	if oldUser.Role != domain.RoleSuperadmin && enumRole == domain.RoleSuperadmin {
+		return errors.New("cannot promote to superadmin via role update")
+	}
+
+	// Resolve name / email — absent fields keep their old value.
+	newName := oldUser.Name
+	newEmail := oldUser.Email
+	if name != nil {
+		newName = strings.TrimSpace(*name)
+	}
+	if email != nil {
+		newEmail = strings.TrimSpace(*email)
+	}
+
+	// Email collision check — only if it actually changed.
+	if newEmail != oldUser.Email {
+		other, err := uc.userRepo.GetByEmail(ctx, newEmail)
+		if err == nil && other.ID != targetID {
+			return domain.ErrEmailAlreadyRegistered
+		}
+		if err != nil && !errors.Is(err, domain.ErrNotFound) {
+			return err
+		}
+	}
+
+	if err := uc.adminRepo.UpdateAdminProfile(ctx, targetID, newName, newEmail, enumRole, roleID); err != nil {
 		return err
 	}
 
-	// Audit
 	before, _ := json.Marshal(oldUser)
 	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
 		ActorID:      actorID,
@@ -164,8 +202,10 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		ResourceType: "admin_user",
 		ResourceID:   targetID.String(),
 		BeforeState:  before,
-		AfterState:   []byte(fmt.Sprintf(`{"role": "%s"}`, status)),
-		IPAddress:    "internal",
+		AfterState: []byte(fmt.Sprintf(
+			`{"name":%q,"email":%q,"role":%q,"role_id":%q}`,
+			newName, newEmail, enumRole, roleID)),
+		IPAddress: "internal",
 	})
 
 	return nil
