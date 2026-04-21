@@ -1563,6 +1563,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/me/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated admin's own role and permissions
+         * @description Returns the caller's role (id, name, permissions) used by the admin
+         *     app to drive sidebar visibility and write-gating. No specific role
+         *     is required: any authenticated user may call this for themselves.
+         *     Users with no assigned role_id (e.g. passengers/drivers that reach
+         *     this endpoint) receive a role envelope with an empty permissions array.
+         */
+        get: operations["adminGetMyPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/users/{id}/password": {
         parameters: {
             query?: never;
@@ -2394,8 +2418,11 @@ export interface components {
             role: "admin" | "superadmin" | "operations" | "finance" | "support";
         };
         UpdateAdminStatusRequest: {
-            /** @enum {string} */
-            role: "admin" | "superadmin" | "operations" | "finance" | "support";
+            name?: string;
+            /** Format: email */
+            email?: string;
+            /** Format: uuid */
+            role_id: string;
         };
         AdminFaresResponse: {
             fares?: components["schemas"]["FareConfig"][];
@@ -5439,6 +5466,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminGetMyPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Role with permissions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
                 };
             };
             401: components["responses"]["Unauthorized"];

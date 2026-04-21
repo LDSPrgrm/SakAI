@@ -83,6 +83,12 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
 		admin := authed.Group("/admin")
 		{
+			// Self-scoped: any authenticated user may read their own role's
+			// permissions to drive sidebar/UI gating. No RequireRole wrapper
+			// so non-superadmin admins (operations/finance/support/admin)
+			// can still fetch.
+			admin.GET("/me/permissions", d.Role.GetMyPermissions)
+
 			// Dashboard
 			admin.GET("/dashboard", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.GetDashboard)
 

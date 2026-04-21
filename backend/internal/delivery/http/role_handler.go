@@ -10,11 +10,12 @@ import (
 )
 
 type RoleHandler struct {
-	uc domain.RoleUseCase
+	uc     domain.RoleUseCase
+	authUC domain.AuthUseCase
 }
 
-func NewRoleHandler(uc domain.RoleUseCase) *RoleHandler {
-	return &RoleHandler{uc: uc}
+func NewRoleHandler(uc domain.RoleUseCase, authUC domain.AuthUseCase) *RoleHandler {
+	return &RoleHandler{uc: uc, authUC: authUC}
 }
 
 func (h *RoleHandler) ListRoles(c *gin.Context) {
@@ -99,6 +100,35 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// GetMyPermissions serves GET /admin/me/permissions. Returns the authenticated
+// user's role with its permissions. Users without a role_id (e.g. passengers
+// or drivers) receive an empty role envelope so the frontend can merge cleanly.
+func (h *RoleHandler) GetMyPermissions(c *gin.Context) {
+	userID, ok := c.MustGet("userID").(uuid.UUID)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"code":    "TOKEN_INVALID",
+			"message": "invalid token context",
+		})
+		return
+	}
+	user, err := h.authUC.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	if user.RoleID == nil {
+		respondOK(c, dto.RoleResponse{Permissions: []dto.RolePermissionDTO{}})
+		return
+	}
+	role, err := h.uc.GetRole(c.Request.Context(), *user.RoleID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.NewRoleResponse(role))
 }
 
 func (h *RoleHandler) GetRolePermissions(c *gin.Context) {

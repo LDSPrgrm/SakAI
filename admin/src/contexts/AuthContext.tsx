@@ -32,9 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const afterAuth = (profile: AdminProfile) => {
     setUser(profile);
-    if (profile.role_id) {
-      void usePermissionsStore.getState().loadPermissions(profile.role_id);
-    }
+    // Self-scoped fetch — backend resolves role from the JWT. Users with no
+    // role_id get an empty permissions array, so no client-side guard needed.
+    void usePermissionsStore.getState().loadPermissions();
   };
 
   useEffect(() => {

@@ -3,6 +3,7 @@ package dto
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sakai/backend/internal/domain"
 )
 
@@ -15,8 +16,13 @@ type DashboardResponse struct {
 	SystemUptime       float64 `json:"system_uptime"`
 }
 
+// UpdateAdminStatusRequest is the body of PUT /admin/users/:id.
+// `role_id` is required; `name` / `email` are optional — absent fields
+// keep the stored value. Email changes are checked for collision.
 type UpdateAdminStatusRequest struct {
-	Role domain.UserRole `json:"role" binding:"required"`
+	Name   *string   `json:"name,omitempty"  binding:"omitempty,min=1,max=120"`
+	Email  *string   `json:"email,omitempty" binding:"omitempty,email"`
+	RoleID uuid.UUID `json:"role_id"         binding:"required"`
 }
 
 type FareConfigDTO struct {

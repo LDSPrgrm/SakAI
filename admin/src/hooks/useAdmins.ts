@@ -1,7 +1,7 @@
 // React Query hooks for admin user CRUD (super-admin only).
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminsApi, type AdminUser, type CreateAdminPayload } from '@/api/super-admin/admins';
+import { adminsApi, type CreateAdminPayload, type UpdateAdminPayload } from '@/api/super-admin/admins';
 
 const ADMINS_KEY = ['admin', 'admins'] as const;
 
@@ -23,7 +23,7 @@ export function useCreateAdmin() {
 export function useUpdateAdmin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<AdminUser> & { role?: string } }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateAdminPayload }) =>
       adminsApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ADMINS_KEY }),
   });

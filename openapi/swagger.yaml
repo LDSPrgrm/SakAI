@@ -2575,6 +2575,31 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  # ── Admin self permissions ─────────────────────────────────────────────────────────────────────────
+
+  /admin/me/permissions:
+    get:
+      tags: [Admin]
+      summary: Get the authenticated admin's own role and permissions
+      description: |
+        Returns the caller's role (id, name, permissions) used by the admin
+        app to drive sidebar visibility and write-gating. No specific role
+        is required: any authenticated user may call this for themselves.
+        Users with no assigned role_id (e.g. passengers/drivers that reach
+        this endpoint) receive a role envelope with an empty permissions array.
+      operationId: adminGetMyPermissions
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Role with permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── Admin password reset ───────────────────────────────────────────────────────────────────────────
 
   /admin/users/{id}/password:
@@ -4095,11 +4120,18 @@ components:
 
     UpdateAdminStatusRequest:
       type: object
-      required: [role]
+      required: [role_id]
       properties:
-        role:
+        name:
           type: string
-          enum: [admin, superadmin, operations, finance, support]
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        role_id:
+          type: string
+          format: uuid
 
     AdminFaresResponse:
       type: object
