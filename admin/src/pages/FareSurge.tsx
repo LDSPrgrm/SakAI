@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Settings2, Zap, Calculator, CheckCircle } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   useFareConfigs, useSurgeConfig,
   useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
@@ -72,6 +73,9 @@ const DEFAULT_FARE: FareConfig = {
 };
 
 export function FareSurge() {
+  const { can } = usePermissions();
+  const canWrite = can('fare_config', 'write');
+  const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
   const fareQuery = useFareConfigs();
   const surgeQuery = useSurgeConfig();
   const updateFares = useUpdateFareConfig();
@@ -151,7 +155,13 @@ export function FareSurge() {
               <CheckCircle className="w-4 h-4" /> Changes saved
             </span>
           )}
-          <Button onClick={handleSave} disabled={loading}>Save Changes</Button>
+          <Button
+            onClick={handleSave}
+            disabled={loading || !canWrite}
+            title={writeDisabledTitle}
+          >
+            Save Changes
+          </Button>
         </div>
       </div>
 

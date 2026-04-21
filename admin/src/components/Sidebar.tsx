@@ -6,26 +6,30 @@ import {
 } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions, type PermissionKey } from '@/hooks/usePermissions';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const navItems = [
-  { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/users', label: 'User Management', icon: Users },
-  { path: '/admin/rides', label: 'Ride Management', icon: Car },
-  { path: '/admin/payments', label: 'Payments & Earnings', icon: CreditCard },
-  { path: '/admin/fare', label: 'Fare & Surge', icon: PhpIcon },
-  { path: '/admin/safety', label: 'Safety & Compliance', icon: ShieldAlert },
-  { path: '/admin/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { path: '/admin/settings', label: 'Settings', icon: Settings },
+const navItems: { path: string; label: string; icon: React.ElementType; perm: PermissionKey }[] = [
+  { path: '/admin/dashboard', label: 'Dashboard',            icon: LayoutDashboard, perm: 'dashboard' },
+  { path: '/admin/users',     label: 'User Management',      icon: Users,            perm: 'user_management' },
+  { path: '/admin/rides',     label: 'Ride Management',      icon: Car,              perm: 'user_management' },
+  { path: '/admin/payments',  label: 'Payments & Earnings',  icon: CreditCard,       perm: 'payments' },
+  { path: '/admin/fare',      label: 'Fare & Surge',         icon: PhpIcon,          perm: 'fare_config' },
+  { path: '/admin/safety',    label: 'Safety & Compliance',  icon: ShieldAlert,      perm: 'safety_incidents' },
+  { path: '/admin/reports',   label: 'Reports & Analytics',  icon: BarChart3,        perm: 'reports' },
+  { path: '/admin/settings',  label: 'Settings',             icon: Settings,         perm: 'system_config' },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const location = useLocation();
+
+  const visibleItems = navItems.filter((item) => can(item.perm, 'read'));
 
   return (
     <aside
@@ -43,7 +47,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname.startsWith(item.path);
           return (

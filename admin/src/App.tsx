@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { RequirePermission } from '@/components/RequirePermission';
 import { Loader2 } from 'lucide-react';
 import type { AdminRole } from '@/lib/permissions';
 
@@ -95,17 +96,33 @@ export default function App() {
             </ProtectedRoute>
           }>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="rides" element={<RideManagement />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="fare" element={
-              <Suspense fallback={<PageLoader />}><FareSurge /></Suspense>
+            <Route path="dashboard" element={
+              <RequirePermission permission="dashboard"><Dashboard /></RequirePermission>
             } />
-            <Route path="safety" element={<SafetyCompliance />} />
-            <Route path="reports" element={<Reports />} />
+            <Route path="users" element={
+              <RequirePermission permission="user_management"><UserManagement /></RequirePermission>
+            } />
+            <Route path="rides" element={
+              <RequirePermission permission="user_management"><RideManagement /></RequirePermission>
+            } />
+            <Route path="payments" element={
+              <RequirePermission permission="payments"><Payments /></RequirePermission>
+            } />
+            <Route path="fare" element={
+              <RequirePermission permission="fare_config">
+                <Suspense fallback={<PageLoader />}><FareSurge /></Suspense>
+              </RequirePermission>
+            } />
+            <Route path="safety" element={
+              <RequirePermission permission="safety_incidents"><SafetyCompliance /></RequirePermission>
+            } />
+            <Route path="reports" element={
+              <RequirePermission permission="reports"><Reports /></RequirePermission>
+            } />
             <Route path="settings" element={
-              <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+              <RequirePermission permission="system_config">
+                <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+              </RequirePermission>
             } />
           </Route>
 
@@ -116,34 +133,54 @@ export default function App() {
           }>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={
-              <Suspense fallback={<PageLoader />}><SADashboard /></Suspense>
+              <RequirePermission permission="dashboard">
+                <Suspense fallback={<PageLoader />}><SADashboard /></Suspense>
+              </RequirePermission>
             } />
             <Route path="admins" element={
-              <Suspense fallback={<PageLoader />}><SAAdminManagement /></Suspense>
+              <RequirePermission permission="admin_management">
+                <Suspense fallback={<PageLoader />}><SAAdminManagement /></Suspense>
+              </RequirePermission>
             } />
             <Route path="roles" element={
-              <Suspense fallback={<PageLoader />}><SARoleManagement /></Suspense>
+              <RequirePermission permission="role_management">
+                <Suspense fallback={<PageLoader />}><SARoleManagement /></Suspense>
+              </RequirePermission>
             } />
             <Route path="fares" element={
-              <Suspense fallback={<PageLoader />}><SAFareConfig /></Suspense>
+              <RequirePermission permission="fare_config">
+                <Suspense fallback={<PageLoader />}><SAFareConfig /></Suspense>
+              </RequirePermission>
             } />
             <Route path="payments" element={
-              <Suspense fallback={<PageLoader />}><SAPayments /></Suspense>
+              <RequirePermission permission="payments">
+                <Suspense fallback={<PageLoader />}><SAPayments /></Suspense>
+              </RequirePermission>
             } />
             <Route path="safety" element={
-              <Suspense fallback={<PageLoader />}><SASafetyCompliance /></Suspense>
+              <RequirePermission permission="safety_incidents">
+                <Suspense fallback={<PageLoader />}><SASafetyCompliance /></Suspense>
+              </RequirePermission>
             } />
             <Route path="reports" element={
-              <Suspense fallback={<PageLoader />}><SAReports /></Suspense>
+              <RequirePermission permission="reports">
+                <Suspense fallback={<PageLoader />}><SAReports /></Suspense>
+              </RequirePermission>
             } />
             <Route path="system" element={
-              <Suspense fallback={<PageLoader />}><SASystemConfig /></Suspense>
+              <RequirePermission permission="system_config">
+                <Suspense fallback={<PageLoader />}><SASystemConfig /></Suspense>
+              </RequirePermission>
             } />
             <Route path="health" element={
-              <Suspense fallback={<PageLoader />}><SASystemHealth /></Suspense>
+              <RequirePermission permission="system_health">
+                <Suspense fallback={<PageLoader />}><SASystemHealth /></Suspense>
+              </RequirePermission>
             } />
             <Route path="audit" element={
-              <Suspense fallback={<PageLoader />}><SAAuditLog /></Suspense>
+              <RequirePermission permission="audit_log">
+                <Suspense fallback={<PageLoader />}><SAAuditLog /></Suspense>
+              </RequirePermission>
             } />
           </Route>
 
