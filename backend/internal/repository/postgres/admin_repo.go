@@ -43,9 +43,9 @@ func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	return admins, nil
 }
 
-func (r *adminRepo) UpdateAdminStatus(ctx context.Context, id uuid.UUID, role domain.UserRole) error {
-	const q = `UPDATE users SET role = $1 WHERE id = $2`
-	_, err := r.db.Exec(ctx, q, string(role), id)
+func (r *adminRepo) UpdateAdminProfile(ctx context.Context, id uuid.UUID, name, email string, role domain.UserRole, roleID uuid.UUID) error {
+	const q = `UPDATE users SET name = $1, email = $2, role = $3, role_id = $4 WHERE id = $5`
+	_, err := r.db.Exec(ctx, q, name, email, string(role), roleID, id)
 	return err
 }
 

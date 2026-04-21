@@ -84,7 +84,7 @@ func (h *AdminHandler) UpdateAdminStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
 		return
 	}
-	if err := h.uc.UpdateAdminStatus(c.Request.Context(), actorID, targetID, req.Role); err != nil {
+	if err := h.uc.UpdateAdminStatus(c.Request.Context(), actorID, targetID, req.Name, req.Email, req.RoleID); err != nil {
 		respondError(c, err)
 		return
 	}

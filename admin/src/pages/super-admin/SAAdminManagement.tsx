@@ -110,8 +110,16 @@ export function SAAdminManagement() {
           setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
           return;
         }
-        // update() only sends { role } — role_id not needed here
-        await adminsApi.update(editingAdmin.id, { role: values.role as AdminRole });
+        const def = roleDefs.find(r => r.name === values.role);
+        if (!def) {
+          setApiError('Selected role not found. Please refresh the page or select a different role.');
+          return;
+        }
+        await adminsApi.update(editingAdmin.id, {
+          name:    values.name,
+          email:   values.email,
+          role_id: def.id,
+        });
       } else {
         // Create needs role_id to link the new user to the roles table
         const selectedRoleDef = roleDefs.find(r => r.name === values.role);
@@ -147,7 +155,16 @@ export function SAAdminManagement() {
       await adminsApi.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminsApi.update(admin.id, { role: confirmModal.pendingData.role as AdminRole });
+      const def = roleDefs.find(r => r.name === confirmModal.pendingData!.role);
+      if (!def) {
+        setApiError('Selected role not found. Please refresh the page or select a different role.');
+        return;
+      }
+      await adminsApi.update(admin.id, {
+        name:    confirmModal.pendingData.name,
+        email:   confirmModal.pendingData.email,
+        role_id: def.id,
+      });
       setModalOpen(false);
     }
 

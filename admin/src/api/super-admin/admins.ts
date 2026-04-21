@@ -11,6 +11,12 @@ export interface CreateAdminPayload {
   password: string;
 }
 
+export interface UpdateAdminPayload {
+  name?:   string;
+  email?:  string;
+  role_id: string;
+}
+
 export const adminsApi = {
   list: () =>
     adminRequest<unknown>('GET', '/users').then(extractArray<AdminUser>),
@@ -26,9 +32,13 @@ export const adminsApi = {
       status:   (u as AdminUser).status   ?? 'active',
     } as AdminUser)),
 
-  /** PUT /admin/users/:id — backend only accepts { role } and returns 204. */
-  update: (id: string, data: Partial<AdminUser> & { role?: string }) =>
-    adminRequestVoid('PUT', `/users/${id}`, { role: data.role ?? '' }),
+  /** PUT /admin/users/:id — updates name / email / role_id. Returns 204. */
+  update: (id: string, data: UpdateAdminPayload) =>
+    adminRequestVoid('PUT', `/users/${id}`, {
+      ...(data.name  !== undefined ? { name:  data.name  } : {}),
+      ...(data.email !== undefined ? { email: data.email } : {}),
+      role_id: data.role_id,
+    }),
 
   deactivate: (id: string) =>
     adminRequestVoid('DELETE', `/users/${id}`),

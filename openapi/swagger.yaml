@@ -4120,11 +4120,18 @@ components:
 
     UpdateAdminStatusRequest:
       type: object
-      required: [role]
+      required: [role_id]
       properties:
-        role:
+        name:
           type: string
-          enum: [admin, superadmin, operations, finance, support]
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        role_id:
+          type: string
+          format: uuid
 
     AdminFaresResponse:
       type: object

@@ -61,11 +61,14 @@ export function AdminsTab() {
           password: values.password ?? '',
         });
       } else if (modal?.mode === 'edit') {
+        if (!selectedRoleDef) {
+          setApiError('Selected role not found. Please refresh the page.');
+          return;
+        }
         await adminsApi.update(modal.admin.id, {
-          name: values.name,
-          email: values.email,
-          role: values.role as AdminRole,
-          role_id: selectedRoleDef?.id,
+          name:    values.name,
+          email:   values.email,
+          role_id: selectedRoleDef.id,
         });
       }
       qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
