@@ -13,6 +13,8 @@
 | Finance     | finance@sakai.com      | admin123  | finance    |
 | Support     | support@sakai.com      | admin123  | support    |
 
+**TEST a@sakai.com @MoXqEWDs3
+
 ---
 
 ## Reset & Reseed (single command)
