@@ -41,14 +41,17 @@ npm run generate:types   # Regenerate src/types/openapi.d.ts from ../openapi/swa
 ## Project Structure
 - `/src/api/` - API client + React Query hooks (typed against generated OpenAPI types).
 - `/src/components/ui/` - Reusable atomic UI primitives (Button, Card, Table, Tabs, Input, Badge, ...).
-- `/src/components/layout/`, `shared/`, `super-admin/` - Composed layout and feature shells.
+- `/src/components/layout/`, `shared/`, `forms/` - Composed layout, shared widgets, and form components.
+- `/src/components/super-admin/{dashboard,tables,modals,forms,shared}/` - Superadmin feature components.
 - `/src/components/Header.tsx`, `Sidebar.tsx`, `ErrorBoundary.tsx` - Top-level chrome.
+- `/src/components/RequirePermission.tsx` - Route/element guard backed by `usePermissions`.
 - `/src/pages/` - One file per admin section (Dashboard, UserManagement, RideManagement, Payments, FareSurge, SafetyCompliance, Reports, Settings, Login).
 - `/src/pages/super-admin/` - Superadmin-only views (audit logs, role management, system config, payments, safety compliance).
 - `/src/contexts/`, `/src/hooks/` - Cross-cutting React context + custom hooks.
 - `/src/constants/`, `/src/utils/`, `/src/lib/` - Constants, helpers, and `cn` / `formatPHP`.
 - `/src/types/openapi.d.ts` - **Generated**, do not hand-edit. Run `npm run generate:types`.
-- `/src/mocks/`, `/src/test/` - MSW/fixture mocks and Vitest setup.
+- `/src/mocks/`, `/src/test/` - Static fixtures and Vitest jsdom setup.
+- `/src/api/super-admin/` - One file per resource; uses typed `adminRequest` helper from `_request.ts`.
 
 ## AI Assistant Guidelines
 When contributing to this project, please adhere to the following rules:
@@ -68,3 +71,6 @@ When contributing to this project, please adhere to the following rules:
 - Dev server runs on **port 3000** (see `package.json`) — some older docs (e.g. `TEST_ACCOUNTS.md`) reference `5173`; 3000 is correct.
 - `src/types/openapi.d.ts` is generated; editing it by hand will be overwritten.
 - Backend API base URL comes from `.env` (see `.env.example`); test credentials are in `TEST_ACCOUNTS.md` (local only).
+- **Monorepo siblings:** backend lives at `../backend/`, OpenAPI contract at `../openapi/swagger.yaml`. `npm run generate:types` reads from there.
+- **Dynamic RBAC:** gate UI with `usePermissions().can('key', 'read' | 'write')`. Do NOT compare against a static role string — backend roles are dynamic.
+- **Test colocation:** Vitest specs live next to source as `*.test.ts(x)` (e.g. `src/utils/formatCurrency.test.ts`). No separate `__tests__/` dirs.
