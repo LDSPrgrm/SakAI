@@ -73,6 +73,7 @@ export function AdminsTab() {
         });
       }
       qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
       closeModal();
     } catch (error: unknown) {
       setApiError(error instanceof Error ? error.message : 'Failed to save admin.');
@@ -188,6 +189,7 @@ export function AdminsTab() {
           try {
             await adminsApi.deactivate(confirmDeactivate.id);
             qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+            qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
           } catch {
             // surfaces via row status on next fetch
           } finally {

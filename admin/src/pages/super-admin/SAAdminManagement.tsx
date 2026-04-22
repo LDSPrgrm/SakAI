@@ -57,7 +57,10 @@ export function SAAdminManagement() {
   const rolesQuery = useRoles();
   const admins = (adminsQuery.data ?? []) as unknown as AdminUser[];
   const roleDefs = (rolesQuery.data ?? []) as unknown as AdminRoleDefinition[];
-  const invalidateAdmins = () => qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+  const invalidateAdminsAndRoles = () => {
+    qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+    qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+  };
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -136,7 +139,7 @@ export function SAAdminManagement() {
         });
       }
       setModalOpen(false);
-      invalidateAdmins();
+      invalidateAdminsAndRoles();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error
         ? error.message
@@ -169,7 +172,7 @@ export function SAAdminManagement() {
       setModalOpen(false);
     }
 
-    invalidateAdmins();
+    invalidateAdminsAndRoles();
     setConfirmModal({ open: false, type: 'suspend', admin: null });
   }
 
