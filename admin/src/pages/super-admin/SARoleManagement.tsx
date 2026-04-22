@@ -182,6 +182,7 @@ export function SARoleManagement() {
                   <TableHead>Role Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Origin</TableHead>
                   <TableHead>Active Admins</TableHead>
                   <TableHead>Permissions</TableHead>
                   <TableHead>Date Created</TableHead>
@@ -191,7 +192,7 @@ export function SARoleManagement() {
               <TableBody>
                 {roles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-text-muted py-10">
+                    <TableCell colSpan={8} className="text-center text-text-muted py-10">
                       No roles found.
                     </TableCell>
                   </TableRow>
@@ -202,6 +203,11 @@ export function SARoleManagement() {
                     </TableCell>
                     <TableCell className="text-sm text-text-muted max-w-[180px] truncate">
                       {role.description || '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={role.name === 'super_admin' ? 'warning' : 'default'}>
+                        {role.name === 'super_admin' ? 'Superadmin' : 'Admin'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={role.is_system ? 'info' : 'default'}>
