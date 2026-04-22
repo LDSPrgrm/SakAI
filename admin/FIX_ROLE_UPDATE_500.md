@@ -1,5 +1,7 @@
 # Fix: `PUT /admin/users/:id` 500s when assigning a custom (non-system) role
 
+> **Status:** ✅ Completed 2026-04-22 — verified end-to-end across backend DTO/ports/repo/usecase/handler/mocks/tests, OpenAPI, generated types, and frontend call sites (`SAAdminManagement.tsx`, `AdminsTab.tsx`).
+
 ## Context
 
 Superadmin updates admin's role via the admin-management UI. Picking a

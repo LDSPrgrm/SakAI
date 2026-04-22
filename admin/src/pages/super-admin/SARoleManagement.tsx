@@ -182,6 +182,7 @@ export function SARoleManagement() {
                   <TableHead>Role Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Origin</TableHead>
                   <TableHead>Active Admins</TableHead>
                   <TableHead>Permissions</TableHead>
                   <TableHead>Date Created</TableHead>
@@ -191,7 +192,7 @@ export function SARoleManagement() {
               <TableBody>
                 {roles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-text-muted py-10">
+                    <TableCell colSpan={8} className="text-center text-text-muted py-10">
                       No roles found.
                     </TableCell>
                   </TableRow>
@@ -202,6 +203,11 @@ export function SARoleManagement() {
                     </TableCell>
                     <TableCell className="text-sm text-text-muted max-w-[180px] truncate">
                       {role.description || '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={role.name === 'super_admin' ? 'warning' : 'default'}>
+                        {role.name === 'super_admin' ? 'Superadmin' : 'Admin'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={role.is_system ? 'info' : 'default'}>
@@ -227,12 +233,15 @@ export function SARoleManagement() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
+                        {role.name !== 'super_admin' && (
+                          <Button variant="ghost" size="icon" title="Edit role"
+                            onClick={() => openEdit(role)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        )}
+
                         {!role.is_system && (
                           <>
-                            <Button variant="ghost" size="icon" title="Edit role"
-                              onClick={() => openEdit(role)}>
-                              <Pencil className="w-4 h-4" />
-                            </Button>
                             <Button variant="ghost" size="icon" title="Duplicate role"
                               onClick={() => handleDuplicate(role).catch(() => {})}>
                               <Copy className="w-4 h-4" />
@@ -252,7 +261,7 @@ export function SARoleManagement() {
                           </>
                         )}
 
-                        {role.is_system && (
+                        {role.name === 'super_admin' && (
                           <span className="text-xs text-text-muted italic px-2">System role</span>
                         )}
                       </div>
@@ -358,7 +367,7 @@ export function SARoleManagement() {
               </Button>
             </div>
             <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-              {viewingRole.is_system && (
+              {viewingRole.name === 'super_admin' && (
                 <div className="flex items-center gap-2 p-3 bg-background rounded-lg border border-border">
                   <Badge variant="info">System role — cannot be modified</Badge>
                   {viewingRole.description && (

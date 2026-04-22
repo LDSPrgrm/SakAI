@@ -53,8 +53,9 @@ export function toPermissions(grid: PermGrid): RolePermission[] {
 }
 
 export function permSummary(perms: RolePermission[]): string {
-  const enabled = perms.filter((p) => p.read || p.write).length;
-  return `${enabled} of ${PERM_ROWS.length}`;
+  const reads = perms.filter((p) => p.read).length;
+  const writes = perms.filter((p) => p.write).length;
+  return `${reads}R · ${writes}W`;
 }
 
 export interface PermissionGridProps {

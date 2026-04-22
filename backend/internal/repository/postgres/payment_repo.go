@@ -2,12 +2,31 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
 )
+
+// In-memory payouts store. Replace with a real driver_payouts table migration
+// later. Guarded by a mutex so concurrent admin requests don't race.
+var (
+	payoutsOnce  sync.Once
+	payoutsMu    sync.Mutex
+	payoutsStore []*domain.DriverPayout
+)
+
+func initPayouts() {
+	payoutsOnce.Do(func() {
+		payoutsStore = []*domain.DriverPayout{
+			{ID: uuid.New(), Batch: "2026-W14", DriverCount: 24, TotalAmount: 18400.00, Period: "Apr 1–7 2026", Status: "pending"},
+			{ID: uuid.New(), Batch: "2026-W13", DriverCount: 20, TotalAmount: 15200.50, Period: "Mar 25–31 2026", Status: "approved"},
+		}
+	})
+}
 
 type paymentRepo struct{ db *pgxpool.Pool }
 
@@ -48,21 +67,28 @@ func (r *paymentRepo) GetPaymentSummary(_ context.Context) (*domain.PaymentSumma
 }
 
 func (r *paymentRepo) ListPayouts(_ context.Context) ([]*domain.DriverPayout, error) {
-	stubs := []*domain.DriverPayout{
-		{
-			ID: uuid.New(), Batch: "2026-W14", DriverCount: 24,
-			TotalAmount: 18400.00, Period: "Apr 1–7 2026", Status: "pending",
-		},
-		{
-			ID: uuid.New(), Batch: "2026-W13", DriverCount: 20,
-			TotalAmount: 15200.50, Period: "Mar 25–31 2026", Status: "approved",
-		},
+	initPayouts()
+	payoutsMu.Lock()
+	defer payoutsMu.Unlock()
+	out := make([]*domain.DriverPayout, len(payoutsStore))
+	for i, p := range payoutsStore {
+		cp := *p
+		out[i] = &cp
 	}
-	return stubs, nil
+	return out, nil
 }
 
-func (r *paymentRepo) ApprovePayout(_ context.Context, _ uuid.UUID) error {
-	return nil
+func (r *paymentRepo) ApprovePayout(_ context.Context, id uuid.UUID) error {
+	initPayouts()
+	payoutsMu.Lock()
+	defer payoutsMu.Unlock()
+	for _, p := range payoutsStore {
+		if p.ID == id {
+			p.Status = "approved"
+			return nil
+		}
+	}
+	return fmt.Errorf("payout %s not found", id)
 }
 
 func (r *paymentRepo) GetGatewayConfigs(ctx context.Context) ([]*domain.PaymentGatewayConfig, error) {

@@ -23,7 +23,7 @@ func NewRoleRepo(db *pgxpool.Pool) domain.RoleRepository {
 func (r *roleRepo) ListRoles(ctx context.Context) ([]*domain.Role, error) {
 	const q = `
 		SELECT r.id, r.name, r.description, r.is_system, r.created_by, r.created_at, r.updated_at,
-		       (SELECT COUNT(*) FROM users u WHERE REPLACE(u.role::text, 'superadmin', 'super_admin') = r.name) AS admin_count
+		       (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) AS admin_count
 		FROM roles r
 		ORDER BY r.is_system DESC, r.name`
 
@@ -101,7 +101,7 @@ func (r *roleRepo) CreateRole(ctx context.Context, role *domain.Role) error {
 func (r *roleRepo) GetRoleByID(ctx context.Context, id uuid.UUID) (*domain.Role, error) {
 	const q = `
 		SELECT r.id, r.name, r.description, r.is_system, r.created_by, r.created_at, r.updated_at,
-		       (SELECT COUNT(*) FROM users u WHERE REPLACE(u.role::text, 'superadmin', 'super_admin') = r.name) AS admin_count
+		       (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) AS admin_count
 		FROM roles r
 		WHERE r.id = $1`
 
@@ -190,14 +190,12 @@ func (r *roleRepo) GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]
 	return perms, rows.Err()
 }
 
-// GetAdminsByRole returns users whose role column matches the role's name.
-// This bridges the ENUM-based user.role with the roles table via name equality.
+// GetAdminsByRole returns users assigned to the given role via the role_id FK.
 func (r *roleRepo) GetAdminsByRole(ctx context.Context, roleID uuid.UUID) ([]*domain.User, error) {
 	const q = `
 		SELECT u.id, u.name, u.email, u.role, u.created_at
 		FROM users u
-		JOIN roles r ON r.name = REPLACE(u.role::text, 'superadmin', 'super_admin')
-		WHERE r.id = $1`
+		WHERE u.role_id = $1`
 
 	rows, err := r.db.Query(ctx, q, roleID)
 	if err != nil {

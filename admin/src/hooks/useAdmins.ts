@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminsApi, type CreateAdminPayload, type UpdateAdminPayload } from '@/api/super-admin/admins';
 
 const ADMINS_KEY = ['admin', 'admins'] as const;
+const ROLES_KEY = ['admin', 'roles'] as const;
 
 export function useAdmins() {
   return useQuery({
@@ -12,11 +13,16 @@ export function useAdmins() {
   });
 }
 
+function invalidateAdminsAndRoles(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ADMINS_KEY });
+  qc.invalidateQueries({ queryKey: ROLES_KEY });
+}
+
 export function useCreateAdmin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateAdminPayload) => adminsApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ADMINS_KEY }),
+    onSuccess: () => invalidateAdminsAndRoles(qc),
   });
 }
 
@@ -25,7 +31,7 @@ export function useUpdateAdmin() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAdminPayload }) =>
       adminsApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ADMINS_KEY }),
+    onSuccess: () => invalidateAdminsAndRoles(qc),
   });
 }
 
@@ -33,7 +39,7 @@ export function useDeactivateAdmin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => adminsApi.deactivate(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ADMINS_KEY }),
+    onSuccess: () => invalidateAdminsAndRoles(qc),
   });
 }
 

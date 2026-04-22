@@ -9,6 +9,7 @@ import { AdminForm, type AdminFormValues } from '@/components/super-admin/forms/
 import { adminsApi } from '@/api/super-admin/admins';
 import { useAdmins } from '@/hooks/useAdmins';
 import { useRoles } from '@/hooks/useRoles';
+import { displayRole } from '@/utils/displayRole';
 import type { AdminRole, AdminRoleDefinition, AdminUser } from '@/types/super-admin';
 
 function roleVariant(role: string): 'info' | 'default' {
@@ -72,6 +73,7 @@ export function AdminsTab() {
         });
       }
       qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
       closeModal();
     } catch (error: unknown) {
       setApiError(error instanceof Error ? error.message : 'Failed to save admin.');
@@ -83,7 +85,7 @@ export function AdminsTab() {
       ? {
           name: modal.admin.name,
           email: modal.admin.email,
-          role: modal.admin.role,
+          role: displayRole(modal.admin, roleDefinitions),
           status: modal.admin.status ?? 'active',
           password: '',
         }
@@ -120,7 +122,7 @@ export function AdminsTab() {
                 <TableCell className="font-medium">{admin.name}</TableCell>
                 <TableCell>{admin.email}</TableCell>
                 <TableCell>
-                  <Badge variant={roleVariant(admin.role)}>{roleLabel(admin.role)}</Badge>
+                  <Badge variant={roleVariant(displayRole(admin, roleDefinitions))}>{roleLabel(displayRole(admin, roleDefinitions))}</Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant={admin.status === 'active' ? 'success' : 'default'}>
@@ -187,6 +189,7 @@ export function AdminsTab() {
           try {
             await adminsApi.deactivate(confirmDeactivate.id);
             qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+            qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
           } catch {
             // surfaces via row status on next fetch
           } finally {
