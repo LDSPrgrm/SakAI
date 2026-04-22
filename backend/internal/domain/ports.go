@@ -241,8 +241,8 @@ type SystemRepository interface {
 // ReportRepository provides report data.
 type ReportRepository interface {
 	ListReports(ctx context.Context) ([]*ReportDefinition, error)
-	GetChartData(ctx context.Context, reportType string) ([]map[string]interface{}, error)
-	ExportReport(ctx context.Context, reportType string) ([]byte, error)
+	GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]interface{}, error)
+	ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error)
 }
 
 // MetricsRepository provides individual KPI metrics.
@@ -469,8 +469,8 @@ type SystemUseCase interface {
 // ReportUseCase provides analytics reports.
 type ReportUseCase interface {
 	ListReports(ctx context.Context) ([]*ReportDefinition, error)
-	GetChartData(ctx context.Context, reportType string) ([]map[string]interface{}, error)
-	ExportReport(ctx context.Context, reportType string) ([]byte, error)
+	GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]interface{}, error)
+	ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error)
 }
 
 // MetricsUseCase provides individual KPI metrics for the dashboard.

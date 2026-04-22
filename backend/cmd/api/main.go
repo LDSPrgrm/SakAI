@@ -21,6 +21,7 @@ import (
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
+	"github.com/sakai/backend/internal/infrastructure/storage"
 	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
 	"github.com/sakai/backend/internal/usecase"
@@ -156,7 +157,7 @@ func main() {
 		System:         handler.NewSystemHandler(systemUC),
 		Report:         handler.NewReportHandler(reportUC),
 		Metrics:        handler.NewMetricsHandler(metricsUC),
-		Document:       handler.NewDocumentHandler(documentUC),
+		Document:       handler.NewDocumentHandler(documentUC, mustUploader(cfg.UploadDir, cfg.UploadPublicBaseURL)),
 		Rating:         handler.NewRatingHandler(ratingUC),
 		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
 		Tip:            handler.NewTipHandler(tipUC),
@@ -200,4 +201,20 @@ func main() {
 		log.Printf("graceful shutdown error: %v", err)
 	}
 	log.Println("server stopped")
+}
+
+// mustUploader builds the storage backend used for driver documents. Empty
+// config falls back to ./uploads served at /files/*.
+func mustUploader(baseDir, publicBaseURL string) storage.Uploader {
+	if baseDir == "" {
+		baseDir = "./uploads"
+	}
+	if publicBaseURL == "" {
+		publicBaseURL = "/files"
+	}
+	u, err := storage.NewLocalUploader(baseDir, publicBaseURL)
+	if err != nil {
+		log.Fatalf("storage: %v", err)
+	}
+	return u
 }

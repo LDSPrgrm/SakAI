@@ -1180,33 +1180,33 @@ func (m *MockReportRepository) EXPECT() *MockReportRepositoryMockRecorder {
 }
 
 // ExportReport mocks base method.
-func (m *MockReportRepository) ExportReport(ctx context.Context, reportType string) ([]byte, error) {
+func (m *MockReportRepository) ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType)
+	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExportReport indicates an expected call of ExportReport.
-func (mr *MockReportRepositoryMockRecorder) ExportReport(ctx, reportType any) *gomock.Call {
+func (mr *MockReportRepositoryMockRecorder) ExportReport(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportRepository)(nil).ExportReport), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportRepository)(nil).ExportReport), ctx, reportType, from, to)
 }
 
 // GetChartData mocks base method.
-func (m *MockReportRepository) GetChartData(ctx context.Context, reportType string) ([]map[string]any, error) {
+func (m *MockReportRepository) GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]any, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType)
+	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]map[string]any)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetChartData indicates an expected call of GetChartData.
-func (mr *MockReportRepositoryMockRecorder) GetChartData(ctx, reportType any) *gomock.Call {
+func (mr *MockReportRepositoryMockRecorder) GetChartData(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportRepository)(nil).GetChartData), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportRepository)(nil).GetChartData), ctx, reportType, from, to)
 }
 
 // ListReports mocks base method.
@@ -2837,33 +2837,33 @@ func (m *MockReportUseCase) EXPECT() *MockReportUseCaseMockRecorder {
 }
 
 // ExportReport mocks base method.
-func (m *MockReportUseCase) ExportReport(ctx context.Context, reportType string) ([]byte, error) {
+func (m *MockReportUseCase) ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType)
+	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExportReport indicates an expected call of ExportReport.
-func (mr *MockReportUseCaseMockRecorder) ExportReport(ctx, reportType any) *gomock.Call {
+func (mr *MockReportUseCaseMockRecorder) ExportReport(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportUseCase)(nil).ExportReport), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportUseCase)(nil).ExportReport), ctx, reportType, from, to)
 }
 
 // GetChartData mocks base method.
-func (m *MockReportUseCase) GetChartData(ctx context.Context, reportType string) ([]map[string]any, error) {
+func (m *MockReportUseCase) GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]any, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType)
+	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]map[string]any)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetChartData indicates an expected call of GetChartData.
-func (mr *MockReportUseCaseMockRecorder) GetChartData(ctx, reportType any) *gomock.Call {
+func (mr *MockReportUseCaseMockRecorder) GetChartData(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportUseCase)(nil).GetChartData), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportUseCase)(nil).GetChartData), ctx, reportType, from, to)
 }
 
 // ListReports mocks base method.

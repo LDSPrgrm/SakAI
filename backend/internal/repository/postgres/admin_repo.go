@@ -343,30 +343,53 @@ func NewSystemMetricsRepo(db *pgxpool.Pool) domain.SystemMetricsRepository {
 func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.DashboardMetrics, error) {
 	m := &domain.DashboardMetrics{}
 
-	// Active Riders (at least 1 ride in past 30 days)
 	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {
 		return nil, err
 	}
 
-	// Active Drivers (online or with a ride in past 30 days)
 	const qDrivers = `SELECT COUNT(DISTINCT driver_id) FROM rides WHERE driver_id IS NOT NULL AND created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qDrivers).Scan(&m.ActiveDrivers); err != nil {
 		return nil, err
 	}
 
-	// Rides Today
 	const qRides = `SELECT COUNT(*) FROM rides WHERE created_at >= CURRENT_DATE`
 	if err := r.db.QueryRow(ctx, qRides).Scan(&m.RidesToday); err != nil {
 		return nil, err
 	}
 
-	// Revenue Today (Mock 0 since billing schema is pending)
-	m.RevenueToday = 0
+	const qRevenue = `
+		SELECT COALESCE(SUM(amount), 0)
+		FROM ride_payments
+		WHERE status = 'completed' AND processed_at::date = CURRENT_DATE`
+	if err := r.db.QueryRow(ctx, qRevenue).Scan(&m.RevenueToday); err != nil {
+		return nil, err
+	}
 
-	// Avg Wait Time Today (Mock 0 since accepted_at schema is pending)
-	m.AvgWaitTimeSeconds = 0
+	// Avg wait = accepted_at - created_at for rides accepted in the last 24h.
+	// NULL when there are no rides yet; scan into a nullable float.
+	const qWait = `
+		SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (accepted_at - created_at))), 0)
+		FROM rides
+		WHERE accepted_at IS NOT NULL AND created_at >= NOW() - INTERVAL '24 hours'`
+	if err := r.db.QueryRow(ctx, qWait).Scan(&m.AvgWaitTimeSeconds); err != nil {
+		return nil, err
+	}
 
-	m.SystemUptime = 99.99 // Hardcoded mock for now as per spec target
+	// Uptime = fraction of 'ok' probes over the last 24h across all services.
+	// If no probes have been recorded yet, leave NULL → UI can render '—'.
+	const qUptime = `
+		SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+		            ELSE 100.0 * COUNT(*) FILTER (WHERE status = 'ok') / COUNT(*)
+		       END
+		FROM system_health_probes
+		WHERE checked_at >= NOW() - INTERVAL '24 hours'`
+	var uptime *float64
+	if err := r.db.QueryRow(ctx, qUptime).Scan(&uptime); err != nil {
+		return nil, err
+	}
+	if uptime != nil {
+		m.SystemUptime = *uptime
+	}
 	return m, nil
 }

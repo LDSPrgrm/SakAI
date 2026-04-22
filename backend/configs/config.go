@@ -32,6 +32,10 @@ type Config struct {
 
 	// Stripe (Payments)
 	StripeSecretKey string
+
+	// Storage (driver documents)
+	UploadDir            string
+	UploadPublicBaseURL  string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -49,6 +53,8 @@ func Load() *Config {
 		WSPingInterval:          getDuration("WS_PING_INTERVAL", 30*time.Second),
 		LocationRateLimitPerMin: getInt("LOCATION_RATE_LIMIT_PER_MIN", 30),
 		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
+		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
+		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/files"),
 	}
 
 	// Security: refuse to start with the default JWT secret outside of local dev.

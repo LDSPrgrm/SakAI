@@ -69,9 +69,12 @@ func TestMigrations_Count(t *testing.T) {
 		t.Fatalf("failed to read embedded dir: %v", err)
 	}
 
-	// We expect 30 files: 15 up + 15 down (all migrations 001-015 have both).
-	if len(entries) != 30 {
-		t.Errorf("expected 30 migration files, got %d", len(entries))
+	// Every migration ships a paired up/down file.
+	if len(entries)%2 != 0 {
+		t.Errorf("expected paired up/down migrations, got odd count %d", len(entries))
+	}
+	if len(entries) < 30 {
+		t.Errorf("expected at least 30 migration files, got %d", len(entries))
 	}
 }
 

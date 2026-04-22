@@ -10,47 +10,40 @@ import (
 	"github.com/google/uuid"
 	"github.com/sakai/backend/internal/delivery/http/dto"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/infrastructure/storage"
 )
 
 const maxUploadSize = 10 << 20 // 10 MB
 
 // DocumentHandler handles /drivers/documents routes.
 type DocumentHandler struct {
-	uc domain.DocumentUseCase
-	// TODO: Replace with actual cloud storage uploader (S3, GCS, etc.)
-	uploadURLBuilder func(driverID uuid.UUID, docType domain.DocumentType, filename string) string
+	uc       domain.DocumentUseCase
+	uploader storage.Uploader
 }
 
-// NewDocumentHandler creates a new DocumentHandler.
-func NewDocumentHandler(uc domain.DocumentUseCase) *DocumentHandler {
-	return &DocumentHandler{
-		uc: uc,
-		// Stub URL builder — replace with real signed URL generation.
-		uploadURLBuilder: func(driverID uuid.UUID, docType domain.DocumentType, filename string) string {
-			return fmt.Sprintf("https://storage.example.com/documents/%s/%s/%s", driverID, docType, filename)
-		},
-	}
+// NewDocumentHandler builds a DocumentHandler. The caller chooses the Uploader
+// implementation — LocalUploader for dev/self-hosted, S3Uploader once cloud
+// storage is adopted.
+func NewDocumentHandler(uc domain.DocumentUseCase, uploader storage.Uploader) *DocumentHandler {
+	return &DocumentHandler{uc: uc, uploader: uploader}
 }
 
 // UploadDocument handles POST /drivers/documents (multipart/form-data).
 func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 	driverID := c.MustGet("userID").(uuid.UUID)
 
-	// Parse form fields.
 	var req dto.DocumentUploadRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
 		return
 	}
 
-	// Parse and validate the file header.
 	fileHeader, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "image file is required"})
 		return
 	}
 
-	// Validate file size.
 	if fileHeader.Size > maxUploadSize {
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
 			"code":    "FILE_TOO_LARGE",
@@ -59,9 +52,14 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 		return
 	}
 
-	// Validate file extension.
 	ext := filepath.Ext(fileHeader.Filename)
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+	contentType := "application/octet-stream"
+	switch ext {
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+	case ".png":
+		contentType = "image/png"
+	default:
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"code":    "INVALID_FILE_FORMAT",
 			"message": "Only JPEG and PNG images are accepted",
@@ -69,21 +67,26 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 		return
 	}
 
-	// TODO: Replace with actual file upload to cloud storage.
-	// For now, generate a stub URL.
-	imageURL := h.uploadURLBuilder(driverID, req.ToDomainDocumentType(), fileHeader.Filename)
+	src, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_SERVER_ERROR", "message": "Failed to open upload"})
+		return
+	}
+	defer src.Close()
 
-	// Save file to local disk for now (stub implementation).
-	if err := c.SaveUploadedFile(fileHeader, fmt.Sprintf("./uploads/%s", fileHeader.Filename)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_SERVER_ERROR", "message": "Failed to save file"})
+	docType := req.ToDomainDocumentType()
+	key := fmt.Sprintf("documents/%s/%s/%s", driverID, docType, fileHeader.Filename)
+
+	imageURL, err := h.uploader.Put(c.Request.Context(), key, src, contentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "INTERNAL_SERVER_ERROR", "message": "Failed to store file"})
 		return
 	}
 
-	// Call usecase.
 	doc, err := h.uc.UploadDocument(
 		c.Request.Context(),
 		driverID,
-		req.ToDomainDocumentType(),
+		docType,
 		req.DocumentNumber,
 		req.ParseExpiryDate(),
 		imageURL,
