@@ -1,8 +1,33 @@
 # Backend Integration Audit — SakAI Admin Panel
 
-**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22
+**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22 · **Phase 3 landed:** 2026-04-22
 **Scope:** All admin & superadmin pages (`admin/src/pages/**/*.tsx`) cross-referenced against the Go backend (`backend/internal/**`), OpenAPI contract (`openapi/swagger.yaml`), and Postgres migrations.
 **Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low · ✅ Closed
+
+## Phase 3 closure (2026-04-22)
+
+All Phase-3 scope shipped except two subsections deferred to Phase 4 (rationale below):
+
+- #31 SASafetyCompliance incident "View" — ✅ `IncidentDetailModal` wired. Opens from row click + icon button.
+- Migration `021_create_incident_status_history` — trigger captures INSERT + status/assignee UPDATE on `incidents`. Backfill row per existing incident. Timeline reads via `GET /admin/incidents/{id}` → `{incident, status_history[]}`.
+- `PUT /admin/incidents/{id}/assign` — reassign dropdown in modal; body `{"assignee_id": "<uuid>" | null}`.
+- Migration `022_create_service_areas` — `service_areas(boundary JSONB, active)` + `lgu_partnerships(service_area_id FK, status CHECK)`. `GET /service-area` public, `/admin/service-areas` + `/admin/lgu-partnerships` CRUD superadmin-only. New `SALguPartnerships` page in sidebar under "LGU & Coverage".
+- Migration `023_create_alert_rules` — `alert_rules(type CHECK in four values, config JSONB)` + `alert_events`. CRUD at `/admin/alerts/rules`, events at `/admin/alerts/events`. Evaluator goroutine ticks every 5 min, four switch branches, one parametric SQL per type. `AlertRulesTab` mounted in `SASystemConfig`.
+- Surge zone polygon editor (`SurgeZoneEditor`) mounted on `SAFareConfig`. Reused as boundary editor on `SALguPartnerships` area modal. `FareCalculator.SimulateFare` now applies zone multiplier when origin sits inside a configured polygon (ray-casting, `usecase.FindZoneMultiplier`); falls back to global `max_multiplier` otherwise. `surge_configs.zones` retyped `[]byte` → `json.RawMessage` so Gin's JSON binder accepts arrays.
+- Map adapter — `src/lib/maps/` exposes `MapProvider` interface with SVG default + Mapbox/Google stubs; toggle via `VITE_MAP_PROVIDER`. `SurgeZoneEditor` consumes `activeMapProvider.PolygonEditor`.
+- Swagger regen + openapi.d.ts regen. Added 10 paths + 11 schemas; rewrote `ServiceArea` from legacy `{center, radius}` to `{boundary, active}` (see §4 drift table).
+
+### Phase 3 caveats ⚠️
+
+- **Not browser-smoke-tested.** IncidentDetailModal, SurgeZoneEditor, SALguPartnerships page + modals, AlertRulesTab all compile + type-check + pass unit tests, but were not exercised in `npm run dev` this session (autonomous, database-less). Hit these before merging.
+- **Alert evaluator is write-without-dedup.** Every 5-min tick inserts a fresh `alert_events` row per still-tripping rule — ~288/day per matching subject. Phase 4 adds cooldown + dedupe.
+- **Migration rollback not tested.** Forward only this session; run `migrate down` + `migrate up` as part of CI or release checklist.
+
+### Phase 3 deferred → Phase 4
+
+- **SOS location trail.** Plan §3.1 asked for `sos_location_trail[]` derived from driver location pings. No `driver_location_history` table exists and `drivers.location` is a single current-position row. Adding location capture + retention during active SOS incidents is a Phase-4 follow-up.
+- **Alert notification dispatch.** Plan §3.3 said "optionally dispatches via notification_templates". Evaluator only records `alert_events` rows; no SMS/email/push push yet. Phase 4.
+- **PostGIS `ST_Contains`** replaced by Go ray-casting. PostGIS is already available (drivers use geometry) so migration is one-query if scale demands it — not now.
 
 ## Phase 2 closure (2026-04-22)
 
@@ -57,7 +82,9 @@ All P0 backend-integration gaps are now closed:
 
 Backend implementation coverage (pre-Phase-1): Auth 100%, Rides 100%, Admin Users/Roles 100%, Fares 100%, Payments 100%, Passenger Payments 100%, Admin Dashboard 83%, Driver Ops 60%, Incidents/Safety 50%, Reports/Audit 33%, Admin System 0%. Aggregate: **76% real, 24% stub/missing**.
 
-Post-Phase-1: Admin Dashboard 100%, Driver Ops 100% (earnings added), Reports/Audit 100%, Admin System 100% (probes + config persistence + real TestIntegration). Aggregate: **~95% real** — the remaining 5% is Phase-3 scope (incident timeline, surge zones, alert rules, LGU partnerships, `/service-area`).
+Post-Phase-1: Admin Dashboard 100%, Driver Ops 100% (earnings added), Reports/Audit 100%, Admin System 100% (probes + config persistence + real TestIntegration). Aggregate: **~95% real** — the remaining 5% was Phase-3 scope (incident timeline, surge zones, alert rules, LGU partnerships, `/service-area`).
+
+Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aware simulation), Service areas + LGU 100% (new surface), Alerts 100% as CRUD + periodic evaluator. Aggregate: **~98% real**. Remaining ~2% = payment_repo still-stubbed transactions/summary/payouts, DriverHeatmap deterministic mock points, SOS location trail, alert dispatch — all Phase 4.
 
 ---
 
@@ -160,9 +187,9 @@ Clean.
 ### SASafetyCompliance.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 31 | Incident "View" button has no `onClick` | SASafetyCompliance.tsx:267 | Dead handler | 🔴 | 2/3 |
-| 32 | "Assigned To" column shown but no reassign UI | SASafetyCompliance.tsx:259-264 | Missing feature | 🟠 | 3 |
-| 33 | SOS incidents have no timeline, no status history, no location trail | — | Missing feature | 🟠 | 3 |
+| 31 | ~~Incident "View" button has no `onClick`~~ → wired to `IncidentDetailModal` | SASafetyCompliance.tsx:267 | ✅ Fixed 2026-04-22 Phase 3 | 🔴 | 3 |
+| 32 | ~~"Assigned To" column shown but no reassign UI~~ → reassign dropdown inside modal, backed by `PUT /admin/incidents/{id}/assign` | SASafetyCompliance.tsx | ✅ Fixed 2026-04-22 Phase 3 | 🟠 | 3 |
+| 33 | ~~SOS incidents have no timeline, no status history, no location trail~~ → timeline shipped via `incident_status_history` trigger + modal. **Location trail deferred to Phase 4** (no `driver_location_history` table yet) | — | ⚠️ Partial 2026-04-22 | 🟠 | 3/4 |
 | 34 | `KycDocPreview` key collides when same `doc.type` appears twice (use `${type}-${idx}`) | KycDocPreview.tsx:38-40 | Bug | 🟡 | 2 |
 | 35 | `LtfrbReportsSection` interface assumes fields backend doesn't return; `violations_open` etc. render NaN | LtfrbReportsSection.tsx:8-18 | Type drift | 🟠 | 1 |
 
@@ -266,7 +293,7 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 ### Swagger endpoints with NO Go handler
 | Endpoint | operationId | swagger.yaml line | Status |
 |----------|-------------|-------------------|--------|
-| `GET /service-area` | `getServiceAreas` | 111-126 | Deferred to Phase 3 |
+| `GET /service-area` | `getServiceAreas` | 111-126 | ✅ Implemented 2026-04-22 Phase 3 (shape rewritten — see drift note) |
 | `GET /driver/earnings` | `driverGetEarnings` | 571-630 | ✅ Implemented 2026-04-22 |
 
 ### New swagger additions (2026-04-22)
@@ -275,6 +302,26 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 | `GET /admin/system/infra-metrics` | p50/p95 HTTP latency + DB p99 + WS count from probes + perf middleware |
 | `InfraMetrics` schema | Response shape for `/admin/system/infra-metrics` |
 | `ComplianceData` extensions | Added `violations_open`, `violations_resolved`, `last_audit_at` |
+
+### Phase 3 swagger additions (2026-04-22)
+| Endpoint / Schema | Purpose |
+|-------------------|---------|
+| `GET /admin/incidents/{id}` | Incident detail + status-history timeline |
+| `PUT /admin/incidents/{id}/assign` | Reassign incident operator (body `{assignee_id}`) |
+| `GET/POST/PUT/DELETE /admin/service-areas` | Service-area CRUD (admin — includes inactive) |
+| `GET/POST/GET/PUT/DELETE /admin/lgu-partnerships` | LGU partnership CRUD |
+| `GET/POST/PUT/DELETE /admin/alerts/rules` | Alert rule CRUD |
+| `GET /admin/alerts/events` | Recent alert event list |
+| `IncidentDetail`, `IncidentStatusEvent` schemas | Timeline payload |
+| `ServiceArea` (rewritten) | **Breaking shape change** from `{center, radius}` → `{boundary, active}`. Boundary reuses `SurgeZone` shape. |
+| `ServiceAreaInput` | POST/PUT body |
+| `SurgeZone` schema | Named polygon + multiplier; consumed by fare calc + reused as service-area boundary |
+| `LGUPartnership` + `LGUPartnershipInput` schemas | Partnership CRUD payload |
+| `AlertRule` + `AlertRuleInput` + `AlertEvent` schemas | Alert CRUD payload |
+
+### Swagger drift ⚠️
+- `ServiceArea` shape changed from `{id, name, center, radius, is_active}` to `{id, name, lgu_code, boundary: SurgeZone, active}` in Phase 3. Any mobile client code reading the old shape must be updated alongside this release.
+- `SurgeConfig.zones` rewritten from `GeoJSONFeatureCollection` (never written this way by backend) to `SurgeZone[]` — matches what `surge_configs.zones` actually stores and what the fare calculator consumes. Brings swagger in sync with runtime. Regen ran; no hand-edited openapi.d.ts casts remain.
 
 ### Go endpoints with NO swagger doc
 None identified (all real handlers have corresponding swagger entries).
@@ -287,25 +334,26 @@ None identified (all real handlers have corresponding swagger entries).
 
 ## Section 5 — Database migration gaps
 
-### Existing tables (migrations 001-015)
-users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings
+### Existing tables (migrations 001-023)
+users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings · feature_flags · notification_templates · integration_configs · kyc_submissions · regulatory_compliance · system_health_probes · http_request_timings · **incident_status_history** (021) · **service_areas** (022) · **lgu_partnerships** (022) · **alert_rules** (023) · **alert_events** (023)
 
-### Missing tables
-| Entity | Needed for | Phase |
-|--------|-----------|-------|
-| `feature_flags` | `SystemRepo.UpdateFeatureFlag` no-op | 1 |
-| `notification_templates` | `SystemRepo.UpdateNotificationTemplate` no-op | 1 |
-| `integration_configs` | `SystemRepo.UpdateIntegration` no-op | 1 |
-| `kyc_submissions` | KYC pipeline entirely stubbed | 1 |
-| `regulatory_compliance` | LTFRB compliance hardcoded | 1 |
-| `system_health_probes` | Infra metrics hardcoded | 1 |
-| `incident_status_history` | SOS timeline | 3 |
-| `alert_rules`, `alert_events` | Alert configuration | 3 |
-| `service_areas`, `lgu_partnerships` | LGU regulatory tracking + `/service-area` endpoint | 3 |
+### Missing tables — Phase 3 closed
+| Entity | Needed for | Status |
+|--------|-----------|--------|
+| `feature_flags` | `SystemRepo.UpdateFeatureFlag` no-op | ✅ Phase 1 |
+| `notification_templates` | `SystemRepo.UpdateNotificationTemplate` no-op | ✅ Phase 1 |
+| `integration_configs` | `SystemRepo.UpdateIntegration` no-op | ✅ Phase 1 |
+| `kyc_submissions` | KYC pipeline entirely stubbed | ✅ Phase 1 |
+| `regulatory_compliance` | LTFRB compliance hardcoded | ✅ Phase 1 |
+| `system_health_probes` | Infra metrics hardcoded | ✅ Phase 1 |
+| `incident_status_history` | SOS timeline | ✅ Phase 3 (021) |
+| `alert_rules`, `alert_events` | Alert configuration | ✅ Phase 3 (023) |
+| `service_areas`, `lgu_partnerships` | LGU regulatory tracking + `/service-area` endpoint | ✅ Phase 3 (022) |
+| `driver_location_history` | SOS location trail | ⏳ Phase 4 (new) |
 
 ### Existing tables with unused columns
-- `surge_configs.zones` (JSONB) — stored but never queried during fare calculation; **Phase 3** wires PostGIS `ST_Contains` in `FareCalculator`.
-- `incidents.assigned_to` — column exists; reassign UI missing (**Phase 3**).
+- ~~`surge_configs.zones` (JSONB) — stored but never queried during fare calculation~~ → ✅ Phase 3: read via `usecase.ParseSurgeZones` + ray-casting in `FareCalculator.SimulateFare`. Shape = `[{name, multiplier, polygon:[[lat,lng]...]}, ...]`.
+- ~~`incidents.assigned_to` — column exists; reassign UI missing~~ → ✅ Phase 3: reassign dropdown in `IncidentDetailModal` + `PUT /admin/incidents/{id}/assign`.
 
 ---
 
@@ -326,5 +374,5 @@ Full phased plan lives at `~/.claude/plans/task-notification-task-id-ry2iub3hu-t
 - **Phase 0** — this document (✅ done).
 - **Phase 1** (P0) — ✅ done 2026-04-22 (including tail: earnings endpoint, probes goroutine, perf middleware + `infra-metrics`, real `TestIntegration` with `SKIP_EXTERNAL_PINGS`, authenticated `/api/files/*` route, swagger + openapi regen, `SASystemHealth`/`LtfrbReportsSection` retype).
 - **Phase 2** (P1) — ✅ done 2026-04-22. Modals (Rider/Driver/Docs/Ride/Transaction), date-range + pagination + payout confirm on Payments, per-provider integration form, small UI nits, DriverHeatmap mount. Deferred: `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` schema drifted to `{name, center, radius}`), fare `updated_by` username join, `SAAdminManagement` cast cleanup, `SASafetyCompliance` incident "View" (rolls into Phase 3).
-- **Phase 3** (P2) — pending. SOS timeline, surge-zone drawer + PostGIS calc, alert rules, LGU partnerships + `/service-area`.
-- **Phase 4** — pending: port fix in TEST_ACCOUNTS.md, `payment_repo` real queries (transactions + summary + payouts table), DriverHeatmap backend endpoint, fix `PaymentGatewayConfig` swagger drift, `SAAdminManagement` cast cleanup, fare `updated_by_name` response field, swagger `KycEntry.status` enum missing `needs_more_info`, final lint + test sweep.
+- **Phase 3** (P2) — ✅ done 2026-04-22. SOS timeline + reassign (021), surge zones via Go ray-casting + `SurgeZoneEditor` + `MapProvider` adapter, alert rules CRUD + evaluator goroutine (023), LGU partnerships + service areas CRUD + `/service-area` (022). Deferred: SOS location trail, alert notification dispatch.
+- **Phase 4** — pending: port fix in TEST_ACCOUNTS.md, `payment_repo` real queries (transactions + summary + payouts table), DriverHeatmap backend endpoint, `SAAdminManagement` cast cleanup, fare `updated_by_name` response field, swagger `KycEntry.status` enum missing `needs_more_info`, `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` drift), SOS location trail (new `driver_location_history` table), alert-event dispatch via `notification_templates`, final lint + test sweep.

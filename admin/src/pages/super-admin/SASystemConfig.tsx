@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { AlertRulesTab } from '@/components/super-admin/system/AlertRulesTab';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
@@ -436,6 +437,7 @@ export function SASystemConfig() {
               <TabsTrigger value="integrations">Integrations</TabsTrigger>
               <TabsTrigger value="templates">Notification Templates</TabsTrigger>
               <TabsTrigger value="flags">Feature Flags</TabsTrigger>
+              <TabsTrigger value="alerts">Alerts</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
 
@@ -494,7 +496,12 @@ export function SASystemConfig() {
               </div>
             </TabsContent>
 
-            {/* Tab 4 — Account / Change Password */}
+            {/* Tab 4 — Alerts */}
+            <TabsContent value="alerts">
+              <AlertRulesTab />
+            </TabsContent>
+
+            {/* Tab 5 — Account / Change Password */}
             <TabsContent value="account">
               <ChangePasswordForm />
             </TabsContent>

@@ -41,6 +41,7 @@ const SASystemConfig = lazy(() => import('@/pages/super-admin/SASystemConfig').t
 const SASystemHealth = lazy(() => import('@/pages/super-admin/SASystemHealth').then(m => ({ default: m.SASystemHealth })));
 const SAAuditLog = lazy(() => import('@/pages/super-admin/SAAuditLog').then(m => ({ default: m.SAAuditLog })));
 const SARoleManagement = lazy(() => import('@/pages/super-admin/SARoleManagement').then(m => ({ default: m.SARoleManagement })));
+const SALguPartnerships = lazy(() => import('@/pages/super-admin/SALguPartnerships').then(m => ({ default: m.SALguPartnerships })));
 
 function PageLoader() {
   return (
@@ -180,6 +181,11 @@ export default function App() {
             <Route path="audit" element={
               <RequirePermission permission="audit_log">
                 <Suspense fallback={<PageLoader />}><SAAuditLog /></Suspense>
+              </RequirePermission>
+            } />
+            <Route path="lgu" element={
+              <RequirePermission permission="system_config">
+                <Suspense fallback={<PageLoader />}><SALguPartnerships /></Suspense>
               </RequirePermission>
             } />
           </Route>

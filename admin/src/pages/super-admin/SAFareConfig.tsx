@@ -17,6 +17,8 @@ import {
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 import { DEFAULT_FARE_BY_VEHICLE } from '@/constants/fareDefaults';
+import { SurgeZoneEditor } from '@/components/super-admin/fares/SurgeZoneEditor';
+import type { SurgeZone } from '@/lib/maps';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -158,6 +160,7 @@ export function SAFareConfig() {
   const [surgeEnabled, setSurgeEnabled] = useState(false);
   const [maxMultiplier, setMaxMultiplier] = useState('2.5');
   const [triggerRatio, setTriggerRatio] = useState('1.5');
+  const [zones, setZones] = useState<SurgeZone[]>([]);
 
   // Sync local surge form state once the query resolves / updates.
   useEffect(() => {
@@ -165,6 +168,15 @@ export function SAFareConfig() {
     setSurgeEnabled(surgeConfig.enabled ?? false);
     setMaxMultiplier(String(surgeConfig.max_multiplier ?? 2.5));
     setTriggerRatio(String(surgeConfig.trigger_ratio ?? 1.5));
+    // Backend stores zones as JSONB SurgeZone[]. openapi regen now types it
+    // correctly; the cast is only needed to narrow the inner polygon rows
+    // from `number[][]` to `[number, number][]`.
+    const raw = surgeConfig.zones;
+    if (Array.isArray(raw)) {
+      setZones(raw as unknown as SurgeZone[]);
+    } else {
+      setZones([]);
+    }
   }, [surgeConfig]);
 
   // Simulator
@@ -189,6 +201,7 @@ export function SAFareConfig() {
       enabled: surgeEnabled,
       max_multiplier: parseFloat(maxMultiplier) || surgeConfig.max_multiplier,
       trigger_ratio: parseFloat(triggerRatio) || surgeConfig.trigger_ratio,
+      zones: zones as unknown as SurgeConfig['zones'],
     };
     await updateSurge.mutateAsync(payload);
     showBanner();
@@ -441,6 +454,12 @@ export function SAFareConfig() {
           </Card>
         </div>
       </div>
+
+      <SurgeZoneEditor
+        value={zones}
+        onChange={setZones}
+        disabled={!surgeEnabled}
+      />
     </div>
   );
 }

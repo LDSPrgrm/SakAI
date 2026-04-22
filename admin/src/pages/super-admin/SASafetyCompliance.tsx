@@ -24,6 +24,7 @@ import {
 import { useExportReport } from '@/hooks/useReports';
 import { formatDate } from '@/utils/formatDate';
 import { LtfrbReportsSection, type LtfrbData } from '@/components/super-admin/safety/LtfrbReportsSection';
+import { IncidentDetailModal } from '@/components/super-admin/modals/IncidentDetailModal';
 import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export function SASafetyCompliance() {
     driverName: '',
     action: 'approve',
   });
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedKycIds, setSelectedKycIds] = useState<Set<string>>(new Set());
   const batchKycLoading = batchKyc.isPending;
   const [banner, setBanner] = useState<{ visible: boolean; message: string }>({
@@ -228,7 +230,11 @@ export function SASafetyCompliance() {
                       </TableRow>
                     ) : (
                       filteredIncidents.map((inc) => (
-                        <TableRow key={inc.id}>
+                        <TableRow
+                          key={inc.id}
+                          className="cursor-pointer hover:bg-surface-hover/80"
+                          onClick={() => inc.id && setSelectedIncidentId(inc.id)}
+                        >
                           <TableCell className="text-sm font-medium text-text-main">
                             {inc.id}
                           </TableCell>
@@ -264,7 +270,15 @@ export function SASafetyCompliance() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="icon" title="View incident">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="View incident"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (inc.id) setSelectedIncidentId(inc.id);
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                           </TableCell>
@@ -382,6 +396,13 @@ export function SASafetyCompliance() {
           <LtfrbReportsSection data={ltfrbData} onGenerateReport={handleGenerateReport} />
         </TabsContent>
       </Tabs>
+
+      {/* Incident detail modal */}
+      <IncidentDetailModal
+        open={!!selectedIncidentId}
+        incidentId={selectedIncidentId}
+        onClose={() => setSelectedIncidentId(null)}
+      />
 
       {/* KYC Confirm Modal */}
       <ConfirmModal
