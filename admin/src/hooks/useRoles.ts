@@ -29,7 +29,12 @@ export function useUpdateRole() {
       id: string;
       data: { name: string; description: string; permissions: RolePermission[] };
     }) => rolesApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ROLES_KEY }),
+    onSuccess: (updated) => {
+      qc.setQueryData<Role[]>(ROLES_KEY as unknown as readonly unknown[], (old) =>
+        old ? old.map((r) => (r.id === updated.id ? updated : r)) : old,
+      );
+      return qc.invalidateQueries({ queryKey: ROLES_KEY });
+    },
   });
 }
 
