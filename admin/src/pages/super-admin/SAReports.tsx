@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
 import {
   PieChart,
@@ -18,7 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
 import { useReportList, useReportChart, useExportReport } from '@/hooks/useReports';
+import type { ReportRange } from '@/api/super-admin/reports';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+
+function toIsoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -39,24 +44,34 @@ export function SAReports() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
   const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
 
+  const apiRange: ReportRange = useMemo(
+    () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
+    [dateRange.from, dateRange.to],
+  );
+
   const reportListQuery = useReportList();
-  const vehicleQuery = useReportChart('rides-by-vehicle');
-  const paymentQuery = useReportChart('payment-method');
-  const waitTimeQuery = useReportChart('wait-time');
-  const ratingsQuery = useReportChart('average-ratings');
+  const vehicleQuery = useReportChart('vehicle-distribution', apiRange);
+  const paymentQuery = useReportChart('payment-methods', apiRange);
+  const waitTimeQuery = useReportChart('wait-time', apiRange);
+  const ratingsQuery = useReportChart('average-ratings', apiRange);
   const exportReport = useExportReport();
 
   const reportList = (reportListQuery.data ?? []) as ReportItem[];
-  const vehicleData = (vehicleQuery.data ?? []) as { name: string; value: number }[];
-  const paymentData = (paymentQuery.data ?? []) as { name: string; value: number }[];
-  const waitTimeData = (waitTimeQuery.data ?? []) as { name: string; wait: number }[];
+
+  // Backend returns { label, value } — normalise to { name, value } for recharts.
+  const vehicleData = ((vehicleQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const paymentData = ((paymentQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const waitTimeData = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? '', wait: d.wait ?? d.value ?? 0 }));
   const ratingsData = (ratingsQuery.data ?? []) as {
     name: string; driver: number; rider: number;
   }[];
   const loading = reportListQuery.isPending;
 
   async function handleExport(type: string) {
-    const res = await exportReport.mutateAsync(type).catch(() => null);
+    const res = await exportReport.mutateAsync({ type, range: apiRange }).catch(() => null);
     if (!res) return;
     const blob = new Blob([res.data], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

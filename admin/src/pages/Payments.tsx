@@ -54,7 +54,7 @@ export function Payments() {
   };
 
   const handleExport = async () => {
-    const res = await exportReport.mutateAsync('financial').catch(() => null);
+    const res = await exportReport.mutateAsync({ type: 'financial' }).catch(() => null);
     if (res?.url) window.open(res.url, '_blank');
   };
 

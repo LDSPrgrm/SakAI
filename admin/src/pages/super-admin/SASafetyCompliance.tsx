@@ -138,7 +138,7 @@ export function SASafetyCompliance() {
   // ── LTFRB helpers ─────────────────────────────────────────────────────────
 
   async function handleGenerateReport() {
-    const res = await exportReport.mutateAsync('ltfrb').catch(() => null);
+    const res = await exportReport.mutateAsync({ type: 'ltfrb' }).catch(() => null);
     if (res?.url) window.open(res.url, '_blank');
   }
 
