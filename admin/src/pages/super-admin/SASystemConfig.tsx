@@ -31,7 +31,57 @@ const SERVICE_LABELS: Record<string, string> = {
   firebase: 'Firebase FCM',
   background_check: 'Background Check',
   cloud_storage: 'Cloud Storage (S3)',
+  stripe: 'Stripe',
+  gcash: 'GCash',
+  paymaya: 'PayMaya',
+  mapbox: 'Mapbox',
 };
+
+interface FieldSchema {
+  key: string;
+  label: string;
+  secret?: boolean;
+  placeholder?: string;
+}
+
+// Per-provider field schema. Falls back to a single `api_key` input for any
+// provider not listed here, preserving the pre-2.6 single-key UX for unknown
+// services while making the known ones fully configurable.
+const INTEGRATION_SCHEMAS: Record<string, FieldSchema[]> = {
+  stripe: [
+    { key: 'api_key', label: 'API Key', secret: true, placeholder: 'sk_live_…' },
+    { key: 'webhook_secret', label: 'Webhook Secret', secret: true, placeholder: 'whsec_…' },
+  ],
+  gcash: [
+    { key: 'merchant_id', label: 'Merchant ID' },
+    { key: 'api_key', label: 'API Key', secret: true },
+  ],
+  paymaya: [
+    { key: 'api_key', label: 'API Key', secret: true },
+  ],
+  twilio: [
+    { key: 'account_sid', label: 'Account SID' },
+    { key: 'auth_token', label: 'Auth Token', secret: true },
+  ],
+  mapbox: [
+    { key: 'access_token', label: 'Access Token', secret: true },
+  ],
+  firebase: [
+    { key: 'project_id', label: 'Project ID' },
+    { key: 'client_email', label: 'Client Email' },
+    { key: 'private_key', label: 'Private Key', secret: true, placeholder: '-----BEGIN PRIVATE KEY-----' },
+  ],
+};
+
+function schemaForService(service: string): FieldSchema[] {
+  return INTEGRATION_SCHEMAS[service] ?? [{ key: 'api_key', label: 'API Key', secret: true }];
+}
+
+// Backend masks secrets as `****…abcd`. Treat any value starting with '****'
+// as unchanged on save so we don't overwrite real credentials with the mask.
+function isMaskedValue(v: string | undefined | null): boolean {
+  return typeof v === 'string' && v.startsWith('****');
+}
 
 function labelForService(service: string | undefined): string {
   if (!service) return '—';
@@ -69,29 +119,67 @@ function humanizeEvent(event: string | null | undefined): string {
 
 interface IntegrationCardProps {
   integration: Integration;
-  onSave: (service: string, newKey: string) => void;
+  onSave: (service: string, configFields: Record<string, string>) => Promise<void> | void;
   onTest: (service: string) => Promise<IntegrationTestResult>;
 }
 
 function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) {
-  const [revealed, setRevealed] = useState(false);
-  const [newKey, setNewKey] = useState('');
+  const service = integration.service ?? '';
+  const schema = schemaForService(service);
+  const stored = integration.config ?? {};
+
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingPatch, setPendingPatch] = useState<Record<string, string>>({});
   const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<IntegrationTestResult | null>(null);
 
-  const service = integration.service ?? '';
-  const apiKey = integration.config?.api_key;
+  // Seed form from backend (masked secrets) exactly once per integration row.
+  useEffect(() => {
+    const seed: Record<string, string> = {};
+    for (const f of schema) {
+      seed[f.key] = stored[f.key] ?? '';
+    }
+    setValues(seed);
+    setRevealed({});
+  // Keying on integration.service + its config keys is intentional: we reset
+  // when the integration row changes or is refreshed, but not on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service, JSON.stringify(stored)]);
+
+  const updateField = (key: string, value: string) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
+  const toggleReveal = (key: string) => {
+    setRevealed((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const hasChanges = schema.some((f) => (values[f.key] ?? '') !== (stored[f.key] ?? ''));
 
   const handleSaveClick = () => {
-    if (!newKey.trim()) return;
+    if (!hasChanges) return;
+    // Drop untouched masked secrets so we don't overwrite real values with '****abcd'.
+    const patch: Record<string, string> = {};
+    for (const f of schema) {
+      const v = values[f.key] ?? '';
+      if (f.secret && isMaskedValue(v) && v === (stored[f.key] ?? '')) continue;
+      patch[f.key] = v;
+    }
+    setPendingPatch(patch);
     setConfirmOpen(true);
   };
 
-  const handleConfirm = () => {
-    onSave(service, newKey.trim());
-    setNewKey('');
-    setConfirmOpen(false);
+  const handleConfirm = async () => {
+    setSaving(true);
+    try {
+      await onSave(service, pendingPatch);
+    } finally {
+      setSaving(false);
+      setConfirmOpen(false);
+      setPendingPatch({});
+    }
   };
 
   const handleTest = async () => {
@@ -137,46 +225,55 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
         </div>
       )}
 
-      {/* Key info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Schema-driven fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {schema.map((f) => {
+          const v = values[f.key] ?? '';
+          const visible = !f.secret || revealed[f.key];
+          return (
+            <div key={f.key}>
+              <p className="text-xs text-text-muted mb-1 flex items-center gap-1.5">
+                {f.secret && <Lock className="w-3 h-3" />}
+                {f.label}
+              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type={visible ? 'text' : 'password'}
+                  placeholder={f.placeholder ?? (f.secret ? '•••••• (unchanged)' : '')}
+                  value={v}
+                  onChange={(e) => updateField(f.key, e.target.value)}
+                  className="flex-1 font-mono"
+                />
+                {f.secret && (
+                  <button
+                    onClick={() => toggleReveal(f.key)}
+                    className="text-text-muted hover:text-text-main transition-colors"
+                    aria-label={visible ? `Hide ${f.label}` : `Reveal ${f.label}`}
+                    type="button"
+                  >
+                    {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
         <div>
-          <p className="text-xs text-text-muted mb-1">API Key</p>
-          <div className="flex items-center gap-2">
-            <code className="text-sm text-text-main font-mono">
-              {revealed ? (apiKey ?? '—') : apiKey ? maskApiKey(apiKey) : '—'}
-            </code>
-            <button
-              onClick={() => setRevealed((r) => !r)}
-              className="text-text-muted hover:text-text-main transition-colors"
-              aria-label={revealed ? 'Hide API key' : 'Reveal API key'}
-            >
-              {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-text-muted mb-1">Last Used</p>
+          <p className="text-xs text-text-muted mb-1">Last Tested</p>
           <p className="text-sm text-text-muted">{formatDate(integration.last_sync)}</p>
         </div>
       </div>
 
-      {/* Update form */}
-      <div className="flex gap-2 items-center">
-        <Input
-          placeholder="Enter new API key…"
-          value={newKey}
-          onChange={(e) => setNewKey(e.target.value)}
-          className="flex-1"
-        />
-        <Button size="sm" onClick={handleSaveClick} disabled={!newKey.trim()}>
-          Save
+      <div className="flex justify-end">
+        <Button size="sm" onClick={handleSaveClick} disabled={!hasChanges || saving}>
+          {saving ? 'Saving…' : 'Save'}
         </Button>
       </div>
 
       <ConfirmModal
         open={confirmOpen}
         title="Update Live Credentials"
-        message="This will update live credentials. Are you sure?"
+        message={`This will replace live ${labelForService(service)} credentials. Continue?`}
         confirmLabel="Update"
         onConfirm={handleConfirm}
         onClose={() => setConfirmOpen(false)}
@@ -307,8 +404,8 @@ export function SASystemConfig() {
     setTimeout(() => setSaveBannerVisible(false), 3000);
   };
 
-  const handleUpdateIntegration = async (service: string, newKey: string) => {
-    await updateIntegrationMut.mutateAsync({ service, data: { api_key: newKey } });
+  const handleUpdateIntegration = async (service: string, configFields: Record<string, string>) => {
+    await updateIntegrationMut.mutateAsync({ service, data: configFields });
     showSaveBanner();
   };
 

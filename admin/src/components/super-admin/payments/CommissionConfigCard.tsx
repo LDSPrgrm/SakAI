@@ -64,8 +64,8 @@ export function CommissionConfigCard({ config, onSave, saving }: CommissionConfi
           <form onSubmit={handleSubmit(onSave)} className="space-y-4">
             <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
               <h4 className="text-sm font-semibold text-text-main">Platform Commission Rate</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(['motorcycle', 'tricycle', 'other'] as const).map((key) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(['motorcycle', 'tricycle', 'car', 'other'] as const).map((key) => (
                   <Controller
                     key={key}
                     name={`rates.${key}` as const}

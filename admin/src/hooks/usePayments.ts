@@ -10,10 +10,10 @@ import {
 
 const PAYMENTS_KEY = ['admin', 'payments'] as const;
 
-export function useTransactions() {
+export function useTransactions(filters: import('@/api/super-admin/payments').TransactionFilters = {}) {
   return useQuery({
-    queryKey: [...PAYMENTS_KEY, 'transactions'] as const,
-    queryFn: () => paymentsApi.getTransactions(),
+    queryKey: [...PAYMENTS_KEY, 'transactions', filters] as const,
+    queryFn: () => paymentsApi.getTransactions(filters),
   });
 }
 

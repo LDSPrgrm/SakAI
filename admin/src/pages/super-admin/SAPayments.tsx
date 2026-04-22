@@ -31,6 +31,7 @@ import {
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
+import { TransactionDetailModal } from '@/components/super-admin/modals/TransactionDetailModal';
 
 interface ConfirmState {
   open: boolean;
@@ -72,6 +73,7 @@ export function SAPayments() {
   };
 
   const [search, setSearch] = useState('');
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
     payoutId: '',
@@ -218,7 +220,11 @@ export function SAPayments() {
                     </TableRow>
                   ) : (
                     filtered.map((t) => (
-                      <TableRow key={t.id}>
+                      <TableRow
+                        key={t.id}
+                        className="cursor-pointer hover:bg-surface-hover/80"
+                        onClick={() => setSelectedTxn(t)}
+                      >
                         {/* Transaction ID + Ride ID */}
                         <TableCell className="whitespace-nowrap">
                           <span
@@ -424,6 +430,12 @@ export function SAPayments() {
         config={commissionQuery.data}
         onSave={saveCommission}
         saving={savingCommission}
+      />
+
+      <TransactionDetailModal
+        open={Boolean(selectedTxn)}
+        transaction={selectedTxn}
+        onClose={() => setSelectedTxn(null)}
       />
 
       {/* Approve Payout Confirm Modal */}

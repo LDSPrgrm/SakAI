@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Zap, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -144,6 +145,7 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SAFareConfig() {
+  const qc = useQueryClient();
   const fareQuery = useFareConfigs();
   const surgeQuery = useSurgeConfig();
   const updateSurge = useUpdateSurgeConfig();
@@ -256,7 +258,10 @@ export function SAFareConfig() {
                   <TabsContent key={value} value={value}>
                     <FareTabForm
                       config={config as FareConfig}
-                      onSaved={() => {}}
+                      onSaved={() => {
+                        void qc.invalidateQueries({ queryKey: ['fare-configs'] });
+                        void qc.invalidateQueries({ queryKey: ['fares'] });
+                      }}
                       onBannerShow={showBanner}
                     />
                   </TabsContent>

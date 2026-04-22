@@ -4,6 +4,26 @@
 **Scope:** All admin & superadmin pages (`admin/src/pages/**/*.tsx`) cross-referenced against the Go backend (`backend/internal/**`), OpenAPI contract (`openapi/swagger.yaml`), and Postgres migrations.
 **Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low · ✅ Closed
 
+## Phase 2 closure (2026-04-22)
+
+All Phase-2 P1 UI gaps closed:
+
+- #3/#4/#5 UserManagement dead buttons — `RiderDetailModal`, `DriverDetailModal`, `DriverDocumentsModal` shipped.
+- #6 RideManagement row click — `RideDetailModal` shipped.
+- #7 Payments export permission bug — now gates on `can('reports','read')`.
+- #8/#9/#10 Payments.tsx missing polish — confirm modal, pagination, date-range filter all shipped (client-side date filter; backend param pipeline wired but filters a stubbed transactions list — see §3 note).
+- #16 SADashboard refresh — now calls `refetch()` on all metric queries.
+- #20 SAFareConfig onSaved — invalidates fare cache keys.
+- #24 SAPayments transaction detail — `TransactionDetailModal` shipped.
+- #26 CommissionConfigCard missing `car` row — added.
+- #34 KycDocPreview key collision — already fixed upstream; verified.
+- #36 Per-provider integration fields — `INTEGRATION_SCHEMAS` schema-driven form; secrets toggle, mask-preservation on save.
+- #1 DriverHeatmap mount on Dashboard — mounted. **Note:** backend `getDriverHeatmap` still returns deterministic mock points (`metrics.ts:82` comment); real endpoint tracked in Phase 4.
+
+### Phase 2 discovery — `payment_repo.go` is still a stub
+
+Audit §3 "Payments (all real)" claim is overstated. `payment_repo.go:37-57` hardcodes 3 transaction rows; `GetPaymentSummary` returns hardcoded KPI values; `ListPayouts` seeds from an in-memory `payoutsStore`. Phase 2.3 wired a date-range filter + pagination, so the UI reads real params through the handler — but they filter stub rows. Rewriting these three methods against `ride_payments`, `driver_earnings`, and a new `driver_payouts` table is deferred to Phase 4.
+
 ## Phase 1 closure (2026-04-22)
 
 All P0 backend-integration gaps are now closed:
@@ -305,6 +325,6 @@ Full phased plan lives at `~/.claude/plans/task-notification-task-id-ry2iub3hu-t
 
 - **Phase 0** — this document (✅ done).
 - **Phase 1** (P0) — ✅ done 2026-04-22 (including tail: earnings endpoint, probes goroutine, perf middleware + `infra-metrics`, real `TestIntegration` with `SKIP_EXTERNAL_PINGS`, authenticated `/api/files/*` route, swagger + openapi regen, `SASystemHealth`/`LtfrbReportsSection` retype).
-- **Phase 2** (P1) — pending. Modals, date-range wiring for regular-admin Payments, per-provider integration form, gateway section mount, DriverHeatmap mount, small UI nits (refresh → `refetch`, fareconfig `onSaved`, CommissionConfigCard car row, KycDocPreview key).
+- **Phase 2** (P1) — ✅ done 2026-04-22. Modals (Rider/Driver/Docs/Ride/Transaction), date-range + pagination + payout confirm on Payments, per-provider integration form, small UI nits, DriverHeatmap mount. Deferred: `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` schema drifted to `{name, center, radius}`), fare `updated_by` username join, `SAAdminManagement` cast cleanup, `SASafetyCompliance` incident "View" (rolls into Phase 3).
 - **Phase 3** (P2) — pending. SOS timeline, surge-zone drawer + PostGIS calc, alert rules, LGU partnerships + `/service-area`.
-- **Phase 4** — port fix in TEST_ACCOUNTS.md, cast cleanup (SAAdminManagement), Payments permission bug, final lint + test sweep.
+- **Phase 4** — pending: port fix in TEST_ACCOUNTS.md, `payment_repo` real queries (transactions + summary + payouts table), DriverHeatmap backend endpoint, fix `PaymentGatewayConfig` swagger drift, `SAAdminManagement` cast cleanup, fare `updated_by_name` response field, swagger `KycEntry.status` enum missing `needs_more_info`, final lint + test sweep.

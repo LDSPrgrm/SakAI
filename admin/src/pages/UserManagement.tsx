@@ -10,6 +10,9 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { usePassengers, useDrivers, useUpdateUserStatus } from '@/hooks/useUsers';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { RiderDetailModal } from '@/components/admin/modals/RiderDetailModal';
+import { DriverDetailModal } from '@/components/admin/modals/DriverDetailModal';
+import { DriverDocumentsModal } from '@/components/admin/modals/DriverDocumentsModal';
 import type { PassengerUser, DriverUser } from '@/types/super-admin';
 
 const PAGE_SIZE = 20;
@@ -47,6 +50,9 @@ export function UserManagement() {
   const [riderPage, setRiderPage] = useState(1);
   const [driverPage, setDriverPage] = useState(1);
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, title: '', message: '', onConfirm: () => {} });
+  const [selectedRider, setSelectedRider] = useState<PassengerUser | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState<DriverUser | null>(null);
+  const [docsDriver, setDocsDriver] = useState<DriverUser | null>(null);
 
   const passengersQuery = usePassengers({ page: riderPage, limit: PAGE_SIZE, q: search || undefined });
   const driversQuery = useDrivers({ page: driverPage, limit: PAGE_SIZE, q: search || undefined });
@@ -91,6 +97,28 @@ export function UserManagement() {
         description={confirm.message}
         onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
         onCancel={closeConfirm}
+      />
+
+      <RiderDetailModal
+        open={Boolean(selectedRider)}
+        rider={selectedRider}
+        onClose={() => setSelectedRider(null)}
+      />
+
+      <DriverDetailModal
+        open={Boolean(selectedDriver)}
+        driver={selectedDriver}
+        onClose={() => setSelectedDriver(null)}
+        onReviewDocuments={(d) => {
+          setSelectedDriver(null);
+          setDocsDriver(d);
+        }}
+      />
+
+      <DriverDocumentsModal
+        open={Boolean(docsDriver)}
+        driver={docsDriver}
+        onClose={() => setDocsDriver(null)}
       />
 
       <div className="flex justify-between items-center">
@@ -162,7 +190,14 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="View Profile"
+                            onClick={() => setSelectedRider(rider)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           {rider.status !== 'suspended' && rider.status !== 'deactivated' && (
                             <Button
                               variant="ghost"
@@ -235,8 +270,22 @@ export function UserManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" aria-label="Review Documents"><CheckCircle className="w-4 h-4 text-success" /></Button>
-                          <Button variant="ghost" size="icon" aria-label="View Profile"><Eye className="w-4 h-4" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Review Documents"
+                            onClick={() => setDocsDriver(driver)}
+                          >
+                            <CheckCircle className="w-4 h-4 text-success" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="View Profile"
+                            onClick={() => setSelectedDriver(driver)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           {driver.status !== 'suspended' && driver.status !== 'deactivated' && (
                             <Button
                               variant="ghost"

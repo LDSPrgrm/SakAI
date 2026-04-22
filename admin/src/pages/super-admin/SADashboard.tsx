@@ -1,5 +1,4 @@
 import React from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -20,12 +19,19 @@ const COLORS = CHART_COLORS;
 const TOOLTIP_STYLE = DARK_TOOLTIP_STYLE;
 
 export function SADashboard() {
-  const qc = useQueryClient();
   const metricsQuery = useDashboardMetrics();
   const ridesChartQuery = useRidesChart();
   const revenueChartQuery = useRevenueChart();
   const vehicleQuery = useVehicleDistribution();
   const activityQuery = useActivityFeed();
+
+  const refetchAll = () => {
+    void metricsQuery.refetch();
+    void ridesChartQuery.refetch();
+    void revenueChartQuery.refetch();
+    void vehicleQuery.refetch();
+    void activityQuery.refetch();
+  };
 
   const metrics = metricsQuery.data;
   const ridesChart = ridesChartQuery.data;
@@ -51,10 +57,11 @@ export function SADashboard() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => qc.invalidateQueries({ queryKey: ['admin', 'metrics'] })}
+          onClick={refetchAll}
+          disabled={metricsQuery.isFetching}
           className="flex items-center gap-2"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${metricsQuery.isFetching ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
