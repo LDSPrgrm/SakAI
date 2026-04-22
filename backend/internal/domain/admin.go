@@ -153,12 +153,16 @@ type ReportDefinition struct {
 	Description string `json:"description"`
 }
 
-// ComplianceData holds LTFRB regulatory compliance status.
+// ComplianceData holds LTFRB regulatory compliance status. Mirrors the
+// regulatory_compliance singleton row in Postgres.
 type ComplianceData struct {
-	AccreditationStatus  string    `json:"accreditation_status"`
-	AccreditationExpiry  time.Time `json:"accreditation_expiry"`
-	DriverComplianceRate float64   `json:"driver_compliance_rate"`
-	ViolationCount       int       `json:"violation_count"`
+	AccreditationStatus  string     `json:"accreditation_status"`
+	AccreditationExpiry  time.Time  `json:"accreditation_expiry"`
+	DriverComplianceRate float64    `json:"driver_compliance_rate"`
+	ViolationCount       int        `json:"violation_count"`
+	ViolationsOpen       int        `json:"violations_open"`
+	ViolationsResolved   int        `json:"violations_resolved"`
+	LastAuditAt          *time.Time `json:"last_audit_at,omitempty"`
 }
 
 // MetricResponse carries a single KPI with trend data.

@@ -950,6 +950,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/system/infra-metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get infrastructure performance metrics
+         * @description Aggregated p50/p95 request latency, WebSocket connection count, and DB
+         *     query p99 latency used by the System Health page. Values are derived
+         *     from the perf-timing middleware and health-probe goroutine — no more
+         *     hardcoded SystemHealth.tsx constants.
+         */
+        get: operations["adminGetInfraMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/system/feature-flags": {
         parameters: {
             query?: never;
@@ -2831,15 +2854,40 @@ export interface components {
             /** @enum {string} */
             status: "approved" | "rejected";
         };
+        /** @description LTFRB regulatory compliance singleton, backed by the regulatory_compliance table. */
         ComplianceData: {
             /** @enum {string} */
-            accreditation_status?: "active" | "expiring" | "expired";
+            accreditation_status?: "active" | "expiring" | "expired" | "pending";
             /** Format: date-time */
             accreditation_expiry?: string;
             /** @description Percentage of drivers with valid documents (0–100) */
             driver_compliance_rate?: number;
-            /** @description LTFRB-reportable violations in current period */
+            /** @description LTFRB-reportable violations in current period (alias of violations_open) */
             violation_count?: number;
+            /** @description Count of open regulatory violations */
+            violations_open?: number;
+            /** @description Count of resolved regulatory violations in current period */
+            violations_resolved?: number;
+            /**
+             * Format: date-time
+             * @description Timestamp of the last LTFRB audit, null if never audited
+             */
+            last_audit_at?: string | null;
+        };
+        /** @description Aggregated infra metrics shown on the System Health page. */
+        InfraMetrics: {
+            /** @description HTTP request latency p50 over window_minutes */
+            api_p50_ms?: number;
+            /** @description HTTP request latency p95 over window_minutes */
+            api_p95_ms?: number;
+            /** @description Current connected WebSocket client count from latest probe */
+            ws_connections?: number;
+            /** @description Database probe latency p99 over last 24h */
+            db_query_p99_ms?: number;
+            /** @description Number of HTTP samples contributing to p50/p95 */
+            sample_count?: number;
+            /** @description Size of the rolling window used for HTTP percentiles */
+            window_minutes?: number;
         };
         IntegrationTestResult: {
             service?: string;
@@ -4657,6 +4705,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemService"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminGetInfraMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current infra metrics snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfraMetrics"];
                 };
             };
             401: components["responses"]["Unauthorized"];

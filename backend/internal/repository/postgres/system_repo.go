@@ -19,11 +19,17 @@ func NewSystemRepo(db *pgxpool.Pool) domain.SystemRepository {
 }
 
 // ListServices returns the latest probe result per registered service. Probes
-// are written by the background health goroutine in cmd/server.
+// are written by the background health goroutine in cmd/server. The websocket
+// probe stores the live hub connection count in the latency_ms column so
+// GetInfraMetrics can expose it without a second table — we zero it here so
+// the service tile shows "0ms" (synthetic probe, no outbound I/O) instead of
+// mistakenly rendering the connection count as latency in red.
 func (r *systemRepo) ListServices(ctx context.Context) ([]*domain.SystemService, error) {
 	const q = `
 		SELECT DISTINCT ON (service_name)
-		       service_name, status, COALESCE(latency_ms, 0), checked_at
+		       service_name, status,
+		       CASE WHEN service_name = 'websocket' THEN 0 ELSE COALESCE(latency_ms, 0) END,
+		       checked_at
 		FROM system_health_probes
 		ORDER BY service_name, checked_at DESC`
 	rows, err := r.db.Query(ctx, q)
@@ -235,6 +241,52 @@ func (r *systemRepo) UpdateNotificationTemplate(ctx context.Context, event, subj
 		return fmt.Errorf("notification template %q not found", event)
 	}
 	return nil
+}
+
+// RecordHTTPTiming appends a single request duration sample used to compute
+// p50/p95 latency on the SystemHealth dashboard.
+func (r *systemRepo) RecordHTTPTiming(ctx context.Context, method, path string, statusCode int, durationMs float64) error {
+	const q = `
+		INSERT INTO http_request_timings (method, path, status_code, duration_ms)
+		VALUES ($1, $2, $3, $4)`
+	_, err := r.db.Exec(ctx, q, method, path, statusCode, durationMs)
+	return err
+}
+
+// GetInfraMetrics returns aggregated stats over the last 15 minutes. The window
+// is intentionally narrow so operators see current load, not historical drift.
+func (r *systemRepo) GetInfraMetrics(ctx context.Context) (*domain.InfraMetrics, error) {
+	const windowMin = 15
+	const q = `
+		SELECT
+		  COALESCE(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY duration_ms), 0)::float8 AS p50,
+		  COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_ms), 0)::float8 AS p95,
+		  COUNT(*)::int AS samples
+		FROM http_request_timings
+		WHERE occurred_at >= NOW() - make_interval(mins => $1)`
+	m := &domain.InfraMetrics{WindowMinutes: windowMin}
+	if err := r.db.QueryRow(ctx, q, windowMin).Scan(&m.APIP50Ms, &m.APIP95Ms, &m.SampleCount); err != nil {
+		return nil, err
+	}
+	// DB query latency p99 reuses the database probe latency samples over the
+	// last 24h. It is a coarser approximation than query-level tracing but
+	// adequate for the overview dashboard.
+	const qDB = `
+		SELECT COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms), 0)::float8
+		FROM system_health_probes
+		WHERE service_name = 'database' AND checked_at >= NOW() - INTERVAL '24 hours'`
+	if err := r.db.QueryRow(ctx, qDB).Scan(&m.DBQueryP99Ms); err != nil {
+		return nil, err
+	}
+	const qWS = `
+		SELECT COALESCE(latency_ms, 0)
+		FROM system_health_probes
+		WHERE service_name = 'websocket'
+		ORDER BY checked_at DESC LIMIT 1`
+	// ws_connections is stored in latency_ms by the prober (0 or positive).
+	// A missing row just leaves the default 0.
+	_ = r.db.QueryRow(ctx, qWS).Scan(&m.WSConnections)
+	return m, nil
 }
 
 // --- helpers -----------------------------------------------------------------

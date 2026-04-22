@@ -85,8 +85,26 @@ func (h *SystemHandler) TestIntegration(c *gin.Context) {
 		Service:   result.Name,
 		Status:    result.Status,
 		LatencyMs: result.LatencyMs,
-		Message:   "health check completed",
+		Message:   integrationMessage(result.Status),
 	})
+}
+
+// integrationMessage gives the UI a one-line status summary without exposing
+// the raw provider error body (which may include API tokens).
+func integrationMessage(status string) string {
+	if status == "ok" {
+		return "connection verified"
+	}
+	return "connection failed — check credentials or try again"
+}
+
+func (h *SystemHandler) GetInfraMetrics(c *gin.Context) {
+	metrics, err := h.uc.GetInfraMetrics(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, metrics)
 }
 
 func (h *SystemHandler) ListNotificationTemplates(c *gin.Context) {

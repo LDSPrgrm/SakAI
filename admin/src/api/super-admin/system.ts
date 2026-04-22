@@ -6,6 +6,7 @@ export type FeatureFlag         = components['schemas']['FeatureFlag'];
 export type Integration         = components['schemas']['Integration'];
 export type NotificationTemplate = components['schemas']['NotificationTemplate'];
 export type IntegrationTestResult = components['schemas']['IntegrationTestResult'];
+export type InfraMetrics         = components['schemas']['InfraMetrics'];
 
 export const systemApi = {
   getIntegrations: () =>
@@ -33,4 +34,7 @@ export const systemApi = {
 
   getServices: () =>
     adminRequest<unknown>('GET', '/system/services').then(extractArray<SystemService>),
+
+  getInfraMetrics: () =>
+    adminRequest<InfraMetrics>('GET', '/system/infra-metrics'),
 };

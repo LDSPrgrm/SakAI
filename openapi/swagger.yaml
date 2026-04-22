@@ -1708,6 +1708,30 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/system/infra-metrics:
+    get:
+      tags: [Admin]
+      summary: Get infrastructure performance metrics
+      description: |
+        Aggregated p50/p95 request latency, WebSocket connection count, and DB
+        query p99 latency used by the System Health page. Values are derived
+        from the perf-timing middleware and health-probe goroutine — no more
+        hardcoded SystemHealth.tsx constants.
+      operationId: adminGetInfraMetrics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current infra metrics snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraMetrics"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/system/feature-flags:
     get:
       tags: [Admin]
@@ -4857,10 +4881,11 @@ components:
 
     ComplianceData:
       type: object
+      description: LTFRB regulatory compliance singleton, backed by the regulatory_compliance table.
       properties:
         accreditation_status:
           type: string
-          enum: [active, expiring, expired]
+          enum: [active, expiring, expired, pending]
         accreditation_expiry:
           type: string
           format: date-time
@@ -4869,7 +4894,41 @@ components:
           description: Percentage of drivers with valid documents (0–100)
         violation_count:
           type: integer
-          description: LTFRB-reportable violations in current period
+          description: LTFRB-reportable violations in current period (alias of violations_open)
+        violations_open:
+          type: integer
+          description: Count of open regulatory violations
+        violations_resolved:
+          type: integer
+          description: Count of resolved regulatory violations in current period
+        last_audit_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the last LTFRB audit, null if never audited
+
+    InfraMetrics:
+      type: object
+      description: Aggregated infra metrics shown on the System Health page.
+      properties:
+        api_p50_ms:
+          type: number
+          description: HTTP request latency p50 over window_minutes
+        api_p95_ms:
+          type: number
+          description: HTTP request latency p95 over window_minutes
+        ws_connections:
+          type: integer
+          description: Current connected WebSocket client count from latest probe
+        db_query_p99_ms:
+          type: number
+          description: Database probe latency p99 over last 24h
+        sample_count:
+          type: integer
+          description: Number of HTTP samples contributing to p50/p95
+        window_minutes:
+          type: integer
+          description: Size of the rolling window used for HTTP percentiles
 
     IntegrationTestResult:
       type: object

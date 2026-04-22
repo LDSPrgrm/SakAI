@@ -75,17 +75,20 @@ func (r *safetyRepo) UpdateKycStatus(ctx context.Context, id uuid.UUID, status s
 // drivers whose documents are all approved.
 func (r *safetyRepo) GetCompliance(ctx context.Context) (*domain.ComplianceData, error) {
 	const q = `
-		SELECT accreditation_status, accreditation_expiry, compliance_rate, violations_open
+		SELECT accreditation_status, accreditation_expiry, compliance_rate,
+		       violations_open, violations_resolved, last_audit_at
 		FROM regulatory_compliance
 		WHERE id = 1`
 
 	var (
-		status   string
-		expiry   *time.Time
-		rate     *float64
-		openViol int
+		status       string
+		expiry       *time.Time
+		rate         *float64
+		openViol     int
+		resolvedViol int
+		lastAudit    *time.Time
 	)
-	err := r.db.QueryRow(ctx, q).Scan(&status, &expiry, &rate, &openViol)
+	err := r.db.QueryRow(ctx, q).Scan(&status, &expiry, &rate, &openViol, &resolvedViol, &lastAudit)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &domain.ComplianceData{AccreditationStatus: "pending"}, nil
 	}
@@ -96,6 +99,9 @@ func (r *safetyRepo) GetCompliance(ctx context.Context) (*domain.ComplianceData,
 	data := &domain.ComplianceData{
 		AccreditationStatus: status,
 		ViolationCount:      openViol,
+		ViolationsOpen:      openViol,
+		ViolationsResolved:  resolvedViol,
+		LastAuditAt:         lastAudit,
 	}
 	if expiry != nil {
 		data.AccreditationExpiry = *expiry

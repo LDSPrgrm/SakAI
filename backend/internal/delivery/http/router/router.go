@@ -32,6 +32,12 @@ type Deps struct {
 	Tip            *handler.TipHandler
 	PaymentMethod  *handler.PaymentMethodHandler
 	WS             *ws.Handler
+	// PerfSampler receives per-request timing samples for the System Health
+	// dashboard. May be nil in tests — the middleware no-ops in that case.
+	PerfSampler    middleware.PerfSampler
+	// FilesRoot is the absolute directory that backs authenticated
+	// GET /files/* responses. Empty disables the route.
+	FilesRoot      string
 }
 
 // New builds and returns the configured Gin engine.
@@ -44,6 +50,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(middleware.CORS())
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.Perf(d.PerfSampler))
 
 	api := r.Group("/api")
 
@@ -78,6 +85,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			driverOnly.PUT("/location", d.Driver.UpdateLocation)
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
 			driverOnly.GET("/rides", d.Ride.ListDriverRides)
+			driverOnly.GET("/earnings", d.Driver.GetEarnings)
 		}
 
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
@@ -155,6 +163,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 			// System
 			admin.GET("/system/services", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.ListServices)
+			admin.GET("/system/infra-metrics", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.GetInfraMetrics)
 			admin.GET("/system/feature-flags", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListFeatureFlags)
 			admin.PUT("/system/feature-flags/:key", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateFeatureFlag)
 			admin.GET("/system/integrations", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListIntegrations)
@@ -233,6 +242,12 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 		// WebSocket — any authenticated user
 		authed.GET("/ws", d.WS.ServeWS)
+
+		// Authenticated static-file serving for driver KYC docs + future uploads.
+		if d.FilesRoot != "" {
+			files := handler.NewFilesHandler(d.FilesRoot)
+			authed.GET("/files/*filepath", files.Serve)
+		}
 	}
 
 	return r

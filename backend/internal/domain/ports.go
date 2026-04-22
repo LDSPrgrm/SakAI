@@ -236,6 +236,32 @@ type SystemRepository interface {
 	UpdateIntegration(ctx context.Context, service string, config map[string]string) error
 	ListNotificationTemplates(ctx context.Context) ([]*NotificationTemplate, error)
 	UpdateNotificationTemplate(ctx context.Context, event string, subject, body string) error
+	// RecordProbe appends a health-probe row used by the System Health dashboard
+	// and 24h uptime rollup. Called from infrastructure/health.Prober.
+	RecordProbe(ctx context.Context, name, status string, latencyMs int, errMsg string) error
+	// RecordIntegrationTest stamps the outcome of a manual Test Connection on an
+	// integration. Consumed by the UI to show last-tested timestamps + status.
+	RecordIntegrationTest(ctx context.Context, service string, ok bool, latencyMs int, message string) error
+	// GetIntegrationRaw returns the unmasked config map for a given service, used
+	// server-side when calling out to the external provider. Must not be
+	// returned directly to the frontend.
+	GetIntegrationRaw(ctx context.Context, service string) (map[string]string, error)
+	// RecordHTTPTiming appends a single request duration sample for the System
+	// Health dashboard. Called from the perf middleware.
+	RecordHTTPTiming(ctx context.Context, method, path string, statusCode int, durationMs float64) error
+	// GetInfraMetrics returns aggregated request-path stats + the latest DB/WS
+	// figures consumed by SystemHealth.tsx.
+	GetInfraMetrics(ctx context.Context) (*InfraMetrics, error)
+}
+
+// InfraMetrics is the aggregated snapshot shown on SystemHealth.
+type InfraMetrics struct {
+	APIP50Ms        float64 `json:"api_p50_ms"`
+	APIP95Ms        float64 `json:"api_p95_ms"`
+	WSConnections   int     `json:"ws_connections"`
+	DBQueryP99Ms    float64 `json:"db_query_p99_ms"`
+	SampleCount     int     `json:"sample_count"`
+	WindowMinutes   int     `json:"window_minutes"`
 }
 
 // ReportRepository provides report data.
@@ -337,6 +363,9 @@ type DriverUseCase interface {
 	GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
 	// GetNearbyDriversAllTypes returns online drivers grouped by vehicle type.
 	GetNearbyDriversAllTypes(ctx context.Context, lat, lng float64, radiusM float64) (map[RideType][]NearbyDriver, error)
+	// GetEarnings lists earnings for the authenticated driver over an optional
+	// date range with pagination.
+	GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*DriverEarnings, int, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.
@@ -464,6 +493,7 @@ type SystemUseCase interface {
 	TestIntegration(ctx context.Context, service string) (*SystemService, error)
 	ListNotificationTemplates(ctx context.Context) ([]*NotificationTemplate, error)
 	UpdateNotificationTemplate(ctx context.Context, actorID uuid.UUID, event, subject, body string) error
+	GetInfraMetrics(ctx context.Context) (*InfraMetrics, error)
 }
 
 // ReportUseCase provides analytics reports.

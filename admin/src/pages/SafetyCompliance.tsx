@@ -92,12 +92,9 @@ export function SafetyCompliance() {
 
   const incidents = (incidentsQuery.data ?? []) as Incident[];
   const kycQueue = (kycQuery.data ?? []) as KycEntry[];
-  const compliance = complianceQuery.data as {
-    accreditation_status: string;
-    accreditation_expiry: string | null;
-    driver_compliance_rate: number;
-    violation_count: number;
-  } | undefined;
+  const compliance = complianceQuery.data as
+    | import('@/types/openapi').components['schemas']['ComplianceData']
+    | undefined;
   const loading = incidentsQuery.isPending || kycQuery.isPending || complianceQuery.isPending;
 
   const [confirm, setConfirm] = useState<ConfirmDialog>({

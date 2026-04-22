@@ -54,7 +54,7 @@ func Load() *Config {
 		LocationRateLimitPerMin: getInt("LOCATION_RATE_LIMIT_PER_MIN", 30),
 		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
 		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
-		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/files"),
+		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/api/files"),
 	}
 
 	// Security: refuse to start with the default JWT secret outside of local dev.

@@ -21,6 +21,7 @@ import (
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
+	"github.com/sakai/backend/internal/infrastructure/health"
 	"github.com/sakai/backend/internal/infrastructure/storage"
 	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
@@ -94,6 +95,7 @@ func main() {
 	docRepo := postgres.NewDocumentRepo(pool)
 	ratingRepo := postgres.NewRatingRepo(pool)
 	ridePaymentRepo := postgres.NewRidePaymentRepo(pool)
+	earningsRepo := postgres.NewEarningsRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -102,7 +104,7 @@ func main() {
 		cfg.AccessTokenExpiry,
 		cfg.RefreshTokenExpiry,
 	)
-	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo)
+	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo)
 	fareCalc := usecase.NewFareCalculator()
 	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
@@ -121,7 +123,7 @@ func main() {
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
 
-	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, postgres.NewEarningsRepo(pool))
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
 	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
@@ -163,6 +165,8 @@ func main() {
 		Tip:            handler.NewTipHandler(tipUC),
 		PaymentMethod:  handler.NewPaymentMethodHandler(pmUC),
 		WS:             ws.NewHandler(hub),
+		PerfSampler:    systemRepo,
+		FilesRoot:      cfg.UploadDir,
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)
@@ -171,6 +175,7 @@ func main() {
 	// workerCtx is cancelled when the process receives SIGINT/SIGTERM. Workers
 	// must honour this context and exit cleanly within the shutdown window.
 	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
+	go health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run(workerCtx)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{
@@ -210,7 +215,7 @@ func mustUploader(baseDir, publicBaseURL string) storage.Uploader {
 		baseDir = "./uploads"
 	}
 	if publicBaseURL == "" {
-		publicBaseURL = "/files"
+		publicBaseURL = "/api/files"
 	}
 	u, err := storage.NewLocalUploader(baseDir, publicBaseURL)
 	if err != nil {

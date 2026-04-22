@@ -15,7 +15,8 @@ import (
 func newDriverUC(ctrl *gomock.Controller) (domain.DriverUseCase, *mocks.MockDriverRepository, *mocks.MockRideRepository) {
 	driverRepo := mocks.NewMockDriverRepository(ctrl)
 	rideRepo := mocks.NewMockRideRepository(ctrl)
-	uc := usecase.NewDriverUseCase(driverRepo, rideRepo)
+	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
+	uc := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo)
 	return uc, driverRepo, rideRepo
 }
 

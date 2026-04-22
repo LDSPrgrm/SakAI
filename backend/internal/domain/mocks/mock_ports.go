@@ -1053,6 +1053,36 @@ func (m *MockSystemRepository) EXPECT() *MockSystemRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetInfraMetrics mocks base method.
+func (m *MockSystemRepository) GetInfraMetrics(ctx context.Context) (*domain.InfraMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInfraMetrics", ctx)
+	ret0, _ := ret[0].(*domain.InfraMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInfraMetrics indicates an expected call of GetInfraMetrics.
+func (mr *MockSystemRepositoryMockRecorder) GetInfraMetrics(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInfraMetrics", reflect.TypeOf((*MockSystemRepository)(nil).GetInfraMetrics), ctx)
+}
+
+// GetIntegrationRaw mocks base method.
+func (m *MockSystemRepository) GetIntegrationRaw(ctx context.Context, service string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIntegrationRaw", ctx, service)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIntegrationRaw indicates an expected call of GetIntegrationRaw.
+func (mr *MockSystemRepositoryMockRecorder) GetIntegrationRaw(ctx, service any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationRaw", reflect.TypeOf((*MockSystemRepository)(nil).GetIntegrationRaw), ctx, service)
+}
+
 // ListFeatureFlags mocks base method.
 func (m *MockSystemRepository) ListFeatureFlags(ctx context.Context) ([]*domain.FeatureFlag, error) {
 	m.ctrl.T.Helper()
@@ -1111,6 +1141,48 @@ func (m *MockSystemRepository) ListServices(ctx context.Context) ([]*domain.Syst
 func (mr *MockSystemRepositoryMockRecorder) ListServices(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*MockSystemRepository)(nil).ListServices), ctx)
+}
+
+// RecordHTTPTiming mocks base method.
+func (m *MockSystemRepository) RecordHTTPTiming(ctx context.Context, method, path string, statusCode int, durationMs float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordHTTPTiming", ctx, method, path, statusCode, durationMs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordHTTPTiming indicates an expected call of RecordHTTPTiming.
+func (mr *MockSystemRepositoryMockRecorder) RecordHTTPTiming(ctx, method, path, statusCode, durationMs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPTiming", reflect.TypeOf((*MockSystemRepository)(nil).RecordHTTPTiming), ctx, method, path, statusCode, durationMs)
+}
+
+// RecordIntegrationTest mocks base method.
+func (m *MockSystemRepository) RecordIntegrationTest(ctx context.Context, service string, ok bool, latencyMs int, message string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordIntegrationTest", ctx, service, ok, latencyMs, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordIntegrationTest indicates an expected call of RecordIntegrationTest.
+func (mr *MockSystemRepositoryMockRecorder) RecordIntegrationTest(ctx, service, ok, latencyMs, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIntegrationTest", reflect.TypeOf((*MockSystemRepository)(nil).RecordIntegrationTest), ctx, service, ok, latencyMs, message)
+}
+
+// RecordProbe mocks base method.
+func (m *MockSystemRepository) RecordProbe(ctx context.Context, name, status string, latencyMs int, errMsg string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordProbe", ctx, name, status, latencyMs, errMsg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordProbe indicates an expected call of RecordProbe.
+func (mr *MockSystemRepositoryMockRecorder) RecordProbe(ctx, name, status, latencyMs, errMsg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordProbe", reflect.TypeOf((*MockSystemRepository)(nil).RecordProbe), ctx, name, status, latencyMs, errMsg)
 }
 
 // UpdateFeatureFlag mocks base method.
@@ -1874,6 +1946,22 @@ func (m *MockDriverUseCase) GetActiveRide(ctx context.Context, driverID uuid.UUI
 func (mr *MockDriverUseCaseMockRecorder) GetActiveRide(ctx, driverID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveRide", reflect.TypeOf((*MockDriverUseCase)(nil).GetActiveRide), ctx, driverID)
+}
+
+// GetEarnings mocks base method.
+func (m *MockDriverUseCase) GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*domain.DriverEarnings, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEarnings", ctx, driverID, from, to, page, limit)
+	ret0, _ := ret[0].([]*domain.DriverEarnings)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetEarnings indicates an expected call of GetEarnings.
+func (mr *MockDriverUseCaseMockRecorder) GetEarnings(ctx, driverID, from, to, page, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEarnings", reflect.TypeOf((*MockDriverUseCase)(nil).GetEarnings), ctx, driverID, from, to, page, limit)
 }
 
 // GetIncomingRide mocks base method.
@@ -2693,6 +2781,21 @@ func NewMockSystemUseCase(ctrl *gomock.Controller) *MockSystemUseCase {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSystemUseCase) EXPECT() *MockSystemUseCaseMockRecorder {
 	return m.recorder
+}
+
+// GetInfraMetrics mocks base method.
+func (m *MockSystemUseCase) GetInfraMetrics(ctx context.Context) (*domain.InfraMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInfraMetrics", ctx)
+	ret0, _ := ret[0].(*domain.InfraMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInfraMetrics indicates an expected call of GetInfraMetrics.
+func (mr *MockSystemUseCaseMockRecorder) GetInfraMetrics(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInfraMetrics", reflect.TypeOf((*MockSystemUseCase)(nil).GetInfraMetrics), ctx)
 }
 
 // ListFeatureFlags mocks base method.

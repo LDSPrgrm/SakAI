@@ -1,8 +1,24 @@
 # Backend Integration Audit — SakAI Admin Panel
 
-**Date:** 2026-04-22
+**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22
 **Scope:** All admin & superadmin pages (`admin/src/pages/**/*.tsx`) cross-referenced against the Go backend (`backend/internal/**`), OpenAPI contract (`openapi/swagger.yaml`), and Postgres migrations.
-**Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low
+**Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low · ✅ Closed
+
+## Phase 1 closure (2026-04-22)
+
+All P0 backend-integration gaps are now closed:
+
+- #2 dashboard revenue/wait/uptime — real SQL in `admin_repo.go`.
+- #12/#13/#14 Reports fake fallbacks — removed, real aggregations in `report_repo.go`.
+- #17 SADashboard trends — backend computed server-side.
+- #27/#28 SAReports date-range + canonical chart ids — wired end-to-end.
+- #35 LtfrbReportsSection type drift — retyped to `components['schemas']['ComplianceData']`; dropped insurance/inspection/report-schedule fields the backend doesn't own.
+- #39 SASystemHealth hardcoded `INFRA_METRICS` — replaced by `GET /admin/system/infra-metrics` fed by the perf middleware + health-probe goroutine.
+- #40 System service stubs — replaced by `system_health_probes` writer loop.
+- Backend §3.J system config stubs — persisted via `feature_flags`, `notification_templates`, `integration_configs`.
+- Swagger gap: `/driver/earnings` — handler + route shipped; `/service-area` deferred to Phase 3.
+- Storage: `document_handler.go` now uses `Uploader` interface; authenticated `GET /api/files/*filepath` serves the local uploads dir with path-traversal + RBAC guards.
+- `TestIntegration` — dials the real providers (stripe/twilio/mapbox/gcash/paymaya/firebase) with `SKIP_EXTERNAL_PINGS=true` to short-circuit CI/dev.
 
 ---
 
@@ -19,7 +35,9 @@
 | Type casts that hide schema drift | 3 |
 | UI-only fallback / placeholder mock data | 4 |
 
-Backend implementation coverage (by endpoint group): Auth 100%, Rides 100%, Admin Users/Roles 100%, Fares 100%, Payments 100%, Passenger Payments 100%, Admin Dashboard 83%, Driver Ops 60%, Incidents/Safety 50%, Reports/Audit 33%, Admin System 0%. Aggregate: **76% real, 24% stub/missing**.
+Backend implementation coverage (pre-Phase-1): Auth 100%, Rides 100%, Admin Users/Roles 100%, Fares 100%, Payments 100%, Passenger Payments 100%, Admin Dashboard 83%, Driver Ops 60%, Incidents/Safety 50%, Reports/Audit 33%, Admin System 0%. Aggregate: **76% real, 24% stub/missing**.
+
+Post-Phase-1: Admin Dashboard 100%, Driver Ops 100% (earnings added), Reports/Audit 100%, Admin System 100% (probes + config persistence + real TestIntegration). Aggregate: **~95% real** — the remaining 5% is Phase-3 scope (incident timeline, surge zones, alert rules, LGU partnerships, `/service-area`).
 
 ---
 
@@ -138,8 +156,8 @@ Clean.
 ### SASystemHealth.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 39 | `INFRA_METRICS` hardcoded client-side: P50 112ms, P95 340ms, WS 1842, DB P99 45ms | SASystemHealth.tsx:39-44 | Fake data | 🔴 | 1 |
-| 40 | Service list from backend is mock (see backend §3.J) | — | Upstream stub | 🔴 | 1 |
+| 39 | ~~`INFRA_METRICS` hardcoded client-side~~ → now reads `GET /admin/system/infra-metrics` (perf middleware + probe goroutine) | SASystemHealth.tsx | ✅ Fixed 2026-04-22 | 🔴 | 1 |
+| 40 | ~~Service list from backend is mock~~ → now streams from `system_health_probes` written every 30s | — | ✅ Fixed 2026-04-22 | 🔴 | 1 |
 
 ---
 
@@ -182,47 +200,61 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 |----------|---------|--------|
 | `GET /admin/incidents` | `AdminHandler.ListIncidents` | ✅ Real DB |
 | `PUT /admin/incidents/{id}/resolve` | `AdminHandler.ResolveIncident` | ✅ Real DB |
-| `GET /admin/safety/kyc` | `SafetyHandler.ListKyc` | 🔴 **STUB** — mock rows, `uuid.New()` per request (safety_repo.go:20-35) |
-| `PUT /admin/safety/kyc/{id}` | `SafetyHandler.UpdateKyc` | 🔴 **NO-OP** (safety_repo.go:38-40) |
-| `POST /admin/safety/kyc/batch` | `SafetyHandler.BatchKyc` | 🔴 **NO-OP** — returns count, no DB write (safety_repo.go:52-74) |
-| `GET /admin/safety/compliance` | `SafetyHandler.GetCompliance` | 🔴 **STUB** — hardcoded 94.5% / +1yr (safety_repo.go:42-49) |
+| `GET /admin/safety/kyc` | `SafetyHandler.ListKyc` | ✅ Joins `kyc_submissions` + `driver_documents` |
+| `PUT /admin/safety/kyc/{id}` | `SafetyHandler.UpdateKyc` | ✅ Real UPDATE on `kyc_submissions` |
+| `POST /admin/safety/kyc/batch` | `SafetyHandler.BatchKyc` | ✅ Real batch UPDATE |
+| `GET /admin/safety/compliance` | `SafetyHandler.GetCompliance` | ✅ Reads `regulatory_compliance` singleton, derives compliance_rate |
 
-#### System config — 0% real
+#### System config — 100% real (Phase 1 tail, 2026-04-22)
 | Endpoint | Status |
 |----------|--------|
-| `GET /admin/system/services` | 🔴 Mock list with fake latencies (system_repo.go:19-29) |
-| `GET /admin/system/feature-flags` | 🔴 Hardcoded 9 flags (system_repo.go:32-43) |
-| `PUT /admin/system/feature-flags/{key}` | 🔴 **NO-OP** (system_repo.go:46-49) |
-| `GET /admin/system/integrations` | 🔴 Hardcoded 4 integrations (system_repo.go:51-58) |
-| `PUT /admin/system/integrations/{service}` | 🔴 **NO-OP** (system_repo.go:61-62) |
-| `POST /admin/system/integrations/{service}/test` | 🔴 **STUB** — always returns success (system_repo.go:77-89) |
-| `GET /admin/system/notification-templates` | 🔴 Hardcoded 5 templates (system_repo.go:65-72) |
-| `PUT /admin/system/notification-templates/{event}` | 🔴 **NO-OP** (system_repo.go:75-76) |
+| `GET /admin/system/services` | ✅ Latest probe per service from `system_health_probes` |
+| `GET /admin/system/infra-metrics` | ✅ NEW — p50/p95 HTTP latency + WS count + DB p99 |
+| `GET /admin/system/feature-flags` | ✅ `SELECT` on `feature_flags` table |
+| `PUT /admin/system/feature-flags/{key}` | ✅ UPSERT with audit log |
+| `GET /admin/system/integrations` | ✅ `SELECT` on `integration_configs` with secret masking |
+| `PUT /admin/system/integrations/{service}` | ✅ UPSERT with audit log |
+| `POST /admin/system/integrations/{service}/test` | ✅ Real provider pings, `SKIP_EXTERNAL_PINGS` guard, writes `last_tested_*` |
+| `GET /admin/system/notification-templates` | ✅ `SELECT` on `notification_templates` |
+| `PUT /admin/system/notification-templates/{event}` | ✅ Real UPDATE with audit log |
 
-#### Reports & audit
+#### Reports & audit — 100% real (Phase 1)
 | Endpoint | Status |
 |----------|--------|
-| `GET /admin/reports/list` | 🔴 Hardcoded 7 reports (report_repo.go:20-34) |
-| `GET /admin/reports/chart/{type}` | 🔴 Hardcoded per type (report_repo.go:35-63) |
-| `POST /admin/reports/export/{type}` | 🔴 Hardcoded CSV (report_repo.go:67-86) |
+| `GET /admin/reports/list` | ✅ Report definitions (metadata, not data) |
+| `GET /admin/reports/chart/{type}` | ✅ Real queries per type, `from/to` passthrough |
+| `POST /admin/reports/export/{type}` | ✅ Real CSV via `encoding/csv` |
 | `GET /admin/audit`, `POST /admin/audit`, `GET /admin/audit/export` | ✅ Real DB |
 
 ### Group C — Driver documents
 | Endpoint | Status |
 |----------|--------|
-| `POST /drivers/documents` | ⚠️ Writes to local `./uploads`; URL builder stubs `storage.example.com` (document_handler.go:20-31, 74-77) |
+| `POST /drivers/documents` | ✅ Uses `storage.Uploader`; `LocalUploader` writes to `./uploads`, returns `{UPLOAD_PUBLIC_BASE_URL}/{key}` (default `/api/files/...`) |
 | `GET /drivers/documents` | ✅ Real DB |
 | `GET /drivers/documents/{id}` | ✅ Real DB |
+| `GET /api/files/*filepath` | ✅ NEW — authenticated static-file route, path-traversal + RBAC guards |
+
+### Group D — Driver earnings (new 2026-04-22)
+| Endpoint | Status |
+|----------|--------|
+| `GET /driver/earnings?from=&to=&page=&limit=` | ✅ Paginated read from `driver_earnings`, ISO-date range filter |
 
 ---
 
 ## Section 4 — OpenAPI vs Go drift
 
 ### Swagger endpoints with NO Go handler
-| Endpoint | operationId | swagger.yaml line |
-|----------|-------------|-------------------|
-| `GET /service-area` | `getServiceAreas` | 111-126 |
-| `GET /driver/earnings` | `driverGetEarnings` | 571-630 |
+| Endpoint | operationId | swagger.yaml line | Status |
+|----------|-------------|-------------------|--------|
+| `GET /service-area` | `getServiceAreas` | 111-126 | Deferred to Phase 3 |
+| `GET /driver/earnings` | `driverGetEarnings` | 571-630 | ✅ Implemented 2026-04-22 |
+
+### New swagger additions (2026-04-22)
+| Endpoint / Schema | Purpose |
+|-------------------|---------|
+| `GET /admin/system/infra-metrics` | p50/p95 HTTP latency + DB p99 + WS count from probes + perf middleware |
+| `InfraMetrics` schema | Response shape for `/admin/system/infra-metrics` |
+| `ComplianceData` extensions | Added `violations_open`, `violations_resolved`, `last_audit_at` |
 
 ### Go endpoints with NO swagger doc
 None identified (all real handlers have corresponding swagger entries).
@@ -272,7 +304,7 @@ users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge
 Full phased plan lives at `~/.claude/plans/task-notification-task-id-ry2iub3hu-tas-buzzing-toast.md`. Summary:
 
 - **Phase 0** — this document (✅ done).
-- **Phase 1** (P0) — real dashboard/report/system/KYC/LTFRB queries, driver earnings endpoint, doc uploader interface, system health probes, real `TestIntegration`.
-- **Phase 2** (P1) — modals, date-range wiring, per-provider integration form, gateway section mount, DriverHeatmap mount, small UI nits.
-- **Phase 3** (P2) — SOS timeline, surge-zone drawer + PostGIS calc, alert rules, LGU partnerships + `/service-area`.
-- **Phase 4** — port fix in TEST_ACCOUNTS.md, cast cleanup, final lint + test sweep.
+- **Phase 1** (P0) — ✅ done 2026-04-22 (including tail: earnings endpoint, probes goroutine, perf middleware + `infra-metrics`, real `TestIntegration` with `SKIP_EXTERNAL_PINGS`, authenticated `/api/files/*` route, swagger + openapi regen, `SASystemHealth`/`LtfrbReportsSection` retype).
+- **Phase 2** (P1) — pending. Modals, date-range wiring for regular-admin Payments, per-provider integration form, gateway section mount, DriverHeatmap mount, small UI nits (refresh → `refetch`, fareconfig `onSaved`, CommissionConfigCard car row, KycDocPreview key).
+- **Phase 3** (P2) — pending. SOS timeline, surge-zone drawer + PostGIS calc, alert rules, LGU partnerships + `/service-area`.
+- **Phase 4** — port fix in TEST_ACCOUNTS.md, cast cleanup (SAAdminManagement), Payments permission bug, final lint + test sweep.
