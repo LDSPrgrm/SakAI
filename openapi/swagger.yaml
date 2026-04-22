@@ -1461,6 +1461,61 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/incidents/{id}:
+    get:
+      tags: [Admin]
+      summary: Get incident detail with SOS status-history timeline
+      operationId: adminGetIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Incident + history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/incidents/{id}/assign:
+    put:
+      tags: [Admin]
+      summary: Reassign an incident
+      description: |
+        Sets `assigned_to`. The DB trigger records the change in
+        incident_status_history so the timeline reflects the reassignment.
+        Body `{"assignee_id": "<uuid>" | null}`.
+      operationId: adminAssignIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        "204":
+          description: Reassigned
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /admin/incidents/{id}/resolve:
     put:
       tags: [Admin]
@@ -1491,6 +1546,227 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /admin/service-areas:
+    get:
+      tags: [Admin]
+      summary: List service areas (admin — includes inactive)
+      operationId: adminListServiceAreas
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Areas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ServiceArea" }
+    post:
+      tags: [Admin]
+      summary: Create a service area
+      operationId: adminCreateServiceArea
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServiceAreaInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServiceArea" }
+
+  /admin/service-areas/{id}:
+    put:
+      tags: [Admin]
+      summary: Update a service area
+      operationId: adminUpdateServiceArea
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServiceAreaInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete a service area
+      operationId: adminDeleteServiceArea
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/lgu-partnerships:
+    get:
+      tags: [Admin]
+      summary: List LGU partnerships
+      operationId: adminListLGUPartnerships
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Partnerships
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LGUPartnership" }
+    post:
+      tags: [Admin]
+      summary: Create an LGU partnership
+      operationId: adminCreateLGUPartnership
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LGUPartnershipInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LGUPartnership" }
+
+  /admin/lgu-partnerships/{id}:
+    get:
+      tags: [Admin]
+      summary: Get an LGU partnership
+      operationId: adminGetLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Partnership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LGUPartnership" }
+    put:
+      tags: [Admin]
+      summary: Update an LGU partnership
+      operationId: adminUpdateLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LGUPartnershipInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete an LGU partnership
+      operationId: adminDeleteLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/alerts/rules:
+    get:
+      tags: [Admin]
+      summary: List alert rules
+      operationId: adminListAlertRules
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlertRule" }
+    post:
+      tags: [Admin]
+      summary: Create an alert rule
+      operationId: adminCreateAlertRule
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertRuleInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertRule" }
+
+  /admin/alerts/rules/{id}:
+    put:
+      tags: [Admin]
+      summary: Update an alert rule
+      operationId: adminUpdateAlertRule
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertRuleInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete an alert rule
+      operationId: adminDeleteAlertRule
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/alerts/events:
+    get:
+      tags: [Admin]
+      summary: List recent alert events
+      operationId: adminListAlertEvents
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 500 }
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlertEvent" }
 
   /admin/audit:
     get:
@@ -4195,7 +4471,13 @@ components:
         trigger_ratio:
           type: number
         zones:
-          $ref: "#/components/schemas/GeoJSONFeatureCollection"
+          type: array
+          description: |
+            Named polygons with per-zone multipliers. The fare calculator does
+            origin-in-polygon (ray-casting) against this list during
+            SimulateFare; falls back to max_multiplier when no zone matches.
+          items:
+            $ref: "#/components/schemas/SurgeZone"
         blackout_hours:
           type: array
           items:
@@ -4659,29 +4941,153 @@ components:
 
     ServiceArea:
       type: object
-      required: [id, name, center, radius]
+      required: [id, name, boundary, active]
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-        description:
+        lgu_code:
           type: string
-        center:
-          $ref: "#/components/schemas/LatLng"
-        radius:
+        boundary:
+          $ref: "#/components/schemas/SurgeZone"
+        active:
+          type: boolean
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ServiceAreaInput:
+      type: object
+      required: [name, boundary]
+      properties:
+        name: { type: string }
+        lgu_code: { type: string }
+        boundary: { $ref: "#/components/schemas/SurgeZone" }
+        active: { type: boolean }
+
+    SurgeZone:
+      type: object
+      description: |
+        Named polygon + multiplier. Consumed by the fare calculator for
+        point-in-polygon origin lookup (usecase.FindZoneMultiplier) and
+        reused as the boundary shape for service areas.
+      required: [name, multiplier, polygon]
+      properties:
+        name: { type: string }
+        multiplier:
           type: number
           format: float
-          description: Service radius in meters
-        is_active:
-          type: boolean
-        created_at:
+          minimum: 1.0
+        polygon:
+          type: array
+          description: Ring of [lat, lng] pairs (closing vertex optional).
+          items:
+            type: array
+            items: { type: number }
+            minItems: 2
+            maxItems: 2
+
+    LGUPartnership:
+      type: object
+      required: [id, lgu_name, status]
+      properties:
+        id: { type: string, format: uuid }
+        service_area_id: { type: string, format: uuid, nullable: true }
+        lgu_name: { type: string }
+        contact_name: { type: string }
+        contact_email: { type: string, format: email }
+        contact_phone: { type: string }
+        agreement_start: { type: string, format: date, nullable: true }
+        agreement_end: { type: string, format: date, nullable: true }
+        status:
           type: string
-          format: date-time
-        updated_at:
+          enum: [active, pending, expired, terminated]
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    LGUPartnershipInput:
+      type: object
+      required: [lgu_name]
+      properties:
+        service_area_id: { type: string, format: uuid, nullable: true }
+        lgu_name: { type: string }
+        contact_name: { type: string }
+        contact_email: { type: string, format: email }
+        contact_phone: { type: string }
+        agreement_start: { type: string, format: date, nullable: true }
+        agreement_end: { type: string, format: date, nullable: true }
+        status:
           type: string
-          format: date-time
+          enum: [active, pending, expired, terminated]
+        notes: { type: string }
+
+    IncidentStatusEvent:
+      type: object
+      required: [id, to_status, occurred_at]
+      properties:
+        id: { type: string, format: uuid }
+        from_status: { type: string, nullable: true }
+        to_status: { type: string }
+        from_assignee: { type: string, format: uuid, nullable: true }
+        to_assignee: { type: string, format: uuid, nullable: true }
+        actor_id: { type: string, format: uuid, nullable: true }
+        actor_name: { type: string }
+        note: { type: string }
+        occurred_at: { type: string, format: date-time }
+
+    IncidentDetail:
+      type: object
+      required: [incident, status_history]
+      properties:
+        incident: { $ref: "#/components/schemas/Incident" }
+        status_history:
+          type: array
+          items: { $ref: "#/components/schemas/IncidentStatusEvent" }
+
+    AlertRule:
+      type: object
+      required: [id, name, type, enabled, config]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type:
+          type: string
+          enum: [low_rating, high_cancellation, fraud_velocity, kyc_expiry]
+        enabled: { type: boolean }
+        config:
+          type: object
+          additionalProperties: true
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    AlertRuleInput:
+      type: object
+      required: [name, type, config]
+      properties:
+        name: { type: string }
+        type:
+          type: string
+          enum: [low_rating, high_cancellation, fraud_velocity, kyc_expiry]
+        enabled: { type: boolean }
+        config:
+          type: object
+          additionalProperties: true
+
+    AlertEvent:
+      type: object
+      required: [id, fired_at, payload]
+      properties:
+        id: { type: string, format: uuid }
+        rule_id: { type: string, format: uuid, nullable: true }
+        fired_at: { type: string, format: date-time }
+        subject_type: { type: string }
+        subject_id: { type: string, format: uuid, nullable: true }
+        payload:
+          type: object
+          additionalProperties: true
 
     Role:
       type: object

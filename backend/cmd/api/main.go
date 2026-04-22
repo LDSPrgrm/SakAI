@@ -19,6 +19,7 @@ import (
 	handler "github.com/sakai/backend/internal/delivery/http"
 	"github.com/sakai/backend/internal/delivery/http/router"
 	"github.com/sakai/backend/internal/delivery/ws"
+	"github.com/sakai/backend/internal/infrastructure/alerting"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
 	"github.com/sakai/backend/internal/infrastructure/health"
@@ -96,6 +97,9 @@ func main() {
 	ratingRepo := postgres.NewRatingRepo(pool)
 	ridePaymentRepo := postgres.NewRidePaymentRepo(pool)
 	earningsRepo := postgres.NewEarningsRepo(pool)
+	serviceAreaRepo := postgres.NewServiceAreaRepo(pool)
+	lguRepo := postgres.NewLGUPartnershipRepo(pool)
+	alertRepo := postgres.NewAlertRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -119,6 +123,9 @@ func main() {
 	// New use cases for documents, ratings, and payment processing.
 	documentUC := usecase.NewDocumentUseCase(docRepo, rideRepo)
 	ratingUC := usecase.NewRatingUseCase(ratingRepo, rideRepo)
+	serviceAreaUC := usecase.NewServiceAreaUseCase(serviceAreaRepo, auditRepo)
+	lguUC := usecase.NewLGUPartnershipUseCase(lguRepo, auditRepo)
+	alertUC := usecase.NewAlertUseCase(alertRepo, auditRepo)
 
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
@@ -164,6 +171,9 @@ func main() {
 		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
 		Tip:            handler.NewTipHandler(tipUC),
 		PaymentMethod:  handler.NewPaymentMethodHandler(pmUC),
+		ServiceArea:    handler.NewServiceAreaHandler(serviceAreaUC),
+		LGUPartnership: handler.NewLGUPartnershipHandler(lguUC),
+		Alert:          handler.NewAlertHandler(alertUC),
 		WS:             ws.NewHandler(hub),
 		PerfSampler:    systemRepo,
 		FilesRoot:      cfg.UploadDir,
@@ -176,6 +186,7 @@ func main() {
 	// must honour this context and exit cleanly within the shutdown window.
 	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
 	go health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run(workerCtx)
+	go alerting.New(alertRepo, pool, 5*time.Minute).Run(workerCtx)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{

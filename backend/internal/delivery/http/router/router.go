@@ -31,6 +31,9 @@ type Deps struct {
 	PayProcess     *handler.RidePaymentHandler
 	Tip            *handler.TipHandler
 	PaymentMethod  *handler.PaymentMethodHandler
+	ServiceArea    *handler.ServiceAreaHandler
+	LGUPartnership *handler.LGUPartnershipHandler
+	Alert          *handler.AlertHandler
 	WS             *ws.Handler
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
@@ -58,6 +61,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// ── Public: service area coverage (mobile discovery) ─────────────────────
+	if d.ServiceArea != nil {
+		api.GET("/service-area", d.ServiceArea.ListPublic)
+	}
 
 	// ── Public auth routes ────────────────────────────────────────────────────
 	auth := api.Group("/auth")
@@ -153,6 +161,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 			// Safety & Incidents
 			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
+			admin.GET("/support-staff", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListAssigneeCandidates)
+			admin.GET("/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.GetIncident)
+			admin.PUT("/incidents/:id/assign", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.AssignIncident)
 			admin.PUT("/incidents/:id/resolve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
 			admin.GET("/safety/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
 			admin.PUT("/safety/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
@@ -181,6 +192,30 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
 			admin.GET("/audit/export", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.Export)
 			admin.POST("/audit", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Audit.Create)
+
+			// Service areas (admin view — includes inactive) + LGU partnerships
+			if d.ServiceArea != nil {
+				admin.GET("/service-areas", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.ServiceArea.ListAdmin)
+				admin.POST("/service-areas", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Create)
+				admin.PUT("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Update)
+				admin.DELETE("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Delete)
+			}
+			if d.LGUPartnership != nil {
+				admin.GET("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.List)
+				admin.GET("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.Get)
+				admin.POST("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Create)
+				admin.PUT("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Update)
+				admin.DELETE("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Delete)
+			}
+
+			// Alerts — superadmin only
+			if d.Alert != nil {
+				admin.GET("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.ListRules)
+				admin.POST("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.CreateRule)
+				admin.PUT("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.UpdateRule)
+				admin.DELETE("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.DeleteRule)
+				admin.GET("/alerts/events", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Alert.ListEvents)
+			}
 		}
 
 

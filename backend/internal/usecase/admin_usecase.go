@@ -292,7 +292,52 @@ func (uc *adminUseCase) ListIncidents(ctx context.Context, status *string) ([]*d
 }
 
 func (uc *adminUseCase) ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error {
-	return uc.incidentRepo.UpdateIncident(ctx, incidentID, "resolved", notes, &actorID)
+	if err := uc.incidentRepo.UpdateIncident(ctx, incidentID, "resolved", notes, &actorID); err != nil {
+		return err
+	}
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "RESOLVE_INCIDENT",
+		ResourceType: "incident",
+		ResourceID:   incidentID.String(),
+		Reason:       notes,
+		IPAddress:    "internal",
+	})
+	return nil
+}
+
+// GetIncident returns the incident plus its full status-history timeline.
+func (uc *adminUseCase) GetIncident(ctx context.Context, incidentID uuid.UUID) (*domain.IncidentDetail, error) {
+	inc, err := uc.incidentRepo.GetIncidentByID(ctx, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	history, err := uc.incidentRepo.ListStatusHistory(ctx, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.IncidentDetail{Incident: inc, StatusHistory: history}, nil
+}
+
+// AssignIncident reassigns an incident to another support operator (or clears
+// the assignee with nil). The DB trigger records the change automatically.
+func (uc *adminUseCase) AssignIncident(ctx context.Context, actorID, incidentID uuid.UUID, assigneeID *uuid.UUID) error {
+	if err := uc.incidentRepo.AssignIncident(ctx, incidentID, assigneeID); err != nil {
+		return err
+	}
+	afterJSON := `null`
+	if assigneeID != nil {
+		afterJSON = fmt.Sprintf(`{"assigned_to":%q}`, assigneeID.String())
+	}
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "ASSIGN_INCIDENT",
+		ResourceType: "incident",
+		ResourceID:   incidentID.String(),
+		AfterState:   []byte(afterJSON),
+		IPAddress:    "internal",
+	})
+	return nil
 }
 
 func (uc *adminUseCase) ListRides(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.AdminRideItem, domain.PaginationMeta, error) {
@@ -435,10 +480,22 @@ func (uc *fareUseCase) SimulateFare(ctx context.Context, vehicleType string, ori
 
 	// Simple Euclidean distance for simulation (in production use Mapbox/Google)
 	dist := origin.DistanceTo(destination) / 1000.0 // km
-	
+
 	total := config.BaseFare + (dist * config.PerKmRate) + config.BookingFee
 	if total < config.MinimumFare {
 		total = config.MinimumFare
+	}
+
+	// Surge: if enabled, apply zone-specific multiplier when origin sits inside
+	// a configured zone polygon, otherwise fall back to the global multiplier.
+	if surge, err := uc.fareRepo.GetSurgeConfig(ctx); err == nil && surge != nil && surge.Enabled {
+		multiplier := surge.MaxMultiplier
+		if _, zm, ok := FindZoneMultiplier(ParseSurgeZones(surge.Zones), origin); ok {
+			multiplier = zm
+		}
+		if multiplier > 1.0 {
+			total *= multiplier
+		}
 	}
 
 	return total, nil

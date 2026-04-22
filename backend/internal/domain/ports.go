@@ -307,6 +307,12 @@ type IncidentRepository interface {
 	ListIncidents(ctx context.Context, status *string) ([]*Incident, error)
 	GetIncidentByID(ctx context.Context, id uuid.UUID) (*Incident, error)
 	UpdateIncident(ctx context.Context, id uuid.UUID, status string, notes string, assignedTo *uuid.UUID) error
+	// ListStatusHistory returns the SOS timeline rows written by the DB
+	// trigger on incidents, oldest first.
+	ListStatusHistory(ctx context.Context, id uuid.UUID) ([]*IncidentStatusEvent, error)
+	// AssignIncident sets assigned_to (nullable) and is recorded in the
+	// history via trigger.
+	AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error
 }
 
 // SystemMetricsRepository aggregates platform-wide KPIs.
@@ -431,7 +437,9 @@ type AdminUseCase interface {
 
 	// Safety & Incidents
 	ListIncidents(ctx context.Context, status *string) ([]*Incident, error)
+	GetIncident(ctx context.Context, incidentID uuid.UUID) (*IncidentDetail, error)
 	ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error
+	AssignIncident(ctx context.Context, actorID, incidentID uuid.UUID, assigneeID *uuid.UUID) error
 }
 
 // FareUseCase handles pricing configuration and simulation.

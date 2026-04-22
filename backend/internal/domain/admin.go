@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,15 +22,17 @@ type FareConfig struct {
 }
 
 // SurgeConfig represents global and zone-specific surge pricing rules.
+// Zones holds the raw JSONB as [{name, multiplier, polygon: [[lat,lng]...]}, ...]
+// consumed by usecase.ParseSurgeZones + point-in-polygon fare lookup.
 type SurgeConfig struct {
-	ID            uuid.UUID `json:"id"`
-	Enabled       bool      `json:"enabled"`
-	MaxMultiplier float64   `json:"max_multiplier"`
-	TriggerRatio  float64   `json:"trigger_ratio"`
-	Zones         []byte    `json:"zones"`          // GeoJSON
-	BlackoutHours []byte    `json:"blackout_hours"` // JSON
-	UpdatedAt     time.Time `json:"updated_at"`
-	UpdatedBy     uuid.UUID `json:"updated_by"`
+	ID            uuid.UUID       `json:"id"`
+	Enabled       bool            `json:"enabled"`
+	MaxMultiplier float64         `json:"max_multiplier"`
+	TriggerRatio  float64         `json:"trigger_ratio"`
+	Zones         json.RawMessage `json:"zones"`
+	BlackoutHours json.RawMessage `json:"blackout_hours"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	UpdatedBy     uuid.UUID       `json:"updated_by"`
 }
 
 // PaymentGatewayConfig carries settings for external payment providers.

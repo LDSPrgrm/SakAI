@@ -332,6 +332,51 @@ func (r *incidentRepo) UpdateIncident(ctx context.Context, id uuid.UUID, status 
 	return err
 }
 
+// ListStatusHistory returns timeline events for an incident, oldest first.
+// actor_name is best-effort joined from users; null when the actor was a DB
+// trigger (INSERT/UPDATE not forwarded through the use case).
+func (r *incidentRepo) ListStatusHistory(ctx context.Context, id uuid.UUID) ([]*domain.IncidentStatusEvent, error) {
+	const q = `
+		SELECT h.id, h.incident_id, h.from_status, h.to_status,
+		       h.from_assignee, h.to_assignee, h.actor_id,
+		       COALESCE(u.name, ''),
+		       COALESCE(h.note, ''), h.occurred_at
+		FROM incident_status_history h
+		LEFT JOIN users u ON u.id = h.actor_id
+		WHERE h.incident_id = $1
+		ORDER BY h.occurred_at ASC`
+
+	rows, err := r.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	events := make([]*domain.IncidentStatusEvent, 0)
+	for rows.Next() {
+		e := &domain.IncidentStatusEvent{}
+		if err := rows.Scan(&e.ID, &e.IncidentID, &e.FromStatus, &e.ToStatus,
+			&e.FromAssignee, &e.ToAssignee, &e.ActorID,
+			&e.ActorName, &e.Note, &e.OccurredAt); err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, rows.Err()
+}
+
+func (r *incidentRepo) AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error {
+	const q = `UPDATE incidents SET assigned_to = $1 WHERE id = $2`
+	tag, err := r.db.Exec(ctx, q, assigneeID, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 // --- System Metrics Repository ---
 
 type systemMetricsRepo struct{ db *pgxpool.Pool }
