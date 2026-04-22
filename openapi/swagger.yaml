@@ -4323,9 +4323,11 @@ components:
         before_state:
           type: object
           nullable: true
+          additionalProperties: true
         after_state:
           type: object
           nullable: true
+          additionalProperties: true
         reason:
           type: string
           nullable: true

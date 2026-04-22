@@ -2518,8 +2518,12 @@ export interface components {
             action?: string;
             resource_type?: string;
             resource_id?: string;
-            before_state?: Record<string, never> | null;
-            after_state?: Record<string, never> | null;
+            before_state?: {
+                [key: string]: unknown;
+            } | null;
+            after_state?: {
+                [key: string]: unknown;
+            } | null;
             reason?: string | null;
         };
         Transaction: {
