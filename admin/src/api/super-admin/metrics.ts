@@ -1,5 +1,7 @@
 import { adminRequest, extractArray } from './_request';
 import type { components } from '@/types/openapi';
+import type { HeatmapResponse } from '@/types/super-admin/heatmap';
+import { METRO_MANILA_BOUNDS } from '@/types/super-admin/heatmap';
 
 export type DashboardResponse = components['schemas']['DashboardResponse'];
 export type MetricResponse    = components['schemas']['MetricResponse'];
@@ -71,6 +73,34 @@ export const metricsApi = {
   getRidesMetric:   () => adminRequest<MetricResponse>('GET', '/metrics/rides'),
   getRevenueMetric: () => adminRequest<MetricResponse>('GET', '/metrics/revenue'),
   getWaitTimeMetric: () => adminRequest<MetricResponse>('GET', '/metrics/wait-time'),
+
+  // Driver supply heatmap. Backend endpoint not yet available;
+  // returns deterministic mock points across Metro Manila so the
+  // frontend visualization can be developed/iterated independently.
+  // Swap to `adminRequest<HeatmapResponse>('GET', '/admin/drivers/heatmap')`
+  // once backend ships the endpoint.
+  getDriverHeatmap: async (): Promise<HeatmapResponse> => {
+    const { north, south, east, west } = METRO_MANILA_BOUNDS;
+    const positions = Array.from({ length: 60 }, (_, i) => {
+      const t = i / 60;
+      const jitter = (seed: number) => (Math.sin(seed * 9301 + 49297) + 1) / 2;
+      const lat = south + (north - south) * jitter(i + 1);
+      const lng = west  + (east  - west)  * jitter(i + 11);
+      return {
+        driver_id: `mock-${i}`,
+        lat,
+        lng,
+        vehicle_type: (['motorcycle', 'car', 'tricycle'] as const)[i % 3],
+        is_available: i % 4 !== 0,
+        updated_at: new Date().toISOString(),
+      };
+    });
+    return {
+      positions,
+      bounds: METRO_MANILA_BOUNDS,
+      generated_at: new Date().toISOString(),
+    };
+  },
 
   getActivityFeed: () =>
     adminRequest<unknown>('GET', '/audit?limit=10').then((raw) => {

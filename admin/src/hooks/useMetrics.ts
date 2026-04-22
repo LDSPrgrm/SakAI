@@ -34,6 +34,14 @@ export function useVehicleDistribution() {
   });
 }
 
+export function useDriverHeatmap() {
+  return useQuery({
+    queryKey: ['admin', 'metrics', 'driver-heatmap'],
+    queryFn: () => metricsApi.getDriverHeatmap(),
+    refetchInterval: 30_000,
+  });
+}
+
 export function useActivityFeed() {
   return useQuery({
     queryKey: ['admin', 'metrics', 'activity-feed'],
