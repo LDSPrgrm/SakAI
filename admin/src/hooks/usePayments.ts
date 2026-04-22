@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   paymentsApi,
   type CommissionConfig,
+  type DriverPayout,
   type UpdatePaymentConfigRequest,
 } from '@/api/super-admin/payments';
 
@@ -44,19 +45,46 @@ export function useGatewayConfigs() {
   });
 }
 
+const PAYOUTS_KEY = [...PAYMENTS_KEY, 'payouts'] as const;
+
+type PayoutsSnapshot = { prev: DriverPayout[] | undefined };
+
 export function useApprovePayout() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => paymentsApi.approvePayout(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...PAYMENTS_KEY, 'payouts'] }),
+  return useMutation<void, Error, string, PayoutsSnapshot>({
+    mutationFn: (id) => paymentsApi.approvePayout(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: PAYOUTS_KEY });
+      const prev = qc.getQueryData<DriverPayout[]>(PAYOUTS_KEY);
+      qc.setQueryData<DriverPayout[]>(PAYOUTS_KEY, (current) =>
+        (current ?? []).map((p) => (p.id === id ? { ...p, status: 'approved' } : p)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(PAYOUTS_KEY, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: PAYOUTS_KEY }),
   });
 }
 
 export function useBatchApprovePayouts() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => paymentsApi.batchApprovePayouts(ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [...PAYMENTS_KEY, 'payouts'] }),
+  return useMutation<{ approved: number }, Error, string[], PayoutsSnapshot>({
+    mutationFn: (ids) => paymentsApi.batchApprovePayouts(ids),
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: PAYOUTS_KEY });
+      const prev = qc.getQueryData<DriverPayout[]>(PAYOUTS_KEY);
+      const idSet = new Set(ids);
+      qc.setQueryData<DriverPayout[]>(PAYOUTS_KEY, (current) =>
+        (current ?? []).map((p) => (idSet.has(p.id) ? { ...p, status: 'approved' } : p)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(PAYOUTS_KEY, ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: PAYOUTS_KEY }),
   });
 }
 

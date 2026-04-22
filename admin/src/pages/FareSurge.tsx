@@ -11,8 +11,7 @@ import {
 } from '@/hooks/useFareConfig';
 import { FareSimulatorForm } from '@/components/forms/FareSimulatorForm';
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
-
-type VehicleType = 'motorcycle' | 'tricycle' | 'car';
+import { DEFAULT_FARE_BY_VEHICLE, type VehicleType } from '@/constants/fareDefaults';
 type NumericFareField = Exclude<keyof FareConfig, 'vehicle_type'>;
 
 const FARE_FIELDS: { key: NumericFareField; label: string }[] = [
@@ -62,16 +61,6 @@ function validateConfig(config: FareConfig): Partial<Record<NumericFareField, st
   return errs;
 }
 
-const DEFAULT_FARE: FareConfig = {
-  vehicle_type: 'motorcycle',
-  base_fare: 50,
-  minimum_fare: 50,
-  per_km_rate: 10,
-  per_min_rate: 2,
-  booking_fee: 0,
-  cancellation_fee: 0,
-};
-
 export function FareSurge() {
   const { can } = usePermissions();
   const canWrite = can('fare_config', 'write');
@@ -83,9 +72,9 @@ export function FareSurge() {
   const simulateFare = useSimulateFare();
 
   const [configs, setConfigs] = useState<Record<VehicleType, FareConfig>>({
-    motorcycle: { ...DEFAULT_FARE, vehicle_type: 'motorcycle' },
-    tricycle: { ...DEFAULT_FARE, vehicle_type: 'tricycle', base_fare: 40, minimum_fare: 40, per_km_rate: 8, per_min_rate: 1.5 },
-    car: { ...DEFAULT_FARE, vehicle_type: 'car', base_fare: 80, minimum_fare: 80, per_km_rate: 15, per_min_rate: 3 },
+    motorcycle: { ...DEFAULT_FARE_BY_VEHICLE.motorcycle },
+    tricycle: { ...DEFAULT_FARE_BY_VEHICLE.tricycle },
+    car: { ...DEFAULT_FARE_BY_VEHICLE.car },
   });
   const [surgeConfig, setSurgeConfig] = useState<Partial<SurgeConfig>>({ enabled: true, max_multiplier: 2.5, trigger_ratio: 1.5 });
   const [validationErrors, setValidationErrors] = useState<Record<VehicleType, Partial<Record<NumericFareField, string>>>>({

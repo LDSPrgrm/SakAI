@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { FareConfig } from '@/types/super-admin';
+import { DEFAULT_FARE_BY_VEHICLE, type VehicleType } from '@/constants/fareDefaults';
 
 const fareSchema = z.object({
   vehicle_type:      z.enum(['motorcycle', 'tricycle', 'car']),
@@ -34,16 +35,18 @@ const FIELDS: { key: keyof FareFormValues; label: string }[] = [
 ];
 
 export function FareConfigForm({ defaultValues, loading, onSubmit, onCancel }: FareConfigFormProps) {
+  const vehicleType = (defaultValues.vehicle_type as VehicleType) ?? 'motorcycle';
+  const d = DEFAULT_FARE_BY_VEHICLE[vehicleType];
   const { register, handleSubmit, formState: { errors } } = useForm<FareFormValues>({
     resolver: zodResolver(fareSchema),
     defaultValues: {
-      vehicle_type:     (defaultValues.vehicle_type as FareFormValues['vehicle_type']) ?? 'motorcycle',
-      base_fare:        defaultValues.base_fare        ?? 0,
-      per_km_rate:      defaultValues.per_km_rate      ?? 0,
-      per_min_rate:     defaultValues.per_min_rate     ?? 0,
-      minimum_fare:     defaultValues.minimum_fare     ?? 0,
-      booking_fee:      defaultValues.booking_fee      ?? 0,
-      cancellation_fee: defaultValues.cancellation_fee ?? 0,
+      vehicle_type:     vehicleType,
+      base_fare:        defaultValues.base_fare        ?? d.base_fare,
+      per_km_rate:      defaultValues.per_km_rate      ?? d.per_km_rate,
+      per_min_rate:     defaultValues.per_min_rate     ?? d.per_min_rate,
+      minimum_fare:     defaultValues.minimum_fare     ?? d.minimum_fare,
+      booking_fee:      defaultValues.booking_fee      ?? d.booking_fee,
+      cancellation_fee: defaultValues.cancellation_fee ?? d.cancellation_fee,
     },
   });
 

@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useFareConfig';
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
+import { DEFAULT_FARE_BY_VEHICLE } from '@/constants/fareDefaults';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -247,13 +248,7 @@ export function SAFareConfig() {
               {VEHICLE_TABS.map(({ value }) => {
                 const config = fareConfigs.find((f) => f.vehicle_type === value) || {
                   id: 'new',
-                  vehicle_type: value,
-                  base_fare: 0,
-                  per_km_rate: 0,
-                  per_min_rate: 0,
-                  minimum_fare: 0,
-                  booking_fee: 0,
-                  cancellation_fee: 0,
+                  ...DEFAULT_FARE_BY_VEHICLE[value],
                   updated_by: '—',
                   updated_at: new Date().toISOString(),
                 };
