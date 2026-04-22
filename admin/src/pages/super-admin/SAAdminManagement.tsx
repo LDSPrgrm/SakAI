@@ -16,6 +16,7 @@ import { useAdmins } from '@/hooks/useAdmins';
 import { useRoles } from '@/hooks/useRoles';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate } from '@/utils/formatDate';
+import { displayRole } from '@/utils/displayRole';
 import { AdminForm, type AdminFormValues } from '@/components/super-admin/forms/AdminForm';
 import { PasswordResetResultModal } from '@/components/super-admin/modals/PasswordResetResultModal';
 import type { AdminUser, AdminRole, AdminRoleDefinition } from '@/types/super-admin';
@@ -93,7 +94,7 @@ export function SAAdminManagement() {
     setFormInitial({
       name: admin.name,
       email: admin.email,
-      role: admin.role,
+      role: displayRole(admin, roleDefs),
       status: admin.status ?? 'active',
       password: '',
     });
@@ -106,7 +107,7 @@ export function SAAdminManagement() {
 
     try {
       if (editingAdmin) {
-        if (editingAdmin.role !== values.role) {
+        if (displayRole(editingAdmin, roleDefs) !== values.role) {
           setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
           return;
         }
@@ -179,7 +180,7 @@ export function SAAdminManagement() {
     return (
       a.name.toLowerCase().includes(q) ||
       a.email.toLowerCase().includes(q) ||
-      a.role.toLowerCase().includes(q)
+      displayRole(a, roleDefs).toLowerCase().includes(q)
     );
   });
 
@@ -250,8 +251,8 @@ export function SAAdminManagement() {
 
                       {/* Role */}
                       <TableCell>
-                        <Badge variant={roleBadgeVariant(admin.role)}>
-                          {roleLabel(admin.role)}
+                        <Badge variant={roleBadgeVariant(displayRole(admin, roleDefs))}>
+                          {roleLabel(displayRole(admin, roleDefs))}
                         </Badge>
                       </TableCell>
 
