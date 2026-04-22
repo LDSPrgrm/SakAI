@@ -1465,6 +1465,10 @@ paths:
     get:
       tags: [Admin]
       summary: Get incident detail with SOS status-history timeline
+      description: |
+        Returns the full incident record plus the ordered status-history
+        timeline for a single SOS/incident, used by the admin incident
+        detail modal.
       operationId: adminGetIncident
       security:
         - BearerAuth: []
@@ -1551,6 +1555,10 @@ paths:
     get:
       tags: [Admin]
       summary: List service areas (admin — includes inactive)
+      description: |
+        Returns every configured service area, including inactive ones, for
+        admin management views. Unlike the public list, this endpoint does
+        not filter by `active` status.
       operationId: adminListServiceAreas
       security: [{ BearerAuth: [] }]
       responses:
@@ -1564,6 +1572,10 @@ paths:
     post:
       tags: [Admin]
       summary: Create a service area
+      description: |
+        Creates a new service area with an associated boundary polygon.
+        The boundary is reused by the fare calculator for point-in-polygon
+        origin lookups.
       operationId: adminCreateServiceArea
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -1582,6 +1594,10 @@ paths:
     put:
       tags: [Admin]
       summary: Update a service area
+      description: |
+        Updates the name, LGU code, boundary polygon, and/or active flag
+        of an existing service area. Boundary changes take effect on the
+        next fare calculation.
       operationId: adminUpdateServiceArea
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1599,6 +1615,9 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete a service area
+      description: |
+        Permanently removes a service area. Any LGU partnerships pointing
+        at this area have their `service_area_id` cleared.
       operationId: adminDeleteServiceArea
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1613,6 +1632,10 @@ paths:
     get:
       tags: [Admin]
       summary: List LGU partnerships
+      description: |
+        Returns all Local Government Unit (LGU) partnership records used
+        to track compliance engagements and contact info per city or
+        municipality.
       operationId: adminListLGUPartnerships
       security: [{ BearerAuth: [] }]
       responses:
@@ -1626,6 +1649,9 @@ paths:
     post:
       tags: [Admin]
       summary: Create an LGU partnership
+      description: |
+        Registers a new LGU partnership, optionally linking it to an
+        existing service area via `service_area_id`.
       operationId: adminCreateLGUPartnership
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -1644,6 +1670,9 @@ paths:
     get:
       tags: [Admin]
       summary: Get an LGU partnership
+      description: |
+        Returns a single LGU partnership record by id, including linked
+        service area and contact details.
       operationId: adminGetLGUPartnership
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1660,6 +1689,9 @@ paths:
     put:
       tags: [Admin]
       summary: Update an LGU partnership
+      description: |
+        Updates LGU partnership fields such as status, contact info, or
+        linked service area.
       operationId: adminUpdateLGUPartnership
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1677,6 +1709,9 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete an LGU partnership
+      description: |
+        Permanently removes an LGU partnership record. Does not affect the
+        linked service area.
       operationId: adminDeleteLGUPartnership
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1691,6 +1726,9 @@ paths:
     get:
       tags: [Admin]
       summary: List alert rules
+      description: |
+        Returns all configured alert rules evaluated against platform
+        metrics (e.g. cancellation spikes, driver supply drops).
       operationId: adminListAlertRules
       security: [{ BearerAuth: [] }]
       responses:
@@ -1704,6 +1742,9 @@ paths:
     post:
       tags: [Admin]
       summary: Create an alert rule
+      description: |
+        Creates a new alert rule. Once active, matching metric conditions
+        will generate alert events consumed by the admin alerts tab.
       operationId: adminCreateAlertRule
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -1722,6 +1763,9 @@ paths:
     put:
       tags: [Admin]
       summary: Update an alert rule
+      description: |
+        Updates the threshold, severity, or enabled flag of an existing
+        alert rule. Historical alert events are not modified.
       operationId: adminUpdateAlertRule
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1739,6 +1783,9 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete an alert rule
+      description: |
+        Permanently removes an alert rule. Historical alert events raised
+        by the rule are retained.
       operationId: adminDeleteAlertRule
       security: [{ BearerAuth: [] }]
       parameters:
@@ -1753,6 +1800,9 @@ paths:
     get:
       tags: [Admin]
       summary: List recent alert events
+      description: |
+        Returns the most recent alert events raised by configured rules,
+        newest first, capped by the optional `limit` query parameter.
       operationId: adminListAlertEvents
       security: [{ BearerAuth: [] }]
       parameters:
@@ -4936,8 +4986,18 @@ components:
         areas:
           - id: "550e8400-e29b-41d4-a716-446655440000"
             name: "Northern Luzon Service Area"
-            center: { lat: 16.607538, lng: 120.2693932 }
-            radius: 100000.0
+            lgu_code: "PH-BAG"
+            boundary:
+              name: "Baguio City Core"
+              multiplier: 1.25
+              polygon:
+                - [16.420, 120.590]
+                - [16.420, 120.610]
+                - [16.400, 120.610]
+                - [16.400, 120.590]
+            active: true
+            created_at: "2026-04-01T08:00:00Z"
+            updated_at: "2026-04-01T08:00:00Z"
 
     ServiceArea:
       type: object

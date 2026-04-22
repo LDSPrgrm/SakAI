@@ -787,7 +787,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get incident detail with SOS status-history timeline */
+        /**
+         * Get incident detail with SOS status-history timeline
+         * @description Returns the full incident record plus the ordered status-history
+         *     timeline for a single SOS/incident, used by the admin incident
+         *     detail modal.
+         */
         get: operations["adminGetIncident"];
         put?: never;
         post?: never;
@@ -846,10 +851,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List service areas (admin — includes inactive) */
+        /**
+         * List service areas (admin — includes inactive)
+         * @description Returns every configured service area, including inactive ones, for
+         *     admin management views. Unlike the public list, this endpoint does
+         *     not filter by `active` status.
+         */
         get: operations["adminListServiceAreas"];
         put?: never;
-        /** Create a service area */
+        /**
+         * Create a service area
+         * @description Creates a new service area with an associated boundary polygon.
+         *     The boundary is reused by the fare calculator for point-in-polygon
+         *     origin lookups.
+         */
         post: operations["adminCreateServiceArea"];
         delete?: never;
         options?: never;
@@ -865,10 +880,19 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update a service area */
+        /**
+         * Update a service area
+         * @description Updates the name, LGU code, boundary polygon, and/or active flag
+         *     of an existing service area. Boundary changes take effect on the
+         *     next fare calculation.
+         */
         put: operations["adminUpdateServiceArea"];
         post?: never;
-        /** Delete a service area */
+        /**
+         * Delete a service area
+         * @description Permanently removes a service area. Any LGU partnerships pointing
+         *     at this area have their `service_area_id` cleared.
+         */
         delete: operations["adminDeleteServiceArea"];
         options?: never;
         head?: never;
@@ -882,10 +906,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List LGU partnerships */
+        /**
+         * List LGU partnerships
+         * @description Returns all Local Government Unit (LGU) partnership records used
+         *     to track compliance engagements and contact info per city or
+         *     municipality.
+         */
         get: operations["adminListLGUPartnerships"];
         put?: never;
-        /** Create an LGU partnership */
+        /**
+         * Create an LGU partnership
+         * @description Registers a new LGU partnership, optionally linking it to an
+         *     existing service area via `service_area_id`.
+         */
         post: operations["adminCreateLGUPartnership"];
         delete?: never;
         options?: never;
@@ -900,12 +933,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an LGU partnership */
+        /**
+         * Get an LGU partnership
+         * @description Returns a single LGU partnership record by id, including linked
+         *     service area and contact details.
+         */
         get: operations["adminGetLGUPartnership"];
-        /** Update an LGU partnership */
+        /**
+         * Update an LGU partnership
+         * @description Updates LGU partnership fields such as status, contact info, or
+         *     linked service area.
+         */
         put: operations["adminUpdateLGUPartnership"];
         post?: never;
-        /** Delete an LGU partnership */
+        /**
+         * Delete an LGU partnership
+         * @description Permanently removes an LGU partnership record. Does not affect the
+         *     linked service area.
+         */
         delete: operations["adminDeleteLGUPartnership"];
         options?: never;
         head?: never;
@@ -919,10 +964,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List alert rules */
+        /**
+         * List alert rules
+         * @description Returns all configured alert rules evaluated against platform
+         *     metrics (e.g. cancellation spikes, driver supply drops).
+         */
         get: operations["adminListAlertRules"];
         put?: never;
-        /** Create an alert rule */
+        /**
+         * Create an alert rule
+         * @description Creates a new alert rule. Once active, matching metric conditions
+         *     will generate alert events consumed by the admin alerts tab.
+         */
         post: operations["adminCreateAlertRule"];
         delete?: never;
         options?: never;
@@ -938,10 +991,18 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update an alert rule */
+        /**
+         * Update an alert rule
+         * @description Updates the threshold, severity, or enabled flag of an existing
+         *     alert rule. Historical alert events are not modified.
+         */
         put: operations["adminUpdateAlertRule"];
         post?: never;
-        /** Delete an alert rule */
+        /**
+         * Delete an alert rule
+         * @description Permanently removes an alert rule. Historical alert events raised
+         *     by the rule are retained.
+         */
         delete: operations["adminDeleteAlertRule"];
         options?: never;
         head?: never;
@@ -955,7 +1016,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List recent alert events */
+        /**
+         * List recent alert events
+         * @description Returns the most recent alert events raised by configured rules,
+         *     newest first, capped by the optional `limit` query parameter.
+         */
         get: operations["adminListAlertEvents"];
         put?: never;
         post?: never;
@@ -2878,11 +2943,32 @@ export interface components {
          *         {
          *           "id": "550e8400-e29b-41d4-a716-446655440000",
          *           "name": "Northern Luzon Service Area",
-         *           "center": {
-         *             "lat": 16.607538,
-         *             "lng": 120.2693932
+         *           "lgu_code": "PH-BAG",
+         *           "boundary": {
+         *             "name": "Baguio City Core",
+         *             "multiplier": 1.25,
+         *             "polygon": [
+         *               [
+         *                 16.42,
+         *                 120.59
+         *               ],
+         *               [
+         *                 16.42,
+         *                 120.61
+         *               ],
+         *               [
+         *                 16.4,
+         *                 120.61
+         *               ],
+         *               [
+         *                 16.4,
+         *                 120.59
+         *               ]
+         *             ]
          *           },
-         *           "radius": 100000
+         *           "active": true,
+         *           "created_at": "2026-04-01T08:00:00Z",
+         *           "updated_at": "2026-04-01T08:00:00Z"
          *         }
          *       ]
          *     }
