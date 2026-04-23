@@ -20,10 +20,18 @@ import (
 	"github.com/sakai/backend/internal/domain"
 )
 
+// Notifier is the dispatch hook the evaluator calls after an alert event is
+// recorded. Evaluator.record skips the hook when the field is nil, so tests
+// and database-less builds keep working.
+type Notifier interface {
+	NotifyAlertFire(ctx context.Context, rule *domain.AlertRule, subjectType, subjectID string, payload []byte) error
+}
+
 type Evaluator struct {
 	repo     domain.AlertRepository
 	pool     *pgxpool.Pool
 	interval time.Duration
+	notifier Notifier
 }
 
 func New(repo domain.AlertRepository, pool *pgxpool.Pool, interval time.Duration) *Evaluator {
@@ -31,6 +39,13 @@ func New(repo domain.AlertRepository, pool *pgxpool.Pool, interval time.Duration
 		interval = 5 * time.Minute
 	}
 	return &Evaluator{repo: repo, pool: pool, interval: interval}
+}
+
+// WithNotifier attaches the outbound dispatcher. Called during wiring in
+// cmd/api/main after the notifications package is constructed.
+func (e *Evaluator) WithNotifier(n Notifier) *Evaluator {
+	e.notifier = n
+	return e
 }
 
 // Run blocks until ctx is cancelled, evaluating all enabled rules each tick.
@@ -228,7 +243,9 @@ func (e *Evaluator) evalKYCExpiry(ctx context.Context, rule *domain.AlertRule) e
 // record inserts an alert_events row only when no event for the same
 // (rule_id, subject_id) has fired inside the per-rule cooldown window.
 // The conditional INSERT runs server-side so concurrent ticks can't both
-// slip a duplicate past a Go-side check.
+// slip a duplicate past a Go-side check. When the insert lands (RowsAffected
+// == 1) and a notifier is attached, the fire is dispatched through the
+// notification_outbox.
 func (e *Evaluator) record(ctx context.Context, rule *domain.AlertRule, subjectType, subjectID string, payload []byte) {
 	var sid *uuid.UUID
 	if u, err := uuid.Parse(subjectID); err == nil {
@@ -244,7 +261,17 @@ func (e *Evaluator) record(ctx context.Context, rule *domain.AlertRule, subjectT
 		      AND ((subject_id IS NULL AND $3::uuid IS NULL) OR subject_id = $3)
 		      AND fired_at >= NOW() - ($5 || ' minutes')::interval
 		)`
-	if _, err := e.pool.Exec(ctx, q, rule.ID, subjectType, sid, payload, fmt.Sprintf("%d", cooldown)); err != nil {
+	tag, err := e.pool.Exec(ctx, q, rule.ID, subjectType, sid, payload, fmt.Sprintf("%d", cooldown))
+	if err != nil {
 		log.Printf("alerting: record event for rule %s: %v", rule.ID, err)
+		return
+	}
+	// Only dispatch when the cooldown guard let the INSERT through, so
+	// repeat ticks inside the cooldown don't re-notify admins.
+	if tag.RowsAffected() == 0 || e.notifier == nil {
+		return
+	}
+	if err := e.notifier.NotifyAlertFire(ctx, rule, subjectType, subjectID, payload); err != nil {
+		log.Printf("alerting: notify fire for rule %s: %v", rule.ID, err)
 	}
 }

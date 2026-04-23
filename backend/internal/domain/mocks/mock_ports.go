@@ -867,6 +867,21 @@ func (mr *MockIncidentRepositoryMockRecorder) AssignIncident(ctx, id, assigneeID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignIncident", reflect.TypeOf((*MockIncidentRepository)(nil).AssignIncident), ctx, id, assigneeID)
 }
 
+// FindActiveByDriver mocks base method.
+func (m *MockIncidentRepository) FindActiveByDriver(ctx context.Context, driverID uuid.UUID) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindActiveByDriver", ctx, driverID)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindActiveByDriver indicates an expected call of FindActiveByDriver.
+func (mr *MockIncidentRepositoryMockRecorder) FindActiveByDriver(ctx, driverID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindActiveByDriver", reflect.TypeOf((*MockIncidentRepository)(nil).FindActiveByDriver), ctx, driverID)
+}
+
 // GetIncidentByID mocks base method.
 func (m *MockIncidentRepository) GetIncidentByID(ctx context.Context, id uuid.UUID) (*domain.Incident, error) {
 	m.ctrl.T.Helper()
@@ -897,6 +912,21 @@ func (mr *MockIncidentRepositoryMockRecorder) ListIncidents(ctx, status any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListIncidents", reflect.TypeOf((*MockIncidentRepository)(nil).ListIncidents), ctx, status)
 }
 
+// ListLocationTrail mocks base method.
+func (m *MockIncidentRepository) ListLocationTrail(ctx context.Context, id uuid.UUID) ([]*domain.IncidentLocationPoint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLocationTrail", ctx, id)
+	ret0, _ := ret[0].([]*domain.IncidentLocationPoint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListLocationTrail indicates an expected call of ListLocationTrail.
+func (mr *MockIncidentRepositoryMockRecorder) ListLocationTrail(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLocationTrail", reflect.TypeOf((*MockIncidentRepository)(nil).ListLocationTrail), ctx, id)
+}
+
 // ListStatusHistory mocks base method.
 func (m *MockIncidentRepository) ListStatusHistory(ctx context.Context, id uuid.UUID) ([]*domain.IncidentStatusEvent, error) {
 	m.ctrl.T.Helper()
@@ -910,6 +940,20 @@ func (m *MockIncidentRepository) ListStatusHistory(ctx context.Context, id uuid.
 func (mr *MockIncidentRepositoryMockRecorder) ListStatusHistory(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStatusHistory", reflect.TypeOf((*MockIncidentRepository)(nil).ListStatusHistory), ctx, id)
+}
+
+// RecordLocationPing mocks base method.
+func (m *MockIncidentRepository) RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordLocationPing", ctx, incidentID, driverID, lat, lng)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordLocationPing indicates an expected call of RecordLocationPing.
+func (mr *MockIncidentRepositoryMockRecorder) RecordLocationPing(ctx, incidentID, driverID, lat, lng any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordLocationPing", reflect.TypeOf((*MockIncidentRepository)(nil).RecordLocationPing), ctx, incidentID, driverID, lat, lng)
 }
 
 // UpdateIncident mocks base method.
@@ -1592,6 +1636,21 @@ func (m *MockMetricsRepository) EXPECT() *MockMetricsRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsRepository) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsRepositoryMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsRepository)(nil).GetDriverHeatmap), ctx)
+}
+
 // GetDriverMetrics mocks base method.
 func (m *MockMetricsRepository) GetDriverMetrics(ctx context.Context) (*domain.MetricResponse, error) {
 	m.ctrl.T.Helper()
@@ -1665,21 +1724,6 @@ func (m *MockMetricsRepository) GetWaitTimeMetrics(ctx context.Context) (*domain
 func (mr *MockMetricsRepositoryMockRecorder) GetWaitTimeMetrics(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsRepository)(nil).GetWaitTimeMetrics), ctx)
-}
-
-// GetDriverHeatmap mocks base method.
-func (m *MockMetricsRepository) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
-	ret0, _ := ret[0].(*domain.DriverHeatmap)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
-func (mr *MockMetricsRepositoryMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsRepository)(nil).GetDriverHeatmap), ctx)
 }
 
 // MockDocumentRepository is a mock of DocumentRepository interface.
@@ -3313,6 +3357,21 @@ func (m *MockMetricsUseCase) EXPECT() *MockMetricsUseCaseMockRecorder {
 	return m.recorder
 }
 
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsUseCase) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsUseCaseMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsUseCase)(nil).GetDriverHeatmap), ctx)
+}
+
 // GetDriverMetrics mocks base method.
 func (m *MockMetricsUseCase) GetDriverMetrics(ctx context.Context) (*domain.MetricResponse, error) {
 	m.ctrl.T.Helper()
@@ -3386,21 +3445,6 @@ func (m *MockMetricsUseCase) GetWaitTimeMetrics(ctx context.Context) (*domain.Me
 func (mr *MockMetricsUseCaseMockRecorder) GetWaitTimeMetrics(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsUseCase)(nil).GetWaitTimeMetrics), ctx)
-}
-
-// GetDriverHeatmap mocks base method.
-func (m *MockMetricsUseCase) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
-	ret0, _ := ret[0].(*domain.DriverHeatmap)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
-func (mr *MockMetricsUseCaseMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsUseCase)(nil).GetDriverHeatmap), ctx)
 }
 
 // MockDocumentUseCase is a mock of DocumentUseCase interface.

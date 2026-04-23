@@ -14,11 +14,13 @@ type driverUseCase struct {
 	driverRepo   domain.DriverRepository
 	rideRepo     domain.RideRepository
 	earningsRepo domain.EarningsRepository
+	incidentRepo domain.IncidentRepository
 }
 
 // NewDriverUseCase creates a new domain.DriverUseCase.
-func NewDriverUseCase(driverRepo domain.DriverRepository, rideRepo domain.RideRepository, earningsRepo domain.EarningsRepository) domain.DriverUseCase {
-	return &driverUseCase{driverRepo: driverRepo, rideRepo: rideRepo, earningsRepo: earningsRepo}
+// incidentRepo may be nil in tests that don't exercise the SOS trail capture.
+func NewDriverUseCase(driverRepo domain.DriverRepository, rideRepo domain.RideRepository, earningsRepo domain.EarningsRepository, incidentRepo domain.IncidentRepository) domain.DriverUseCase {
+	return &driverUseCase{driverRepo: driverRepo, rideRepo: rideRepo, earningsRepo: earningsRepo, incidentRepo: incidentRepo}
 }
 
 func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) error {
@@ -47,7 +49,32 @@ func (uc *driverUseCase) UpdateLocation(ctx context.Context, driverID uuid.UUID,
 	if driver.Status != domain.DriverStatusOnline {
 		return domain.ErrForbidden
 	}
-	return uc.driverRepo.UpdateLocation(ctx, driverID, loc)
+	if err := uc.driverRepo.UpdateLocation(ctx, driverID, loc); err != nil {
+		return err
+	}
+	uc.captureIncidentTrail(ctx, driverID, loc)
+	return nil
+}
+
+// captureIncidentTrail appends the current ping to driver_location_history for
+// every unresolved incident involving this driver. The partial index on
+// incidents keeps the negative-case lookup index-only; when it fires the
+// insert is append-only. Errors are logged and swallowed so trail capture
+// never blocks a location update.
+func (uc *driverUseCase) captureIncidentTrail(ctx context.Context, driverID uuid.UUID, loc domain.DriverLocation) {
+	if uc.incidentRepo == nil {
+		return
+	}
+	ids, err := uc.incidentRepo.FindActiveByDriver(ctx, driverID)
+	if err != nil {
+		log.Printf("[DRIVER_UC] SOS trail: find active incidents: %v", err)
+		return
+	}
+	for _, id := range ids {
+		if err := uc.incidentRepo.RecordLocationPing(ctx, id, driverID, loc.Lat, loc.Lng); err != nil {
+			log.Printf("[DRIVER_UC] SOS trail: record ping (%s): %v", id, err)
+		}
+	}
 }
 
 func (uc *driverUseCase) GetIncomingRide(ctx context.Context, driverID uuid.UUID) (*domain.Ride, error) {

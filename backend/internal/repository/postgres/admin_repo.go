@@ -169,9 +169,14 @@ func (r *fareRepo) UpdateFareConfig(ctx context.Context, c *domain.FareConfig) e
 }
 
 func (r *fareRepo) GetSurgeConfig(ctx context.Context) (*domain.SurgeConfig, error) {
-	const q = `SELECT id, enabled, max_multiplier, trigger_ratio, zones, blackout_hours, updated_at, updated_by FROM surge_configs LIMIT 1`
+	const q = `
+		SELECT s.id, s.enabled, s.max_multiplier, s.trigger_ratio, s.zones, s.blackout_hours,
+		       s.updated_at, s.updated_by, COALESCE(u.name, '')
+		FROM surge_configs s
+		LEFT JOIN users u ON u.id = s.updated_by
+		LIMIT 1`
 	c := &domain.SurgeConfig{}
-	err := r.db.QueryRow(ctx, q).Scan(&c.ID, &c.Enabled, &c.MaxMultiplier, &c.TriggerRatio, &c.Zones, &c.BlackoutHours, &c.UpdatedAt, &c.UpdatedBy)
+	err := r.db.QueryRow(ctx, q).Scan(&c.ID, &c.Enabled, &c.MaxMultiplier, &c.TriggerRatio, &c.Zones, &c.BlackoutHours, &c.UpdatedAt, &c.UpdatedBy, &c.UpdatedByName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &domain.SurgeConfig{Enabled: false, MaxMultiplier: 1.0, TriggerRatio: 1.5}, nil
 	}
@@ -380,6 +385,62 @@ func (r *incidentRepo) AssignIncident(ctx context.Context, id uuid.UUID, assigne
 		return domain.ErrNotFound
 	}
 	return nil
+}
+
+// ListLocationTrail returns incident-scoped GPS pings oldest-first.
+func (r *incidentRepo) ListLocationTrail(ctx context.Context, id uuid.UUID) ([]*domain.IncidentLocationPoint, error) {
+	const q = `
+		SELECT lat, lng, recorded_at
+		FROM driver_location_history
+		WHERE incident_id = $1
+		ORDER BY recorded_at ASC`
+	rows, err := r.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	trail := make([]*domain.IncidentLocationPoint, 0)
+	for rows.Next() {
+		p := &domain.IncidentLocationPoint{}
+		if err := rows.Scan(&p.Lat, &p.Lng, &p.RecordedAt); err != nil {
+			return nil, err
+		}
+		trail = append(trail, p)
+	}
+	return trail, rows.Err()
+}
+
+// FindActiveByDriver hits the partial index idx_incidents_active_driver so the
+// empty case (driver has no open incident) reads a single index tuple. Callers
+// on the driver location hot path depend on this staying cheap.
+func (r *incidentRepo) FindActiveByDriver(ctx context.Context, driverID uuid.UUID) ([]uuid.UUID, error) {
+	const q = `
+		SELECT id FROM incidents
+		WHERE driver_id = $1 AND resolved_at IS NULL`
+	rows, err := r.db.Query(ctx, q, driverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func (r *incidentRepo) RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error {
+	const q = `
+		INSERT INTO driver_location_history (incident_id, driver_id, lat, lng)
+		VALUES ($1, $2, $3, $4)`
+	_, err := r.db.Exec(ctx, q, incidentID, driverID, lat, lng)
+	return err
 }
 
 // --- System Metrics Repository ---

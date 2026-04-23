@@ -34,6 +34,7 @@ type SurgeConfig struct {
 	BlackoutHours json.RawMessage `json:"blackout_hours"`
 	UpdatedAt     time.Time       `json:"updated_at"`
 	UpdatedBy     uuid.UUID       `json:"updated_by"`
+	UpdatedByName string          `json:"updated_by_name,omitempty"`
 }
 
 // PaymentGatewayConfig carries settings for external payment providers.

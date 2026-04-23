@@ -316,6 +316,16 @@ type IncidentRepository interface {
 	// AssignIncident sets assigned_to (nullable) and is recorded in the
 	// history via trigger.
 	AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error
+	// ListLocationTrail returns GPS pings captured while the incident was
+	// open, oldest first. Empty slice when no pings were recorded.
+	ListLocationTrail(ctx context.Context, id uuid.UUID) ([]*IncidentLocationPoint, error)
+	// FindActiveByDriver returns the IDs of any currently-unresolved incidents
+	// involving this driver. Called from the driver location hot path — uses
+	// the partial index idx_incidents_active_driver so the empty case is O(1).
+	FindActiveByDriver(ctx context.Context, driverID uuid.UUID) ([]uuid.UUID, error)
+	// RecordLocationPing appends one trail point bound to an incident_id.
+	// Called only when FindActiveByDriver returned at least one id.
+	RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error
 }
 
 // SystemMetricsRepository aggregates platform-wide KPIs.
