@@ -48,6 +48,14 @@ export function useSystemServices(options?: { refetchInterval?: number }) {
   });
 }
 
+export function useInfraMetrics(options?: { refetchInterval?: number }) {
+  return useQuery({
+    queryKey: [...SYSTEM_KEY, 'infra-metrics'] as const,
+    queryFn: () => systemApi.getInfraMetrics(),
+    refetchInterval: options?.refetchInterval,
+  });
+}
+
 export function useUpdateIntegration() {
   const qc = useQueryClient();
   return useMutation({

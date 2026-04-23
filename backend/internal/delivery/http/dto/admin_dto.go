@@ -61,6 +61,7 @@ type IncidentDTO struct {
 	TriggeredBy     string     `json:"triggered_by"`
 	RiderID         string     `json:"rider_id"`
 	DriverID        string     `json:"driver_id"`
+	AssignedTo      *string    `json:"assigned_to,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
@@ -78,7 +79,7 @@ func NewDashboardResponse(m *domain.DashboardMetrics) *DashboardResponse {
 }
 
 func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
-	return &IncidentDTO{
+	dto := &IncidentDTO{
 		ID:              i.ID.String(),
 		RideID:          i.RideID.String(),
 		Type:            i.Type,
@@ -90,6 +91,61 @@ func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
 		ResolvedAt:      i.ResolvedAt,
 		ResolutionNotes: i.ResolutionNotes,
 	}
+	if i.AssignedTo != nil {
+		s := i.AssignedTo.String()
+		dto.AssignedTo = &s
+	}
+	return dto
+}
+
+// IncidentStatusEventDTO is a single row in the SOS timeline.
+type IncidentStatusEventDTO struct {
+	ID           string    `json:"id"`
+	FromStatus   *string   `json:"from_status,omitempty"`
+	ToStatus     string    `json:"to_status"`
+	FromAssignee *string   `json:"from_assignee,omitempty"`
+	ToAssignee   *string   `json:"to_assignee,omitempty"`
+	ActorID      *string   `json:"actor_id,omitempty"`
+	ActorName    string    `json:"actor_name,omitempty"`
+	Note         string    `json:"note,omitempty"`
+	OccurredAt   time.Time `json:"occurred_at"`
+}
+
+// IncidentDetailDTO is returned by GET /admin/incidents/{id}.
+type IncidentDetailDTO struct {
+	Incident      *IncidentDTO             `json:"incident"`
+	StatusHistory []IncidentStatusEventDTO `json:"status_history"`
+}
+
+func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
+	res := &IncidentDetailDTO{
+		Incident:      NewIncidentDTO(d.Incident),
+		StatusHistory: make([]IncidentStatusEventDTO, 0, len(d.StatusHistory)),
+	}
+	for _, ev := range d.StatusHistory {
+		item := IncidentStatusEventDTO{
+			ID:         ev.ID.String(),
+			FromStatus: ev.FromStatus,
+			ToStatus:   ev.ToStatus,
+			ActorName:  ev.ActorName,
+			Note:       ev.Note,
+			OccurredAt: ev.OccurredAt,
+		}
+		if ev.FromAssignee != nil {
+			s := ev.FromAssignee.String()
+			item.FromAssignee = &s
+		}
+		if ev.ToAssignee != nil {
+			s := ev.ToAssignee.String()
+			item.ToAssignee = &s
+		}
+		if ev.ActorID != nil {
+			s := ev.ActorID.String()
+			item.ActorID = &s
+		}
+		res.StatusHistory = append(res.StatusHistory, item)
+	}
+	return res
 }
 
 // AdminRideItemDTO is the API representation of a ride in the admin browse list.

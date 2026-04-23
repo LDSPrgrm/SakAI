@@ -74,32 +74,20 @@ export const metricsApi = {
   getRevenueMetric: () => adminRequest<MetricResponse>('GET', '/metrics/revenue'),
   getWaitTimeMetric: () => adminRequest<MetricResponse>('GET', '/metrics/wait-time'),
 
-  // Driver supply heatmap. Backend endpoint not yet available;
-  // returns deterministic mock points across Metro Manila so the
-  // frontend visualization can be developed/iterated independently.
-  // Swap to `adminRequest<HeatmapResponse>('GET', '/admin/drivers/heatmap')`
-  // once backend ships the endpoint.
+  // Driver supply heatmap — one position per online driver, last-known PostGIS
+  // location plus vehicle type and availability. Falls back to Metro Manila
+  // bounds if backend returns an empty list or the query fails.
   getDriverHeatmap: async (): Promise<HeatmapResponse> => {
-    const { north, south, east, west } = METRO_MANILA_BOUNDS;
-    const positions = Array.from({ length: 60 }, (_, i) => {
-      const t = i / 60;
-      const jitter = (seed: number) => (Math.sin(seed * 9301 + 49297) + 1) / 2;
-      const lat = south + (north - south) * jitter(i + 1);
-      const lng = west  + (east  - west)  * jitter(i + 11);
+    try {
+      const raw = await adminRequest<HeatmapResponse>('GET', '/drivers/heatmap');
       return {
-        driver_id: `mock-${i}`,
-        lat,
-        lng,
-        vehicle_type: (['motorcycle', 'car', 'tricycle'] as const)[i % 3],
-        is_available: i % 4 !== 0,
-        updated_at: new Date().toISOString(),
+        positions: raw.positions ?? [],
+        bounds: raw.bounds ?? METRO_MANILA_BOUNDS,
+        generated_at: raw.generated_at ?? new Date().toISOString(),
       };
-    });
-    return {
-      positions,
-      bounds: METRO_MANILA_BOUNDS,
-      generated_at: new Date().toISOString(),
-    };
+    } catch {
+      return { positions: [], bounds: METRO_MANILA_BOUNDS, generated_at: new Date().toISOString() };
+    }
   },
 
   getActivityFeed: () =>

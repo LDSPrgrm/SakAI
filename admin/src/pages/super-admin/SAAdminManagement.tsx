@@ -55,8 +55,8 @@ export function SAAdminManagement() {
   const qc = useQueryClient();
   const adminsQuery = useAdmins();
   const rolesQuery = useRoles();
-  const admins = (adminsQuery.data ?? []) as unknown as AdminUser[];
-  const roleDefs = (rolesQuery.data ?? []) as unknown as AdminRoleDefinition[];
+  const admins: AdminUser[] = adminsQuery.data ?? [];
+  const roleDefs: AdminRoleDefinition[] = rolesQuery.data ?? [];
   const invalidateAdminsAndRoles = () => {
     qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
     qc.invalidateQueries({ queryKey: ['admin', 'roles'] });

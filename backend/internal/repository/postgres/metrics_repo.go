@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
@@ -60,6 +61,69 @@ func (r *metricsRepo) GetRevenueMetrics(_ context.Context, _ string) (*domain.Me
 func (r *metricsRepo) GetWaitTimeMetrics(_ context.Context) (*domain.MetricResponse, error) {
 	// Stub: requires accepted_at timestamp in rides
 	return buildMetric(240, 280), nil // seconds
+}
+
+// metroManilaBounds is the fallback bounding box served when no online drivers
+// have a recorded location yet.
+var metroManilaBounds = domain.HeatmapBounds{North: 14.78, South: 14.40, East: 121.13, West: 120.93}
+
+func (r *metricsRepo) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	const q = `
+		SELECT d.user_id,
+		       ST_Y(d.location) AS lat,
+		       ST_X(d.location) AS lng,
+		       COALESCE(v.vehicle_type::text, '') AS vehicle_type,
+		       NOT EXISTS (
+		           SELECT 1 FROM rides
+		           WHERE driver_id = d.user_id
+		             AND status NOT IN ('completed', 'cancelled')
+		       ) AS is_available,
+		       d.updated_at
+		FROM drivers d
+		LEFT JOIN vehicles v ON v.driver_id = d.user_id
+		WHERE d.status = 'online' AND d.location IS NOT NULL
+		LIMIT 500`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := &domain.DriverHeatmap{
+		Positions:   []domain.HeatmapPosition{},
+		Bounds:      metroManilaBounds,
+		GeneratedAt: time.Now().UTC(),
+	}
+	var north, south, east, west float64
+	first := true
+	for rows.Next() {
+		p := domain.HeatmapPosition{}
+		if err := rows.Scan(&p.DriverID, &p.Lat, &p.Lng, &p.VehicleType, &p.IsAvailable, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out.Positions = append(out.Positions, p)
+		if first {
+			north, south, east, west = p.Lat, p.Lat, p.Lng, p.Lng
+			first = false
+			continue
+		}
+		if p.Lat > north {
+			north = p.Lat
+		}
+		if p.Lat < south {
+			south = p.Lat
+		}
+		if p.Lng > east {
+			east = p.Lng
+		}
+		if p.Lng < west {
+			west = p.Lng
+		}
+	}
+	if !first {
+		out.Bounds = domain.HeatmapBounds{North: north, South: south, East: east, West: west}
+	}
+	return out, rows.Err()
 }
 
 func buildMetric(current, previous float64) *domain.MetricResponse {

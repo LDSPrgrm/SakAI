@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ShieldCheck, UserCog, PhilippinePeso, Banknote,
-  FileText, Wrench, Activity, ScrollText, Shield, Car,
+  FileText, Wrench, Activity, ScrollText, Shield, Car, Building2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions, PermissionKey } from '@/hooks/usePermissions';
@@ -23,6 +23,7 @@ const saNavItems: { path: string; label: string; icon: React.ElementType; perm: 
   { path: '/super-admin/reports',   label: 'Reports',            icon: FileText,         perm: 'reports' },
   { path: '/super-admin/system',    label: 'System Config',      icon: Wrench,           perm: 'system_config' },
   { path: '/super-admin/health',    label: 'System Health',      icon: Activity,         perm: 'system_health' },
+  { path: '/super-admin/lgu',       label: 'LGU & Coverage',     icon: Building2,        perm: 'system_config' },
   { path: '/super-admin/audit',     label: 'Audit Log',          icon: ScrollText,       perm: 'audit_log' },
 ];
 

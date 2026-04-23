@@ -13,9 +13,27 @@ export type PaymentGatewayConfig     = components['schemas']['PaymentGatewayConf
 export type PaymentMethod      = NonNullable<Transaction['payment_method']>;
 export type TransactionStatus  = NonNullable<Transaction['status']>;
 
+export interface TransactionFilters {
+  page?: number;
+  limit?: number;
+  /** ISO date (YYYY-MM-DD) inclusive lower bound on created_at */
+  from?: string;
+  /** ISO date (YYYY-MM-DD) inclusive upper bound on created_at */
+  to?: string;
+}
+
+function buildQuery(params: TransactionFilters): string {
+  const s = new URLSearchParams();
+  for (const [k, v] of Object.entries(params) as [string, string | number | undefined][]) {
+    if (v !== undefined && v !== '') s.set(k, String(v));
+  }
+  const q = s.toString();
+  return q ? `?${q}` : '';
+}
+
 export const paymentsApi = {
-  getTransactions: () =>
-    adminRequest<unknown>('GET', '/payments/transactions').then(extractArray<Transaction>),
+  getTransactions: (filters: TransactionFilters = {}) =>
+    adminRequest<unknown>('GET', `/payments/transactions${buildQuery(filters)}`).then(extractArray<Transaction>),
 
   getPayouts: () =>
     adminRequest<unknown>('GET', '/payments/payouts').then(extractArray<DriverPayout>),

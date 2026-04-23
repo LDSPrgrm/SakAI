@@ -1,11 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Users, Car, Clock, MapPin, Activity } from 'lucide-react';
+import { Users, Car, Clock, Activity } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { formatPHP } from '@/lib/utils';
 import {
-  useDashboardMetrics, useRidesChart, useRevenueChart, useActivityFeed,
+  useDashboardMetrics, useRidesChart, useRevenueChart, useActivityFeed, useDriverHeatmap,
 } from '@/hooks/useMetrics';
+import { DriverHeatmap } from '@/components/super-admin/dashboard/DriverHeatmap';
 import { useHealth } from '@/hooks/useSystem';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
@@ -18,6 +19,7 @@ export function Dashboard() {
   const ridesChartQuery = useRidesChart();
   const revenueChartQuery = useRevenueChart();
   const activityQuery = useActivityFeed();
+  const heatmapQuery = useDriverHeatmap();
 
   const health = healthQuery.isError
     ? { status: 'down' as const }
@@ -173,22 +175,12 @@ export function Dashboard() {
             <CardTitle>Live Hotspots</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px] bg-surface-hover rounded-lg flex items-center justify-center border border-border relative overflow-hidden">
-              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#1A73E8 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-              <div className="absolute top-1/4 left-1/4 w-12 h-12 bg-danger/30 rounded-full animate-pulse flex items-center justify-center">
-                <div className="w-4 h-4 bg-danger rounded-full"></div>
-              </div>
-              <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-primary/30 rounded-full animate-pulse flex items-center justify-center" style={{ animationDelay: '1s' }}>
-                <div className="w-6 h-6 bg-primary rounded-full"></div>
-              </div>
-              <div className="absolute bottom-1/4 right-1/4 w-8 h-8 bg-warning/30 rounded-full animate-pulse flex items-center justify-center" style={{ animationDelay: '0.5s' }}>
-                <div className="w-3 h-3 bg-warning rounded-full"></div>
-              </div>
-              <div className="z-10 flex flex-col items-center text-text-muted">
-                <MapPin className="w-8 h-8 mb-2" />
-                <span className="text-sm">Metro Manila Map View</span>
-              </div>
-            </div>
+            <DriverHeatmap
+              positions={heatmapQuery.data?.positions}
+              bounds={heatmapQuery.data?.bounds}
+              loading={heatmapQuery.isPending}
+              className="h-[250px]"
+            />
           </CardContent>
         </Card>
       </div>

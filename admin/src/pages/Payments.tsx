@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
@@ -12,6 +12,20 @@ import {
 } from '@/hooks/usePayments';
 import { useExportReport } from '@/hooks/useReports';
 import type { Transaction, DriverPayout } from '@/types/super-admin';
+import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
+
+const TRANSACTIONS_PER_PAGE = 20;
+
+function toIsoDate(d: Date): string {
+  // YYYY-MM-DD in local time so the backend treats the lower/upper bound as
+  // the admin's calendar day, not UTC-shifted.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function txnStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
   switch (status) {
@@ -36,10 +50,18 @@ function paymentMethodLabel(method: string): string {
 export function Payments() {
   const { can } = usePermissions();
   const canWrite = can('payments', 'write');
+  const canExportReports = can('reports', 'read');
   const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
+  const exportDisabledTitle = canExportReports ? undefined : 'You do not have reports access';
   const [search, setSearch] = useState('');
+  const [range, setRange] = useState<DateRange>(() => getDefaultRange('30d'));
+  const [page, setPage] = useState(1);
+  const [payoutConfirm, setPayoutConfirm] = useState<{ open: boolean; payout: DriverPayout | null }>({ open: false, payout: null });
   const summaryQuery = usePaymentSummary();
-  const transactionsQuery = useTransactions();
+  const transactionsQuery = useTransactions({
+    from: toIsoDate(range.from),
+    to: toIsoDate(range.to),
+  });
   const payoutsQuery = usePayouts();
   const approvePayout = useApprovePayout();
   const exportReport = useExportReport();
@@ -49,39 +71,73 @@ export function Payments() {
   const summary = summaryQuery.data;
   const loading = summaryQuery.isPending || transactionsQuery.isPending || payoutsQuery.isPending;
 
-  const handleApprovePayout = (id: string) => {
-    approvePayout.mutate(id);
+  const openPayoutConfirm = (payout: DriverPayout) => {
+    setPayoutConfirm({ open: true, payout });
+  };
+
+  const confirmApprovePayout = () => {
+    if (payoutConfirm.payout) approvePayout.mutate(payoutConfirm.payout.id);
+    setPayoutConfirm({ open: false, payout: null });
   };
 
   const handleExport = async () => {
-    const res = await exportReport.mutateAsync('financial').catch(() => null);
+    const res = await exportReport.mutateAsync({ type: 'financial' }).catch(() => null);
     if (res?.url) window.open(res.url, '_blank');
   };
 
   const q = search.toLowerCase();
-  const filtered = transactions.filter(txn =>
-    !q ||
-    txn.id.toLowerCase().includes(q) ||
-    (txn.ride_id ?? '').toLowerCase().includes(q) ||
-    (txn.rider_name ?? '').toLowerCase().includes(q) ||
-    (txn.driver_name ?? '').toLowerCase().includes(q) ||
-    txn.payment_method.toLowerCase().includes(q) ||
-    txn.status.toLowerCase().includes(q)
+  const fromMs = useMemo(() => {
+    const d = new Date(range.from);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, [range.from]);
+  const toMs = useMemo(() => {
+    const d = new Date(range.to);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  }, [range.to]);
+
+  const filtered = useMemo(() => {
+    return transactions.filter(txn => {
+      if (q) {
+        const matchesSearch =
+          txn.id.toLowerCase().includes(q) ||
+          (txn.ride_id ?? '').toLowerCase().includes(q) ||
+          (txn.rider_name ?? '').toLowerCase().includes(q) ||
+          (txn.driver_name ?? '').toLowerCase().includes(q) ||
+          txn.payment_method.toLowerCase().includes(q) ||
+          txn.status.toLowerCase().includes(q);
+        if (!matchesSearch) return false;
+      }
+      if (!txn.created_at) return true;
+      const ts = new Date(txn.created_at).getTime();
+      return ts >= fromMs && ts <= toMs;
+    });
+  }, [transactions, q, fromMs, toMs]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / TRANSACTIONS_PER_PAGE));
+  const clampedPage = Math.min(page, pageCount);
+  const paginated = filtered.slice(
+    (clampedPage - 1) * TRANSACTIONS_PER_PAGE,
+    clampedPage * TRANSACTIONS_PER_PAGE,
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-text-main">Payments & Earnings</h1>
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={handleExport}
-          disabled={!canWrite}
-          title={writeDisabledTitle}
-        >
-          <Download className="w-4 h-4" /> Export Weekly Report
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker value={range} onChange={(r) => { setRange(r); setPage(1); }} />
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handleExport}
+            disabled={!canExportReports}
+            title={exportDisabledTitle}
+          >
+            <Download className="w-4 h-4" /> Export Weekly Report
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
@@ -143,7 +199,7 @@ export function Payments() {
                       No transactions match your search.
                     </TableCell>
                   </TableRow>
-                ) : filtered.map((txn) => (
+                ) : paginated.map((txn) => (
                   <TableRow key={txn.id}>
                     <TableCell>
                       <p className="font-medium text-text-main">{txn.id}</p>
@@ -171,6 +227,18 @@ export function Payments() {
                 ))}
               </TableBody>
             </Table>
+            <PaginationFooter
+              meta={{
+                current_page: clampedPage,
+                limit: TRANSACTIONS_PER_PAGE,
+                total_items: filtered.length,
+                total_pages: pageCount,
+              }}
+              page={clampedPage}
+              onPageChange={setPage}
+              label="transactions"
+              className="flex items-center justify-between px-4 md:px-6 py-3 border-t border-border text-sm text-text-muted"
+            />
           </CardContent>
         </Card>
 
@@ -195,7 +263,7 @@ export function Payments() {
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => handleApprovePayout(payout.id)}
+                      onClick={() => openPayoutConfirm(payout)}
                       disabled={!canWrite}
                       title={writeDisabledTitle}
                     >
@@ -208,6 +276,20 @@ export function Payments() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmModal
+        open={payoutConfirm.open}
+        title="Approve payout?"
+        message={
+          payoutConfirm.payout
+            ? `Approve batch ${payoutConfirm.payout.batch} — ${payoutConfirm.payout.driver_count} drivers · ${formatPHP(payoutConfirm.payout.total_amount ?? 0)}?`
+            : ''
+        }
+        confirmLabel="Approve"
+        variant="success"
+        onConfirm={confirmApprovePayout}
+        onClose={() => setPayoutConfirm({ open: false, payout: null })}
+      />
     </div>
   );
 }

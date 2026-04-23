@@ -59,16 +59,13 @@ func (r *earningsRepo) ListByDriverID(ctx context.Context, driverID uuid.UUID, f
 		argIdx++
 	}
 
-	const countBase = `SELECT COUNT(*) FROM driver_earnings %s`
-	countQ := countBase + " " + where
+	countQ := `SELECT COUNT(*) FROM driver_earnings ` + where
 	var total int
 	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	const dataBase = `SELECT id, driver_id, ride_id, fare_amount, tip_amount, total_amount, currency, completed_at FROM driver_earnings %s ORDER BY completed_at DESC LIMIT $%d OFFSET $%d`
-	dataQ := dataBase + " " + where
-	dataQ = dataQ + " ORDER BY completed_at DESC"
+	dataQ := `SELECT id, driver_id, ride_id, fare_amount, tip_amount, total_amount, currency, completed_at FROM driver_earnings ` + where + ` ORDER BY completed_at DESC`
 	// Append limit and offset.
 	args = append(args, limit, offset)
 	dataQ += " LIMIT $" + strconv.Itoa(argIdx) + " OFFSET $" + strconv.Itoa(argIdx+1)

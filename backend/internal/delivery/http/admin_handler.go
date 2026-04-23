@@ -109,6 +109,75 @@ func (h *AdminHandler) ListIncidents(c *gin.Context) {
 	respondOK(c, res)
 }
 
+// GetIncident returns an incident with its full SOS status-history timeline.
+func (h *AdminHandler) GetIncident(c *gin.Context) {
+	incidentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid incident id"})
+		return
+	}
+	detail, err := h.uc.GetIncident(c.Request.Context(), incidentID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.NewIncidentDetailDTO(detail))
+}
+
+// AssignIncident reassigns an incident to a support operator. Body:
+// {"assignee_id": "<uuid>" | null}. The DB trigger records the change in the
+// timeline.
+func (h *AdminHandler) AssignIncident(c *gin.Context) {
+	actorID := c.MustGet("userID").(uuid.UUID)
+	incidentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_ID", "message": "invalid incident id"})
+		return
+	}
+	var req struct {
+		AssigneeID *string `json:"assignee_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	var assigneeID *uuid.UUID
+	if req.AssigneeID != nil && *req.AssigneeID != "" {
+		u, err := uuid.Parse(*req.AssigneeID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid assignee_id"})
+			return
+		}
+		assigneeID = &u
+	}
+	if err := h.uc.AssignIncident(c.Request.Context(), actorID, incidentID, assigneeID); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// ListAssigneeCandidates returns a slim list of admin/support users that can
+// be assigned an incident. Narrower than ListAdmins (no creation metadata,
+// no password flags) so the route can be opened to operations + support
+// without exposing sensitive fields.
+func (h *AdminHandler) ListAssigneeCandidates(c *gin.Context) {
+	admins, err := h.uc.ListAdmins(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	out := make([]gin.H, 0, len(admins))
+	for _, a := range admins {
+		out = append(out, gin.H{
+			"id":   a.ID.String(),
+			"name": a.Name,
+			"role": string(a.Role),
+		})
+	}
+	respondOK(c, out)
+}
+
 func (h *AdminHandler) ResolveIncident(c *gin.Context) {
 	actorID := c.MustGet("userID").(uuid.UUID)
 	incidentID, err := uuid.Parse(c.Param("id"))

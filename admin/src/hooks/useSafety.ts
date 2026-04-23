@@ -29,12 +29,42 @@ export function useLtfrbCompliance() {
   });
 }
 
+export function useIncident(id: string | null) {
+  return useQuery({
+    queryKey: [...INCIDENTS_KEY, id],
+    queryFn: () => safetyApi.getIncident(id as string),
+    enabled: !!id,
+  });
+}
+
 export function useResolveIncident() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       safetyApi.resolveIncident(id, notes),
-    onSuccess: () => qc.invalidateQueries({ queryKey: INCIDENTS_KEY }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: INCIDENTS_KEY });
+      qc.invalidateQueries({ queryKey: [...INCIDENTS_KEY, vars.id] });
+    },
+  });
+}
+
+export function useAssigneeCandidates() {
+  return useQuery({
+    queryKey: [...SAFETY_KEY, 'assignees'],
+    queryFn: () => safetyApi.getAssigneeCandidates(),
+  });
+}
+
+export function useAssignIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assigneeId }: { id: string; assigneeId: string | null }) =>
+      safetyApi.assignIncident(id, assigneeId),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: INCIDENTS_KEY });
+      qc.invalidateQueries({ queryKey: [...INCIDENTS_KEY, vars.id] });
+    },
   });
 }
 

@@ -116,6 +116,14 @@ func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn) {
 	go cl.writePump(h.pingInterval)
 }
 
+// Size returns the number of currently-connected clients. Used by health
+// probes and the SystemHealth dashboard.
+func (h *Hub) Size() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients)
+}
+
 // Unregister removes a client for the given user.
 func (h *Hub) Unregister(userID uuid.UUID) {
 	h.mu.Lock()

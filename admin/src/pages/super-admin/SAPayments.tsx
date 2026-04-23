@@ -27,10 +27,13 @@ import {
   useTransactions, usePayouts, usePaymentSummary,
   useCommissionConfig, useApprovePayout,
   useBatchApprovePayouts, useUpdateCommissionConfig,
+  useGatewayConfigs, useUpdatePaymentConfig,
 } from '@/hooks/usePayments';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
 import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
+import { GatewayProvidersSection } from '@/components/super-admin/payments/GatewayProvidersSection';
+import { TransactionDetailModal } from '@/components/super-admin/modals/TransactionDetailModal';
 
 interface ConfirmState {
   open: boolean;
@@ -58,9 +61,17 @@ export function SAPayments() {
   const payoutsQuery = usePayouts();
   const summaryQuery = usePaymentSummary();
   const commissionQuery = useCommissionConfig();
+  const gatewayQuery = useGatewayConfigs();
   const approvePayout = useApprovePayout();
   const batchApprovePayouts = useBatchApprovePayouts();
   const updateCommissionConfig = useUpdateCommissionConfig();
+  const updatePaymentConfig = useUpdatePaymentConfig();
+
+  const gatewayConfigs = gatewayQuery.data ?? [];
+
+  async function saveGatewayConfig(provider: string, payload: { config_fields: Record<string, string>; is_active: boolean }) {
+    await updatePaymentConfig.mutateAsync({ provider, payload });
+  }
 
   const transactions = (transactionsQuery.data ?? []) as Transaction[];
   const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
@@ -72,6 +83,7 @@ export function SAPayments() {
   };
 
   const [search, setSearch] = useState('');
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
     payoutId: '',
@@ -218,7 +230,11 @@ export function SAPayments() {
                     </TableRow>
                   ) : (
                     filtered.map((t) => (
-                      <TableRow key={t.id}>
+                      <TableRow
+                        key={t.id}
+                        className="cursor-pointer hover:bg-surface-hover/80"
+                        onClick={() => setSelectedTxn(t)}
+                      >
                         {/* Transaction ID + Ride ID */}
                         <TableCell className="whitespace-nowrap">
                           <span
@@ -424,6 +440,18 @@ export function SAPayments() {
         config={commissionQuery.data}
         onSave={saveCommission}
         saving={savingCommission}
+      />
+
+      {/* Section 4 — Payment Gateway Providers */}
+      <GatewayProvidersSection
+        configs={gatewayConfigs}
+        onSave={saveGatewayConfig}
+      />
+
+      <TransactionDetailModal
+        open={Boolean(selectedTxn)}
+        transaction={selectedTxn}
+        onClose={() => setSelectedTxn(null)}
       />
 
       {/* Approve Payout Confirm Modal */}

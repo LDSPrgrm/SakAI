@@ -780,6 +780,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/incidents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get incident detail with SOS status-history timeline
+         * @description Returns the full incident record plus the ordered status-history
+         *     timeline for a single SOS/incident, used by the admin incident
+         *     detail modal.
+         */
+        get: operations["adminGetIncident"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/incidents/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reassign an incident
+         * @description Sets `assigned_to`. The DB trigger records the change in
+         *     incident_status_history so the timeline reflects the reassignment.
+         *     Body `{"assignee_id": "<uuid>" | null}`.
+         */
+        put: operations["adminAssignIncident"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/incidents/{id}/resolve": {
         parameters: {
             query?: never;
@@ -793,6 +837,192 @@ export interface paths {
          * @description Requires Superadmin or Operations role.
          */
         put: operations["adminResolveIncident"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/service-areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List service areas (admin — includes inactive)
+         * @description Returns every configured service area, including inactive ones, for
+         *     admin management views. Unlike the public list, this endpoint does
+         *     not filter by `active` status.
+         */
+        get: operations["adminListServiceAreas"];
+        put?: never;
+        /**
+         * Create a service area
+         * @description Creates a new service area with an associated boundary polygon.
+         *     The boundary is reused by the fare calculator for point-in-polygon
+         *     origin lookups.
+         */
+        post: operations["adminCreateServiceArea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/service-areas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update a service area
+         * @description Updates the name, LGU code, boundary polygon, and/or active flag
+         *     of an existing service area. Boundary changes take effect on the
+         *     next fare calculation.
+         */
+        put: operations["adminUpdateServiceArea"];
+        post?: never;
+        /**
+         * Delete a service area
+         * @description Permanently removes a service area. Any LGU partnerships pointing
+         *     at this area have their `service_area_id` cleared.
+         */
+        delete: operations["adminDeleteServiceArea"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lgu-partnerships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List LGU partnerships
+         * @description Returns all Local Government Unit (LGU) partnership records used
+         *     to track compliance engagements and contact info per city or
+         *     municipality.
+         */
+        get: operations["adminListLGUPartnerships"];
+        put?: never;
+        /**
+         * Create an LGU partnership
+         * @description Registers a new LGU partnership, optionally linking it to an
+         *     existing service area via `service_area_id`.
+         */
+        post: operations["adminCreateLGUPartnership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lgu-partnerships/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an LGU partnership
+         * @description Returns a single LGU partnership record by id, including linked
+         *     service area and contact details.
+         */
+        get: operations["adminGetLGUPartnership"];
+        /**
+         * Update an LGU partnership
+         * @description Updates LGU partnership fields such as status, contact info, or
+         *     linked service area.
+         */
+        put: operations["adminUpdateLGUPartnership"];
+        post?: never;
+        /**
+         * Delete an LGU partnership
+         * @description Permanently removes an LGU partnership record. Does not affect the
+         *     linked service area.
+         */
+        delete: operations["adminDeleteLGUPartnership"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/alerts/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List alert rules
+         * @description Returns all configured alert rules evaluated against platform
+         *     metrics (e.g. cancellation spikes, driver supply drops).
+         */
+        get: operations["adminListAlertRules"];
+        put?: never;
+        /**
+         * Create an alert rule
+         * @description Creates a new alert rule. Once active, matching metric conditions
+         *     will generate alert events consumed by the admin alerts tab.
+         */
+        post: operations["adminCreateAlertRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/alerts/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update an alert rule
+         * @description Updates the threshold, severity, or enabled flag of an existing
+         *     alert rule. Historical alert events are not modified.
+         */
+        put: operations["adminUpdateAlertRule"];
+        post?: never;
+        /**
+         * Delete an alert rule
+         * @description Permanently removes an alert rule. Historical alert events raised
+         *     by the rule are retained.
+         */
+        delete: operations["adminDeleteAlertRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/alerts/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recent alert events
+         * @description Returns the most recent alert events raised by configured rules,
+         *     newest first, capped by the optional `limit` query parameter.
+         */
+        get: operations["adminListAlertEvents"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -942,6 +1172,29 @@ export interface paths {
          * @description Evaluates status of 3rd-party internal services running the core infrastructure. Requires Superadmin or Operations role.
          */
         get: operations["adminGetServices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/system/infra-metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get infrastructure performance metrics
+         * @description Aggregated p50/p95 request latency, WebSocket connection count, and DB
+         *     query p99 latency used by the System Health page. Values are derived
+         *     from the perf-timing middleware and health-probe goroutine — no more
+         *     hardcoded SystemHealth.tsx constants.
+         */
+        get: operations["adminGetInfraMetrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1282,6 +1535,28 @@ export interface paths {
          * @description Returns the average wait time for passengers across the platform.
          */
         get: operations["adminMetricsWaitTime"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/drivers/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Driver supply heatmap
+         * @description One position per online driver with last-known PostGIS coordinates,
+         *     vehicle type, and ride availability. Returned bounds are the actual
+         *     extents of the positions (Metro Manila default if list is empty).
+         */
+        get: operations["adminDriverHeatmap"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2429,6 +2704,8 @@ export interface components {
             surge?: components["schemas"]["SurgeConfig"];
         };
         FareConfig: {
+            /** Format: uuid */
+            id?: string;
             vehicle_type?: string;
             base_fare?: number;
             per_km_rate?: number;
@@ -2436,12 +2713,23 @@ export interface components {
             minimum_fare?: number;
             booking_fee?: number;
             cancellation_fee?: number;
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string | null;
+            /** @description Display name of the admin who last updated this row (joined from users.name). */
+            updated_by_name?: string;
         };
         SurgeConfig: {
             enabled?: boolean;
             max_multiplier?: number;
             trigger_ratio?: number;
-            zones?: components["schemas"]["GeoJSONFeatureCollection"];
+            /**
+             * @description Named polygons with per-zone multipliers. The fare calculator does
+             *     origin-in-polygon (ray-casting) against this list during
+             *     SimulateFare; falls back to max_multiplier when no zone matches.
+             */
+            zones?: components["schemas"]["SurgeZone"][];
             blackout_hours?: components["schemas"]["BlackoutHour"][];
         };
         GeoJSONFeatureCollection: {
@@ -2605,7 +2893,7 @@ export interface components {
             submitted_at?: string;
             docs?: components["schemas"]["KycDocument"][];
             /** @enum {string} */
-            status?: "pending" | "approved" | "rejected";
+            status?: "pending" | "approved" | "rejected" | "needs_more_info";
         };
         KycDocument: {
             /** @description Machine-readable document type (e.g. drivers_license, vehicle_registration, insurance). */
@@ -2685,11 +2973,32 @@ export interface components {
          *         {
          *           "id": "550e8400-e29b-41d4-a716-446655440000",
          *           "name": "Northern Luzon Service Area",
-         *           "center": {
-         *             "lat": 16.607538,
-         *             "lng": 120.2693932
+         *           "lgu_code": "PH-BAG",
+         *           "boundary": {
+         *             "name": "Baguio City Core",
+         *             "multiplier": 1.25,
+         *             "polygon": [
+         *               [
+         *                 16.42,
+         *                 120.59
+         *               ],
+         *               [
+         *                 16.42,
+         *                 120.61
+         *               ],
+         *               [
+         *                 16.4,
+         *                 120.61
+         *               ],
+         *               [
+         *                 16.4,
+         *                 120.59
+         *               ]
+         *             ]
          *           },
-         *           "radius": 100000
+         *           "active": true,
+         *           "created_at": "2026-04-01T08:00:00Z",
+         *           "updated_at": "2026-04-01T08:00:00Z"
          *         }
          *       ]
          *     }
@@ -2701,18 +3010,129 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
-            description?: string;
-            center: components["schemas"]["LatLng"];
-            /**
-             * Format: float
-             * @description Service radius in meters
-             */
-            radius: number;
-            is_active?: boolean;
+            lgu_code?: string;
+            boundary: components["schemas"]["SurgeZone"];
+            active: boolean;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
             updated_at?: string;
+        };
+        ServiceAreaInput: {
+            name: string;
+            lgu_code?: string;
+            boundary: components["schemas"]["SurgeZone"];
+            active?: boolean;
+        };
+        /**
+         * @description Named polygon + multiplier. Consumed by the fare calculator for
+         *     point-in-polygon origin lookup (usecase.FindZoneMultiplier) and
+         *     reused as the boundary shape for service areas.
+         */
+        SurgeZone: {
+            name: string;
+            /** Format: float */
+            multiplier: number;
+            /** @description Ring of [lat, lng] pairs (closing vertex optional). */
+            polygon: number[][];
+        };
+        LGUPartnership: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            service_area_id?: string | null;
+            lgu_name: string;
+            contact_name?: string;
+            /** Format: email */
+            contact_email?: string;
+            contact_phone?: string;
+            /** Format: date */
+            agreement_start?: string | null;
+            /** Format: date */
+            agreement_end?: string | null;
+            /** @enum {string} */
+            status: "active" | "pending" | "expired" | "terminated";
+            notes?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        LGUPartnershipInput: {
+            /** Format: uuid */
+            service_area_id?: string | null;
+            lgu_name: string;
+            contact_name?: string;
+            /** Format: email */
+            contact_email?: string;
+            contact_phone?: string;
+            /** Format: date */
+            agreement_start?: string | null;
+            /** Format: date */
+            agreement_end?: string | null;
+            /** @enum {string} */
+            status?: "active" | "pending" | "expired" | "terminated";
+            notes?: string;
+        };
+        IncidentStatusEvent: {
+            /** Format: uuid */
+            id: string;
+            from_status?: string | null;
+            to_status: string;
+            /** Format: uuid */
+            from_assignee?: string | null;
+            /** Format: uuid */
+            to_assignee?: string | null;
+            /** Format: uuid */
+            actor_id?: string | null;
+            actor_name?: string;
+            note?: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        IncidentDetail: {
+            incident: components["schemas"]["Incident"];
+            status_history: components["schemas"]["IncidentStatusEvent"][];
+        };
+        AlertRule: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            type: "low_rating" | "high_cancellation" | "fraud_velocity" | "kyc_expiry";
+            enabled: boolean;
+            config: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        AlertRuleInput: {
+            name: string;
+            /** @enum {string} */
+            type: "low_rating" | "high_cancellation" | "fraud_velocity" | "kyc_expiry";
+            enabled?: boolean;
+            config: {
+                [key: string]: unknown;
+            };
+        };
+        AlertEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rule_id?: string | null;
+            /** Format: date-time */
+            fired_at: string;
+            subject_type?: string;
+            /** Format: uuid */
+            subject_id?: string | null;
+            payload: {
+                [key: string]: unknown;
+            };
         };
         Role: {
             /** Format: uuid */
@@ -2750,16 +3170,25 @@ export interface components {
         BatchApproveRequest: {
             ids: string[];
         };
+        /**
+         * @description Persisted credentials and toggle state for one payment gateway provider
+         *     (gcash, paymaya, card, cash). config_fields is a string-keyed map; secret
+         *     values are masked to "****" + last4 on read responses, so the UI must
+         *     treat fields starting with "****" as unchanged when re-saving.
+         */
         PaymentGatewayConfig: {
-            /** @example Metro Manila */
-            name?: string;
-            center?: components["schemas"]["LatLng"];
-            /**
-             * Format: float
-             * @description Service radius in meters
-             * @example 15000
-             */
-            radius?: number;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            provider?: "gcash" | "paymaya" | "card" | "cash";
+            config_fields?: {
+                [key: string]: string;
+            };
+            is_active?: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string | null;
         };
         /**
          * @example {
@@ -2831,15 +3260,69 @@ export interface components {
             /** @enum {string} */
             status: "approved" | "rejected";
         };
+        /** @description LTFRB regulatory compliance singleton, backed by the regulatory_compliance table. */
         ComplianceData: {
             /** @enum {string} */
-            accreditation_status?: "active" | "expiring" | "expired";
+            accreditation_status?: "active" | "expiring" | "expired" | "pending";
             /** Format: date-time */
             accreditation_expiry?: string;
             /** @description Percentage of drivers with valid documents (0–100) */
             driver_compliance_rate?: number;
-            /** @description LTFRB-reportable violations in current period */
+            /** @description LTFRB-reportable violations in current period (alias of violations_open) */
             violation_count?: number;
+            /** @description Count of open regulatory violations */
+            violations_open?: number;
+            /** @description Count of resolved regulatory violations in current period */
+            violations_resolved?: number;
+            /**
+             * Format: date-time
+             * @description Timestamp of the last LTFRB audit, null if never audited
+             */
+            last_audit_at?: string | null;
+        };
+        HeatmapPosition: {
+            /** Format: uuid */
+            driver_id?: string;
+            /** Format: double */
+            lat?: number;
+            /** Format: double */
+            lng?: number;
+            /** @enum {string} */
+            vehicle_type?: "motorcycle" | "tricycle" | "car";
+            is_available?: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        HeatmapBounds: {
+            /** Format: double */
+            north?: number;
+            /** Format: double */
+            south?: number;
+            /** Format: double */
+            east?: number;
+            /** Format: double */
+            west?: number;
+        };
+        DriverHeatmap: {
+            positions?: components["schemas"]["HeatmapPosition"][];
+            bounds?: components["schemas"]["HeatmapBounds"];
+            /** Format: date-time */
+            generated_at?: string;
+        };
+        /** @description Aggregated infra metrics shown on the System Health page. */
+        InfraMetrics: {
+            /** @description HTTP request latency p50 over window_minutes */
+            api_p50_ms?: number;
+            /** @description HTTP request latency p95 over window_minutes */
+            api_p95_ms?: number;
+            /** @description Current connected WebSocket client count from latest probe */
+            ws_connections?: number;
+            /** @description Database probe latency p99 over last 24h */
+            db_query_p99_ms?: number;
+            /** @description Number of HTTP samples contributing to p50/p95 */
+            sample_count?: number;
+            /** @description Size of the rolling window used for HTTP percentiles */
+            window_minutes?: number;
         };
         IntegrationTestResult: {
             service?: string;
@@ -4427,6 +4910,57 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    adminGetIncident: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Incident + history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentDetail"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminAssignIncident: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    assignee_id?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Reassigned */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     adminResolveIncident: {
         parameters: {
             query?: never;
@@ -4452,6 +4986,314 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListServiceAreas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Areas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceArea"][];
+                };
+            };
+        };
+    };
+    adminCreateServiceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAreaInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceArea"];
+                };
+            };
+        };
+    };
+    adminUpdateServiceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAreaInput"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDeleteServiceArea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminListLGUPartnerships: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partnerships */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LGUPartnership"][];
+                };
+            };
+        };
+    };
+    adminCreateLGUPartnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LGUPartnershipInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LGUPartnership"];
+                };
+            };
+        };
+    };
+    adminGetLGUPartnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partnership */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LGUPartnership"];
+                };
+            };
+        };
+    };
+    adminUpdateLGUPartnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LGUPartnershipInput"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDeleteLGUPartnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminListAlertRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRule"][];
+                };
+            };
+        };
+    };
+    adminCreateAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRule"];
+                };
+            };
+        };
+    };
+    adminUpdateAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminDeleteAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adminListAlertEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertEvent"][];
+                };
+            };
         };
     };
     adminListAudit: {
@@ -4657,6 +5499,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemService"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminGetInfraMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current infra metrics snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfraMetrics"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -5074,6 +5938,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminDriverHeatmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Heatmap snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverHeatmap"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     adminListRoles: {

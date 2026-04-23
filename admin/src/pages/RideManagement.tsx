@@ -8,6 +8,7 @@ import { formatPHP } from '@/lib/utils';
 import { useRides } from '@/hooks/useRides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { RideDetailModal } from '@/components/admin/modals/RideDetailModal';
 
 const STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { label: 'All Statuses', value: '' },
@@ -52,6 +53,7 @@ export function RideManagement() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedRide, setSelectedRide] = useState<AdminRideItem | null>(null);
 
   const ridesQuery = useRides({ status: statusFilter || undefined, page, limit: PAGE_SIZE });
   const rides = (ridesQuery.data?.items ?? []) as AdminRideItem[];
@@ -133,7 +135,11 @@ export function RideManagement() {
                   </TableCell>
                 </TableRow>
               ) : filtered.map((ride) => (
-                <TableRow key={ride.id} className="cursor-pointer hover:bg-surface-hover/80">
+                <TableRow
+                  key={ride.id}
+                  className="cursor-pointer hover:bg-surface-hover/80"
+                  onClick={() => setSelectedRide(ride)}
+                >
                   <TableCell className="font-medium text-primary">{ride.id}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
@@ -176,6 +182,12 @@ export function RideManagement() {
           />
         </CardContent>
       </Card>
+
+      <RideDetailModal
+        open={Boolean(selectedRide)}
+        ride={selectedRide}
+        onClose={() => setSelectedRide(null)}
+      />
     </div>
   );
 }
