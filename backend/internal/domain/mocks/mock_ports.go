@@ -1667,6 +1667,21 @@ func (mr *MockMetricsRepositoryMockRecorder) GetWaitTimeMetrics(ctx any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsRepository)(nil).GetWaitTimeMetrics), ctx)
 }
 
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsRepository) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsRepositoryMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsRepository)(nil).GetDriverHeatmap), ctx)
+}
+
 // MockDocumentRepository is a mock of DocumentRepository interface.
 type MockDocumentRepository struct {
 	ctrl     *gomock.Controller
@@ -3371,6 +3386,21 @@ func (m *MockMetricsUseCase) GetWaitTimeMetrics(ctx context.Context) (*domain.Me
 func (mr *MockMetricsUseCaseMockRecorder) GetWaitTimeMetrics(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsUseCase)(nil).GetWaitTimeMetrics), ctx)
+}
+
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsUseCase) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsUseCaseMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsUseCase)(nil).GetDriverHeatmap), ctx)
 }
 
 // MockDocumentUseCase is a mock of DocumentUseCase interface.

@@ -19,6 +19,7 @@ type FareConfig struct {
 	CancellationFee float64   `json:"cancellation_fee"`
 	UpdatedAt       time.Time `json:"updated_at"`
 	UpdatedBy       uuid.UUID `json:"updated_by"`
+	UpdatedByName   string    `json:"updated_by_name,omitempty"`
 }
 
 // SurgeConfig represents global and zone-specific surge pricing rules.
@@ -36,13 +37,15 @@ type SurgeConfig struct {
 }
 
 // PaymentGatewayConfig carries settings for external payment providers.
+// ConfigFields is a string→string map serialized to/from JSONB. Secret-like
+// keys are masked on read responses by maskSecrets() in system_repo.go.
 type PaymentGatewayConfig struct {
-	ID           uuid.UUID `json:"id"`
-	Provider     string    `json:"provider"`
-	ConfigFields []byte    `json:"config_fields"` // JSON
-	IsActive     bool      `json:"is_active"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	UpdatedBy    uuid.UUID `json:"updated_by"`
+	ID           uuid.UUID         `json:"id"`
+	Provider     string            `json:"provider"`
+	ConfigFields map[string]string `json:"config_fields"`
+	IsActive     bool              `json:"is_active"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	UpdatedBy    uuid.UUID         `json:"updated_by"`
 }
 
 // CommissionSettings defines platform revenue rules.
@@ -104,6 +107,34 @@ type PaymentSummary struct {
 	Payouts            float64 `json:"payouts"`
 	Commission         float64 `json:"commission"`
 	PendingSettlements float64 `json:"pending_settlements"`
+}
+
+// HeatmapPosition is a single online driver's last known location for the
+// admin driver-supply visualization.
+type HeatmapPosition struct {
+	DriverID    uuid.UUID `json:"driver_id"`
+	Lat         float64   `json:"lat"`
+	Lng         float64   `json:"lng"`
+	VehicleType string    `json:"vehicle_type,omitempty"`
+	IsAvailable bool      `json:"is_available"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// HeatmapBounds is the lat/lng bounding box the UI uses for the SVG fallback
+// map. Server returns the actual extents of the returned positions when there
+// is data, else a Metro Manila default.
+type HeatmapBounds struct {
+	North float64 `json:"north"`
+	South float64 `json:"south"`
+	East  float64 `json:"east"`
+	West  float64 `json:"west"`
+}
+
+// DriverHeatmap is the response shape for GET /admin/drivers/heatmap.
+type DriverHeatmap struct {
+	Positions   []HeatmapPosition `json:"positions"`
+	Bounds      HeatmapBounds     `json:"bounds"`
+	GeneratedAt time.Time         `json:"generated_at"`
 }
 
 // KycEntry represents a driver KYC submission in the review queue.

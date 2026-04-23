@@ -80,7 +80,22 @@ func (e *Evaluator) evaluate(ctx context.Context, rule *domain.AlertRule) error 
 	return nil
 }
 
-// low_rating config: { "threshold": 3.5, "window_days": 7 }
+// cooldownMinutes returns the per-rule suppression window from config, or
+// 60min default. Used by record() to skip duplicate events for the same
+// (rule, subject) inside the window — without it the evaluator emits ~288
+// rows/day per still-tripping subject (one per 5min tick).
+func cooldownMinutes(raw json.RawMessage) int {
+	var cfg struct {
+		CooldownMinutes int `json:"cooldown_minutes"`
+	}
+	_ = json.Unmarshal(raw, &cfg)
+	if cfg.CooldownMinutes <= 0 {
+		return 60
+	}
+	return cfg.CooldownMinutes
+}
+
+// low_rating config: { "threshold": 3.5, "window_days": 7, "cooldown_minutes": 60 }
 func (e *Evaluator) evalLowRating(ctx context.Context, rule *domain.AlertRule) error {
 	cfg := struct {
 		Threshold  float64 `json:"threshold"`
@@ -210,16 +225,26 @@ func (e *Evaluator) evalKYCExpiry(ctx context.Context, rule *domain.AlertRule) e
 	return nil
 }
 
+// record inserts an alert_events row only when no event for the same
+// (rule_id, subject_id) has fired inside the per-rule cooldown window.
+// The conditional INSERT runs server-side so concurrent ticks can't both
+// slip a duplicate past a Go-side check.
 func (e *Evaluator) record(ctx context.Context, rule *domain.AlertRule, subjectType, subjectID string, payload []byte) {
 	var sid *uuid.UUID
 	if u, err := uuid.Parse(subjectID); err == nil {
 		sid = &u
 	}
-	ruleID := rule.ID
-	_ = e.repo.RecordEvent(ctx, &domain.AlertEvent{
-		RuleID:      &ruleID,
-		SubjectType: subjectType,
-		SubjectID:   sid,
-		Payload:     payload,
-	})
+	cooldown := cooldownMinutes(rule.Config)
+	const q = `
+		INSERT INTO alert_events (rule_id, subject_type, subject_id, payload)
+		SELECT $1, $2, $3, $4
+		WHERE NOT EXISTS (
+		    SELECT 1 FROM alert_events
+		    WHERE rule_id = $1
+		      AND ((subject_id IS NULL AND $3::uuid IS NULL) OR subject_id = $3)
+		      AND fired_at >= NOW() - ($5 || ' minutes')::interval
+		)`
+	if _, err := e.pool.Exec(ctx, q, rule.ID, subjectType, sid, payload, fmt.Sprintf("%d", cooldown)); err != nil {
+		log.Printf("alerting: record event for rule %s: %v", rule.ID, err)
+	}
 }

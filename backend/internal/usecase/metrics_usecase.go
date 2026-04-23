@@ -33,3 +33,7 @@ func (uc *metricsUseCase) GetRevenueMetrics(ctx context.Context, period string) 
 func (uc *metricsUseCase) GetWaitTimeMetrics(ctx context.Context) (*domain.MetricResponse, error) {
 	return uc.metricsRepo.GetWaitTimeMetrics(ctx)
 }
+
+func (uc *metricsUseCase) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	return uc.metricsRepo.GetDriverHeatmap(ctx)
+}

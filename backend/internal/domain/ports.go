@@ -278,6 +278,9 @@ type MetricsRepository interface {
 	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
+	// GetDriverHeatmap returns the current online drivers' last-known
+	// PostGIS positions joined with vehicle type and ride availability.
+	GetDriverHeatmap(ctx context.Context) (*DriverHeatmap, error)
 }
 
 // FareRepository manages pricing rules.
@@ -518,6 +521,7 @@ type MetricsUseCase interface {
 	GetRideMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetRevenueMetrics(ctx context.Context, period string) (*MetricResponse, error)
 	GetWaitTimeMetrics(ctx context.Context) (*MetricResponse, error)
+	GetDriverHeatmap(ctx context.Context) (*DriverHeatmap, error)
 }
 
 // ─── New Repository Ports for Documents, Ratings, Payments ───────────────────

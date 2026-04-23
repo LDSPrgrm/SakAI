@@ -117,6 +117,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.GET("/metrics/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRides)
 			admin.GET("/metrics/revenue", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Metrics.GetRevenue)
 			admin.GET("/metrics/wait-time", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetWaitTime)
+			admin.GET("/drivers/heatmap", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetDriverHeatmap)
 
 			// Admin Management
 			admin.GET("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ListAdmins)

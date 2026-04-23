@@ -2,31 +2,15 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"sync"
-	"time"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
 )
-
-// In-memory payouts store. Replace with a real driver_payouts table migration
-// later. Guarded by a mutex so concurrent admin requests don't race.
-var (
-	payoutsOnce  sync.Once
-	payoutsMu    sync.Mutex
-	payoutsStore []*domain.DriverPayout
-)
-
-func initPayouts() {
-	payoutsOnce.Do(func() {
-		payoutsStore = []*domain.DriverPayout{
-			{ID: uuid.New(), Batch: "2026-W14", DriverCount: 24, TotalAmount: 18400.00, Period: "Apr 1–7 2026", Status: "pending"},
-			{ID: uuid.New(), Batch: "2026-W13", DriverCount: 20, TotalAmount: 15200.50, Period: "Mar 25–31 2026", Status: "approved"},
-		}
-	})
-}
 
 type paymentRepo struct{ db *pgxpool.Pool }
 
@@ -34,66 +18,136 @@ func NewPaymentRepo(db *pgxpool.Pool) domain.PaymentRepository {
 	return &paymentRepo{db: db}
 }
 
-func (r *paymentRepo) ListTransactions(_ context.Context, _, _ int) ([]*domain.Transaction, int, error) {
-	// Stub: transactions table pending billing schema
-	stubs := []*domain.Transaction{
-		{
-			ID: uuid.New(), RiderName: "Juan dela Cruz", DriverName: "Pedro Santos",
-			Amount: 85.00, PaymentMethod: "gcash", Status: "settled", Commission: 8.50,
-			CreatedAt: time.Now().Add(-2 * time.Hour),
-		},
-		{
-			ID: uuid.New(), RiderName: "Maria Reyes", DriverName: "Jose Aquino",
-			Amount: 120.50, PaymentMethod: "cash", Status: "settled", Commission: 12.05,
-			CreatedAt: time.Now().Add(-4 * time.Hour),
-		},
-		{
-			ID: uuid.New(), RiderName: "Ana Gonzales", DriverName: "Carlo Mendoza",
-			Amount: 65.00, PaymentMethod: "paymaya", Status: "pending", Commission: 6.50,
-			CreatedAt: time.Now().Add(-1 * time.Hour),
-		},
+// ListTransactions returns paginated rows from ride_payments enriched with
+// rider + driver names and the commission rate matched against
+// commission_settings for the ride's vehicle type.
+//
+// Note (2026-04-23): the ride_payments.method ENUM is currently ('cash','card').
+// E-wallet flows (gcash, paymaya) write to a separate gateway pipeline and do
+// not yet land in this table. Until that integration is wired, the admin
+// transaction list will only surface cash + card.
+func (r *paymentRepo) ListTransactions(ctx context.Context, page, limit int) ([]*domain.Transaction, int, error) {
+	if page < 1 {
+		page = 1
 	}
-	return stubs, len(stubs), nil
-}
-
-func (r *paymentRepo) GetPaymentSummary(_ context.Context) (*domain.PaymentSummary, error) {
-	// Stub: billing schema pending
-	return &domain.PaymentSummary{
-		TotalRevenue:       48250.75,
-		Payouts:            38600.60,
-		Commission:         4825.07,
-		PendingSettlements: 2500.00,
-	}, nil
-}
-
-func (r *paymentRepo) ListPayouts(_ context.Context) ([]*domain.DriverPayout, error) {
-	initPayouts()
-	payoutsMu.Lock()
-	defer payoutsMu.Unlock()
-	out := make([]*domain.DriverPayout, len(payoutsStore))
-	for i, p := range payoutsStore {
-		cp := *p
-		out[i] = &cp
+	if limit < 1 || limit > 200 {
+		limit = 20
 	}
-	return out, nil
-}
+	offset := (page - 1) * limit
 
-func (r *paymentRepo) ApprovePayout(_ context.Context, id uuid.UUID) error {
-	initPayouts()
-	payoutsMu.Lock()
-	defer payoutsMu.Unlock()
-	for _, p := range payoutsStore {
-		if p.ID == id {
-			p.Status = "approved"
-			return nil
+	const countQ = `SELECT COUNT(*) FROM ride_payments`
+	var total int
+	if err := r.db.QueryRow(ctx, countQ).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	const q = `
+		SELECT
+			p.id, p.ride_id, p.amount, p.method::text, p.status::text, p.created_at,
+			COALESCE(rider.name, '') AS rider_name,
+			COALESCE(driver.name, '') AS driver_name,
+			COALESCE(cs.rate_percent, 0) AS rate_percent,
+			COALESCE(cs.min_commission, 0) AS min_commission
+		FROM ride_payments p
+		JOIN rides r ON r.id = p.ride_id
+		LEFT JOIN users rider  ON rider.id  = r.passenger_id
+		LEFT JOIN users driver ON driver.id = r.driver_id
+		LEFT JOIN commission_settings cs ON cs.vehicle_type = r.vehicle_type
+		ORDER BY p.created_at DESC
+		LIMIT $1 OFFSET $2`
+	rows, err := r.db.Query(ctx, q, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var out []*domain.Transaction
+	for rows.Next() {
+		var (
+			t             = &domain.Transaction{}
+			ratePercent   float64
+			minCommission float64
+		)
+		if err := rows.Scan(
+			&t.ID, &t.RideID, &t.Amount, &t.PaymentMethod, &t.Status, &t.CreatedAt,
+			&t.RiderName, &t.DriverName, &ratePercent, &minCommission,
+		); err != nil {
+			return nil, 0, err
 		}
+		t.Commission = t.Amount * ratePercent / 100.0
+		if t.Commission < minCommission {
+			t.Commission = minCommission
+		}
+		out = append(out, t)
 	}
-	return fmt.Errorf("payout %s not found", id)
+	return out, total, rows.Err()
 }
+
+// GetPaymentSummary aggregates lifetime financial KPIs from ride_payments,
+// driver_earnings, and the driver_payouts pipeline.
+func (r *paymentRepo) GetPaymentSummary(ctx context.Context) (*domain.PaymentSummary, error) {
+	const q = `
+		SELECT
+			COALESCE((SELECT SUM(amount) FROM ride_payments WHERE status = 'completed'), 0)              AS total_revenue,
+			COALESCE((SELECT SUM(total_amount) FROM driver_earnings), 0)                                  AS payouts,
+			COALESCE((SELECT SUM(amount) FROM ride_payments WHERE status = 'completed'), 0) -
+			  COALESCE((SELECT SUM(total_amount) FROM driver_earnings), 0)                                AS commission,
+			COALESCE((SELECT SUM(total_amount) FROM driver_payouts WHERE status IN ('pending','approved')), 0) AS pending_settlements`
+	s := &domain.PaymentSummary{}
+	if err := r.db.QueryRow(ctx, q).Scan(&s.TotalRevenue, &s.Payouts, &s.Commission, &s.PendingSettlements); err != nil {
+		return nil, err
+	}
+	if s.Commission < 0 {
+		// Earnings outpacing revenue means a tip-only / refund edge case —
+		// surface as zero rather than a negative commission KPI.
+		s.Commission = 0
+	}
+	return s, nil
+}
+
+func (r *paymentRepo) ListPayouts(ctx context.Context) ([]*domain.DriverPayout, error) {
+	const q = `
+		SELECT id, batch, driver_count, total_amount, period_label, status
+		FROM driver_payouts
+		ORDER BY created_at DESC
+		LIMIT 200`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*domain.DriverPayout
+	for rows.Next() {
+		p := &domain.DriverPayout{}
+		if err := rows.Scan(&p.ID, &p.Batch, &p.DriverCount, &p.TotalAmount, &p.Period, &p.Status); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+func (r *paymentRepo) ApprovePayout(ctx context.Context, id uuid.UUID) error {
+	const q = `
+		UPDATE driver_payouts
+		SET status = 'approved', approved_at = NOW()
+		WHERE id = $1 AND status = 'pending'`
+	tag, err := r.db.Exec(ctx, q, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("payout %s not found or not pending", id)
+	}
+	return nil
+}
+
+// Compile-time assertion that pgx imports stay in use even if some method
+// flow is refactored; keeps the build error close to the cause.
+var _ = pgx.ErrNoRows
 
 func (r *paymentRepo) GetGatewayConfigs(ctx context.Context) ([]*domain.PaymentGatewayConfig, error) {
-	// Delegate to existing adminRepo query
-	const q = `SELECT id, provider, config_fields, is_active, updated_at, updated_by FROM payment_gateway_configs`
+	const q = `SELECT id, provider, config_fields, is_active, updated_at, updated_by FROM payment_gateway_configs ORDER BY provider`
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -102,37 +156,84 @@ func (r *paymentRepo) GetGatewayConfigs(ctx context.Context) ([]*domain.PaymentG
 	var configs []*domain.PaymentGatewayConfig
 	for rows.Next() {
 		c := &domain.PaymentGatewayConfig{}
-		if err := rows.Scan(&c.ID, &c.Provider, &c.ConfigFields, &c.IsActive, &c.UpdatedAt, &c.UpdatedBy); err != nil {
+		var raw []byte
+		if err := rows.Scan(&c.ID, &c.Provider, &raw, &c.IsActive, &c.UpdatedAt, &c.UpdatedBy); err != nil {
 			return nil, err
 		}
-		configs = append(configs, c)
-	}
-	if configs == nil {
-		// Return stubs if table is empty
-		configs = []*domain.PaymentGatewayConfig{
-			{ID: uuid.New(), Provider: "gcash", IsActive: true, UpdatedAt: time.Now()},
-			{ID: uuid.New(), Provider: "paymaya", IsActive: true, UpdatedAt: time.Now()},
-			{ID: uuid.New(), Provider: "card", IsActive: false, UpdatedAt: time.Now()},
+		fields := map[string]string{}
+		if len(raw) > 0 {
+			if err := json.Unmarshal(raw, &fields); err != nil {
+				return nil, fmt.Errorf("payment_gateway_configs[%s]: %w", c.Provider, err)
+			}
 		}
+		c.ConfigFields = maskGatewaySecrets(fields)
+		configs = append(configs, c)
 	}
 	return configs, nil
 }
 
 func (r *paymentRepo) UpdateGatewayConfig(ctx context.Context, c *domain.PaymentGatewayConfig) error {
+	// Drop masked values so a save round-trip does not overwrite real secrets
+	// with the "****" placeholder we returned to the UI.
+	clean := map[string]string{}
+	for k, v := range c.ConfigFields {
+		if !isMaskedGatewayValue(v) {
+			clean[k] = v
+		}
+	}
+	raw, err := json.Marshal(clean)
+	if err != nil {
+		return err
+	}
 	const q = `
 		INSERT INTO payment_gateway_configs (provider, config_fields, is_active, updated_at, updated_by)
 		VALUES ($1, $2, $3, NOW(), $4)
 		ON CONFLICT (provider) DO UPDATE SET
-			config_fields = EXCLUDED.config_fields,
+			config_fields = payment_gateway_configs.config_fields || EXCLUDED.config_fields,
 			is_active = EXCLUDED.is_active,
 			updated_at = NOW(),
 			updated_by = EXCLUDED.updated_by`
-	_, err := r.db.Exec(ctx, q, c.Provider, c.ConfigFields, c.IsActive, c.UpdatedBy)
+	_, err = r.db.Exec(ctx, q, c.Provider, raw, c.IsActive, c.UpdatedBy)
 	return err
 }
 
+// maskGatewaySecrets mirrors system_repo.maskSecrets — keys ending in common
+// secret suffixes are reduced to "****"+last4 so the UI can still tell rows
+// apart but never sees raw credentials.
+func maskGatewaySecrets(in map[string]string) map[string]string {
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		if isGatewaySecretKey(k) {
+			if len(v) > 4 {
+				out[k] = "****" + v[len(v)-4:]
+			} else if v != "" {
+				out[k] = "****"
+			} else {
+				out[k] = ""
+			}
+		} else {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+func isGatewaySecretKey(k string) bool {
+	lk := strings.ToLower(k)
+	for _, suf := range []string{"_key", "_secret", "_token", "auth_token", "private_key", "api_key", "webhook_secret"} {
+		if strings.HasSuffix(lk, suf) || lk == suf {
+			return true
+		}
+	}
+	return false
+}
+
+func isMaskedGatewayValue(v string) bool {
+	return strings.HasPrefix(v, "****")
+}
+
 func (r *paymentRepo) GetCommissionSettings(ctx context.Context) ([]*domain.CommissionSettings, error) {
-	const q = `SELECT id, vehicle_type, rate_percent, min_commission, updated_at, updated_by FROM commission_settings`
+	const q = `SELECT id, vehicle_type, rate_percent, min_commission, updated_at, updated_by FROM commission_settings ORDER BY vehicle_type`
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -145,13 +246,6 @@ func (r *paymentRepo) GetCommissionSettings(ctx context.Context) ([]*domain.Comm
 			return nil, err
 		}
 		settings = append(settings, s)
-	}
-	if settings == nil {
-		settings = []*domain.CommissionSettings{
-			{ID: uuid.New(), VehicleType: "motorcycle", RatePercent: 10.0, MinCommission: 5.0, UpdatedAt: time.Now()},
-			{ID: uuid.New(), VehicleType: "tricycle", RatePercent: 10.0, MinCommission: 5.0, UpdatedAt: time.Now()},
-			{ID: uuid.New(), VehicleType: "car", RatePercent: 12.0, MinCommission: 8.0, UpdatedAt: time.Now()},
-		}
 	}
 	return settings, nil
 }

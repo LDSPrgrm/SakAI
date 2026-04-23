@@ -2493,6 +2493,29 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /admin/drivers/heatmap:
+    get:
+      tags: [Admin]
+      summary: Driver supply heatmap
+      description: |
+        One position per online driver with last-known PostGIS coordinates,
+        vehicle type, and ride availability. Returned bounds are the actual
+        extents of the positions (Metro Manila default if list is empty).
+      operationId: adminDriverHeatmap
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Heatmap snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverHeatmap"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Role Management ───────────────────────────────────────────────────────
 
   /admin/roles:
@@ -4496,6 +4519,9 @@ components:
     FareConfig:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         vehicle_type:
           type: string
         base_fare:
@@ -4510,6 +4536,16 @@ components:
           type: number
         cancellation_fee:
           type: number
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by_name:
+          type: string
+          description: Display name of the admin who last updated this row (joined from users.name).
 
     SurgeConfig:
       type: object
@@ -4836,7 +4872,7 @@ components:
             $ref: "#/components/schemas/KycDocument"
         status:
           type: string
-          enum: [pending, approved, rejected]
+          enum: [pending, approved, rejected, needs_more_info]
 
     KycDocument:
       type: object
@@ -5248,17 +5284,31 @@ components:
 
     PaymentGatewayConfig:
       type: object
+      description: |
+        Persisted credentials and toggle state for one payment gateway provider
+        (gcash, paymaya, card, cash). config_fields is a string-keyed map; secret
+        values are masked to "****" + last4 on read responses, so the UI must
+        treat fields starting with "****" as unchanged when re-saving.
       properties:
-        name:
+        id:
           type: string
-          example: "Metro Manila"
-        center:
-          $ref: "#/components/schemas/LatLng"
-        radius:
-          type: number
-          format: float
-          description: Service radius in meters
-          example: 15000.0
+          format: uuid
+        provider:
+          type: string
+          enum: [gcash, paymaya, card, cash]
+        config_fields:
+          type: object
+          additionalProperties:
+            type: string
+        is_active:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
 
     NearbyDriversResponse:
       type: object
@@ -5372,6 +5422,48 @@ components:
           format: date-time
           nullable: true
           description: Timestamp of the last LTFRB audit, null if never audited
+
+    HeatmapPosition:
+      type: object
+      properties:
+        driver_id:
+          type: string
+          format: uuid
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        vehicle_type:
+          type: string
+          enum: [motorcycle, tricycle, car]
+        is_available:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+
+    HeatmapBounds:
+      type: object
+      properties:
+        north: { type: number, format: double }
+        south: { type: number, format: double }
+        east:  { type: number, format: double }
+        west:  { type: number, format: double }
+
+    DriverHeatmap:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeatmapPosition"
+        bounds:
+          $ref: "#/components/schemas/HeatmapBounds"
+        generated_at:
+          type: string
+          format: date-time
 
     InfraMetrics:
       type: object

@@ -128,7 +128,12 @@ func NewFareRepo(db *pgxpool.Pool) domain.FareRepository {
 }
 
 func (r *fareRepo) GetFareConfigs(ctx context.Context) ([]*domain.FareConfig, error) {
-	const q = `SELECT id, vehicle_type, base_fare, per_km_rate, per_min_rate, minimum_fare, booking_fee, cancellation_fee, updated_at, updated_by FROM fare_configs`
+	const q = `
+		SELECT f.id, f.vehicle_type, f.base_fare, f.per_km_rate, f.per_min_rate,
+		       f.minimum_fare, f.booking_fee, f.cancellation_fee,
+		       f.updated_at, f.updated_by, COALESCE(u.name, '')
+		FROM fare_configs f
+		LEFT JOIN users u ON u.id = f.updated_by`
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -138,7 +143,7 @@ func (r *fareRepo) GetFareConfigs(ctx context.Context) ([]*domain.FareConfig, er
 	var configs []*domain.FareConfig
 	for rows.Next() {
 		c := &domain.FareConfig{}
-		if err := rows.Scan(&c.ID, &c.VehicleType, &c.BaseFare, &c.PerKmRate, &c.PerMinRate, &c.MinimumFare, &c.BookingFee, &c.CancellationFee, &c.UpdatedAt, &c.UpdatedBy); err != nil {
+		if err := rows.Scan(&c.ID, &c.VehicleType, &c.BaseFare, &c.PerKmRate, &c.PerMinRate, &c.MinimumFare, &c.BookingFee, &c.CancellationFee, &c.UpdatedAt, &c.UpdatedBy, &c.UpdatedByName); err != nil {
 			return nil, err
 		}
 		configs = append(configs, c)
