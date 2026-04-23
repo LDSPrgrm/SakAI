@@ -123,7 +123,7 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <p className="text-xs text-text-muted">
             Last updated by{' '}
-            <span className="text-text-main">{config.updated_by}</span>
+            <span className="text-text-main">{config.updated_by_name || config.updated_by || '—'}</span>
           </p>
           <Button type="submit" size="sm" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : 'Save Changes'}

@@ -1,8 +1,36 @@
 # Backend Integration Audit — SakAI Admin Panel
 
-**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22 · **Phase 3 landed:** 2026-04-22
+**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22 · **Phase 3 landed:** 2026-04-22 · **Phase 4a landed:** 2026-04-23
 **Scope:** All admin & superadmin pages (`admin/src/pages/**/*.tsx`) cross-referenced against the Go backend (`backend/internal/**`), OpenAPI contract (`openapi/swagger.yaml`), and Postgres migrations.
 **Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low · ✅ Closed
+
+## Phase 4a closure (2026-04-23)
+
+- #7 Payments export permission — already `can('reports','read')` (fixed in Phase 2, verified).
+- #18/#19 SAAdminManagement casts — ✅ dropped. `adminsApi.list()` + `rolesApi.list()` already typed correctly; `as unknown as AdminUser[]` / `as unknown as AdminRoleDefinition[]` removed.
+- #22 SAFareConfig `config.updated_by` UUID → username — ✅ `fare_configs` repo query now `LEFT JOIN users`, `domain.FareConfig.UpdatedByName` exposed, swagger `FareConfig` schema rewritten to carry `id, updated_at, updated_by, updated_by_name`. UI renders `updated_by_name || updated_by || '—'`.
+- Payment gateway swagger drift — ✅ `PaymentGatewayConfig` rewritten from `{name, center, radius}` service-area drift to the real `{id, provider (gcash|paymaya|card|cash), config_fields (object), is_active, updated_at, updated_by}` shape. `domain.PaymentGatewayConfig.ConfigFields` retyped `[]byte` → `map[string]string` so JSON marshals as object instead of base64. Secret-like keys masked via new `maskGatewaySecrets` helper; `UpdateGatewayConfig` merges JSONB with `||` and drops `****`-prefixed values so unchanged secrets aren't overwritten.
+- GatewayProvidersSection mount — ✅ component rewritten schema-driven against `PaymentGatewayConfig`. Per-provider `FieldSchema` map (gcash/paymaya/card/cash) drives labels + secret toggles. Mounted on `SAPayments.tsx` after commission config.
+- `payment_repo` stubs — ✅ all three replaced. `ListTransactions` joins `ride_payments → rides → users (rider+driver) → commission_settings`, computing commission as `amount × rate_percent / 100` clamped to `min_commission`. `GetPaymentSummary` is one aggregate SELECT over `ride_payments` + `driver_earnings` + new `driver_payouts`. `ListPayouts` / `ApprovePayout` now read/write the new table (idempotent `UPDATE ... WHERE id=$1 AND status='pending'`). In-memory `payoutsStore` deleted. `GetCommissionSettings` stub-fallback removed — rows must come from migration seeds.
+- Migration `024_create_driver_payouts` — ✅ shipped. `driver_payouts(batch UNIQUE, period_label, status CHECK in pending|approved|paid|cancelled, approved_at/by)` + `driver_payout_lines` junction (UNIQUE per payout+driver).
+- `KycEntry.status` enum — ✅ swagger extended to include `needs_more_info`.
+- DriverHeatmap real backend — ✅ `GET /admin/drivers/heatmap` (operations/support/superadmin) returns online drivers with PostGIS `ST_X/ST_Y` coords + vehicle type + availability + actual lat/lng bounds. `MetricsRepository`/`MetricsUseCase` extended; mocks hand-extended; `metrics.ts.getDriverHeatmap` now calls the real endpoint (Metro-Manila fallback on empty/error). Swagger gains `DriverHeatmap`, `HeatmapPosition`, `HeatmapBounds`.
+- Alert evaluator dedup — ✅ `cooldownMinutes(rule.Config)` (default 60). `evaluator.record` now a conditional `INSERT ... WHERE NOT EXISTS (... fired_at >= NOW() - cooldown)` — concurrent ticks can't double-emit. Cooldown stored in `rule.Config.cooldown_minutes`; no schema migration needed.
+- `TEST_ACCOUNTS.md` UI port — ✅ bumped `5173 → 3000`.
+
+### Phase 4a caveats ⚠️
+
+- **Not browser-smoke-tested.** GatewayProvidersSection, DriverHeatmap mount, SAFareConfig updated-by rendering compile + type-check + pass 136/136 vitest; click-through in `npm run dev` was skipped (autonomous + database-less session). Hit these before merging.
+- **ride_payments.method ENUM is still `('cash','card')`.** `ListTransactions` now reads real rows, but gcash/paymaya transactions will not appear in the admin list until the e-wallet pipeline writes into `ride_payments` (or the ENUM is extended with those values).
+- **Mocks regenerated manually.** New `MetricsRepository.GetDriverHeatmap` / `MetricsUseCase.GetDriverHeatmap` stubs added by hand to `mock_ports.go`. Run full `mockgen` once the toolchain is available to pick up ordering tweaks.
+- **Forward migrations verified; `migrate down` + `migrate up` cycle not exercised** this session.
+
+### Phase 4a deferred → Phase 4b
+
+- **SOS location trail** (plan §3.1 sub-bullet). Still needs a new `driver_location_history` table and capture during active SOS incidents — hot-path concern, defer until load-tested.
+- **Alert notification dispatch** via `notification_templates`. Dedup landed; SMS/email/push channel still missing.
+- **`SurgeConfig` updated_by_name** parity — only `FareConfig` got the join this session.
+- **`ride_payments` ENUM extension** (or e-wallet pipeline writing to `ride_payments`) so gcash/paymaya show in admin transactions.
 
 ## Phase 3 closure (2026-04-22)
 
@@ -84,7 +112,9 @@ Backend implementation coverage (pre-Phase-1): Auth 100%, Rides 100%, Admin User
 
 Post-Phase-1: Admin Dashboard 100%, Driver Ops 100% (earnings added), Reports/Audit 100%, Admin System 100% (probes + config persistence + real TestIntegration). Aggregate: **~95% real** — the remaining 5% was Phase-3 scope (incident timeline, surge zones, alert rules, LGU partnerships, `/service-area`).
 
-Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aware simulation), Service areas + LGU 100% (new surface), Alerts 100% as CRUD + periodic evaluator. Aggregate: **~98% real**. Remaining ~2% = payment_repo still-stubbed transactions/summary/payouts, DriverHeatmap deterministic mock points, SOS location trail, alert dispatch — all Phase 4.
+Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aware simulation), Service areas + LGU 100% (new surface), Alerts 100% as CRUD + periodic evaluator. Aggregate: **~98% real**.
+
+Post-Phase-4a: Payments 100% real (transactions/summary/payouts now query `ride_payments + driver_earnings + driver_payouts`), DriverHeatmap 100% real (PostGIS-backed `/admin/drivers/heatmap`), Alerts 100% with dedup (no duplicate firings inside per-rule cooldown). Aggregate: **~99% real**. Remaining ~1% = SOS location trail capture, alert notification dispatch, `SurgeConfig.updated_by_name` parity, e-wallet ENUM extension — all Phase 4b.
 
 ---
 
@@ -93,7 +123,7 @@ Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aw
 ### Dashboard.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 1 | "Live Hotspots" renders static animated circles; the ready-built `<DriverHeatmap>` component is never mounted | Dashboard.tsx:176-186 | Placeholder UI | 🟡 | 2 |
+| 1 | ~~"Live Hotspots" renders static animated circles; the ready-built `<DriverHeatmap>` component is never mounted~~ → mounted Phase 2; backend `getDriverHeatmap` now real (PostGIS `/admin/drivers/heatmap`) Phase 4a | Dashboard.tsx:176-186 | ✅ Fixed 2026-04-23 | 🟡 | 2/4a |
 | 2 | Dashboard numbers come from `/admin/dashboard`, but backend hardcodes `RevenueToday=0`, `AvgWaitTimeSeconds=0`, `SystemUptime=99.99` | backend/internal/repository/postgres/admin_repo.go:365-370 | Fake data | 🔴 | 1 |
 
 ### UserManagement.tsx
@@ -111,7 +141,7 @@ Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aw
 ### Payments.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 7 | `handleExport` uses `canWrite`; export is a read op and should use `can('reports','read')` | Payments.tsx:80 | Permission bug | 🟡 | 4 |
+| 7 | ~~`handleExport` uses `canWrite`; export is a read op and should use `can('reports','read')`~~ — already gated on `can('reports','read')` (Phase 2). Verified Phase 4a. | Payments.tsx:80 | ✅ Fixed | 🟡 | 2/4 |
 | 8 | No confirm modal before payout approval | Payments.tsx | Missing safety | 🟡 | 2 |
 | 9 | No pagination on transactions table | Payments.tsx | Missing feature | 🟡 | 2 |
 | 10 | No date-range filter wired to `?from=&to=` | Payments.tsx | Missing filter | 🟡 | 2 |
@@ -151,8 +181,8 @@ Clean.
 ### SAAdminManagement.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 18 | Double-cast `as unknown as AdminUser` indicates openapi schema drift | SAAdminManagement.tsx:58-59 | Type drift | 🟡 | 4 |
-| 19 | `displayRole(...) !== values.role` — normalization may mismatch backend expectation | SAAdminManagement.tsx:113-114 | Type drift | 🟡 | 4 |
+| 18 | ~~Double-cast `as unknown as AdminUser` indicates openapi schema drift~~ → cast removed; api types already correct | SAAdminManagement.tsx:58-59 | ✅ Fixed 2026-04-23 Phase 4a | 🟡 | 4 |
+| 19 | `displayRole(...) !== values.role` — normalization works (verified) but worth a unit test on the role-rename path | SAAdminManagement.tsx:113-114 | Open (test only) | 🟢 | 4b |
 
 ### SAAuditLog.tsx
 Clean.
@@ -162,12 +192,12 @@ Clean.
 |---|-------|-----------|------|-----|-------|
 | 20 | `onSaved` callback is empty `() => {}` — no query invalidation after save | SAFareConfig.tsx:259-261 | Missing wiring | 🟡 | 2 |
 | 21 | Fare simulator uses hardcoded Manila coords (`14.5995, 120.9842`) | SAFareConfig.tsx:195-213 | Hardcoded data | 🟢 | 3 |
-| 22 | `config.updated_by` rendered as-is; backend returns UUID, UI needs username | SAFareConfig.tsx:157 | Missing field | 🟡 | 2 |
+| 22 | ~~`config.updated_by` rendered as-is; backend returns UUID, UI needs username~~ → repo `LEFT JOIN users`, `domain.FareConfig.UpdatedByName` exposed, swagger updated, UI renders `updated_by_name || updated_by || '—'` | SAFareConfig.tsx:126 | ✅ Fixed 2026-04-23 Phase 4a | 🟡 | 4a |
 
 ### SAPayments.tsx
 | # | Issue | File:line | Type | Sev | Phase |
 |---|-------|-----------|------|-----|-------|
-| 23 | `<GatewayProvidersSection>` component exists but never mounted | SAPayments.tsx | Missing section | 🟠 | 2 |
+| 23 | ~~`<GatewayProvidersSection>` component exists but never mounted~~ → swagger `PaymentGatewayConfig` rewritten to real shape, component rewritten schema-driven against new shape, mounted on SAPayments | SAPayments.tsx | ✅ Fixed 2026-04-23 Phase 4a | 🟠 | 4a |
 | 24 | No transaction detail modal / row click | SAPayments.tsx | Dead handler | 🟠 | 2 |
 | 25 | CSV export manually reconstructs headers client-side; backend should own format | SAPayments.tsx:125-137 | Brittle export | 🟢 | 3 |
 | 26 | `CommissionConfigCard` renders only motorcycle/tricycle/other; missing `car` row | CommissionConfigCard.tsx:68 | Missing vehicle | 🟡 | 2 |
@@ -239,8 +269,14 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 #### Fares & surge (all real)
 `GET/PUT /admin/fares`, `GET /admin/fares/surge`, `PUT /admin/surge`, `POST /admin/fares/simulate`
 
-#### Payments (all real — incl. gateway config + commission)
+#### Payments (all real — Phase 4a)
 `/admin/payments/{transactions,summary,payouts,payouts/{id}/approve,payouts/approve,config,config/{provider},commission-config}`
+
+- `transactions`: real `ride_payments JOIN rides JOIN users (rider+driver) LEFT JOIN commission_settings`. Commission = `amount × rate_percent / 100` clamped to `min_commission`.
+- `summary`: one aggregate SELECT — `total_revenue` from completed `ride_payments`, `payouts` from `driver_earnings`, `commission` = revenue − payouts (clamped ≥ 0), `pending_settlements` from `driver_payouts` (status pending|approved).
+- `payouts` / `payouts/{id}/approve`: backed by new `driver_payouts` table (migration 024); approve is idempotent `UPDATE ... WHERE status='pending'`.
+- `config` (gateway list/update): `payment_gateway_configs.config_fields` JSONB ↔ `map[string]string`; secrets masked on read; UPDATE merges with `||` so unchanged secrets persist.
+- `commission-config`: real read/upsert; stub fallback removed (rows must come from migration seeds).
 
 #### Incidents & safety
 | Endpoint | Handler | Status |
@@ -286,6 +322,11 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 |----------|--------|
 | `GET /driver/earnings?from=&to=&page=&limit=` | ✅ Paginated read from `driver_earnings`, ISO-date range filter |
 
+### Group E — Driver heatmap (new 2026-04-23 Phase 4a)
+| Endpoint | Status |
+|----------|--------|
+| `GET /admin/drivers/heatmap` | ✅ PostGIS `ST_X/ST_Y` over online drivers + vehicle join + ride availability; bounds = actual extents or Metro Manila default. Roles: superadmin/operations/support. |
+
 ---
 
 ## Section 4 — OpenAPI vs Go drift
@@ -319,6 +360,15 @@ Total: **75 implemented Go routes**, **80+ swagger-defined operations**, **~76% 
 | `LGUPartnership` + `LGUPartnershipInput` schemas | Partnership CRUD payload |
 | `AlertRule` + `AlertRuleInput` + `AlertEvent` schemas | Alert CRUD payload |
 
+### Phase 4a swagger additions (2026-04-23)
+| Endpoint / Schema | Purpose |
+|-------------------|---------|
+| `GET /admin/drivers/heatmap` | DriverHeatmap snapshot — PostGIS-backed online driver positions |
+| `DriverHeatmap`, `HeatmapPosition`, `HeatmapBounds` schemas | Heatmap response shape |
+| `FareConfig` (rewritten) | Now exposes `id, updated_at, updated_by, updated_by_name` joined from `users` |
+| `PaymentGatewayConfig` (rewritten) | **Breaking shape change** from drifted `{name, center, radius}` → real `{id, provider, config_fields, is_active, updated_at, updated_by}` |
+| `KycEntry.status` enum | Extended to include `needs_more_info` |
+
 ### Swagger drift ⚠️
 - `ServiceArea` shape changed from `{id, name, center, radius, is_active}` to `{id, name, lgu_code, boundary: SurgeZone, active}` in Phase 3. Any mobile client code reading the old shape must be updated alongside this release.
 - `SurgeConfig.zones` rewritten from `GeoJSONFeatureCollection` (never written this way by backend) to `SurgeZone[]` — matches what `surge_configs.zones` actually stores and what the fare calculator consumes. Brings swagger in sync with runtime. Regen ran; no hand-edited openapi.d.ts casts remain.
@@ -334,8 +384,8 @@ None identified (all real handlers have corresponding swagger entries).
 
 ## Section 5 — Database migration gaps
 
-### Existing tables (migrations 001-023)
-users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings · feature_flags · notification_templates · integration_configs · kyc_submissions · regulatory_compliance · system_health_probes · http_request_timings · **incident_status_history** (021) · **service_areas** (022) · **lgu_partnerships** (022) · **alert_rules** (023) · **alert_events** (023)
+### Existing tables (migrations 001-024)
+users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings · feature_flags · notification_templates · integration_configs · kyc_submissions · regulatory_compliance · system_health_probes · http_request_timings · incident_status_history (021) · service_areas (022) · lgu_partnerships (022) · alert_rules (023) · alert_events (023) · **driver_payouts** (024) · **driver_payout_lines** (024)
 
 ### Missing tables — Phase 3 closed
 | Entity | Needed for | Status |
@@ -349,7 +399,8 @@ users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge
 | `incident_status_history` | SOS timeline | ✅ Phase 3 (021) |
 | `alert_rules`, `alert_events` | Alert configuration | ✅ Phase 3 (023) |
 | `service_areas`, `lgu_partnerships` | LGU regulatory tracking + `/service-area` endpoint | ✅ Phase 3 (022) |
-| `driver_location_history` | SOS location trail | ⏳ Phase 4 (new) |
+| `driver_payouts`, `driver_payout_lines` | Real backing for `/admin/payments/payouts` (replaces in-memory store) | ✅ Phase 4a (024) |
+| `driver_location_history` | SOS location trail | ⏳ Phase 4b (new) |
 
 ### Existing tables with unused columns
 - ~~`surge_configs.zones` (JSONB) — stored but never queried during fare calculation~~ → ✅ Phase 3: read via `usecase.ParseSurgeZones` + ray-casting in `FareCalculator.SimulateFare`. Shape = `[{name, multiplier, polygon:[[lat,lng]...]}, ...]`.
@@ -375,4 +426,5 @@ Full phased plan lives at `~/.claude/plans/task-notification-task-id-ry2iub3hu-t
 - **Phase 1** (P0) — ✅ done 2026-04-22 (including tail: earnings endpoint, probes goroutine, perf middleware + `infra-metrics`, real `TestIntegration` with `SKIP_EXTERNAL_PINGS`, authenticated `/api/files/*` route, swagger + openapi regen, `SASystemHealth`/`LtfrbReportsSection` retype).
 - **Phase 2** (P1) — ✅ done 2026-04-22. Modals (Rider/Driver/Docs/Ride/Transaction), date-range + pagination + payout confirm on Payments, per-provider integration form, small UI nits, DriverHeatmap mount. Deferred: `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` schema drifted to `{name, center, radius}`), fare `updated_by` username join, `SAAdminManagement` cast cleanup, `SASafetyCompliance` incident "View" (rolls into Phase 3).
 - **Phase 3** (P2) — ✅ done 2026-04-22. SOS timeline + reassign (021), surge zones via Go ray-casting + `SurgeZoneEditor` + `MapProvider` adapter, alert rules CRUD + evaluator goroutine (023), LGU partnerships + service areas CRUD + `/service-area` (022). Deferred: SOS location trail, alert notification dispatch.
-- **Phase 4** — pending: port fix in TEST_ACCOUNTS.md, `payment_repo` real queries (transactions + summary + payouts table), DriverHeatmap backend endpoint, `SAAdminManagement` cast cleanup, fare `updated_by_name` response field, swagger `KycEntry.status` enum missing `needs_more_info`, `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` drift), SOS location trail (new `driver_location_history` table), alert-event dispatch via `notification_templates`, final lint + test sweep.
+- **Phase 4a** — ✅ done 2026-04-23. TEST_ACCOUNTS.md port (5173 → 3000), `KycEntry.status` enum + `needs_more_info`, `SAAdminManagement` cast cleanup, fare `updated_by_name` (FareConfig schema rewrite + repo JOIN + UI render), `PaymentGatewayConfig` swagger rewrite (drifted shape → real `{provider, config_fields, …}`) + schema-driven `GatewayProvidersSection` mount, `payment_repo` real queries (`ListTransactions`, `GetPaymentSummary`, `ListPayouts`/`ApprovePayout` against new `driver_payouts` table), migration 024, DriverHeatmap real backend (`GET /admin/drivers/heatmap` PostGIS), alert evaluator dedup via per-rule `cooldown_minutes`. Verification: `go build`, `go test ./...`, `npm run lint`, `npm test` (136/136). Not browser-smoke-tested.
+- **Phase 4b** — pending: SOS location trail capture (new `driver_location_history` table + active-incident write-path), alert-event dispatch via `notification_templates`, `SurgeConfig.updated_by_name` parity, `ride_payments.method` ENUM extension (or e-wallet pipeline writing into `ride_payments`) so gcash/paymaya appear in admin transactions, mock regen via mockgen, `migrate down` cycle exercise.

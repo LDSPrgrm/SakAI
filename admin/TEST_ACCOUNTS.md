@@ -30,7 +30,7 @@ The tool supports `-role admin` or `-role superadmin`. For `operations`, `financ
 
 ## How to Log In
 
-**UI:** `http://localhost:5173`
+**UI:** `http://localhost:3000`
 
 **API:** `POST http://192.168.100.43/api/auth/login`
 ```json

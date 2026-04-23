@@ -1543,6 +1543,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/drivers/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Driver supply heatmap
+         * @description One position per online driver with last-known PostGIS coordinates,
+         *     vehicle type, and ride availability. Returned bounds are the actual
+         *     extents of the positions (Metro Manila default if list is empty).
+         */
+        get: operations["adminDriverHeatmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/roles": {
         parameters: {
             query?: never;
@@ -2682,6 +2704,8 @@ export interface components {
             surge?: components["schemas"]["SurgeConfig"];
         };
         FareConfig: {
+            /** Format: uuid */
+            id?: string;
             vehicle_type?: string;
             base_fare?: number;
             per_km_rate?: number;
@@ -2689,6 +2713,12 @@ export interface components {
             minimum_fare?: number;
             booking_fee?: number;
             cancellation_fee?: number;
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string | null;
+            /** @description Display name of the admin who last updated this row (joined from users.name). */
+            updated_by_name?: string;
         };
         SurgeConfig: {
             enabled?: boolean;
@@ -2863,7 +2893,7 @@ export interface components {
             submitted_at?: string;
             docs?: components["schemas"]["KycDocument"][];
             /** @enum {string} */
-            status?: "pending" | "approved" | "rejected";
+            status?: "pending" | "approved" | "rejected" | "needs_more_info";
         };
         KycDocument: {
             /** @description Machine-readable document type (e.g. drivers_license, vehicle_registration, insurance). */
@@ -3140,16 +3170,25 @@ export interface components {
         BatchApproveRequest: {
             ids: string[];
         };
+        /**
+         * @description Persisted credentials and toggle state for one payment gateway provider
+         *     (gcash, paymaya, card, cash). config_fields is a string-keyed map; secret
+         *     values are masked to "****" + last4 on read responses, so the UI must
+         *     treat fields starting with "****" as unchanged when re-saving.
+         */
         PaymentGatewayConfig: {
-            /** @example Metro Manila */
-            name?: string;
-            center?: components["schemas"]["LatLng"];
-            /**
-             * Format: float
-             * @description Service radius in meters
-             * @example 15000
-             */
-            radius?: number;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            provider?: "gcash" | "paymaya" | "card" | "cash";
+            config_fields?: {
+                [key: string]: string;
+            };
+            is_active?: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string | null;
         };
         /**
          * @example {
@@ -3240,6 +3279,35 @@ export interface components {
              * @description Timestamp of the last LTFRB audit, null if never audited
              */
             last_audit_at?: string | null;
+        };
+        HeatmapPosition: {
+            /** Format: uuid */
+            driver_id?: string;
+            /** Format: double */
+            lat?: number;
+            /** Format: double */
+            lng?: number;
+            /** @enum {string} */
+            vehicle_type?: "motorcycle" | "tricycle" | "car";
+            is_available?: boolean;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        HeatmapBounds: {
+            /** Format: double */
+            north?: number;
+            /** Format: double */
+            south?: number;
+            /** Format: double */
+            east?: number;
+            /** Format: double */
+            west?: number;
+        };
+        DriverHeatmap: {
+            positions?: components["schemas"]["HeatmapPosition"][];
+            bounds?: components["schemas"]["HeatmapBounds"];
+            /** Format: date-time */
+            generated_at?: string;
         };
         /** @description Aggregated infra metrics shown on the System Health page. */
         InfraMetrics: {
@@ -5870,6 +5938,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminDriverHeatmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Heatmap snapshot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverHeatmap"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     adminListRoles: {
