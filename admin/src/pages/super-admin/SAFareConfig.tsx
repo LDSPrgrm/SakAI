@@ -361,6 +361,15 @@ export function SAFareConfig() {
               >
                 {surgeSaving ? 'Saving…' : 'Save Surge Settings'}
               </Button>
+
+              {surgeConfig && (
+                <p className="text-xs text-text-muted">
+                  Last updated by{' '}
+                  <span className="text-text-main">
+                    {surgeConfig.updated_by_name || surgeConfig.updated_by || '—'}
+                  </span>
+                </p>
+              )}
             </CardContent>
           </Card>
 

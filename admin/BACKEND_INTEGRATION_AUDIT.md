@@ -1,8 +1,24 @@
 # Backend Integration Audit — SakAI Admin Panel
 
-**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22 · **Phase 3 landed:** 2026-04-22 · **Phase 4a landed:** 2026-04-23
+**Date:** 2026-04-22 (initial) · **Phase 1 tail landed:** 2026-04-22 · **Phase 3 landed:** 2026-04-22 · **Phase 4a landed:** 2026-04-23 · **Phase 4b landed:** 2026-04-23
 **Scope:** All admin & superadmin pages (`admin/src/pages/**/*.tsx`) cross-referenced against the Go backend (`backend/internal/**`), OpenAPI contract (`openapi/swagger.yaml`), and Postgres migrations.
 **Status legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🟢 Low · ✅ Closed
+
+## Phase 4b closure (2026-04-23)
+
+- SOS location trail — ✅ migration 025 adds `driver_location_history(id, driver_id, incident_id, lat, lng, recorded_at)` + partial index `idx_incidents_active_driver ON incidents(driver_id) WHERE resolved_at IS NULL` so the hot-path `FindActiveByDriver` check is index-only in the empty case. `driverUseCase.UpdateLocation` now calls `captureIncidentTrail` after a successful location write; trail rows append per unresolved incident. Domain gains `IncidentLocationPoint`; `IncidentRepository` + `adminUseCase.GetIncident` + `IncidentDetailDTO` all carry the new `location_trail`. Swagger `IncidentDetail` extended with `location_trail: IncidentLocationPoint[]`. `IncidentDetailModal.tsx` renders the trail as a scrollable list of `lat, lng · timestamp`.
+- Alert notification dispatch — ✅ migration 026 adds `notification_outbox(id, channel, recipient, subject, body, status, attempts, last_error, sent_at, created_at)` with pending-only partial index, plus four seeded `alert.*` templates in `notification_templates`. New `internal/infrastructure/notifications` package exposes `AlertNotifier` (renders `{{var}}` + fans one outbox row per superadmin/operations admin) + `Dispatcher` (30s tick, batch of 20, log-only `send()`, 5-attempt cap). `alerting.Evaluator.record` checks `RowsAffected()==1` so dispatch only runs when the cooldown guard let the event through.
+- `ride_payments.method` ENUM — ✅ migration 027 runs `ALTER TYPE payment_method ADD VALUE IF NOT EXISTS 'gcash'/'paymaya'` (PG12+ transaction-safe). `domain.PaymentMethod` gains `PaymentMethodGcash`/`PaymentMethodPaymaya` + `IsValid()` update. Swagger enum widened at four call-sites plus the `PaymentMethod` schema. Down migration recreates the narrow type with rename + coerce + drop (lossy — gcash/paymaya rows coerce to cash).
+- `SurgeConfig.updated_by_name` parity — ✅ `fareRepo.GetSurgeConfig` now `LEFT JOIN users`. `domain.SurgeConfig` gains `UpdatedByName`. Swagger `SurgeConfig` schema gets `id`, `updated_at`, `updated_by`, `updated_by_name`. `SAFareConfig.tsx` renders "Last updated by …" under the Save Surge Settings button.
+- Mock regen — ✅ `go generate ./internal/domain/...` ran cleanly; `mock_ports.go` rewritten by the canonical generator, replacing the hand-extended copy from Phase 4a.
+- Verification green: `go build ./...`, `go test ./...` (all packages, including updated `TestDriverUseCase_UpdateLocation_OnlineDriver` that now asserts `FindActiveByDriver`), `npm run generate:types`, `npm run lint`, `npm test` (136/136).
+
+### Phase 4b caveats ⚠️
+
+- **SOS trail capture ships dormant.** No SOS-trigger endpoint currently creates rows in `incidents`; `admin/incidents/*` is still read-only. Trail capture activates the moment mobile (or a future backend endpoint) creates an incident — until then the table stays empty and `location_trail` renders the "no GPS pings" empty state.
+- **Notification dispatcher is log-only.** `send()` emits `[NOTIFY] channel=… to=… subject=… body=…` and flips status to `sent`. Plug a real SMS/email/push provider into the single `send()` call-site when one exists. `notification_outbox` rows are durable in the meantime so replay is possible.
+- **`migrate down` cycle not exercised** for 025/026/027. 027 down is lossy by design.
+- **Not browser-smoke-tested.** Updated `IncidentDetailModal` + `SAFareConfig` surge update-by line compile + pass vitest but not clicked through in `npm run dev` (autonomous + database-less session).
 
 ## Phase 4a closure (2026-04-23)
 
@@ -25,12 +41,12 @@
 - **Mocks regenerated manually.** New `MetricsRepository.GetDriverHeatmap` / `MetricsUseCase.GetDriverHeatmap` stubs added by hand to `mock_ports.go`. Run full `mockgen` once the toolchain is available to pick up ordering tweaks.
 - **Forward migrations verified; `migrate down` + `migrate up` cycle not exercised** this session.
 
-### Phase 4a deferred → Phase 4b
+### Phase 4a deferred → Phase 4b (all landed 2026-04-23)
 
-- **SOS location trail** (plan §3.1 sub-bullet). Still needs a new `driver_location_history` table and capture during active SOS incidents — hot-path concern, defer until load-tested.
-- **Alert notification dispatch** via `notification_templates`. Dedup landed; SMS/email/push channel still missing.
-- **`SurgeConfig` updated_by_name** parity — only `FareConfig` got the join this session.
-- **`ride_payments` ENUM extension** (or e-wallet pipeline writing to `ride_payments`) so gcash/paymaya show in admin transactions.
+- ✅ **SOS location trail** (plan §3.1 sub-bullet). Migration 025 + partial index + `driverUseCase.captureIncidentTrail` + `IncidentDetailModal` trail list. Dormant until mobile creates incidents.
+- ✅ **Alert notification dispatch** via `notification_templates`. Migration 026 + `notifications` package + log-only dispatcher + four seeded alert templates.
+- ✅ **`SurgeConfig` updated_by_name** parity — repo `LEFT JOIN users`, domain + swagger + UI all updated.
+- ✅ **`ride_payments` ENUM extension**. Migration 027 `ALTER TYPE payment_method ADD VALUE gcash/paymaya`; swagger enums widened; domain constants + `IsValid()` updated.
 
 ## Phase 3 closure (2026-04-22)
 
@@ -115,6 +131,8 @@ Post-Phase-1: Admin Dashboard 100%, Driver Ops 100% (earnings added), Reports/Au
 Post-Phase-3: Incidents 100% (timeline + reassign + detail), Fares 100% (zone-aware simulation), Service areas + LGU 100% (new surface), Alerts 100% as CRUD + periodic evaluator. Aggregate: **~98% real**.
 
 Post-Phase-4a: Payments 100% real (transactions/summary/payouts now query `ride_payments + driver_earnings + driver_payouts`), DriverHeatmap 100% real (PostGIS-backed `/admin/drivers/heatmap`), Alerts 100% with dedup (no duplicate firings inside per-rule cooldown). Aggregate: **~99% real**. Remaining ~1% = SOS location trail capture, alert notification dispatch, `SurgeConfig.updated_by_name` parity, e-wallet ENUM extension — all Phase 4b.
+
+Post-Phase-4b: SOS location trail captured (dormant until mobile creates incidents), alert-event notifications fan into `notification_outbox` per admin recipient (log-only dispatcher), `payment_method` ENUM widened to include gcash/paymaya, SurgeConfig join parity with FareConfig. Aggregate: **~100% real / integrated**. Remaining work is the SOS-trigger write-path on mobile, a real SMS/email/push provider for the notification dispatcher, and rollback exercise for migrations 025–027.
 
 ---
 
@@ -219,7 +237,7 @@ Clean.
 |---|-------|-----------|------|-----|-------|
 | 31 | ~~Incident "View" button has no `onClick`~~ → wired to `IncidentDetailModal` | SASafetyCompliance.tsx:267 | ✅ Fixed 2026-04-22 Phase 3 | 🔴 | 3 |
 | 32 | ~~"Assigned To" column shown but no reassign UI~~ → reassign dropdown inside modal, backed by `PUT /admin/incidents/{id}/assign` | SASafetyCompliance.tsx | ✅ Fixed 2026-04-22 Phase 3 | 🟠 | 3 |
-| 33 | ~~SOS incidents have no timeline, no status history, no location trail~~ → timeline shipped via `incident_status_history` trigger + modal. **Location trail deferred to Phase 4** (no `driver_location_history` table yet) | — | ⚠️ Partial 2026-04-22 | 🟠 | 3/4 |
+| 33 | ~~SOS incidents have no timeline, no status history, no location trail~~ → timeline shipped Phase 3; location trail shipped Phase 4b (migration 025 + driverUseCase.captureIncidentTrail + IncidentDetailModal trail list). Dormant until mobile SOS-trigger endpoint exists. | — | ✅ Fixed 2026-04-23 Phase 4b | 🟠 | 3/4b |
 | 34 | `KycDocPreview` key collides when same `doc.type` appears twice (use `${type}-${idx}`) | KycDocPreview.tsx:38-40 | Bug | 🟡 | 2 |
 | 35 | `LtfrbReportsSection` interface assumes fields backend doesn't return; `violations_open` etc. render NaN | LtfrbReportsSection.tsx:8-18 | Type drift | 🟠 | 1 |
 
@@ -384,8 +402,8 @@ None identified (all real handlers have corresponding swagger entries).
 
 ## Section 5 — Database migration gaps
 
-### Existing tables (migrations 001-024)
-users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings · feature_flags · notification_templates · integration_configs · kyc_submissions · regulatory_compliance · system_health_probes · http_request_timings · incident_status_history (021) · service_areas (022) · lgu_partnerships (022) · alert_rules (023) · alert_events (023) · **driver_payouts** (024) · **driver_payout_lines** (024)
+### Existing tables (migrations 001-027)
+users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge_configs · audit_log_entries · incidents · payment_gateway_configs · commission_settings · roles · role_permissions · driver_documents · ratings · ride_payments · ride_tips · driver_earnings · feature_flags · notification_templates · integration_configs · kyc_submissions · regulatory_compliance · system_health_probes · http_request_timings · incident_status_history (021) · service_areas (022) · lgu_partnerships (022) · alert_rules (023) · alert_events (023) · driver_payouts (024) · driver_payout_lines (024) · **driver_location_history** (025) · **notification_outbox** (026) · **payment_method ENUM extended** (027 — +gcash, +paymaya)
 
 ### Missing tables — Phase 3 closed
 | Entity | Needed for | Status |
@@ -400,7 +418,9 @@ users · vehicles · drivers · rides · refresh_tokens · fare_configs · surge
 | `alert_rules`, `alert_events` | Alert configuration | ✅ Phase 3 (023) |
 | `service_areas`, `lgu_partnerships` | LGU regulatory tracking + `/service-area` endpoint | ✅ Phase 3 (022) |
 | `driver_payouts`, `driver_payout_lines` | Real backing for `/admin/payments/payouts` (replaces in-memory store) | ✅ Phase 4a (024) |
-| `driver_location_history` | SOS location trail | ⏳ Phase 4b (new) |
+| `driver_location_history` | SOS location trail | ✅ Phase 4b (025) |
+| `notification_outbox` | Alert notification dispatch pipe | ✅ Phase 4b (026) |
+| `payment_method` ENUM ext | gcash/paymaya values so e-wallet rows land in ride_payments | ✅ Phase 4b (027) |
 
 ### Existing tables with unused columns
 - ~~`surge_configs.zones` (JSONB) — stored but never queried during fare calculation~~ → ✅ Phase 3: read via `usecase.ParseSurgeZones` + ray-casting in `FareCalculator.SimulateFare`. Shape = `[{name, multiplier, polygon:[[lat,lng]...]}, ...]`.
@@ -427,4 +447,5 @@ Full phased plan lives at `~/.claude/plans/task-notification-task-id-ry2iub3hu-t
 - **Phase 2** (P1) — ✅ done 2026-04-22. Modals (Rider/Driver/Docs/Ride/Transaction), date-range + pagination + payout confirm on Payments, per-provider integration form, small UI nits, DriverHeatmap mount. Deferred: `GatewayProvidersSection` mount (swagger `PaymentGatewayConfig` schema drifted to `{name, center, radius}`), fare `updated_by` username join, `SAAdminManagement` cast cleanup, `SASafetyCompliance` incident "View" (rolls into Phase 3).
 - **Phase 3** (P2) — ✅ done 2026-04-22. SOS timeline + reassign (021), surge zones via Go ray-casting + `SurgeZoneEditor` + `MapProvider` adapter, alert rules CRUD + evaluator goroutine (023), LGU partnerships + service areas CRUD + `/service-area` (022). Deferred: SOS location trail, alert notification dispatch.
 - **Phase 4a** — ✅ done 2026-04-23. TEST_ACCOUNTS.md port (5173 → 3000), `KycEntry.status` enum + `needs_more_info`, `SAAdminManagement` cast cleanup, fare `updated_by_name` (FareConfig schema rewrite + repo JOIN + UI render), `PaymentGatewayConfig` swagger rewrite (drifted shape → real `{provider, config_fields, …}`) + schema-driven `GatewayProvidersSection` mount, `payment_repo` real queries (`ListTransactions`, `GetPaymentSummary`, `ListPayouts`/`ApprovePayout` against new `driver_payouts` table), migration 024, DriverHeatmap real backend (`GET /admin/drivers/heatmap` PostGIS), alert evaluator dedup via per-rule `cooldown_minutes`. Verification: `go build`, `go test ./...`, `npm run lint`, `npm test` (136/136). Not browser-smoke-tested.
-- **Phase 4b** — pending: SOS location trail capture (new `driver_location_history` table + active-incident write-path), alert-event dispatch via `notification_templates`, `SurgeConfig.updated_by_name` parity, `ride_payments.method` ENUM extension (or e-wallet pipeline writing into `ride_payments`) so gcash/paymaya appear in admin transactions, mock regen via mockgen, `migrate down` cycle exercise.
+- **Phase 4b** — ✅ done 2026-04-23. Migration 025 (`driver_location_history` + partial index on `incidents(driver_id) WHERE resolved_at IS NULL`), SOS trail capture in `driverUseCase.UpdateLocation`, trail exposed through `IncidentDetail` + rendered in `IncidentDetailModal`. Migration 026 (`notification_outbox` + seeded `alert.*` templates), `internal/infrastructure/notifications` package (`AlertNotifier` + `Dispatcher` goroutine), evaluator wired via `WithNotifier` + RowsAffected guard. Migration 027 (`ALTER TYPE payment_method ADD VALUE gcash/paymaya`), domain constants + `IsValid()` updated, swagger enums widened. `SurgeConfig` `LEFT JOIN users` + `UpdatedByName` + swagger + UI parity with FareConfig. Mocks regenerated via `go generate`. Verification: `go build`, `go test ./...`, `npm run generate:types`, `npm run lint`, `npm test` (136/136). Not browser-smoke-tested. Log-only dispatcher + dormant SOS trail flagged as caveats.
+- **Phase 4c** — pending: real SMS/email/push provider swap in `notifications.Dispatcher.send()`, SOS-trigger write-path on mobile (until then trail capture stays dormant), `migrate down` cycle exercise for 025/026/027, browser smoke test of Phase 4a/4b UI, plus audit 🟢 polish bucket: #19 SAAdminManagement role-rename unit test, #21 SAFareConfig hardcoded Manila sim coords, #25 SAPayments CSV export server-side, #29 SAReports `selectedReport` surface, #30 SARoleManagement `fromPermissions` validation, #37 Template body var validation, #38 Feature flag confirm-modals beyond `maintenance_mode`.
