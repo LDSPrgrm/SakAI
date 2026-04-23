@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  AlertCircle,
   Search,
   Download,
 } from 'lucide-react';
@@ -23,33 +22,18 @@ import { Input } from '@/components/ui/Input';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { paymentsApi } from '@/api/super-admin/payments';
-import { systemApi } from '@/api/super-admin/system';
+import type { PaymentSummary } from '@/api/super-admin/payments';
+import {
+  useTransactions, usePayouts, usePaymentSummary,
+  useCommissionConfig, useApprovePayout,
+  useBatchApprovePayouts, useUpdateCommissionConfig,
+  useGatewayConfigs, useUpdatePaymentConfig,
+} from '@/hooks/usePayments';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-interface PaymentSummary {
-  total_revenue: number;
-  driver_payouts: number;
-  commission: number;
-  pending_settlements: number;
-  failed_transactions: number;
-}
-
-interface GatewayProvider {
-  id: string;
-  label: string;
-  type: 'ewallet' | 'card';
-  apiKey?: string;
-  secret?: string;
-  merchantId?: string;
-  webhookUrl?: string;
-  publishableKey?: string;
-  secretKey?: string;
-  webhookSecret?: string;
-}
+import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
+import { GatewayProvidersSection } from '@/components/super-admin/payments/GatewayProvidersSection';
+import { TransactionDetailModal } from '@/components/super-admin/modals/TransactionDetailModal';
 
 interface ConfirmState {
   open: boolean;
@@ -59,87 +43,56 @@ interface ConfirmState {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function maskKey(k?: string): string {
-  if (!k || k.length <= 4) return k || '';
-  return '••••••••' + k.slice(-4);
-}
-
 function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'gcash') return 'info';
   if (method === 'paymaya') return 'warning';
   return 'default';
 }
 
-const DEFAULT_PROVIDERS: GatewayProvider[] = [
-  {
-    id: 'gcash',
-    label: 'GCash',
-    type: 'ewallet',
-    apiKey: 'gcash_live_xK9mP2qR7nL4wT1yZ5vA8sD',
-    secret: 'gsec_live_9384jsdf83',
-    merchantId: 'M-12345',
-    webhookUrl: 'https://api.sakai.ph/webhooks/gcash',
-  },
-  {
-    id: 'paymaya',
-    label: 'PayMaya',
-    type: 'ewallet',
-    apiKey: 'pm_live_3bN8cX6hJ0eQ4uI2oW7fY9kM',
-    secret: 'pm_sec_live_9jdf934f',
-    merchantId: 'P-98765',
-    webhookUrl: 'https://api.sakai.ph/webhooks/paymaya',
-  },
-  {
-    id: 'card',
-    label: 'Stripe (Cards)',
-    type: 'card',
-    publishableKey: 'pk_live_5aG1dV4jR8mU3oS7pL9wB2xZ',
-    secretKey: 'sk_live_39dsf93kdfvj94jg',
-    webhookSecret: 'whsec_38sjd8fu4ndsf',
-  },
-];
+function shortId(id: string | undefined | null, len = 8): string {
+  if (!id) return '—';
+  return id.length > len ? `${id.slice(0, len)}…` : id;
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SAPayments() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [payouts, setPayouts] = useState<DriverPayout[]>([]);
-  const [summary, setSummary] = useState<PaymentSummary>({
+  const transactionsQuery = useTransactions();
+  const payoutsQuery = usePayouts();
+  const summaryQuery = usePaymentSummary();
+  const commissionQuery = useCommissionConfig();
+  const gatewayQuery = useGatewayConfigs();
+  const approvePayout = useApprovePayout();
+  const batchApprovePayouts = useBatchApprovePayouts();
+  const updateCommissionConfig = useUpdateCommissionConfig();
+  const updatePaymentConfig = useUpdatePaymentConfig();
+
+  const gatewayConfigs = gatewayQuery.data ?? [];
+
+  async function saveGatewayConfig(provider: string, payload: { config_fields: Record<string, string>; is_active: boolean }) {
+    await updatePaymentConfig.mutateAsync({ provider, payload });
+  }
+
+  const transactions = (transactionsQuery.data ?? []) as Transaction[];
+  const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
+  const summary: PaymentSummary = summaryQuery.data ?? {
     total_revenue: 0,
-    driver_payouts: 0,
+    payouts: 0,
     commission: 0,
     pending_settlements: 0,
-    failed_transactions: 0,
-  });
+  };
+
   const [search, setSearch] = useState('');
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
     payoutId: '',
     batchName: '',
   });
-  const [providers, setProviders] = useState<GatewayProvider[]>(DEFAULT_PROVIDERS);
-  const [savingProvider, setSavingProvider] = useState<string | null>(null);
+  const savingCommission = updateCommissionConfig.isPending;
 
-  const [commissionConfig, setCommissionConfig] = useState<any>(null);
-  const [savingCommission, setSavingCommission] = useState(false);
-
-  // ── Load data on mount ─────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function load() {
-      const [txns, pouts, sum, comm] = await Promise.all([
-        paymentsApi.getTransactions(),
-        paymentsApi.getPayouts(),
-        paymentsApi.getSummary(),
-        paymentsApi.getCommissionConfig(),
-      ]);
-      setTransactions(txns);
-      setPayouts(pouts);
-      setSummary(sum as unknown as PaymentSummary);
-      setCommissionConfig(comm);
-    }
-    void load();
-  }, []);
+  const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
+  const batchApproving = batchApprovePayouts.isPending;
 
   // ── Filtered transactions ──────────────────────────────────────────────────
 
@@ -160,47 +113,21 @@ export function SAPayments() {
   }
 
   async function handleApprovePayout() {
-    await paymentsApi.approvePayout(confirmModal.payoutId);
-    setPayouts((prev) =>
-      prev.map((p) =>
-        p.id === confirmModal.payoutId ? { ...p, status: 'approved' } : p
-      )
-    );
+    await approvePayout.mutateAsync(confirmModal.payoutId);
   }
 
-  // ── Gateway provider helpers ───────────────────────────────────────────────
-
-  function updateProvider(
-    id: string,
-    field: keyof Omit<GatewayProvider, 'id' | 'label'>,
-    value: string
-  ) {
-    setProviders((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-    );
-  }
-
-  async function saveProvider(id: string) {
-    setSavingProvider(id);
-    const provider = providers.find((p) => p.id === id);
-    if (provider) {
-      const fields: Record<string, string> = {};
-      if (provider.apiKey) fields.api_key = provider.apiKey;
-      if (provider.secret) fields.secret = provider.secret;
-      if (provider.merchantId) fields.merchant_id = provider.merchantId;
-      if (provider.webhookUrl) fields.webhook_url = provider.webhookUrl;
-      if (provider.publishableKey) fields.publishable_key = provider.publishableKey;
-      if (provider.secretKey) fields.secret_key = provider.secretKey;
-      if (provider.webhookSecret) fields.webhook_secret = provider.webhookSecret;
-      await systemApi.updateIntegration(id, fields).catch(() => {});
+  async function handleBatchApprove() {
+    const ids = [...selectedPayoutIds];
+    try {
+      await batchApprovePayouts.mutateAsync(ids);
+      setSelectedPayoutIds(new Set());
+    } catch {
+      // Error surfaced via batchApprovePayouts.isError / .error in the UI.
     }
-    setSavingProvider(null);
   }
 
-  async function saveCommission() {
-    setSavingCommission(true);
-    await paymentsApi.updateCommissionConfig(commissionConfig).catch(() => {});
-    setSavingCommission(false);
+  async function saveCommission(values: Parameters<typeof updateCommissionConfig.mutateAsync>[0]) {
+    await updateCommissionConfig.mutateAsync(values).catch(() => {});
   }
 
   // ── CSV download ───────────────────────────────────────────────────────────
@@ -234,36 +161,31 @@ export function SAPayments() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <SummaryCard
           title="Total Revenue"
-          value={formatPHP(summary.total_revenue)}
+          value={formatPHP(summary.total_revenue ?? 0)}
           icon={<Wallet className="w-5 h-5 text-primary" />}
         />
         <SummaryCard
           title="Driver Payouts"
-          value={formatPHP(summary.driver_payouts)}
+          value={formatPHP(summary.payouts ?? 0)}
           icon={<ArrowUpRight className="w-5 h-5 text-danger" />}
         />
         <SummaryCard
           title="Platform Commission"
-          value={formatPHP(summary.commission)}
+          value={formatPHP(summary.commission ?? 0)}
           icon={<ArrowDownRight className="w-5 h-5 text-success" />}
         />
         <SummaryCard
           title="Pending Settlements"
-          value={formatPHP(summary.pending_settlements)}
+          value={formatPHP(summary.pending_settlements ?? 0)}
           icon={<Clock className="w-5 h-5 text-warning" />}
-        />
-        <SummaryCard
-          title="Failed Transactions"
-          value={(summary.failed_transactions ?? 0).toString()}
-          icon={<AlertCircle className="w-5 h-5 text-danger" />}
         />
       </div>
 
       {/* Section 2 — Transaction History + Pending Driver Payouts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
 
         {/* Transaction History */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle>Transaction History</CardTitle>
@@ -308,31 +230,39 @@ export function SAPayments() {
                     </TableRow>
                   ) : (
                     filtered.map((t) => (
-                      <TableRow key={t.id}>
+                      <TableRow
+                        key={t.id}
+                        className="cursor-pointer hover:bg-surface-hover/80"
+                        onClick={() => setSelectedTxn(t)}
+                      >
                         {/* Transaction ID + Ride ID */}
-                        <TableCell>
-                          <span className="text-sm font-medium text-text-main">
-                            {t.id}
+                        <TableCell className="whitespace-nowrap">
+                          <span
+                            className="block text-sm font-mono font-medium text-text-main"
+                            title={t.id ?? ''}
+                          >
+                            {shortId(t.id)}
                           </span>
-                          <br />
-                          <span className="text-xs text-text-muted">
-                            Ride {t.ride_id}
+                          <span
+                            className="block text-xs font-mono text-text-muted"
+                            title={t.ride_id ?? ''}
+                          >
+                            Ride {shortId(t.ride_id)}
                           </span>
                         </TableCell>
 
                         {/* Rider + Driver names */}
-                        <TableCell>
-                          <span className="text-sm text-text-main">
+                        <TableCell className="whitespace-nowrap">
+                          <span className="block text-sm text-text-main truncate max-w-[12rem]">
                             {t.rider_name ?? '—'}
                           </span>
-                          <br />
-                          <span className="text-xs text-text-muted">
+                          <span className="block text-xs text-text-muted truncate max-w-[12rem]">
                             {t.driver_name ?? '—'}
                           </span>
                         </TableCell>
 
                         {/* Amount — positive = success, negative = danger */}
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap">
                           <span
                             className={
                               t.amount >= 0
@@ -346,12 +276,12 @@ export function SAPayments() {
                         </TableCell>
 
                         {/* Commission */}
-                        <TableCell className="text-right text-sm text-text-muted">
+                        <TableCell className="text-right text-sm text-text-muted whitespace-nowrap">
                           {formatPHP(t.commission)}
                         </TableCell>
 
                         {/* Payment Method */}
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {t.payment_method ? (
                             <Badge variant={methodVariant(t.payment_method)}>
                               {t.payment_method.toUpperCase()}
@@ -360,7 +290,7 @@ export function SAPayments() {
                         </TableCell>
 
                         {/* Status */}
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <StatusBadge status={t.status} />
                         </TableCell>
 
@@ -386,186 +316,143 @@ export function SAPayments() {
         {/* Pending Driver Payouts */}
         <Card>
           <CardHeader>
-            <CardTitle>Pending Driver Payouts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {payouts.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-6">
-                No payouts found.
-              </p>
-            ) : (
-              payouts.map((payout) => (
-                <div
-                  key={payout.id}
-                  className="p-3 bg-surface-hover rounded-lg border border-border space-y-2"
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Pending Driver Payouts</CardTitle>
+              {selectedPayoutIds.size > 0 && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleBatchApprove}
+                  disabled={batchApproving}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-text-main">
-                      {payout.batch}
-                    </span>
-                    <StatusBadge status={payout.status} />
-                  </div>
-                  <p className="text-xs text-text-muted">
-                    {payout.driver_count} drivers &middot;{' '}
-                    {formatPHP(payout.total_amount)}
-                  </p>
-                  {payout.status === 'pending' && (
-                    <Button
-                      variant="success"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => openApproveModal(payout)}
-                    >
-                      Approve Payout
-                    </Button>
-                  )}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Section 3 & 4 Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Payment Gateway Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Gateway Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-warning">
-                API keys are masked for security. Only the last 4 characters are visible.
-              </p>
+                  {batchApproving ? 'Approving…' : `Approve Selected (${selectedPayoutIds.size})`}
+                </Button>
+              )}
             </div>
-
-            <div className="space-y-4">
-              {providers.map((provider) => (
-                <div key={provider.id} className="p-4 bg-surface-hover rounded-lg border border-border">
-                  <h4 className="text-sm font-semibold text-text-main mb-3">{provider.label}</h4>
-
-                  {provider.type === 'ewallet' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">API Key</label>
-                        <Input value={maskKey(provider.apiKey)} onChange={e => updateProvider(provider.id, 'apiKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Secret</label>
-                        <Input value={maskKey(provider.secret)} type="password" onChange={e => updateProvider(provider.id, 'secret', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Merchant ID</label>
-                        <Input value={provider.merchantId} onChange={e => updateProvider(provider.id, 'merchantId', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Webhook URL</label>
-                        <Input value={provider.webhookUrl || ''} onChange={e => updateProvider(provider.id, 'webhookUrl', e.target.value)} />
-                      </div>
-                    </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      {(() => {
+                        const pendingIds = payouts
+                          .filter((p) => p.status === 'pending')
+                          .map((p) => p.id);
+                        const allSelected =
+                          pendingIds.length > 0 &&
+                          pendingIds.every((id) => selectedPayoutIds.has(id));
+                        const someSelected =
+                          pendingIds.some((id) => selectedPayoutIds.has(id)) && !allSelected;
+                        return (
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-border accent-primary"
+                            disabled={pendingIds.length === 0}
+                            checked={allSelected}
+                            ref={(el) => {
+                              if (el) el.indeterminate = someSelected;
+                            }}
+                            onChange={(e) => {
+                              setSelectedPayoutIds(
+                                e.target.checked ? new Set(pendingIds) : new Set(),
+                              );
+                            }}
+                            aria-label="Select all pending payouts"
+                          />
+                        );
+                      })()}
+                    </TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead className="text-right">Drivers</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payouts.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-text-muted py-10"
+                      >
+                        No payouts found.
+                      </TableCell>
+                    </TableRow>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs text-text-muted mb-1">Publishable Key</label>
-                        <Input value={maskKey(provider.publishableKey)} onChange={e => updateProvider(provider.id, 'publishableKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Secret Key</label>
-                        <Input value={maskKey(provider.secretKey)} type="password" onChange={e => updateProvider(provider.id, 'secretKey', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Webhook Secret</label>
-                        <Input value={maskKey(provider.webhookSecret)} type="password" onChange={e => updateProvider(provider.id, 'webhookSecret', e.target.value)} />
-                      </div>
-                    </div>
+                    payouts.map((payout) => (
+                      <TableRow key={payout.id}>
+                        <TableCell>
+                          {payout.status === 'pending' ? (
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-border accent-primary"
+                              checked={selectedPayoutIds.has(payout.id)}
+                              onChange={(e) => {
+                                setSelectedPayoutIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (e.target.checked) next.add(payout.id);
+                                  else next.delete(payout.id);
+                                  return next;
+                                });
+                              }}
+                              aria-label={`Select payout ${payout.batch}`}
+                            />
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-text-main whitespace-nowrap">
+                          {payout.batch}
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-text-muted whitespace-nowrap">
+                          {payout.driver_count}
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-medium text-text-main whitespace-nowrap">
+                          {formatPHP(payout.total_amount)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <StatusBadge status={payout.status} />
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {payout.status === 'pending' ? (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => openApproveModal(payout)}
+                            >
+                              Approve
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
-
-                  <div className="mt-3 flex justify-end">
-                    <Button variant="primary" size="sm" onClick={() => saveProvider(provider.id)} disabled={savingProvider === provider.id}>
-                      {savingProvider === provider.id ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
-
-        {/* Commission Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Commission Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {commissionConfig ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
-                  <h4 className="text-sm font-semibold text-text-main">Platform Commission Rate</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Motorcycle (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.motorcycle}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, motorcycle: Number(e.target.value) } })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Tricycle (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.tricycle}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, tricycle: Number(e.target.value) } })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Other (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.rates.other}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, rates: { ...commissionConfig.rates, other: Number(e.target.value) } })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
-                  <h4 className="text-sm font-semibold text-text-main">Pricing Floors & Promos</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Minimum Commission (₱)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.minimum_commission}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, minimum_commission: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-text-muted mb-1">Promotional Override (%)</label>
-                      <Input
-                        type="number"
-                        value={commissionConfig.promotional_override}
-                        onChange={e => setCommissionConfig({ ...commissionConfig, promotional_override: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button variant="primary" onClick={saveCommission} disabled={savingCommission}>
-                    {savingCommission ? 'Saving...' : 'Save Commission Settings'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-text-muted text-center py-6">Loading config...</div>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Section 3 — Commission Config */}
+      <CommissionConfigCard
+        config={commissionQuery.data}
+        onSave={saveCommission}
+        saving={savingCommission}
+      />
+
+      {/* Section 4 — Payment Gateway Providers */}
+      <GatewayProvidersSection
+        configs={gatewayConfigs}
+        onSave={saveGatewayConfig}
+      />
+
+      <TransactionDetailModal
+        open={Boolean(selectedTxn)}
+        transaction={selectedTxn}
+        onClose={() => setSelectedTxn(null)}
+      />
 
       {/* Approve Payout Confirm Modal */}
       <ConfirmModal

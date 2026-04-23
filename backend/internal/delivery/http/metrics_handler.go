@@ -60,3 +60,14 @@ func (h *MetricsHandler) GetWaitTime(c *gin.Context) {
 	}
 	respondOK(c, dto.NewMetricResponseDTO(m))
 }
+
+// GetDriverHeatmap powers the admin Live Hotspots / driver supply visualization.
+// Returns one point per online driver with last-known PostGIS coordinates.
+func (h *MetricsHandler) GetDriverHeatmap(c *gin.Context) {
+	hm, err := h.uc.GetDriverHeatmap(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, hm)
+}

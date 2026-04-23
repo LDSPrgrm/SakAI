@@ -1,28 +1,15 @@
 // Dynamic RBAC hook — caches the current admin's role + permissions in Zustand.
-// Permissions are fetched from GET /api/admin/roles/:id/permissions on auth.
+// Permissions are fetched from GET /api/admin/me/permissions on auth. The self
+// endpoint works for every admin persona (superadmin, admin, operations,
+// finance, support) so the sidebar populates regardless of role.
 // Spec: superadmin.md §3 (Dynamic RBAC)
 
 import { create } from 'zustand';
 import { useAuth } from '@/contexts/AuthContext';
-import { tokenStore } from '@/lib/api';
+import { adminRequest } from '@/api/super-admin/_request';
+import type { PermissionKey } from '@/utils/permissions';
 
-// Permission keys defined by the spec (superadmin.md §3.2)
-export type PermissionKey =
-  | 'dashboard'
-  | 'admin_management'
-  | 'role_management'
-  | 'fare_config'
-  | 'payments'
-  | 'payouts'
-  | 'user_management'
-  | 'kyc_verification'
-  | 'safety_incidents'
-  | 'reports'
-  | 'system_config'
-  | 'system_health'
-  | 'audit_log'
-  | 'ltfrb_compliance';
-
+export type { PermissionKey };
 export type PermissionScope = 'read' | 'write';
 
 export interface RolePermission {
@@ -44,27 +31,14 @@ interface PermissionsState {
   permissions: RolePermission[];
   loading: boolean;
   error: string | null;
-  loadPermissions: (roleId: string) => Promise<void>;
+  loadPermissions: () => Promise<void>;
   clear: () => void;
 }
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
-
-async function fetchRolePermissions(roleId: string): Promise<Role> {
-  const token = tokenStore.getAccess();
-  const res = await fetch(`${BASE_URL}/admin/roles/${roleId}/permissions`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Failed to load permissions (${res.status})`);
-  const json = await res.json();
-  // Unwrap the standard envelope if present
-  const role = (json?.data ?? json) as Role;
-  // Normalize backend "superadmin" → "super_admin"
-  if (role?.name === 'superadmin') role.name = 'super_admin';
-  return role;
+// Self-scoped endpoint: backend reads the caller's userID from the JWT and
+// returns that user's own role + permissions. Safe for any admin persona.
+async function fetchMyPermissions(): Promise<Role> {
+  return adminRequest<Role>('GET', '/me/permissions');
 }
 
 export const usePermissionsStore = create<PermissionsState>((set) => ({
@@ -72,10 +46,10 @@ export const usePermissionsStore = create<PermissionsState>((set) => ({
   permissions: [],
   loading: false,
   error: null,
-  async loadPermissions(roleId: string) {
+  async loadPermissions() {
     set({ loading: true, error: null });
     try {
-      const role = await fetchRolePermissions(roleId);
+      const role = await fetchMyPermissions();
       set({ role, permissions: role.permissions ?? [], loading: false });
     } catch (err) {
       set({
@@ -102,9 +76,9 @@ export function usePermissions() {
     usePermissionsStore();
 
   const can = (key: PermissionKey, scope: PermissionScope): boolean => {
-    // super_admin is immutable and always allowed — check both the auth context
+    // superadmin is immutable and always allowed — check both the auth context
     // (available immediately from the JWT) and the loaded role (from the permissions API)
-    if (user?.role === 'super_admin' || role?.name === 'super_admin') return true;
+    if (user?.role === 'superadmin' || role?.name === 'superadmin') return true;
     const entry = permissions.find((p) => p.permission_key === key);
     if (!entry) return false;
     return scope === 'read' ? entry.read || entry.write : entry.write;

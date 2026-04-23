@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Download, Eye, Search, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import {
@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { auditApi } from '@/api/super-admin/audit';
+import { useAuditLog, useExportAuditLog } from '@/hooks/useAuditLog';
 import type { AuditLogEntry } from '@/types/super-admin';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -159,27 +159,16 @@ function DiffModal({ log, onClose }: DiffModalProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SAAuditLog() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const logsQuery = useAuditLog();
+  const exportMutation = useExportAuditLog();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
 
-  useEffect(() => {
-    auditApi.getLogs().then(l => setLogs(l as unknown as AuditLogEntry[]));
-  }, []);
+  const logs = (logsQuery.data ?? []) as unknown as AuditLogEntry[];
+  const handleExportCsv = () => exportMutation.mutate();
 
-  const handleExportCsv = async () => {
-    const csvContent = await auditApi.exportCsv();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `sakai-audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const filteredLogs = (logs || []).filter((log) => {
+  const filteredLogs = logs.filter((log) => {
     const matchesSearch =
       !search ||
       (log.actor_name ?? '').toLowerCase().includes(search.toLowerCase()) ||

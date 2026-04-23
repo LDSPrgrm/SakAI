@@ -651,18 +651,18 @@ func (mr *MockAdminRepositoryMockRecorder) GetPaymentConfigs(ctx any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentConfigs", reflect.TypeOf((*MockAdminRepository)(nil).GetPaymentConfigs), ctx)
 }
 
-// UpdateAdminStatus mocks base method.
-func (m *MockAdminRepository) UpdateAdminStatus(ctx context.Context, id uuid.UUID, status domain.UserRole) error {
+// UpdateAdminProfile mocks base method.
+func (m *MockAdminRepository) UpdateAdminProfile(ctx context.Context, id uuid.UUID, name, email string, role domain.UserRole, roleID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAdminStatus", ctx, id, status)
+	ret := m.ctrl.Call(m, "UpdateAdminProfile", ctx, id, name, email, role, roleID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateAdminStatus indicates an expected call of UpdateAdminStatus.
-func (mr *MockAdminRepositoryMockRecorder) UpdateAdminStatus(ctx, id, status any) *gomock.Call {
+// UpdateAdminProfile indicates an expected call of UpdateAdminProfile.
+func (mr *MockAdminRepositoryMockRecorder) UpdateAdminProfile(ctx, id, name, email, role, roleID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminStatus", reflect.TypeOf((*MockAdminRepository)(nil).UpdateAdminStatus), ctx, id, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminProfile", reflect.TypeOf((*MockAdminRepository)(nil).UpdateAdminProfile), ctx, id, name, email, role, roleID)
 }
 
 // UpdateCommissionSettings mocks base method.
@@ -853,6 +853,20 @@ func (m *MockIncidentRepository) EXPECT() *MockIncidentRepositoryMockRecorder {
 	return m.recorder
 }
 
+// AssignIncident mocks base method.
+func (m *MockIncidentRepository) AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignIncident", ctx, id, assigneeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AssignIncident indicates an expected call of AssignIncident.
+func (mr *MockIncidentRepositoryMockRecorder) AssignIncident(ctx, id, assigneeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignIncident", reflect.TypeOf((*MockIncidentRepository)(nil).AssignIncident), ctx, id, assigneeID)
+}
+
 // GetIncidentByID mocks base method.
 func (m *MockIncidentRepository) GetIncidentByID(ctx context.Context, id uuid.UUID) (*domain.Incident, error) {
 	m.ctrl.T.Helper()
@@ -881,6 +895,21 @@ func (m *MockIncidentRepository) ListIncidents(ctx context.Context, status *stri
 func (mr *MockIncidentRepositoryMockRecorder) ListIncidents(ctx, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListIncidents", reflect.TypeOf((*MockIncidentRepository)(nil).ListIncidents), ctx, status)
+}
+
+// ListStatusHistory mocks base method.
+func (m *MockIncidentRepository) ListStatusHistory(ctx context.Context, id uuid.UUID) ([]*domain.IncidentStatusEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStatusHistory", ctx, id)
+	ret0, _ := ret[0].([]*domain.IncidentStatusEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStatusHistory indicates an expected call of ListStatusHistory.
+func (mr *MockIncidentRepositoryMockRecorder) ListStatusHistory(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStatusHistory", reflect.TypeOf((*MockIncidentRepository)(nil).ListStatusHistory), ctx, id)
 }
 
 // UpdateIncident mocks base method.
@@ -1296,6 +1325,36 @@ func (m *MockSystemRepository) EXPECT() *MockSystemRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetInfraMetrics mocks base method.
+func (m *MockSystemRepository) GetInfraMetrics(ctx context.Context) (*domain.InfraMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInfraMetrics", ctx)
+	ret0, _ := ret[0].(*domain.InfraMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInfraMetrics indicates an expected call of GetInfraMetrics.
+func (mr *MockSystemRepositoryMockRecorder) GetInfraMetrics(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInfraMetrics", reflect.TypeOf((*MockSystemRepository)(nil).GetInfraMetrics), ctx)
+}
+
+// GetIntegrationRaw mocks base method.
+func (m *MockSystemRepository) GetIntegrationRaw(ctx context.Context, service string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIntegrationRaw", ctx, service)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIntegrationRaw indicates an expected call of GetIntegrationRaw.
+func (mr *MockSystemRepositoryMockRecorder) GetIntegrationRaw(ctx, service any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationRaw", reflect.TypeOf((*MockSystemRepository)(nil).GetIntegrationRaw), ctx, service)
+}
+
 // ListFeatureFlags mocks base method.
 func (m *MockSystemRepository) ListFeatureFlags(ctx context.Context) ([]*domain.FeatureFlag, error) {
 	m.ctrl.T.Helper()
@@ -1354,6 +1413,48 @@ func (m *MockSystemRepository) ListServices(ctx context.Context) ([]*domain.Syst
 func (mr *MockSystemRepositoryMockRecorder) ListServices(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*MockSystemRepository)(nil).ListServices), ctx)
+}
+
+// RecordHTTPTiming mocks base method.
+func (m *MockSystemRepository) RecordHTTPTiming(ctx context.Context, method, path string, statusCode int, durationMs float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordHTTPTiming", ctx, method, path, statusCode, durationMs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordHTTPTiming indicates an expected call of RecordHTTPTiming.
+func (mr *MockSystemRepositoryMockRecorder) RecordHTTPTiming(ctx, method, path, statusCode, durationMs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPTiming", reflect.TypeOf((*MockSystemRepository)(nil).RecordHTTPTiming), ctx, method, path, statusCode, durationMs)
+}
+
+// RecordIntegrationTest mocks base method.
+func (m *MockSystemRepository) RecordIntegrationTest(ctx context.Context, service string, ok bool, latencyMs int, message string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordIntegrationTest", ctx, service, ok, latencyMs, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordIntegrationTest indicates an expected call of RecordIntegrationTest.
+func (mr *MockSystemRepositoryMockRecorder) RecordIntegrationTest(ctx, service, ok, latencyMs, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIntegrationTest", reflect.TypeOf((*MockSystemRepository)(nil).RecordIntegrationTest), ctx, service, ok, latencyMs, message)
+}
+
+// RecordProbe mocks base method.
+func (m *MockSystemRepository) RecordProbe(ctx context.Context, name, status string, latencyMs int, errMsg string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordProbe", ctx, name, status, latencyMs, errMsg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordProbe indicates an expected call of RecordProbe.
+func (mr *MockSystemRepositoryMockRecorder) RecordProbe(ctx, name, status, latencyMs, errMsg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordProbe", reflect.TypeOf((*MockSystemRepository)(nil).RecordProbe), ctx, name, status, latencyMs, errMsg)
 }
 
 // UpdateFeatureFlag mocks base method.
@@ -1423,33 +1524,33 @@ func (m *MockReportRepository) EXPECT() *MockReportRepositoryMockRecorder {
 }
 
 // ExportReport mocks base method.
-func (m *MockReportRepository) ExportReport(ctx context.Context, reportType string) ([]byte, error) {
+func (m *MockReportRepository) ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType)
+	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExportReport indicates an expected call of ExportReport.
-func (mr *MockReportRepositoryMockRecorder) ExportReport(ctx, reportType any) *gomock.Call {
+func (mr *MockReportRepositoryMockRecorder) ExportReport(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportRepository)(nil).ExportReport), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportRepository)(nil).ExportReport), ctx, reportType, from, to)
 }
 
 // GetChartData mocks base method.
-func (m *MockReportRepository) GetChartData(ctx context.Context, reportType string) ([]map[string]any, error) {
+func (m *MockReportRepository) GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]any, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType)
+	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]map[string]any)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetChartData indicates an expected call of GetChartData.
-func (mr *MockReportRepositoryMockRecorder) GetChartData(ctx, reportType any) *gomock.Call {
+func (mr *MockReportRepositoryMockRecorder) GetChartData(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportRepository)(nil).GetChartData), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportRepository)(nil).GetChartData), ctx, reportType, from, to)
 }
 
 // ListReports mocks base method.
@@ -1564,6 +1665,21 @@ func (m *MockMetricsRepository) GetWaitTimeMetrics(ctx context.Context) (*domain
 func (mr *MockMetricsRepositoryMockRecorder) GetWaitTimeMetrics(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsRepository)(nil).GetWaitTimeMetrics), ctx)
+}
+
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsRepository) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsRepositoryMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsRepository)(nil).GetDriverHeatmap), ctx)
 }
 
 // MockDocumentRepository is a mock of DocumentRepository interface.
@@ -2108,6 +2224,22 @@ func (mr *MockDriverUseCaseMockRecorder) GetActiveRide(ctx, driverID any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveRide", reflect.TypeOf((*MockDriverUseCase)(nil).GetActiveRide), ctx, driverID)
 }
 
+// GetEarnings mocks base method.
+func (m *MockDriverUseCase) GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*domain.DriverEarnings, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEarnings", ctx, driverID, from, to, page, limit)
+	ret0, _ := ret[0].([]*domain.DriverEarnings)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetEarnings indicates an expected call of GetEarnings.
+func (mr *MockDriverUseCaseMockRecorder) GetEarnings(ctx, driverID, from, to, page, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEarnings", reflect.TypeOf((*MockDriverUseCase)(nil).GetEarnings), ctx, driverID, from, to, page, limit)
+}
+
 // GetIncomingRide mocks base method.
 func (m *MockDriverUseCase) GetIncomingRide(ctx context.Context, driverID uuid.UUID) (*domain.Ride, error) {
 	m.ctrl.T.Helper()
@@ -2205,6 +2337,20 @@ func (m *MockAdminUseCase) EXPECT() *MockAdminUseCaseMockRecorder {
 	return m.recorder
 }
 
+// AssignIncident mocks base method.
+func (m *MockAdminUseCase) AssignIncident(ctx context.Context, actorID, incidentID uuid.UUID, assigneeID *uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignIncident", ctx, actorID, incidentID, assigneeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AssignIncident indicates an expected call of AssignIncident.
+func (mr *MockAdminUseCaseMockRecorder) AssignIncident(ctx, actorID, incidentID, assigneeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignIncident", reflect.TypeOf((*MockAdminUseCase)(nil).AssignIncident), ctx, actorID, incidentID, assigneeID)
+}
+
 // CreateAdmin mocks base method.
 func (m *MockAdminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name, email, password string, role domain.UserRole, roleID *uuid.UUID) (*domain.User, error) {
 	m.ctrl.T.Helper()
@@ -2262,6 +2408,21 @@ func (m *MockAdminUseCase) GetDashboard(ctx context.Context) (*domain.DashboardM
 func (mr *MockAdminUseCaseMockRecorder) GetDashboard(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDashboard", reflect.TypeOf((*MockAdminUseCase)(nil).GetDashboard), ctx)
+}
+
+// GetIncident mocks base method.
+func (m *MockAdminUseCase) GetIncident(ctx context.Context, incidentID uuid.UUID) (*domain.IncidentDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncident", ctx, incidentID)
+	ret0, _ := ret[0].(*domain.IncidentDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncident indicates an expected call of GetIncident.
+func (mr *MockAdminUseCaseMockRecorder) GetIncident(ctx, incidentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncident", reflect.TypeOf((*MockAdminUseCase)(nil).GetIncident), ctx, incidentID)
 }
 
 // ListAdmins mocks base method.
@@ -2326,6 +2487,20 @@ func (mr *MockAdminUseCaseMockRecorder) ListUsers(ctx, filter any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockAdminUseCase)(nil).ListUsers), ctx, filter)
 }
 
+// ResetUserPassword mocks base method.
+func (m *MockAdminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID uuid.UUID, newPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetUserPassword", ctx, actorID, targetID, newPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetUserPassword indicates an expected call of ResetUserPassword.
+func (mr *MockAdminUseCaseMockRecorder) ResetUserPassword(ctx, actorID, targetID, newPassword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetUserPassword", reflect.TypeOf((*MockAdminUseCase)(nil).ResetUserPassword), ctx, actorID, targetID, newPassword)
+}
+
 // ResolveIncident mocks base method.
 func (m *MockAdminUseCase) ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error {
 	m.ctrl.T.Helper()
@@ -2341,17 +2516,17 @@ func (mr *MockAdminUseCaseMockRecorder) ResolveIncident(ctx, actorID, incidentID
 }
 
 // UpdateAdminStatus mocks base method.
-func (m *MockAdminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status domain.UserRole) error {
+func (m *MockAdminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, name, email *string, roleID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAdminStatus", ctx, actorID, targetID, status)
+	ret := m.ctrl.Call(m, "UpdateAdminStatus", ctx, actorID, targetID, name, email, roleID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAdminStatus indicates an expected call of UpdateAdminStatus.
-func (mr *MockAdminUseCaseMockRecorder) UpdateAdminStatus(ctx, actorID, targetID, status any) *gomock.Call {
+func (mr *MockAdminUseCaseMockRecorder) UpdateAdminStatus(ctx, actorID, targetID, name, email, roleID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminStatus", reflect.TypeOf((*MockAdminUseCase)(nil).UpdateAdminStatus), ctx, actorID, targetID, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminStatus", reflect.TypeOf((*MockAdminUseCase)(nil).UpdateAdminStatus), ctx, actorID, targetID, name, email, roleID)
 }
 
 // MockFareUseCase is a mock of FareUseCase interface.
@@ -2557,6 +2732,21 @@ func (m *MockRoleUseCase) DeleteRole(ctx context.Context, actorID, roleID uuid.U
 func (mr *MockRoleUseCaseMockRecorder) DeleteRole(ctx, actorID, roleID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRole", reflect.TypeOf((*MockRoleUseCase)(nil).DeleteRole), ctx, actorID, roleID)
+}
+
+// DuplicateRole mocks base method.
+func (m *MockRoleUseCase) DuplicateRole(ctx context.Context, actorID, roleID uuid.UUID) (*domain.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DuplicateRole", ctx, actorID, roleID)
+	ret0, _ := ret[0].(*domain.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DuplicateRole indicates an expected call of DuplicateRole.
+func (mr *MockRoleUseCaseMockRecorder) DuplicateRole(ctx, actorID, roleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateRole", reflect.TypeOf((*MockRoleUseCase)(nil).DuplicateRole), ctx, actorID, roleID)
 }
 
 // GetRole mocks base method.
@@ -2898,6 +3088,21 @@ func (m *MockSystemUseCase) EXPECT() *MockSystemUseCaseMockRecorder {
 	return m.recorder
 }
 
+// GetInfraMetrics mocks base method.
+func (m *MockSystemUseCase) GetInfraMetrics(ctx context.Context) (*domain.InfraMetrics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInfraMetrics", ctx)
+	ret0, _ := ret[0].(*domain.InfraMetrics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInfraMetrics indicates an expected call of GetInfraMetrics.
+func (mr *MockSystemUseCaseMockRecorder) GetInfraMetrics(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInfraMetrics", reflect.TypeOf((*MockSystemUseCase)(nil).GetInfraMetrics), ctx)
+}
+
 // ListFeatureFlags mocks base method.
 func (m *MockSystemUseCase) ListFeatureFlags(ctx context.Context) ([]*domain.FeatureFlag, error) {
 	m.ctrl.T.Helper()
@@ -3040,33 +3245,33 @@ func (m *MockReportUseCase) EXPECT() *MockReportUseCaseMockRecorder {
 }
 
 // ExportReport mocks base method.
-func (m *MockReportUseCase) ExportReport(ctx context.Context, reportType string) ([]byte, error) {
+func (m *MockReportUseCase) ExportReport(ctx context.Context, reportType string, from, to *time.Time) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType)
+	ret := m.ctrl.Call(m, "ExportReport", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExportReport indicates an expected call of ExportReport.
-func (mr *MockReportUseCaseMockRecorder) ExportReport(ctx, reportType any) *gomock.Call {
+func (mr *MockReportUseCaseMockRecorder) ExportReport(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportUseCase)(nil).ExportReport), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportReport", reflect.TypeOf((*MockReportUseCase)(nil).ExportReport), ctx, reportType, from, to)
 }
 
 // GetChartData mocks base method.
-func (m *MockReportUseCase) GetChartData(ctx context.Context, reportType string) ([]map[string]any, error) {
+func (m *MockReportUseCase) GetChartData(ctx context.Context, reportType string, from, to *time.Time) ([]map[string]any, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType)
+	ret := m.ctrl.Call(m, "GetChartData", ctx, reportType, from, to)
 	ret0, _ := ret[0].([]map[string]any)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetChartData indicates an expected call of GetChartData.
-func (mr *MockReportUseCaseMockRecorder) GetChartData(ctx, reportType any) *gomock.Call {
+func (mr *MockReportUseCaseMockRecorder) GetChartData(ctx, reportType, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportUseCase)(nil).GetChartData), ctx, reportType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChartData", reflect.TypeOf((*MockReportUseCase)(nil).GetChartData), ctx, reportType, from, to)
 }
 
 // ListReports mocks base method.
@@ -3181,6 +3386,21 @@ func (m *MockMetricsUseCase) GetWaitTimeMetrics(ctx context.Context) (*domain.Me
 func (mr *MockMetricsUseCaseMockRecorder) GetWaitTimeMetrics(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWaitTimeMetrics", reflect.TypeOf((*MockMetricsUseCase)(nil).GetWaitTimeMetrics), ctx)
+}
+
+// GetDriverHeatmap mocks base method.
+func (m *MockMetricsUseCase) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatmap, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDriverHeatmap", ctx)
+	ret0, _ := ret[0].(*domain.DriverHeatmap)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDriverHeatmap indicates an expected call of GetDriverHeatmap.
+func (mr *MockMetricsUseCaseMockRecorder) GetDriverHeatmap(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDriverHeatmap", reflect.TypeOf((*MockMetricsUseCase)(nil).GetDriverHeatmap), ctx)
 }
 
 // MockDocumentUseCase is a mock of DocumentUseCase interface.

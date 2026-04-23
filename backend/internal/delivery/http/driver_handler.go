@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -96,6 +97,65 @@ func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": drivers})
+}
+
+// GetEarnings handles GET /driver/earnings?from=&to=&page=&limit=.
+func (h *DriverHandler) GetEarnings(c *gin.Context) {
+	driverID := c.MustGet("userID").(uuid.UUID)
+
+	var from, to *time.Time
+	if v := c.Query("from"); v != "" {
+		t, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "from must be YYYY-MM-DD"})
+			return
+		}
+		from = &t
+	}
+	if v := c.Query("to"); v != "" {
+		t, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "to must be YYYY-MM-DD"})
+			return
+		}
+		// Include the entire end day.
+		end := t.Add(24*time.Hour - time.Nanosecond)
+		to = &end
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if limit > 50 {
+		limit = 50
+	}
+
+	items, total, err := h.uc.GetEarnings(c.Request.Context(), driverID, from, to, page, limit)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	out := make([]dto.EarningsItem, 0, len(items))
+	for _, e := range items {
+		out = append(out, dto.NewEarningsItem(e))
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	totalPages := (total + limit - 1) / limit
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": out,
+		"pagination": dto.PaginationMeta{
+			CurrentPage: page,
+			Limit:       limit,
+			TotalItems:  total,
+			TotalPages:  totalPages,
+		},
+	})
 }
 
 // GetNearbyDriversAllTypes handles GET /drivers/nearby/all?lat=...&lng=...&radius=...

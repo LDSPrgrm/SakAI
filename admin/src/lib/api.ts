@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
-// SakAI API Client — typed wrapper for all endpoints in swagger.yaml v1.1.0
-// Base URL: http://localhost:8080/api  (override via VITE_API_URL)
+// SakAI API Client — typed wrapper for all endpoints in swagger.yaml v1.2.0
+// Base URL: configured via VITE_API_URL; falls back to /api (same-origin proxy).
 // ---------------------------------------------------------------------------
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://192.168.100.43/api';
+const BASE_URL = (import.meta.env.VITE_API_URL as string) || '/api';
 
 // ── Token storage ────────────────────────────────────────────────────────────
 

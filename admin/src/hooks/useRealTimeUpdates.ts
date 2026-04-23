@@ -30,13 +30,21 @@ export function useRealTimeUpdates<T = unknown>(
   const [error, setError] = useState<Error | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Hold the latest fetcher in a ref so callers passing inline arrows don't
+  // re-trigger the effect every render (would cause interval churn + refetch
+  // storm). The effect itself depends only on enabled/intervalMs.
+  const fetcherRef = useRef(fetcher);
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
+
   useEffect(() => {
     if (!enabled) return;
 
     let cancelled = false;
     const tick = async () => {
       try {
-        const next = await fetcher();
+        const next = await fetcherRef.current();
         if (!cancelled) setEvents(next);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err : new Error(String(err)));
@@ -49,7 +57,7 @@ export function useRealTimeUpdates<T = unknown>(
       cancelled = true;
       if (timer.current) clearInterval(timer.current);
     };
-  }, [enabled, intervalMs, fetcher]);
+  }, [enabled, intervalMs]);
 
   return { events, error };
 }

@@ -6,6 +6,7 @@ import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { RoleBadge } from '../shared/RoleBadge';
 import { DateDisplay } from '../shared/DateDisplay';
+import { displayRole } from '@/utils/displayRole';
 import type { AdminUser } from '@/types/super-admin';
 
 interface AdminTableProps {
@@ -20,7 +21,7 @@ export function AdminTable({ data, onEdit, onSuspend, onDeactivate, className }:
   const columns: ColumnDef<AdminUser>[] = [
     { accessorKey: 'name',          header: 'Name' },
     { accessorKey: 'email',         header: 'Email' },
-    { accessorKey: 'role',          header: 'Role',         cell: ({ getValue }) => <RoleBadge role={String(getValue())} /> },
+    { id: 'role',                   header: 'Role',         accessorFn: (u) => displayRole(u), cell: ({ getValue }) => <RoleBadge role={String(getValue())} /> },
     { accessorKey: 'status',        header: 'Status',       cell: ({ getValue }) => <StatusBadge status={String(getValue())} /> },
     { accessorKey: 'last_login_at', header: 'Last Login',   cell: ({ getValue }) => <DateDisplay iso={getValue() as string | null} format="relative" /> },
     { accessorKey: 'created_at',    header: 'Created',      cell: ({ getValue }) => <DateDisplay iso={getValue() as string} format="date" /> },

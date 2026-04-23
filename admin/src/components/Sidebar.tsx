@@ -2,30 +2,43 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  AlertTriangle,
   LayoutDashboard, Users, Car, CreditCard, ShieldAlert, BarChart3, Settings
 } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions, type PermissionKey } from '@/hooks/usePermissions';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const navItems = [
-  { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/users', label: 'User Management', icon: Users },
-  { path: '/admin/rides', label: 'Ride Management', icon: Car },
-  { path: '/admin/payments', label: 'Payments & Earnings', icon: CreditCard },
-  { path: '/admin/fare', label: 'Fare & Surge', icon: PhpIcon },
-  { path: '/admin/safety', label: 'Safety & Compliance', icon: ShieldAlert },
-  { path: '/admin/reports', label: 'Reports & Analytics', icon: BarChart3 },
-  { path: '/admin/settings', label: 'Settings', icon: Settings },
+const navItems: { path: string; label: string; icon: React.ElementType; perm: PermissionKey }[] = [
+  { path: '/admin/dashboard', label: 'Dashboard',            icon: LayoutDashboard, perm: 'dashboard' },
+  { path: '/admin/users',     label: 'User Management',      icon: Users,            perm: 'user_management' },
+  { path: '/admin/rides',     label: 'Ride Management',      icon: Car,              perm: 'user_management' },
+  { path: '/admin/payments',  label: 'Payments & Earnings',  icon: CreditCard,       perm: 'payments' },
+  { path: '/admin/fare',      label: 'Fare & Surge',         icon: PhpIcon,          perm: 'fare_config' },
+  { path: '/admin/safety',    label: 'Safety & Compliance',  icon: ShieldAlert,      perm: 'safety_incidents' },
+  { path: '/admin/reports',   label: 'Reports & Analytics',  icon: BarChart3,        perm: 'reports' },
+  { path: '/admin/settings',  label: 'Settings',             icon: Settings,         perm: 'system_config' },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
+  const { can, error } = usePermissions();
   const location = useLocation();
+
+  const visibleItems = navItems.filter((item) => can(item.perm, 'read'));
+
+  // Permissions fetch failed for a non-superadmin: surface the error and keep
+  // Dashboard visible so the user isn't stranded on a blank sidebar.
+  const showFallback =
+    !!error && user?.role !== 'superadmin' && visibleItems.length === 0;
+  const itemsToRender = showFallback
+    ? navItems.filter((i) => i.perm === 'dashboard')
+    : visibleItems;
 
   return (
     <aside
@@ -43,7 +56,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {showFallback && (
+          <div
+            role="alert"
+            className="mb-3 flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+          >
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>
+              Failed to load permissions. Please retry or contact a superadmin.
+            </span>
+          </div>
+        )}
+        {itemsToRender.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname.startsWith(item.path);
           return (

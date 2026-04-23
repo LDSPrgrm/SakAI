@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
 import {
   PieChart,
@@ -17,19 +17,18 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
-import { reportsApi } from '@/api/super-admin/reports';
+import { useReportList, useReportChart, useExportReport } from '@/hooks/useReports';
+import type { ReportRange } from '@/api/super-admin/reports';
+import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+
+function toIsoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const COLORS = ['#1A73E8', '#34A853', '#FBBC05', '#EA4335', '#9C27B0'];
-
-const DARK_TOOLTIP = {
-  contentStyle: {
-    backgroundColor: '#1E1E1E',
-    borderColor: '#333',
-    color: '#FFF',
-  },
-};
+const COLORS = CHART_COLORS;
+const DARK_TOOLTIP = DARK_TOOLTIP_STYLE;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -39,72 +38,49 @@ interface ReportItem {
   description: string;
 }
 
-// ── Export helper ─────────────────────────────────────────────────────────────
-
-async function handleExport(type: string) {
-  const csv = await reportsApi.exportCsv(type);
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${type}-${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SAReports() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
   const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
-  const [reportList, setReportList] = useState<ReportItem[]>([]);
 
-  // Chart data states
-  const [vehicleData, setVehicleData] = useState<{ name: string; value: number }[]>([]);
-  const [paymentData, setPaymentData] = useState<{ name: string; value: number }[]>([]);
-  const [waitTimeData, setWaitTimeData] = useState<{ name: string; wait: number }[]>([]);
-  const [ratingsData, setRatingsData] = useState<
-    { name: string; driver: number; rider: number }[]
-  >([]);
+  const apiRange: ReportRange = useMemo(
+    () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
+    [dateRange.from, dateRange.to],
+  );
 
-  const [loading, setLoading] = useState(true);
+  const reportListQuery = useReportList();
+  const vehicleQuery = useReportChart('vehicle-distribution', apiRange);
+  const paymentQuery = useReportChart('payment-methods', apiRange);
+  const waitTimeQuery = useReportChart('wait-time', apiRange);
+  const ratingsQuery = useReportChart('average-ratings', apiRange);
+  const exportReport = useExportReport();
 
-  // ── Initial load ────────────────────────────────────────────────────────────
+  const reportList = (reportListQuery.data ?? []) as ReportItem[];
 
-  useEffect(() => {
-    async function initialLoad() {
-      setLoading(true);
-      const [list, vehicle, payment, waitTime, ratings] = await Promise.all([
-        reportsApi.getReportList(),
-        reportsApi.getChartData('rides-by-vehicle'),
-        reportsApi.getChartData('payment-method'),
-        reportsApi.getChartData('wait-time'),
-        reportsApi.getChartData('average-ratings'),
-      ]);
-      setReportList(list as ReportItem[]);
-      setVehicleData(vehicle as { name: string; value: number }[]);
-      setPaymentData(payment as { name: string; value: number }[]);
-      setWaitTimeData(waitTime as { name: string; wait: number }[]);
-      setRatingsData(
-        ratings as { name: string; driver: number; rider: number }[]
-      );
-      setLoading(false);
-    }
-    void initialLoad();
-  }, []);
+  // Backend returns { label, value } — normalise to { name, value } for recharts.
+  const vehicleData = ((vehicleQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const paymentData = ((paymentQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const waitTimeData = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? '', wait: d.wait ?? d.value ?? 0 }));
+  const ratingsData = (ratingsQuery.data ?? []) as {
+    name: string; driver: number; rider: number;
+  }[];
+  const loading = reportListQuery.isPending;
 
-  // ── Reload chart data when selectedReport changes ───────────────────────────
-
-  const reloadChartData = useCallback(async () => {
-    await reportsApi.getChartData(selectedReport);
-    // Additional chart-specific data can be wired here when backend ships
-  }, [selectedReport]);
-
-  useEffect(() => {
-    void reloadChartData();
-  }, [reloadChartData]);
-
-  // ── Export all (header-level) ──────────────────────────────────────────────
+  async function handleExport(type: string) {
+    const res = await exportReport.mutateAsync({ type, range: apiRange }).catch(() => null);
+    if (!res) return;
+    const blob = new Blob([res.data], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function handleExportAll() {
     await handleExport(selectedReport);

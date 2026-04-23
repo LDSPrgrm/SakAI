@@ -4,19 +4,21 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sakai/backend/internal/domain"
 )
 
 type driverUseCase struct {
-	driverRepo domain.DriverRepository
-	rideRepo   domain.RideRepository
+	driverRepo   domain.DriverRepository
+	rideRepo     domain.RideRepository
+	earningsRepo domain.EarningsRepository
 }
 
 // NewDriverUseCase creates a new domain.DriverUseCase.
-func NewDriverUseCase(driverRepo domain.DriverRepository, rideRepo domain.RideRepository) domain.DriverUseCase {
-	return &driverUseCase{driverRepo: driverRepo, rideRepo: rideRepo}
+func NewDriverUseCase(driverRepo domain.DriverRepository, rideRepo domain.RideRepository, earningsRepo domain.EarningsRepository) domain.DriverUseCase {
+	return &driverUseCase{driverRepo: driverRepo, rideRepo: rideRepo, earningsRepo: earningsRepo}
 }
 
 func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) error {
@@ -66,6 +68,10 @@ func (uc *driverUseCase) GetActiveRide(ctx context.Context, driverID uuid.UUID) 
 
 func (uc *driverUseCase) GetNearbyDrivers(ctx context.Context, lat, lng float64, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
 	return uc.driverRepo.FindNearbyOnlineByType(ctx, lat, lng, radiusM, rideType)
+}
+
+func (uc *driverUseCase) GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*domain.DriverEarnings, int, error) {
+	return uc.earningsRepo.ListByDriverID(ctx, driverID, from, to, page, limit)
 }
 
 // GetNearbyDriversAllTypes returns online drivers grouped by vehicle type.

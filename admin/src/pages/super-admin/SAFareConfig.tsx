@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Zap, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -9,9 +10,15 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
-import { faresApi } from '@/api/super-admin/fares';
+import {
+  useFareConfigs, useSurgeConfig,
+  useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
+} from '@/hooks/useFareConfig';
 import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
+import { DEFAULT_FARE_BY_VEHICLE } from '@/constants/fareDefaults';
+import { SurgeZoneEditor } from '@/components/super-admin/fares/SurgeZoneEditor';
+import type { SurgeZone } from '@/lib/maps';
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -54,6 +61,7 @@ interface FareTabFormProps {
 function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<FareFormValues | null>(null);
+  const updateFares = useUpdateFareConfig();
 
   const {
     register,
@@ -79,7 +87,7 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
 
   async function handleConfirm() {
     if (!pendingValues) return;
-    await faresApi.updateConfigs([pendingValues as any]);
+    await updateFares.mutateAsync([{ ...pendingValues, vehicle_type: config.vehicle_type }]);
     setConfirmOpen(false);
     setPendingValues(null);
     onSaved();
@@ -115,7 +123,7 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <p className="text-xs text-text-muted">
             Last updated by{' '}
-            <span className="text-text-main">{config.updated_by}</span>
+            <span className="text-text-main">{config.updated_by_name || config.updated_by || '—'}</span>
           </p>
           <Button type="submit" size="sm" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : 'Save Changes'}
@@ -139,15 +147,37 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SAFareConfig() {
-  const [fareConfigs, setFareConfigs] = useState<FareConfig[]>([]);
-  const [surgeConfig, setSurgeConfig] = useState<SurgeConfig | null>(null);
-  const [bannerVisible, setBannerVisible] = useState(false);
+  const qc = useQueryClient();
+  const fareQuery = useFareConfigs();
+  const surgeQuery = useSurgeConfig();
+  const updateSurge = useUpdateSurgeConfig();
+  const simulateFare = useSimulateFare();
 
-  // Surge local state (controlled)
+  const fareConfigs = fareQuery.data ?? [];
+  const surgeConfig = surgeQuery.data ?? null;
+
+  const [bannerVisible, setBannerVisible] = useState(false);
   const [surgeEnabled, setSurgeEnabled] = useState(false);
   const [maxMultiplier, setMaxMultiplier] = useState('2.5');
   const [triggerRatio, setTriggerRatio] = useState('1.5');
-  const [surgeSaving, setSurgeSaving] = useState(false);
+  const [zones, setZones] = useState<SurgeZone[]>([]);
+
+  // Sync local surge form state once the query resolves / updates.
+  useEffect(() => {
+    if (!surgeConfig) return;
+    setSurgeEnabled(surgeConfig.enabled ?? false);
+    setMaxMultiplier(String(surgeConfig.max_multiplier ?? 2.5));
+    setTriggerRatio(String(surgeConfig.trigger_ratio ?? 1.5));
+    // Backend stores zones as JSONB SurgeZone[]. openapi regen now types it
+    // correctly; the cast is only needed to narrow the inner polygon rows
+    // from `number[][]` to `[number, number][]`.
+    const raw = surgeConfig.zones;
+    if (Array.isArray(raw)) {
+      setZones(raw as unknown as SurgeZone[]);
+    } else {
+      setZones([]);
+    }
+  }, [surgeConfig]);
 
   // Simulator
   const [simDistance, setSimDistance] = useState('');
@@ -155,31 +185,10 @@ export function SAFareConfig() {
   const [simVehicle, setSimVehicle] = useState<VehicleTab>('motorcycle');
   const [simResult, setSimResult] = useState<number | null>(null);
   const [simError, setSimError] = useState('');
-  const [simLoading, setSimLoading] = useState(false);
 
-  // Data loading state
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const [configs, surge] = await Promise.all([
-          faresApi.getConfigs(),
-          faresApi.getSurge(),
-        ]);
-        setFareConfigs(configs || []);
-        setSurgeConfig(surge || { enabled: false, max_multiplier: 1, trigger_ratio: 1 } as SurgeConfig);
-        setSurgeEnabled(surge?.enabled ?? false);
-        setMaxMultiplier(String(surge?.max_multiplier ?? 2.5));
-        setTriggerRatio(String(surge?.trigger_ratio ?? 1.5));
-      } catch (err) {
-        console.error('Failed to load fare configs', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    load();
-  }, []);
+  const isLoading = fareQuery.isPending || surgeQuery.isPending;
+  const surgeSaving = updateSurge.isPending;
+  const simLoading = simulateFare.isPending;
 
   function showBanner() {
     setBannerVisible(true);
@@ -188,14 +197,13 @@ export function SAFareConfig() {
 
   async function saveSurge() {
     if (!surgeConfig) return;
-    setSurgeSaving(true);
-    const updated = await faresApi.updateSurge({
+    const payload = {
       enabled: surgeEnabled,
       max_multiplier: parseFloat(maxMultiplier) || surgeConfig.max_multiplier,
       trigger_ratio: parseFloat(triggerRatio) || surgeConfig.trigger_ratio,
-    });
-    setSurgeConfig(updated);
-    setSurgeSaving(false);
+      zones: zones as unknown as SurgeConfig['zones'],
+    };
+    await updateSurge.mutateAsync(payload);
     showBanner();
   }
 
@@ -212,14 +220,12 @@ export function SAFareConfig() {
       setSimError('Enter a valid time (minutes).');
       return;
     }
-    setSimLoading(true);
-    const result = await faresApi.simulate(
-      simVehicle,
-      { lat: 14.5995, lng: 120.9842 },
-      { lat: 14.5995 + dist * 0.01, lng: 120.9842 + time * 0.001 },
-    );
+    const result = await simulateFare.mutateAsync({
+      vehicle: simVehicle,
+      origin: { lat: 14.5995, lng: 120.9842 },
+      destination: { lat: 14.5995 + dist * 0.01, lng: 120.9842 + time * 0.001 },
+    });
     setSimResult(result);
-    setSimLoading(false);
   }
 
   if (isLoading) {
@@ -257,13 +263,7 @@ export function SAFareConfig() {
               {VEHICLE_TABS.map(({ value }) => {
                 const config = fareConfigs.find((f) => f.vehicle_type === value) || {
                   id: 'new',
-                  vehicle_type: value,
-                  base_fare: 0,
-                  per_km_rate: 0,
-                  per_min_rate: 0,
-                  minimum_fare: 0,
-                  booking_fee: 0,
-                  cancellation_fee: 0,
+                  ...DEFAULT_FARE_BY_VEHICLE[value],
                   updated_by: '—',
                   updated_at: new Date().toISOString(),
                 };
@@ -272,7 +272,8 @@ export function SAFareConfig() {
                     <FareTabForm
                       config={config as FareConfig}
                       onSaved={() => {
-                        faresApi.getConfigs().then((res) => setFareConfigs(res as unknown as FareConfig[] || []));
+                        void qc.invalidateQueries({ queryKey: ['fare-configs'] });
+                        void qc.invalidateQueries({ queryKey: ['fares'] });
                       }}
                       onBannerShow={showBanner}
                     />
@@ -359,10 +360,6 @@ export function SAFareConfig() {
                 disabled={surgeSaving}
               >
                 {surgeSaving ? 'Saving…' : 'Save Surge Settings'}
-              </Button>
-
-              <Button variant="outline" className="w-full">
-                Manage Surge Zones
               </Button>
             </CardContent>
           </Card>
@@ -457,6 +454,12 @@ export function SAFareConfig() {
           </Card>
         </div>
       </div>
+
+      <SurgeZoneEditor
+        value={zones}
+        onChange={setZones}
+        disabled={!surgeEnabled}
+      />
     </div>
   );
 }

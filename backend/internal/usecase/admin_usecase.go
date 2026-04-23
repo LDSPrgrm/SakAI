@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -127,8 +128,8 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 	return user, nil
 }
 
-func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, status domain.UserRole) error {
-	// Business Rule: Cannot modify own role/status (prevents accidental self-demotion)
+func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID uuid.UUID, name, email *string, roleID uuid.UUID) error {
+	// Cannot modify own role/profile (prevents accidental self-demotion).
 	if actorID == targetID {
 		return errors.New("cannot modify own account status")
 	}
@@ -138,8 +139,19 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		return err
 	}
 
-	// Business Rule: Cannot deactivate the last superadmin
-	if oldUser.Role == domain.RoleSuperadmin && status != domain.RoleSuperadmin {
+	// Resolve the picked role row → ENUM bucket. Custom roles bucket into
+	// RoleAdmin; system roles map to their named ENUM value.
+	role, err := uc.roleRepo.GetRoleByID(ctx, roleID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return err
+		}
+		return fmt.Errorf("invalid role_id: %w", err)
+	}
+	enumRole := roleNameToEnum(role.Name)
+
+	// Cannot remove the last superadmin.
+	if oldUser.Role == domain.RoleSuperadmin && enumRole != domain.RoleSuperadmin {
 		admins, _ := uc.adminRepo.GetAdmins(ctx)
 		superCount := 0
 		for _, a := range admins {
@@ -152,11 +164,37 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		}
 	}
 
-	if err := uc.adminRepo.UpdateAdminStatus(ctx, targetID, status); err != nil {
+	// Cannot promote a non-superadmin to superadmin via this endpoint.
+	// Superadmin provisioning must stay out-of-band (seed / direct DB).
+	if oldUser.Role != domain.RoleSuperadmin && enumRole == domain.RoleSuperadmin {
+		return errors.New("cannot promote to superadmin via role update")
+	}
+
+	// Resolve name / email — absent fields keep their old value.
+	newName := oldUser.Name
+	newEmail := oldUser.Email
+	if name != nil {
+		newName = strings.TrimSpace(*name)
+	}
+	if email != nil {
+		newEmail = strings.TrimSpace(*email)
+	}
+
+	// Email collision check — only if it actually changed.
+	if newEmail != oldUser.Email {
+		other, err := uc.userRepo.GetByEmail(ctx, newEmail)
+		if err == nil && other.ID != targetID {
+			return domain.ErrEmailAlreadyRegistered
+		}
+		if err != nil && !errors.Is(err, domain.ErrNotFound) {
+			return err
+		}
+	}
+
+	if err := uc.adminRepo.UpdateAdminProfile(ctx, targetID, newName, newEmail, enumRole, roleID); err != nil {
 		return err
 	}
 
-	// Audit
 	before, _ := json.Marshal(oldUser)
 	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
 		ActorID:      actorID,
@@ -164,8 +202,10 @@ func (uc *adminUseCase) UpdateAdminStatus(ctx context.Context, actorID, targetID
 		ResourceType: "admin_user",
 		ResourceID:   targetID.String(),
 		BeforeState:  before,
-		AfterState:   []byte(fmt.Sprintf(`{"role": "%s"}`, status)),
-		IPAddress:    "internal",
+		AfterState: []byte(fmt.Sprintf(
+			`{"name":%q,"email":%q,"role":%q,"role_id":%q}`,
+			newName, newEmail, enumRole, roleID)),
+		IPAddress: "internal",
 	})
 
 	return nil
@@ -213,12 +253,91 @@ func (uc *adminUseCase) GetAdminActivity(ctx context.Context, adminID uuid.UUID)
 	return logs, err
 }
 
+// ResetUserPassword lets a superadmin set another admin's password without
+// knowing the current one. The target account must exist.
+func (uc *adminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID uuid.UUID, newPassword string) error {
+	if actorID == targetID {
+		return errors.New("use /admin/auth/password to change your own password")
+	}
+	if len(newPassword) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+
+	target, err := uc.userRepo.GetByID(ctx, targetID)
+	if err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := uc.userRepo.UpdatePassword(ctx, targetID, string(hash)); err != nil {
+		return err
+	}
+
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "RESET_PASSWORD",
+		ResourceType: "admin_user",
+		ResourceID:   targetID.String(),
+		AfterState:   []byte(fmt.Sprintf(`{"email":%q}`, target.Email)),
+		IPAddress:    "internal",
+	})
+	return nil
+}
+
 func (uc *adminUseCase) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
 	return uc.incidentRepo.ListIncidents(ctx, status)
 }
 
 func (uc *adminUseCase) ResolveIncident(ctx context.Context, actorID, incidentID uuid.UUID, notes string) error {
-	return uc.incidentRepo.UpdateIncident(ctx, incidentID, "resolved", notes, &actorID)
+	if err := uc.incidentRepo.UpdateIncident(ctx, incidentID, "resolved", notes, &actorID); err != nil {
+		return err
+	}
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "RESOLVE_INCIDENT",
+		ResourceType: "incident",
+		ResourceID:   incidentID.String(),
+		Reason:       notes,
+		IPAddress:    "internal",
+	})
+	return nil
+}
+
+// GetIncident returns the incident plus its full status-history timeline.
+func (uc *adminUseCase) GetIncident(ctx context.Context, incidentID uuid.UUID) (*domain.IncidentDetail, error) {
+	inc, err := uc.incidentRepo.GetIncidentByID(ctx, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	history, err := uc.incidentRepo.ListStatusHistory(ctx, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.IncidentDetail{Incident: inc, StatusHistory: history}, nil
+}
+
+// AssignIncident reassigns an incident to another support operator (or clears
+// the assignee with nil). The DB trigger records the change automatically.
+func (uc *adminUseCase) AssignIncident(ctx context.Context, actorID, incidentID uuid.UUID, assigneeID *uuid.UUID) error {
+	if err := uc.incidentRepo.AssignIncident(ctx, incidentID, assigneeID); err != nil {
+		return err
+	}
+	afterJSON := `null`
+	if assigneeID != nil {
+		afterJSON = fmt.Sprintf(`{"assigned_to":%q}`, assigneeID.String())
+	}
+	_ = uc.auditRepo.Store(ctx, &domain.AuditLogEntry{
+		ActorID:      actorID,
+		Action:       "ASSIGN_INCIDENT",
+		ResourceType: "incident",
+		ResourceID:   incidentID.String(),
+		AfterState:   []byte(afterJSON),
+		IPAddress:    "internal",
+	})
+	return nil
 }
 
 func (uc *adminUseCase) ListRides(ctx context.Context, filter domain.AdminRideFilter) ([]*domain.AdminRideItem, domain.PaginationMeta, error) {
@@ -361,10 +480,22 @@ func (uc *fareUseCase) SimulateFare(ctx context.Context, vehicleType string, ori
 
 	// Simple Euclidean distance for simulation (in production use Mapbox/Google)
 	dist := origin.DistanceTo(destination) / 1000.0 // km
-	
+
 	total := config.BaseFare + (dist * config.PerKmRate) + config.BookingFee
 	if total < config.MinimumFare {
 		total = config.MinimumFare
+	}
+
+	// Surge: if enabled, apply zone-specific multiplier when origin sits inside
+	// a configured zone polygon, otherwise fall back to the global multiplier.
+	if surge, err := uc.fareRepo.GetSurgeConfig(ctx); err == nil && surge != nil && surge.Enabled {
+		multiplier := surge.MaxMultiplier
+		if _, zm, ok := FindZoneMultiplier(ParseSurgeZones(surge.Zones), origin); ok {
+			multiplier = zm
+		}
+		if multiplier > 1.0 {
+			total *= multiplier
+		}
 	}
 
 	return total, nil

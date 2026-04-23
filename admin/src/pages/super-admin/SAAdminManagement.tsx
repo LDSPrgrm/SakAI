@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React, { useState } from 'react';
 import { Plus, Search, Pencil, Ban, CheckCircle, X, Trash2, Activity, Key } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -13,36 +10,33 @@ import {
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { useQueryClient } from '@tanstack/react-query';
 import { adminsApi } from '@/api/super-admin/admins';
-import { rolesApi } from '@/api/super-admin/roles';
-import type { AdminUser, AdminRole, AdminStatus, AdminRoleDefinition } from '@/types/super-admin';
-
-// ── Zod schema ───────────────────────────────────────────────────────────────
-
-const adminSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Must be a valid email address'),
-  role: z.string().min(1, 'Role is required'),
-  status: z.enum(['active', 'suspended', 'deactivated']),
-  password: z.string().min(8, 'Must be at least 8 characters').optional().or(z.literal('')),
-});
-
-type AdminFormValues = z.infer<typeof adminSchema>;
+import { useAdmins } from '@/hooks/useAdmins';
+import { useRoles } from '@/hooks/useRoles';
+import { useAuth } from '@/hooks/useAuth';
+import { formatDate } from '@/utils/formatDate';
+import { displayRole } from '@/utils/displayRole';
+import { AdminForm, type AdminFormValues } from '@/components/super-admin/forms/AdminForm';
+import { PasswordResetResultModal } from '@/components/super-admin/modals/PasswordResetResultModal';
+import type { AdminUser, AdminRole, AdminRoleDefinition } from '@/types/super-admin';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const ROLE_BADGE: Record<string, 'danger' | 'info' | 'warning' | 'default'> = {
-  super_admin: 'danger',
+  admin:      'info',
+  superadmin: 'danger',
   operations: 'info',
-  finance: 'warning',
-  support: 'default',
+  finance:    'warning',
+  support:    'default',
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Super Admin',
+  admin:      'Admin',
+  superadmin: 'Super Admin',
   operations: 'Operations',
-  finance: 'Finance',
-  support: 'Support',
+  finance:    'Finance',
+  support:    'Support',
 };
 
 function roleLabel(role: string): string {
@@ -53,27 +47,20 @@ function roleBadgeVariant(role: string): 'danger' | 'info' | 'warning' | 'defaul
   return ROLE_BADGE[role] ?? 'default';
 }
 
-function formatDate(iso: string | null): string {
-  if (!iso) return 'Never';
-  return new Date(iso).toLocaleDateString('en-PH', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
-}
-
-// Hardcoded current user ID (replace with auth context if available)
-const CURRENT_USER_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-
-/** Convert backend ENUM role ("superadmin") to roles-table name ("super_admin"). */
-function toFormRole(role: string): string {
-  if (role === 'superadmin') return 'super_admin';
-  return role;
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function SAAdminManagement() {
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [roleDefs, setRoleDefs] = useState<AdminRoleDefinition[]>([]);
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? '';
+  const qc = useQueryClient();
+  const adminsQuery = useAdmins();
+  const rolesQuery = useRoles();
+  const admins: AdminUser[] = adminsQuery.data ?? [];
+  const roleDefs: AdminRoleDefinition[] = rolesQuery.data ?? [];
+  const invalidateAdminsAndRoles = () => {
+    qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
+    qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
+  };
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -87,19 +74,7 @@ export function SAAdminManagement() {
   }>({ open: false, type: 'suspend', admin: null });
 
   const [resetResult, setResetResult] = useState<{ open: boolean; password?: string; admin?: AdminUser | null }>({ open: false });
-
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } =
-    useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
-
-  async function loadAdmins() {
-    const list = await adminsApi.list() as unknown as AdminUser[];
-    setAdmins(list);
-  }
-
-  useEffect(() => {
-    loadAdmins();
-    rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
-  }, []);
+  const [formInitial, setFormInitial] = useState<Partial<AdminFormValues> | undefined>(undefined);
 
   function generatePassword() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -110,25 +85,23 @@ export function SAAdminManagement() {
 
   async function openAdd() {
     setEditingAdmin(null);
-    setApiError(null); // Clear any previous errors
-    reset({ name: '', email: '', role: 'support', status: 'active', password: generatePassword() });
-    // Refresh roleDefs to include any newly created custom roles
-    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
+    setApiError(null);
+    setFormInitial({ name: '', email: '', role: 'support', status: 'active', password: generatePassword() });
+    await qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
     setModalOpen(true);
   }
 
   async function openEdit(admin: AdminUser) {
     setEditingAdmin(admin);
-    setApiError(null); // Clear any previous errors
-    reset({
+    setApiError(null);
+    setFormInitial({
       name: admin.name,
       email: admin.email,
-      role: toFormRole(admin.role),
+      role: displayRole(admin, roleDefs),
       status: admin.status ?? 'active',
       password: '',
     });
-    // Refresh roleDefs to include any newly created custom roles
-    await rolesApi.list().then(r => setRoleDefs(r as unknown as AdminRoleDefinition[])).catch(() => {});
+    await qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
     setModalOpen(true);
   }
 
@@ -137,14 +110,20 @@ export function SAAdminManagement() {
 
     try {
       if (editingAdmin) {
-        // Compare normalized forms so "superadmin" == "super_admin" doesn't trigger a spurious confirm
-        const currentRole = toFormRole(editingAdmin.role);
-        if (currentRole !== values.role) {
+        if (displayRole(editingAdmin, roleDefs) !== values.role) {
           setConfirmModal({ open: true, type: 'role_change', admin: editingAdmin, pendingData: values });
           return;
         }
-        // update() only sends { role } — role_id not needed here
-        await adminsApi.update(editingAdmin.id, { role: values.role } as any);
+        const def = roleDefs.find(r => r.name === values.role);
+        if (!def) {
+          setApiError('Selected role not found. Please refresh the page or select a different role.');
+          return;
+        }
+        await adminsApi.update(editingAdmin.id, {
+          name:    values.name,
+          email:   values.email,
+          role_id: def.id,
+        });
       } else {
         // Create needs role_id to link the new user to the roles table
         const selectedRoleDef = roleDefs.find(r => r.name === values.role);
@@ -160,9 +139,11 @@ export function SAAdminManagement() {
         });
       }
       setModalOpen(false);
-      await loadAdmins();
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to save admin. Please try again.';
+      invalidateAdminsAndRoles();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to save admin. Please try again.';
       setApiError(errorMessage);
     }
   }
@@ -178,22 +159,31 @@ export function SAAdminManagement() {
       await adminsApi.resetPassword(admin.id, newPass);
       setResetResult({ open: true, password: newPass, admin });
     } else if (confirmModal.type === 'role_change' && confirmModal.pendingData) {
-      await adminsApi.update(admin.id, { role: confirmModal.pendingData.role } as any);
+      const def = roleDefs.find(r => r.name === confirmModal.pendingData!.role);
+      if (!def) {
+        setApiError('Selected role not found. Please refresh the page or select a different role.');
+        return;
+      }
+      await adminsApi.update(admin.id, {
+        name:    confirmModal.pendingData.name,
+        email:   confirmModal.pendingData.email,
+        role_id: def.id,
+      });
       setModalOpen(false);
     }
 
-    await loadAdmins();
+    invalidateAdminsAndRoles();
     setConfirmModal({ open: false, type: 'suspend', admin: null });
   }
 
-  const superAdminCount = admins.filter((a) => a.role === 'super_admin').length;
+  const superAdminCount = admins.filter((a) => a.role === 'superadmin').length;
 
   const filtered = admins.filter((a) => {
     const q = search.toLowerCase();
     return (
       a.name.toLowerCase().includes(q) ||
       a.email.toLowerCase().includes(q) ||
-      a.role.toLowerCase().includes(q)
+      displayRole(a, roleDefs).toLowerCase().includes(q)
     );
   });
 
@@ -249,9 +239,9 @@ export function SAAdminManagement() {
                   </TableRow>
                 )}
                 {filtered.map((admin) => {
-                  const isSelf = admin.id === CURRENT_USER_ID;
+                  const isSelf = admin.id === currentUserId;
                   const isLastSuperAdmin =
-                    admin.role === 'super_admin' && superAdminCount === 1;
+                    admin.role === 'superadmin' && superAdminCount === 1;
                   const canAct = !isSelf && !isLastSuperAdmin;
 
                   return (
@@ -264,8 +254,8 @@ export function SAAdminManagement() {
 
                       {/* Role */}
                       <TableCell>
-                        <Badge variant={roleBadgeVariant(admin.role)}>
-                          {roleLabel(admin.role)}
+                        <Badge variant={roleBadgeVariant(displayRole(admin, roleDefs))}>
+                          {roleLabel(displayRole(admin, roleDefs))}
                         </Badge>
                       </TableCell>
 
@@ -361,7 +351,6 @@ export function SAAdminManagement() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-surface border border-border rounded-xl w-full max-w-md shadow-xl">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border">
               <h2 className="text-base font-semibold text-text-main">
                 {editingAdmin ? 'Edit Admin' : 'Add Admin'}
@@ -371,137 +360,14 @@ export function SAAdminManagement() {
               </Button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
-              {/* Error Message Display */}
-              {apiError && (
-                <div className="bg-danger/10 border border-danger rounded-lg p-3 flex items-start gap-2">
-                  <X className="w-4 h-4 text-danger mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-danger">{apiError}</p>
-                </div>
-              )}
-
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">
-                  Full Name
-                </label>
-                <Input
-                  {...register('name')}
-                  placeholder="e.g. Maria Santos"
-                  className={errors.name ? 'border-danger' : ''}
-                />
-                {errors.name && (
-                  <p className="text-xs text-danger mt-1">{errors.name.message}</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">
-                  Email Address
-                </label>
-                <Input
-                  {...register('email')}
-                  type="email"
-                  placeholder="e.g. maria@sakai.ph"
-                  className={errors.email ? 'border-danger' : ''}
-                />
-                {errors.email && (
-                  <p className="text-xs text-danger mt-1">{errors.email.message}</p>
-                )}
-              </div>
-
-              {/* Password (Create Only) */}
-              {!editingAdmin && (
-                <div>
-                  <label className="block text-sm font-medium text-text-muted mb-1">
-                    Temporary Password
-                  </label>
-                  <Input
-                    {...register('password')}
-                    type="text"
-                    placeholder="Must be at least 8 characters"
-                    className={errors.password ? 'border-danger' : ''}
-                  />
-                  {errors.password && (
-                    <p className="text-xs text-danger mt-1">{errors.password.message}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Role */}
-              <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">
-                  Role
-                </label>
-                <Controller
-                  name="role"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {roleDefs.length > 0 ? (
-                        roleDefs.map((r) => (
-                          <option key={r.id} value={r.name}>{roleLabel(r.name)}</option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="super_admin">Super Admin</option>
-                          <option value="operations">Operations</option>
-                          <option value="finance">Finance</option>
-                          <option value="support">Support</option>
-                        </>
-                      )}
-                    </select>
-                  )}
-                />
-                {errors.role && (
-                  <p className="text-xs text-danger mt-1">{errors.role.message}</p>
-                )}
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">
-                  Status
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="active">Active</option>
-                      <option value="suspended">Suspended</option>
-                      <option value="deactivated">Deactivated</option>
-                    </select>
-                  )}
-                />
-                {errors.status && (
-                  <p className="text-xs text-danger mt-1">{errors.status.message}</p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { setApiError(null); setModalOpen(false); }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
-            </form>
+            <AdminForm
+              mode={editingAdmin ? 'edit' : 'add'}
+              initial={formInitial}
+              roleDefinitions={roleDefs}
+              apiError={apiError}
+              onSubmit={onSubmit}
+              onCancel={() => { setApiError(null); setModalOpen(false); }}
+            />
           </div>
         </div>
       )}
@@ -538,26 +404,13 @@ export function SAAdminManagement() {
       />
 
       {/* Reset Result Modal */}
+      {/* TODO: replace with one-time magic-link flow — requires backend endpoint. */}
       {resetResult.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-surface border border-border rounded-xl w-full max-w-sm shadow-xl p-6 text-center space-y-4">
-            <div className="mx-auto bg-success/20 text-success rounded-full w-12 h-12 flex items-center justify-center mb-2">
-              <CheckCircle className="w-6 h-6" />
-            </div>
-            <h2 className="text-lg font-semibold text-text-main">Password Reset</h2>
-            <p className="text-sm text-text-muted">
-              The password for <strong>{resetResult.admin?.name}</strong> has been reset. Share this temporary password securely:
-            </p>
-            <div className="bg-background border border-border rounded p-3 font-mono text-center text-lg select-all">
-              {resetResult.password}
-            </div>
-            <div className="pt-4">
-              <Button className="w-full" onClick={() => setResetResult({ open: false })}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PasswordResetResultModal
+          adminName={resetResult.admin?.name ?? ''}
+          password={resetResult.password ?? ''}
+          onClose={() => setResetResult({ open: false, password: undefined, admin: null })}
+        />
       )}
     </div>
   );

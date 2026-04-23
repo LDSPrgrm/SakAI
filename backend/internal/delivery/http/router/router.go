@@ -31,7 +31,16 @@ type Deps struct {
 	PayProcess     *handler.RidePaymentHandler
 	Tip            *handler.TipHandler
 	PaymentMethod  *handler.PaymentMethodHandler
+	ServiceArea    *handler.ServiceAreaHandler
+	LGUPartnership *handler.LGUPartnershipHandler
+	Alert          *handler.AlertHandler
 	WS             *ws.Handler
+	// PerfSampler receives per-request timing samples for the System Health
+	// dashboard. May be nil in tests — the middleware no-ops in that case.
+	PerfSampler    middleware.PerfSampler
+	// FilesRoot is the absolute directory that backs authenticated
+	// GET /files/* responses. Empty disables the route.
+	FilesRoot      string
 }
 
 // New builds and returns the configured Gin engine.
@@ -44,6 +53,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(middleware.CORS())
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.Perf(d.PerfSampler))
 
 	api := r.Group("/api")
 
@@ -51,6 +61,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// ── Public: service area coverage (mobile discovery) ─────────────────────
+	if d.ServiceArea != nil {
+		api.GET("/service-area", d.ServiceArea.ListPublic)
+	}
 
 	// ── Public auth routes ────────────────────────────────────────────────────
 	auth := api.Group("/auth")
@@ -78,11 +93,18 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			driverOnly.PUT("/location", d.Driver.UpdateLocation)
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
 			driverOnly.GET("/rides", d.Ride.ListDriverRides)
+			driverOnly.GET("/earnings", d.Driver.GetEarnings)
 		}
 
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
 		admin := authed.Group("/admin")
 		{
+			// Self-scoped: any authenticated user may read their own role's
+			// permissions to drive sidebar/UI gating. No RequireRole wrapper
+			// so non-superadmin admins (operations/finance/support/admin)
+			// can still fetch.
+			admin.GET("/me/permissions", d.Role.GetMyPermissions)
+
 			// Dashboard
 			admin.GET("/dashboard", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.GetDashboard)
 
@@ -95,6 +117,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.GET("/metrics/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRides)
 			admin.GET("/metrics/revenue", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Metrics.GetRevenue)
 			admin.GET("/metrics/wait-time", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetWaitTime)
+			admin.GET("/drivers/heatmap", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetDriverHeatmap)
 
 			// Admin Management
 			admin.GET("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ListAdmins)
@@ -102,6 +125,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
 			admin.DELETE("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.DeactivateAdmin)
 			admin.GET("/users/:id/activity", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.GetAdminActivity)
+			admin.PUT("/users/:id/password", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ResetUserPassword)
 
 			// Role Management
 			admin.GET("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.ListRoles)
@@ -111,11 +135,12 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.DELETE("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DeleteRole)
 			admin.GET("/roles/:id/permissions", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRolePermissions)
 			admin.GET("/roles/:id/admins", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRoleAdmins)
+			admin.POST("/roles/:id/duplicate", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DuplicateRole)
 
 			// Ride & User browsing
 			admin.GET("/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.ListRides)
-			admin.GET("/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
-			admin.GET("/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
+			admin.GET("/users/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
+			admin.GET("/users/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
 
 			// Fare & Surge
 			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
@@ -132,11 +157,14 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			admin.POST("/payments/payouts/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.BatchApprovePayouts)
 			admin.GET("/payments/config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.GetGatewayConfigs)
 			admin.PUT("/payments/config/:provider", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateGatewayConfig)
-			admin.GET("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
-			admin.PUT("/payments/commission", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
+			admin.GET("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
+			admin.PUT("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
 
 			// Safety & Incidents
 			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
+			admin.GET("/support-staff", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListAssigneeCandidates)
+			admin.GET("/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.GetIncident)
+			admin.PUT("/incidents/:id/assign", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.AssignIncident)
 			admin.PUT("/incidents/:id/resolve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
 			admin.GET("/safety/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
 			admin.PUT("/safety/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
@@ -147,6 +175,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 			// System
 			admin.GET("/system/services", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.ListServices)
+			admin.GET("/system/infra-metrics", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.GetInfraMetrics)
 			admin.GET("/system/feature-flags", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListFeatureFlags)
 			admin.PUT("/system/feature-flags/:key", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateFeatureFlag)
 			admin.GET("/system/integrations", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListIntegrations)
@@ -163,6 +192,31 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			// Audit Log
 			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
 			admin.GET("/audit/export", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.Export)
+			admin.POST("/audit", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Audit.Create)
+
+			// Service areas (admin view — includes inactive) + LGU partnerships
+			if d.ServiceArea != nil {
+				admin.GET("/service-areas", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.ServiceArea.ListAdmin)
+				admin.POST("/service-areas", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Create)
+				admin.PUT("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Update)
+				admin.DELETE("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Delete)
+			}
+			if d.LGUPartnership != nil {
+				admin.GET("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.List)
+				admin.GET("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.Get)
+				admin.POST("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Create)
+				admin.PUT("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Update)
+				admin.DELETE("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Delete)
+			}
+
+			// Alerts — superadmin only
+			if d.Alert != nil {
+				admin.GET("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.ListRules)
+				admin.POST("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.CreateRule)
+				admin.PUT("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.UpdateRule)
+				admin.DELETE("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.DeleteRule)
+				admin.GET("/alerts/events", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Alert.ListEvents)
+			}
 		}
 
 
@@ -224,6 +278,12 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 		// WebSocket — any authenticated user
 		authed.GET("/ws", d.WS.ServeWS)
+
+		// Authenticated static-file serving for driver KYC docs + future uploads.
+		if d.FilesRoot != "" {
+			files := handler.NewFilesHandler(d.FilesRoot)
+			authed.GET("/files/*filepath", files.Serve)
+		}
 	}
 
 	return r

@@ -3,6 +3,7 @@ package dto
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sakai/backend/internal/domain"
 )
 
@@ -15,8 +16,13 @@ type DashboardResponse struct {
 	SystemUptime       float64 `json:"system_uptime"`
 }
 
+// UpdateAdminStatusRequest is the body of PUT /admin/users/:id.
+// `role_id` is required; `name` / `email` are optional — absent fields
+// keep the stored value. Email changes are checked for collision.
 type UpdateAdminStatusRequest struct {
-	Role domain.UserRole `json:"role" binding:"required"`
+	Name   *string   `json:"name,omitempty"  binding:"omitempty,min=1,max=120"`
+	Email  *string   `json:"email,omitempty" binding:"omitempty,email"`
+	RoleID uuid.UUID `json:"role_id"         binding:"required"`
 }
 
 type FareConfigDTO struct {
@@ -55,6 +61,7 @@ type IncidentDTO struct {
 	TriggeredBy     string     `json:"triggered_by"`
 	RiderID         string     `json:"rider_id"`
 	DriverID        string     `json:"driver_id"`
+	AssignedTo      *string    `json:"assigned_to,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
@@ -72,7 +79,7 @@ func NewDashboardResponse(m *domain.DashboardMetrics) *DashboardResponse {
 }
 
 func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
-	return &IncidentDTO{
+	dto := &IncidentDTO{
 		ID:              i.ID.String(),
 		RideID:          i.RideID.String(),
 		Type:            i.Type,
@@ -84,6 +91,61 @@ func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
 		ResolvedAt:      i.ResolvedAt,
 		ResolutionNotes: i.ResolutionNotes,
 	}
+	if i.AssignedTo != nil {
+		s := i.AssignedTo.String()
+		dto.AssignedTo = &s
+	}
+	return dto
+}
+
+// IncidentStatusEventDTO is a single row in the SOS timeline.
+type IncidentStatusEventDTO struct {
+	ID           string    `json:"id"`
+	FromStatus   *string   `json:"from_status,omitempty"`
+	ToStatus     string    `json:"to_status"`
+	FromAssignee *string   `json:"from_assignee,omitempty"`
+	ToAssignee   *string   `json:"to_assignee,omitempty"`
+	ActorID      *string   `json:"actor_id,omitempty"`
+	ActorName    string    `json:"actor_name,omitempty"`
+	Note         string    `json:"note,omitempty"`
+	OccurredAt   time.Time `json:"occurred_at"`
+}
+
+// IncidentDetailDTO is returned by GET /admin/incidents/{id}.
+type IncidentDetailDTO struct {
+	Incident      *IncidentDTO             `json:"incident"`
+	StatusHistory []IncidentStatusEventDTO `json:"status_history"`
+}
+
+func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
+	res := &IncidentDetailDTO{
+		Incident:      NewIncidentDTO(d.Incident),
+		StatusHistory: make([]IncidentStatusEventDTO, 0, len(d.StatusHistory)),
+	}
+	for _, ev := range d.StatusHistory {
+		item := IncidentStatusEventDTO{
+			ID:         ev.ID.String(),
+			FromStatus: ev.FromStatus,
+			ToStatus:   ev.ToStatus,
+			ActorName:  ev.ActorName,
+			Note:       ev.Note,
+			OccurredAt: ev.OccurredAt,
+		}
+		if ev.FromAssignee != nil {
+			s := ev.FromAssignee.String()
+			item.FromAssignee = &s
+		}
+		if ev.ToAssignee != nil {
+			s := ev.ToAssignee.String()
+			item.ToAssignee = &s
+		}
+		if ev.ActorID != nil {
+			s := ev.ActorID.String()
+			item.ActorID = &s
+		}
+		res.StatusHistory = append(res.StatusHistory, item)
+	}
+	return res
 }
 
 // AdminRideItemDTO is the API representation of a ride in the admin browse list.
@@ -296,4 +358,21 @@ func NewMetricResponseDTO(m *domain.MetricResponse) MetricResponseDTO {
 type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// ResetPasswordRequest is the superadmin-initiated password reset payload
+// (PUT /admin/users/{id}/password).
+type ResetPasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// CreateAuditEntryRequest matches the OpenAPI CreateAuditEntryRequest schema.
+// Before/after state are arbitrary JSON objects persisted as raw bytes.
+type CreateAuditEntryRequest struct {
+	ResourceType string         `json:"resource_type" binding:"required"`
+	ResourceID   string         `json:"resource_id"   binding:"required"`
+	Action       string         `json:"action"        binding:"required,oneof=create update delete approve reject login logout"`
+	BeforeState  map[string]any `json:"before_state,omitempty"`
+	AfterState   map[string]any `json:"after_state,omitempty"`
+	Reason       string         `json:"reason,omitempty"`
 }

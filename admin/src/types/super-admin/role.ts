@@ -1,11 +1,7 @@
 import type { components } from '@/types/openapi';
+import type { PermissionKey } from '@/utils/permissions';
 
-// Permission keys (spec superadmin.md §3.2)
-export type PermissionKey =
-  | 'dashboard' | 'admin_management' | 'role_management' | 'fare_config'
-  | 'payments'  | 'payouts'          | 'user_management'  | 'kyc_verification'
-  | 'safety_incidents' | 'reports'   | 'system_config'    | 'system_health'
-  | 'audit_log' | 'ltfrb_compliance';
+export type { PermissionKey };
 
 // Form-facing RolePermission: keys required so form state matches schema.
 export interface RolePermission {

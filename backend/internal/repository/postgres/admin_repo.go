@@ -43,9 +43,9 @@ func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	return admins, nil
 }
 
-func (r *adminRepo) UpdateAdminStatus(ctx context.Context, id uuid.UUID, role domain.UserRole) error {
-	const q = `UPDATE users SET role = $1 WHERE id = $2`
-	_, err := r.db.Exec(ctx, q, string(role), id)
+func (r *adminRepo) UpdateAdminProfile(ctx context.Context, id uuid.UUID, name, email string, role domain.UserRole, roleID uuid.UUID) error {
+	const q = `UPDATE users SET name = $1, email = $2, role = $3, role_id = $4 WHERE id = $5`
+	_, err := r.db.Exec(ctx, q, name, email, string(role), roleID, id)
 	return err
 }
 
@@ -128,7 +128,12 @@ func NewFareRepo(db *pgxpool.Pool) domain.FareRepository {
 }
 
 func (r *fareRepo) GetFareConfigs(ctx context.Context) ([]*domain.FareConfig, error) {
-	const q = `SELECT id, vehicle_type, base_fare, per_km_rate, per_min_rate, minimum_fare, booking_fee, cancellation_fee, updated_at, updated_by FROM fare_configs`
+	const q = `
+		SELECT f.id, f.vehicle_type, f.base_fare, f.per_km_rate, f.per_min_rate,
+		       f.minimum_fare, f.booking_fee, f.cancellation_fee,
+		       f.updated_at, f.updated_by, COALESCE(u.name, '')
+		FROM fare_configs f
+		LEFT JOIN users u ON u.id = f.updated_by`
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -138,7 +143,7 @@ func (r *fareRepo) GetFareConfigs(ctx context.Context) ([]*domain.FareConfig, er
 	var configs []*domain.FareConfig
 	for rows.Next() {
 		c := &domain.FareConfig{}
-		if err := rows.Scan(&c.ID, &c.VehicleType, &c.BaseFare, &c.PerKmRate, &c.PerMinRate, &c.MinimumFare, &c.BookingFee, &c.CancellationFee, &c.UpdatedAt, &c.UpdatedBy); err != nil {
+		if err := rows.Scan(&c.ID, &c.VehicleType, &c.BaseFare, &c.PerKmRate, &c.PerMinRate, &c.MinimumFare, &c.BookingFee, &c.CancellationFee, &c.UpdatedAt, &c.UpdatedBy, &c.UpdatedByName); err != nil {
 			return nil, err
 		}
 		configs = append(configs, c)
@@ -332,6 +337,51 @@ func (r *incidentRepo) UpdateIncident(ctx context.Context, id uuid.UUID, status 
 	return err
 }
 
+// ListStatusHistory returns timeline events for an incident, oldest first.
+// actor_name is best-effort joined from users; null when the actor was a DB
+// trigger (INSERT/UPDATE not forwarded through the use case).
+func (r *incidentRepo) ListStatusHistory(ctx context.Context, id uuid.UUID) ([]*domain.IncidentStatusEvent, error) {
+	const q = `
+		SELECT h.id, h.incident_id, h.from_status, h.to_status,
+		       h.from_assignee, h.to_assignee, h.actor_id,
+		       COALESCE(u.name, ''),
+		       COALESCE(h.note, ''), h.occurred_at
+		FROM incident_status_history h
+		LEFT JOIN users u ON u.id = h.actor_id
+		WHERE h.incident_id = $1
+		ORDER BY h.occurred_at ASC`
+
+	rows, err := r.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	events := make([]*domain.IncidentStatusEvent, 0)
+	for rows.Next() {
+		e := &domain.IncidentStatusEvent{}
+		if err := rows.Scan(&e.ID, &e.IncidentID, &e.FromStatus, &e.ToStatus,
+			&e.FromAssignee, &e.ToAssignee, &e.ActorID,
+			&e.ActorName, &e.Note, &e.OccurredAt); err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, rows.Err()
+}
+
+func (r *incidentRepo) AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error {
+	const q = `UPDATE incidents SET assigned_to = $1 WHERE id = $2`
+	tag, err := r.db.Exec(ctx, q, assigneeID, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 // --- System Metrics Repository ---
 
 type systemMetricsRepo struct{ db *pgxpool.Pool }
@@ -343,30 +393,53 @@ func NewSystemMetricsRepo(db *pgxpool.Pool) domain.SystemMetricsRepository {
 func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.DashboardMetrics, error) {
 	m := &domain.DashboardMetrics{}
 
-	// Active Riders (at least 1 ride in past 30 days)
 	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {
 		return nil, err
 	}
 
-	// Active Drivers (online or with a ride in past 30 days)
 	const qDrivers = `SELECT COUNT(DISTINCT driver_id) FROM rides WHERE driver_id IS NOT NULL AND created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qDrivers).Scan(&m.ActiveDrivers); err != nil {
 		return nil, err
 	}
 
-	// Rides Today
 	const qRides = `SELECT COUNT(*) FROM rides WHERE created_at >= CURRENT_DATE`
 	if err := r.db.QueryRow(ctx, qRides).Scan(&m.RidesToday); err != nil {
 		return nil, err
 	}
 
-	// Revenue Today (Mock 0 since billing schema is pending)
-	m.RevenueToday = 0
+	const qRevenue = `
+		SELECT COALESCE(SUM(amount), 0)
+		FROM ride_payments
+		WHERE status = 'completed' AND processed_at::date = CURRENT_DATE`
+	if err := r.db.QueryRow(ctx, qRevenue).Scan(&m.RevenueToday); err != nil {
+		return nil, err
+	}
 
-	// Avg Wait Time Today (Mock 0 since accepted_at schema is pending)
-	m.AvgWaitTimeSeconds = 0
+	// Avg wait = accepted_at - created_at for rides accepted in the last 24h.
+	// NULL when there are no rides yet; scan into a nullable float.
+	const qWait = `
+		SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (accepted_at - created_at))), 0)
+		FROM rides
+		WHERE accepted_at IS NOT NULL AND created_at >= NOW() - INTERVAL '24 hours'`
+	if err := r.db.QueryRow(ctx, qWait).Scan(&m.AvgWaitTimeSeconds); err != nil {
+		return nil, err
+	}
 
-	m.SystemUptime = 99.99 // Hardcoded mock for now as per spec target
+	// Uptime = fraction of 'ok' probes over the last 24h across all services.
+	// If no probes have been recorded yet, leave NULL → UI can render '—'.
+	const qUptime = `
+		SELECT CASE WHEN COUNT(*) = 0 THEN NULL
+		            ELSE 100.0 * COUNT(*) FILTER (WHERE status = 'ok') / COUNT(*)
+		       END
+		FROM system_health_probes
+		WHERE checked_at >= NOW() - INTERVAL '24 hours'`
+	var uptime *float64
+	if err := r.db.QueryRow(ctx, qUptime).Scan(&uptime); err != nil {
+		return nil, err
+	}
+	if uptime != nil {
+		m.SystemUptime = *uptime
+	}
 	return m, nil
 }

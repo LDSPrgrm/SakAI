@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { systemApi } from '@/api/super-admin/system';
+import { useInfraMetrics, useSystemServices } from '@/hooks/useSystem';
 import type { SystemService } from '@/types/super-admin';
 import { cn } from '@/lib/utils';
 
@@ -33,15 +33,6 @@ function statusDotClass(status: SystemService['status']): string {
   if (status === 'degraded') return 'bg-warning';
   return 'bg-danger';
 }
-
-// ── Infrastructure metric tiles (mock values) ─────────────────────────────────
-
-const INFRA_METRICS = [
-  { label: 'API P50 Latency', value: '112ms' },
-  { label: 'API P95 Latency', value: '340ms' },
-  { label: 'Active WS Connections', value: '1,842' },
-  { label: 'DB Query Time P99', value: '45ms' },
-] as const;
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -87,34 +78,22 @@ function ServiceCard({ service }: { service: SystemService }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SASystemHealth() {
-  const [services, setServices] = useState<SystemService[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const servicesQuery = useSystemServices({ refetchInterval: 30_000 });
+  const metricsQuery = useInfraMetrics({ refetchInterval: 30_000 });
+  const services = (servicesQuery.data ?? []) as unknown as SystemService[];
+  const metrics = metricsQuery.data;
+  const loading = servicesQuery.isFetching;
+  const lastRefreshed = servicesQuery.dataUpdatedAt
+    ? new Date(servicesQuery.dataUpdatedAt)
+    : new Date();
   const [, tick] = useState(0); // force re-render every second for "X seconds ago"
 
-  const fetchServices = async () => {
-    setLoading(true);
-    try {
-      const data = await systemApi.getServices() as unknown as SystemService[];
-      setServices(data);
-      setLastRefreshed(new Date());
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchServices = () => { void servicesQuery.refetch(); };
 
   useEffect(() => {
-    fetchServices();
-    intervalRef.current = setInterval(fetchServices, 30_000);
-
     // Tick every second to keep "last updated" text fresh
     const tickInterval = setInterval(() => tick((n) => n + 1), 1000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      clearInterval(tickInterval);
-    };
+    return () => clearInterval(tickInterval);
   }, []);
 
   // Derived counts
@@ -171,7 +150,7 @@ export function SASystemHealth() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {INFRA_METRICS.map(({ label, value }) => (
+            {buildInfraTiles(metrics).map(({ label, value }) => (
               <div
                 key={label}
                 className="p-3 bg-surface-hover rounded-lg text-center"
@@ -181,8 +160,24 @@ export function SASystemHealth() {
               </div>
             ))}
           </div>
+          {!metrics && !metricsQuery.isFetching && (
+            <p className="text-xs text-text-muted mt-3 text-center">
+              No infra samples yet — probes start streaming after first request.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
   );
+}
+
+function buildInfraTiles(m?: { api_p50_ms?: number; api_p95_ms?: number; ws_connections?: number; db_query_p99_ms?: number }) {
+  const fmtMs = (n?: number) => (n == null ? '—' : `${Math.round(n)}ms`);
+  const fmtInt = (n?: number) => (n == null ? '—' : n.toLocaleString());
+  return [
+    { label: 'API P50 Latency', value: fmtMs(m?.api_p50_ms) },
+    { label: 'API P95 Latency', value: fmtMs(m?.api_p95_ms) },
+    { label: 'Active WS Connections', value: fmtInt(m?.ws_connections) },
+    { label: 'DB Query Time P99', value: fmtMs(m?.db_query_p99_ms) },
+  ];
 }

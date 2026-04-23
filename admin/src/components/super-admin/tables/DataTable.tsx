@@ -13,17 +13,27 @@ import {
 } from '@tanstack/react-table';
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { PaginationMeta } from '@/api/super-admin/_request';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
+
+export interface ServerPagination {
+  meta?: PaginationMeta;
+  page: number;
+  onPageChange: (page: number) => void;
+}
 
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
-  /** Rows per page; default 10 */
+  /** Rows per page; default 10 (ignored when serverPagination is set). */
   pageSize?: number;
   /** Show a global search input */
   searchable?: boolean;
   searchPlaceholder?: string;
   className?: string;
   emptyMessage?: string;
+  /** When set, disables client-side pagination and renders footer driven by server meta. */
+  serverPagination?: ServerPagination;
 }
 
 export function DataTable<TData>({
@@ -34,6 +44,7 @@ export function DataTable<TData>({
   searchPlaceholder = 'Search…',
   className,
   emptyMessage = 'No results found.',
+  serverPagination,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -46,8 +57,10 @@ export function DataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: serverPagination ? undefined : getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: !!serverPagination,
+    pageCount: serverPagination?.meta?.total_pages ?? undefined,
     initialState: { pagination: { pageSize } },
   });
 
@@ -109,7 +122,14 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      {table.getPageCount() > 1 && (
+      {serverPagination ? (
+        <PaginationFooter
+          meta={serverPagination.meta}
+          page={serverPagination.page}
+          onPageChange={serverPagination.onPageChange}
+          label="rows"
+        />
+      ) : table.getPageCount() > 1 ? (
         <div className="flex items-center justify-between text-sm text-text-muted">
           <span>
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
@@ -133,7 +153,8 @@ export function DataTable<TData>({
             </button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
+

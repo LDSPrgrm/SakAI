@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Search, Map } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
-import { ridesApi } from '@/api/admin/rides';
+import { useRides } from '@/hooks/useRides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { RideDetailModal } from '@/components/admin/modals/RideDetailModal';
 
 const STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { label: 'All Statuses', value: '' },
@@ -46,19 +47,21 @@ function paymentBadgeLabel(method: string | null): string {
   }
 }
 
+const PAGE_SIZE = 20;
+
 export function RideManagement() {
-  const [rides, setRides] = useState<AdminRideItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedRide, setSelectedRide] = useState<AdminRideItem | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
-    ridesApi.list(statusFilter || undefined)
-      .then(r => setRides(r as unknown as AdminRideItem[]))
-      .catch(() => setRides([]))
-      .finally(() => setLoading(false));
-  }, [statusFilter]);
+  const ridesQuery = useRides({ status: statusFilter || undefined, page, limit: PAGE_SIZE });
+  const rides = (ridesQuery.data?.items ?? []) as AdminRideItem[];
+  const meta = ridesQuery.data?.meta;
+  const loading = ridesQuery.isPending;
+
+  // Reset to page 1 when filter changes.
+  useEffect(() => { setPage(1); }, [statusFilter]);
 
   const q = search.toLowerCase();
   const filtered = rides.filter(ride => {
@@ -102,6 +105,13 @@ export function RideManagement() {
           </div>
         </div>
         <CardContent className="p-0 overflow-x-auto">
+          <PaginationFooter
+            meta={meta}
+            page={page}
+            onPageChange={setPage}
+            label="rides"
+            className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border text-sm text-text-muted"
+          />
           <Table>
             <TableHeader>
               <TableRow>
@@ -111,22 +121,25 @@ export function RideManagement() {
                 <TableHead>Fare & Payment</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date & Time</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-text-muted">Loading...</TableCell>
+                  <TableCell colSpan={6} className="text-center py-10 text-text-muted">Loading...</TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-text-muted">
+                  <TableCell colSpan={6} className="text-center py-10 text-text-muted">
                     No rides match your search or filter.
                   </TableCell>
                 </TableRow>
               ) : filtered.map((ride) => (
-                <TableRow key={ride.id} className="cursor-pointer hover:bg-surface-hover/80">
+                <TableRow
+                  key={ride.id}
+                  className="cursor-pointer hover:bg-surface-hover/80"
+                  onClick={() => setSelectedRide(ride)}
+                >
                   <TableCell className="font-medium text-primary">{ride.id}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
@@ -151,22 +164,31 @@ export function RideManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(ride.status as RideStatus) as any}>{statusLabel(ride.status as RideStatus)}</Badge>
+                    <Badge variant={getStatusVariant(ride.status as RideStatus)}>{statusLabel(ride.status as RideStatus)}</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-text-muted">
                     {ride.created_at ? new Date(ride.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" aria-label="View map route">
-                      <Map className="w-4 h-4" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <PaginationFooter
+            meta={meta}
+            page={page}
+            onPageChange={setPage}
+            label="rides"
+            className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border text-sm text-text-muted"
+          />
         </CardContent>
       </Card>
+
+      <RideDetailModal
+        open={Boolean(selectedRide)}
+        ride={selectedRide}
+        onClose={() => setSelectedRide(null)}
+      />
     </div>
   );
 }
+

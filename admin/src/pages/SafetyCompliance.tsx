@@ -1,11 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
-import { safetyApi } from '@/api/super-admin/safety';
-import { reportsApi } from '@/api/super-admin/reports';
+import { SaveBanner } from '@/components/shared/SaveBanner';
+import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  useIncidents, useKycQueue, useLtfrbCompliance,
+  useResolveIncident, useUpdateKyc,
+} from '@/hooks/useSafety';
+import { useExportReport } from '@/hooks/useReports';
 import type { Incident, KycEntry } from '@/types/super-admin';
 
 function incidentTypeLabel(type: string): string {
@@ -74,33 +80,45 @@ function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () 
 }
 
 export function SafetyCompliance() {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [kycQueue, setKycQueue] = useState<KycEntry[]>([]);
-  const [compliance, setCompliance] = useState<{
-    accreditation_status: string;
-    accreditation_expiry: string | null;
-    driver_compliance_rate: number;
-    violation_count: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { can } = usePermissions();
+  const canWrite = can('safety_incidents', 'write');
+  const writeDisabledTitle = canWrite ? undefined : 'You do not have write access';
+  const incidentsQuery = useIncidents();
+  const kycQuery = useKycQueue();
+  const complianceQuery = useLtfrbCompliance();
+  const resolveIncident = useResolveIncident();
+  const updateKyc = useUpdateKyc();
+  const exportReport = useExportReport();
+
+  const incidents = (incidentsQuery.data ?? []) as Incident[];
+  const kycQueue = (kycQuery.data ?? []) as KycEntry[];
+  const compliance = complianceQuery.data as
+    | import('@/types/openapi').components['schemas']['ComplianceData']
+    | undefined;
+  const loading = incidentsQuery.isPending || kycQuery.isPending || complianceQuery.isPending;
+
   const [confirm, setConfirm] = useState<ConfirmDialog>({
     open: false, title: '', message: '', variant: 'danger', onConfirm: () => {},
   });
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      safetyApi.getIncidents() as unknown as Promise<Incident[]>,
-      safetyApi.getKycQueue() as unknown as Promise<KycEntry[]>,
-      safetyApi.getLtfrbCompliance(),
-    ]).then(([inc, kyc, comp]) => {
-      setIncidents(inc);
-      setKycQueue(kyc);
-      setCompliance(comp as any);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
+
+  const [banner, setBanner] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: '',
+  });
+  const flashBanner = (message: string) => {
+    setBanner({ visible: true, message });
+    setTimeout(() => setBanner(s => ({ ...s, visible: false })), 3000);
+  };
+
+  const runUpdateKyc = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      await updateKyc.mutateAsync({ id, status });
+      flashBanner(status === 'approved' ? 'KYC approved' : 'KYC rejected');
+    } catch {
+      flashBanner('Failed to update KYC');
+    }
+  };
 
   const approveDriver = (id: string, name: string) => {
     setConfirm({
@@ -108,10 +126,7 @@ export function SafetyCompliance() {
       title: 'Approve KYC',
       message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
-      onConfirm: () => {
-        safetyApi.updateKyc(id, 'approved').catch(() => {});
-        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'approved' } : k));
-      },
+      onConfirm: () => runUpdateKyc(id, 'approved'),
     });
   };
 
@@ -121,31 +136,26 @@ export function SafetyCompliance() {
       title: 'Reject KYC',
       message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
-      onConfirm: () => {
-        safetyApi.updateKyc(id, 'rejected').catch(() => {});
-        setKycQueue(prev => prev.map(k => k.id === id ? { ...k, status: 'rejected' } : k));
-      },
+      onConfirm: () => runUpdateKyc(id, 'rejected'),
     });
   };
 
   const handleResolveIncident = (id: string) => {
-    safetyApi.resolveIncident(id, 'Resolved via admin panel').then(() => {
-      setIncidents(prev => prev.map(i => i.id === id ? { ...i, status: 'resolved' as any } : i));
-    }).catch(() => {});
+    resolveIncident.mutate({ id, notes: 'Resolved via admin panel' });
   };
 
-  const handleGenerateLtfrb = () => {
-    reportsApi.exportCsv('ltfrb').then(url => {
-      if (url) window.open(url, '_blank');
-    }).catch(() => {});
+  const handleGenerateLtfrb = async () => {
+    const res = await exportReport.mutateAsync({ type: 'ltfrb' }).catch(() => null);
+    if (res?.url) window.open(res.url, '_blank');
   };
 
   return (
     <div className="space-y-6">
       <ConfirmModal dialog={confirm} onClose={closeConfirm} />
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
+        <SaveBanner visible={banner.visible} message={banner.message} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -155,7 +165,6 @@ export function SafetyCompliance() {
               <ShieldAlert className="w-5 h-5 text-danger" />
               Emergency & Incident Log
             </CardTitle>
-            <Button variant="outline" size="sm">View All</Button>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -209,7 +218,13 @@ export function SafetyCompliance() {
                     </TableCell>
                     <TableCell className="text-right">
                       {inc.status !== 'resolved' ? (
-                        <Button size="sm" variant="secondary" onClick={() => handleResolveIncident(inc.id)}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleResolveIncident(inc.id)}
+                          disabled={!canWrite}
+                          title={writeDisabledTitle}
+                        >
                           Resolve
                         </Button>
                       ) : (
@@ -248,16 +263,28 @@ export function SafetyCompliance() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {driver.docs.map(doc => (
-                          <Badge key={doc} variant="default" className="text-[10px]">{doc}</Badge>
-                        ))}
+                      <div className="mb-3">
+                        <KycDocPreview docs={driver.docs ?? []} />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="success" className="w-full" onClick={() => approveDriver(driver.id, driver.driver_name)}>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          className="w-full"
+                          disabled={updateKyc.isPending || !canWrite}
+                          title={writeDisabledTitle}
+                          onClick={() => approveDriver(driver.id, driver.driver_name)}
+                        >
                           Approve
                         </Button>
-                        <Button size="sm" variant="danger" className="w-full" onClick={() => rejectDriver(driver.id, driver.driver_name)}>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          className="w-full"
+                          disabled={updateKyc.isPending || !canWrite}
+                          title={writeDisabledTitle}
+                          onClick={() => rejectDriver(driver.id, driver.driver_name)}
+                        >
                           Reject
                         </Button>
                       </div>
@@ -302,7 +329,13 @@ export function SafetyCompliance() {
                   {compliance != null ? compliance.violation_count : '—'}
                 </Badge>
               </div>
-              <Button variant="outline" className="w-full mt-2" onClick={handleGenerateLtfrb}>
+              <Button
+                variant="outline"
+                className="w-full mt-2"
+                onClick={handleGenerateLtfrb}
+                disabled={!canWrite}
+                title={writeDisabledTitle}
+              >
                 Generate LTFRB Report
               </Button>
             </CardContent>

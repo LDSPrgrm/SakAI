@@ -31,7 +31,11 @@ This roadmap is structured around two key milestones:
 
 ---
 
+<<<<<<< HEAD
+## 🛡️ Phase 2: Security & Bug Fixes ✅
+=======
 ## 🛡️ Phase 2: Security & Bug Fixes
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 > **Goal:** Address system audit findings to make the backend safe for real client connections.
 
@@ -48,12 +52,23 @@ This roadmap is structured around two key milestones:
 - [x] Transactional user registration (`CreateWithTokens`)
 - [x] JWT weak-secret panic guard for production
 - [x] Logging for critical async failures
+<<<<<<< HEAD
+
+### ✅ Completed — Critical
+
+- [x] **C1:** Notify passenger via WebSocket when offer expires — inject Hub into expiry worker, emit `ride.offer_expired` ([REQ-2.1](requirements.md#req-21-expired-offer-passenger-notification))
+- [x] **C2:** Exclude drivers with active rides from `FindNearbyOnline` — `NOT EXISTS` subquery ([REQ-2.2](requirements.md#req-22-exclude-busy-drivers-from-matching))
+- [x] **L3:** `GetByID` — verify caller is ride participant, return `403` otherwise ([REQ-2.3](requirements.md#req-23-ride-participant-authorization))
+- [x] **H4:** Request body size limit middleware (`MaxBytesReader`, 1 MiB) ([REQ-2.4](requirements.md#req-24-request-body-size-limit))
+- [x] **SC1:** GIST index on `drivers.location` column (partial index, `WHERE status = 'online'`) ([REQ-2.5](requirements.md#req-25-geospatial-index))
+=======
 - [x] `GetByID` — verifies caller is ride participant (passenger or assigned driver), returns `403 Forbidden` otherwise
 - [x] Request body size limit middleware (`MaxBodySize`, 1 MiB)
 - [x] Security headers middleware (X-Frame-Options: DENY, X-Content-Type-Options: nosniff, CSP: default-src 'self')
 - [x] Cancel — enforces per-role state validation (passenger/driver ownership checks)
 - [x] GiST index on `drivers.location` column (present in `003_create_drivers.up.sql`)
 - [x] Admin backend with RBAC (~49 endpoints defined in spec with handler/usecase/repo implementations)
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 ### 🚧 To Do — High (Important but not blocking MVP)
 
@@ -109,8 +124,22 @@ This roadmap is structured around two key milestones:
 
 ---
 
-## 🖥️ Phase 4: Admin Dashboard (MVP Baseline)
+## 🖥️ Phase 4: Admin Dashboard 🚧
 
+<<<<<<< HEAD
+> **Goal:** Basic web dashboard for operational visibility. Lightweight — enough to manage the MVP.
+>
+> **Status:** Frontend feature-complete. API contract alignment in progress (see `docs/audit_check.md`).
+
+- [x] Choose framework (React + TypeScript + Vite)
+- [x] Auth flow (JWT with dynamic RBAC via `usePermissions` + Zustand)
+- [x] **Dashboard overview:** KPI cards, rides/revenue charts, activity feed, real-time refresh
+- [x] **Ride list:** Searchable table with status filters, pagination, ride details view
+- [x] **User list:** Passengers and drivers tabs, profiles, search, pagination
+- [x] **Driver management:** Approve/suspend/deactivate drivers, view vehicle info
+- [x] **Super Admin panel:** Fare config, payments, safety/KYC, reports, system health, audit log, role management
+- [ ] API contract alignment — undocumented endpoints need spec additions: `GET /admin/users/me`, `POST /admin/audit`, `POST /admin/roles/{id}/duplicate`, `PUT /admin/users/{id}/password`
+=======
 > **Goal:** Basic web dashboard for operational visibility. Backend APIs are defined in the OpenAPI spec (~49 endpoints) with handler/usecase/repo implementations in place.
 
 - [ ] Choose framework (React or Vue.js — TBD)
@@ -120,6 +149,7 @@ This roadmap is structured around two key milestones:
 - [x] **Ride list:** Searchable table with status filters, ride details view (Backend Done)
 - [x] **User list:** Browse passengers and drivers, view profiles (Backend Done)
 - [ ] **Driver management:** Approve/suspend drivers, view vehicle info
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12
 
 ### Definition of Done — Phase 4
 
@@ -203,6 +233,18 @@ This roadmap is structured around two key milestones:
 
 ## Summary Table
 
+<<<<<<< HEAD
+| Phase | Name                 | Focus            | Status         |
+| ----- | -------------------- | ---------------- | -------------- |
+| 1     | Backend Foundation   | Core API         | ✅ Complete    |
+| 2     | Security & Bug Fixes | Audit fixes      | ✅ Complete    |
+| 3     | Flutter Mobile Apps  | Client apps      | ⬜ Not Started |
+| 4     | Admin Dashboard      | Operations UI    | 🚧 In Progress |
+| —     | **MVP Milestone**    | **End-to-end**   | —              |
+| 5     | Real-Time Resilience | WS reliability   | ⬜ Not Started |
+| 6     | Polish & UX          | Production UX    | ⬜ Not Started |
+| 7     | Production Readiness | Deploy & operate | ⬜ Not Started |
+=======
 | Phase | Name                 | Focus            | Status                  |
 | ----- | -------------------- | ---------------- | ----------------------- |
 | 1     | Backend Foundation   | Core API         | ✅ Complete             |
@@ -213,3 +255,4 @@ This roadmap is structured around two key milestones:
 | 5     | Real-Time Resilience | WS reliability   | ⬜ Not Started          |
 | 6     | Polish & UX          | Production UX    | ⬜ Not Started          |
 | 7     | Production Readiness | Deploy & operate | ⬜ Not Started          |
+>>>>>>> bba4afffec8c5aeb07369876175f7e482d444d12

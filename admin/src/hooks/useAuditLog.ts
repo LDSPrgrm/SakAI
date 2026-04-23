@@ -8,6 +8,7 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { auditApi, type AuditLog } from '@/api/super-admin/audit';
+import { adminRequestVoid } from '@/api/super-admin/_request';
 
 const AUDIT_KEY = ['admin', 'audit'] as const;
 
@@ -20,7 +21,15 @@ export function useAuditLog() {
 
 export function useExportAuditLog() {
   return useMutation({
-    mutationFn: () => auditApi.exportCsv(),
+    mutationFn: async () => {
+      const blob = await auditApi.exportCsv();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sakai-audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
   });
 }
 
@@ -57,18 +66,14 @@ export function useAuditedMutation<TData, TVars, TBefore = unknown>(
         // swallow — audit capture must not block the mutation
       }
       const after = await mutationFn(vars);
-      // Fire-and-forget audit log write
-      void fetch('/api/admin/audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resource_type: ctx.resourceType,
-          resource_id: ctx.resourceId,
-          action: ctx.action,
-          before_state: before ?? null,
-          after_state: after ?? null,
-          reason: ctx.reason ?? null,
-        }),
+      // Fire-and-forget audit log write.
+      void adminRequestVoid('POST', '/audit', {
+        resource_type: ctx.resourceType,
+        resource_id: ctx.resourceId,
+        action: ctx.action,
+        before_state: before ?? null,
+        after_state: after ?? null,
+        reason: ctx.reason ?? null,
       }).catch(() => {});
       return after;
     },

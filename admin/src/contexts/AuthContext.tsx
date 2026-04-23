@@ -19,16 +19,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Normalize the backend's role string to the frontend's AdminRole type.
- *  The backend uses "superadmin" (no underscore); the frontend uses "super_admin". */
-function normalizeRole(raw: string): AdminRole {
-  if (raw === 'superadmin') return 'super_admin';
-  return (raw as AdminRole) ?? 'support';
-}
-
 function applyAdminProfile(raw: UserProfile): AdminProfile {
   const r = raw as unknown as Record<string, string>;
-  const role = normalizeRole(r['role'] ?? '');
+  const role = ((r['role'] as AdminRole) ?? 'support') as AdminRole;
   const role_id = r['role_id'];
   return { ...raw, role, role_id };
 }
@@ -39,9 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const afterAuth = (profile: AdminProfile) => {
     setUser(profile);
-    if (profile.role_id) {
-      void usePermissionsStore.getState().loadPermissions(profile.role_id);
-    }
+    // Self-scoped fetch — backend resolves role from the JWT. Users with no
+    // role_id get an empty permissions array, so no client-side guard needed.
+    void usePermissionsStore.getState().loadPermissions();
   };
 
   useEffect(() => {

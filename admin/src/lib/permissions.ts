@@ -4,7 +4,7 @@
 // dynamically at runtime via usePermissions() (see hooks/usePermissions.ts).
 // ---------------------------------------------------------------------------
 
-export type AdminRole = 'super_admin' | 'operations' | 'finance' | 'support';
+export type AdminRole = 'admin' | 'superadmin' | 'operations' | 'finance' | 'support';
 
 // Legacy dot-notation keys kept for reference; prefer the spec PermissionKey
 // (superadmin.md §3.2) in new code:  can('fare_config', 'read')

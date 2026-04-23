@@ -1461,6 +1461,65 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/incidents/{id}:
+    get:
+      tags: [Admin]
+      summary: Get incident detail with SOS status-history timeline
+      description: |
+        Returns the full incident record plus the ordered status-history
+        timeline for a single SOS/incident, used by the admin incident
+        detail modal.
+      operationId: adminGetIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Incident + history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/incidents/{id}/assign:
+    put:
+      tags: [Admin]
+      summary: Reassign an incident
+      description: |
+        Sets `assigned_to`. The DB trigger records the change in
+        incident_status_history so the timeline reflects the reassignment.
+        Body `{"assignee_id": "<uuid>" | null}`.
+      operationId: adminAssignIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        "204":
+          description: Reassigned
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /admin/incidents/{id}/resolve:
     put:
       tags: [Admin]
@@ -1492,6 +1551,273 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/service-areas:
+    get:
+      tags: [Admin]
+      summary: List service areas (admin — includes inactive)
+      description: |
+        Returns every configured service area, including inactive ones, for
+        admin management views. Unlike the public list, this endpoint does
+        not filter by `active` status.
+      operationId: adminListServiceAreas
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Areas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ServiceArea" }
+    post:
+      tags: [Admin]
+      summary: Create a service area
+      description: |
+        Creates a new service area with an associated boundary polygon.
+        The boundary is reused by the fare calculator for point-in-polygon
+        origin lookups.
+      operationId: adminCreateServiceArea
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServiceAreaInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServiceArea" }
+
+  /admin/service-areas/{id}:
+    put:
+      tags: [Admin]
+      summary: Update a service area
+      description: |
+        Updates the name, LGU code, boundary polygon, and/or active flag
+        of an existing service area. Boundary changes take effect on the
+        next fare calculation.
+      operationId: adminUpdateServiceArea
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServiceAreaInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete a service area
+      description: |
+        Permanently removes a service area. Any LGU partnerships pointing
+        at this area have their `service_area_id` cleared.
+      operationId: adminDeleteServiceArea
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/lgu-partnerships:
+    get:
+      tags: [Admin]
+      summary: List LGU partnerships
+      description: |
+        Returns all Local Government Unit (LGU) partnership records used
+        to track compliance engagements and contact info per city or
+        municipality.
+      operationId: adminListLGUPartnerships
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Partnerships
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LGUPartnership" }
+    post:
+      tags: [Admin]
+      summary: Create an LGU partnership
+      description: |
+        Registers a new LGU partnership, optionally linking it to an
+        existing service area via `service_area_id`.
+      operationId: adminCreateLGUPartnership
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LGUPartnershipInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LGUPartnership" }
+
+  /admin/lgu-partnerships/{id}:
+    get:
+      tags: [Admin]
+      summary: Get an LGU partnership
+      description: |
+        Returns a single LGU partnership record by id, including linked
+        service area and contact details.
+      operationId: adminGetLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Partnership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LGUPartnership" }
+    put:
+      tags: [Admin]
+      summary: Update an LGU partnership
+      description: |
+        Updates LGU partnership fields such as status, contact info, or
+        linked service area.
+      operationId: adminUpdateLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LGUPartnershipInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete an LGU partnership
+      description: |
+        Permanently removes an LGU partnership record. Does not affect the
+        linked service area.
+      operationId: adminDeleteLGUPartnership
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/alerts/rules:
+    get:
+      tags: [Admin]
+      summary: List alert rules
+      description: |
+        Returns all configured alert rules evaluated against platform
+        metrics (e.g. cancellation spikes, driver supply drops).
+      operationId: adminListAlertRules
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlertRule" }
+    post:
+      tags: [Admin]
+      summary: Create an alert rule
+      description: |
+        Creates a new alert rule. Once active, matching metric conditions
+        will generate alert events consumed by the admin alerts tab.
+      operationId: adminCreateAlertRule
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertRuleInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertRule" }
+
+  /admin/alerts/rules/{id}:
+    put:
+      tags: [Admin]
+      summary: Update an alert rule
+      description: |
+        Updates the threshold, severity, or enabled flag of an existing
+        alert rule. Historical alert events are not modified.
+      operationId: adminUpdateAlertRule
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertRuleInput" }
+      responses:
+        "204": { description: Updated }
+    delete:
+      tags: [Admin]
+      summary: Delete an alert rule
+      description: |
+        Permanently removes an alert rule. Historical alert events raised
+        by the rule are retained.
+      operationId: adminDeleteAlertRule
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /admin/alerts/events:
+    get:
+      tags: [Admin]
+      summary: List recent alert events
+      description: |
+        Returns the most recent alert events raised by configured rules,
+        newest first, capped by the optional `limit` query parameter.
+      operationId: adminListAlertEvents
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 500 }
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlertEvent" }
+
   /admin/audit:
     get:
       tags: [Admin]
@@ -1500,6 +1826,26 @@ paths:
       operationId: adminListAudit
       security:
         - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: actor_id
+          in: query
+          required: false
+          description: Filter entries to those created by this admin UUID
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Paginated audit logs
@@ -1507,6 +1853,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Write an audit log entry
+      description: |
+        Records an admin action in the audit trail. Called by the frontend after
+        high-impact mutations (fare changes, role edits, payout approvals).
+        Requires any admin role.
+      operationId: adminCreateAuditEntry
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditEntryRequest"
+      responses:
+        "204":
+          description: Audit entry recorded
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1658,6 +2029,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SystemService"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/system/infra-metrics:
+    get:
+      tags: [Admin]
+      summary: Get infrastructure performance metrics
+      description: |
+        Aggregated p50/p95 request latency, WebSocket connection count, and DB
+        query p99 latency used by the System Health page. Values are derived
+        from the perf-timing middleware and health-probe goroutine — no more
+        hardcoded SystemHealth.tsx constants.
+      operationId: adminGetInfraMetrics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current infra metrics snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraMetrics"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2098,6 +2493,29 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /admin/drivers/heatmap:
+    get:
+      tags: [Admin]
+      summary: Driver supply heatmap
+      description: |
+        One position per online driver with last-known PostGIS coordinates,
+        vehicle type, and ride availability. Returned bounds are the actual
+        extents of the positions (Metro Manila default if list is empty).
+      operationId: adminDriverHeatmap
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Heatmap snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverHeatmap"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Role Management ───────────────────────────────────────────────────────
 
   /admin/roles:
@@ -2508,7 +2926,124 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  # ── Driver Documents ──────────────────────────────────────────────────────
+  # ── Admin self-profile ─────────────────────────────────────────────────────────────────────────
+
+  /admin/users/me:
+    get:
+      tags: [Admin]
+      summary: Get the authenticated admin's own profile
+      description: |
+        Returns the current admin's profile including role_id, role_name, and status.
+        Call on admin app cold-start to re-hydrate session state.
+      operationId: adminGetMe
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Admin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Admin self permissions ─────────────────────────────────────────────────────────────────────────
+
+  /admin/me/permissions:
+    get:
+      tags: [Admin]
+      summary: Get the authenticated admin's own role and permissions
+      description: |
+        Returns the caller's role (id, name, permissions) used by the admin
+        app to drive sidebar visibility and write-gating. No specific role
+        is required: any authenticated user may call this for themselves.
+        Users with no assigned role_id (e.g. passengers/drivers that reach
+        this endpoint) receive a role envelope with an empty permissions array.
+      operationId: adminGetMyPermissions
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Role with permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Admin password reset ───────────────────────────────────────────────────────────────────────────
+
+  /admin/users/{id}/password:
+    put:
+      tags: [Admin]
+      summary: Reset another admin's password
+      description: |
+        Superadmin sets a new password for another admin account.
+        Distinct from `PUT /admin/auth/password` which is self-service.
+        Requires Superadmin role.
+      operationId: adminResetUserPassword
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "204":
+          description: Password reset
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Role duplication ────────────────────────────────────────────────────────────────────────────────────
+
+  /admin/roles/{id}/duplicate:
+    post:
+      tags: [Admin]
+      summary: Duplicate a role
+      description: |
+        Creates a copy of the given role with "Copy of [name]" as the new name.
+        Permissions are copied verbatim. The new role is not a system role.
+        Requires Superadmin role.
+      operationId: adminDuplicateRole
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Duplicated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Driver Documents ──────────────────────────────────────────────────────────────────────────────────────────
 
   /drivers/documents:
     post:
@@ -2637,7 +3172,7 @@ paths:
                 code: DOCUMENT_NOT_FOUND
                 message: "Document not found or you do not have access"
 
-  # ── Payments ──────────────────────────────────────────────────────────────
+  # ── Payments ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   /payments/process:
     post:
@@ -2792,7 +3327,7 @@ paths:
                 code: RIDE_NOT_COMPLETED
                 message: "Cannot add tip for a ride that is not in completed state"
 
-  # ── Ratings ───────────────────────────────────────────────────────────────
+  # ── Ratings ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
   /rides/{rideId}/rating:
     post:
@@ -3958,11 +4493,18 @@ components:
 
     UpdateAdminStatusRequest:
       type: object
-      required: [role]
+      required: [role_id]
       properties:
-        role:
+        name:
           type: string
-          enum: [admin, superadmin, operations, finance, support]
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        role_id:
+          type: string
+          format: uuid
 
     AdminFaresResponse:
       type: object
@@ -3977,6 +4519,9 @@ components:
     FareConfig:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         vehicle_type:
           type: string
         base_fare:
@@ -3991,6 +4536,16 @@ components:
           type: number
         cancellation_fee:
           type: number
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by_name:
+          type: string
+          description: Display name of the admin who last updated this row (joined from users.name).
 
     SurgeConfig:
       type: object
@@ -4002,7 +4557,13 @@ components:
         trigger_ratio:
           type: number
         zones:
-          $ref: "#/components/schemas/GeoJSONFeatureCollection"
+          type: array
+          description: |
+            Named polygons with per-zone multipliers. The fare calculator does
+            origin-in-polygon (ray-casting) against this list during
+            SimulateFare; falls back to max_multiplier when no zone matches.
+          items:
+            $ref: "#/components/schemas/SurgeZone"
         blackout_hours:
           type: array
           items:
@@ -4154,9 +4715,11 @@ components:
         before_state:
           type: object
           nullable: true
+          additionalProperties: true
         after_state:
           type: object
           nullable: true
+          additionalProperties: true
         reason:
           type: string
           nullable: true
@@ -4306,10 +4869,23 @@ components:
         docs:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/KycDocument"
         status:
           type: string
-          enum: [pending, approved, rejected]
+          enum: [pending, approved, rejected, needs_more_info]
+
+    KycDocument:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Machine-readable document type (e.g. drivers_license, vehicle_registration, insurance).
+        label:
+          type: string
+          description: Human-readable name displayed in the UI.
+        url:
+          type: string
+          description: Signed URL to the uploaded image/PDF. Absent when not yet uploaded.
 
     ReportDefinition:
       type: object
@@ -4374,6 +4950,39 @@ components:
 
     # ── New Schemas ───────────────────────────────────────────────────────────
 
+    ResetPasswordRequest:
+      type: object
+      required: [new_password]
+      properties:
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+
+    CreateAuditEntryRequest:
+      type: object
+      required: [resource_type, resource_id, action]
+      properties:
+        resource_type:
+          type: string
+          example: fare_config
+        resource_id:
+          type: string
+        action:
+          type: string
+          enum: [create, update, delete, approve, reject, login, logout]
+        before_state:
+          type: object
+          nullable: true
+          additionalProperties: true
+        after_state:
+          type: object
+          nullable: true
+          additionalProperties: true
+        reason:
+          type: string
+          nullable: true
+
     ChangePasswordRequest:
       type: object
       required: [old_password, new_password]
@@ -4413,34 +5022,168 @@ components:
         areas:
           - id: "550e8400-e29b-41d4-a716-446655440000"
             name: "Northern Luzon Service Area"
-            center: { lat: 16.607538, lng: 120.2693932 }
-            radius: 100000.0
+            lgu_code: "PH-BAG"
+            boundary:
+              name: "Baguio City Core"
+              multiplier: 1.25
+              polygon:
+                - [16.420, 120.590]
+                - [16.420, 120.610]
+                - [16.400, 120.610]
+                - [16.400, 120.590]
+            active: true
+            created_at: "2026-04-01T08:00:00Z"
+            updated_at: "2026-04-01T08:00:00Z"
 
     ServiceArea:
       type: object
-      required: [id, name, center, radius]
+      required: [id, name, boundary, active]
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-        description:
+        lgu_code:
           type: string
-        center:
-          $ref: "#/components/schemas/LatLng"
-        radius:
+        boundary:
+          $ref: "#/components/schemas/SurgeZone"
+        active:
+          type: boolean
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ServiceAreaInput:
+      type: object
+      required: [name, boundary]
+      properties:
+        name: { type: string }
+        lgu_code: { type: string }
+        boundary: { $ref: "#/components/schemas/SurgeZone" }
+        active: { type: boolean }
+
+    SurgeZone:
+      type: object
+      description: |
+        Named polygon + multiplier. Consumed by the fare calculator for
+        point-in-polygon origin lookup (usecase.FindZoneMultiplier) and
+        reused as the boundary shape for service areas.
+      required: [name, multiplier, polygon]
+      properties:
+        name: { type: string }
+        multiplier:
           type: number
           format: float
-          description: Service radius in meters
-        is_active:
-          type: boolean
-        created_at:
+          minimum: 1.0
+        polygon:
+          type: array
+          description: Ring of [lat, lng] pairs (closing vertex optional).
+          items:
+            type: array
+            items: { type: number }
+            minItems: 2
+            maxItems: 2
+
+    LGUPartnership:
+      type: object
+      required: [id, lgu_name, status]
+      properties:
+        id: { type: string, format: uuid }
+        service_area_id: { type: string, format: uuid, nullable: true }
+        lgu_name: { type: string }
+        contact_name: { type: string }
+        contact_email: { type: string, format: email }
+        contact_phone: { type: string }
+        agreement_start: { type: string, format: date, nullable: true }
+        agreement_end: { type: string, format: date, nullable: true }
+        status:
           type: string
-          format: date-time
-        updated_at:
+          enum: [active, pending, expired, terminated]
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    LGUPartnershipInput:
+      type: object
+      required: [lgu_name]
+      properties:
+        service_area_id: { type: string, format: uuid, nullable: true }
+        lgu_name: { type: string }
+        contact_name: { type: string }
+        contact_email: { type: string, format: email }
+        contact_phone: { type: string }
+        agreement_start: { type: string, format: date, nullable: true }
+        agreement_end: { type: string, format: date, nullable: true }
+        status:
           type: string
-          format: date-time
+          enum: [active, pending, expired, terminated]
+        notes: { type: string }
+
+    IncidentStatusEvent:
+      type: object
+      required: [id, to_status, occurred_at]
+      properties:
+        id: { type: string, format: uuid }
+        from_status: { type: string, nullable: true }
+        to_status: { type: string }
+        from_assignee: { type: string, format: uuid, nullable: true }
+        to_assignee: { type: string, format: uuid, nullable: true }
+        actor_id: { type: string, format: uuid, nullable: true }
+        actor_name: { type: string }
+        note: { type: string }
+        occurred_at: { type: string, format: date-time }
+
+    IncidentDetail:
+      type: object
+      required: [incident, status_history]
+      properties:
+        incident: { $ref: "#/components/schemas/Incident" }
+        status_history:
+          type: array
+          items: { $ref: "#/components/schemas/IncidentStatusEvent" }
+
+    AlertRule:
+      type: object
+      required: [id, name, type, enabled, config]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type:
+          type: string
+          enum: [low_rating, high_cancellation, fraud_velocity, kyc_expiry]
+        enabled: { type: boolean }
+        config:
+          type: object
+          additionalProperties: true
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    AlertRuleInput:
+      type: object
+      required: [name, type, config]
+      properties:
+        name: { type: string }
+        type:
+          type: string
+          enum: [low_rating, high_cancellation, fraud_velocity, kyc_expiry]
+        enabled: { type: boolean }
+        config:
+          type: object
+          additionalProperties: true
+
+    AlertEvent:
+      type: object
+      required: [id, fired_at, payload]
+      properties:
+        id: { type: string, format: uuid }
+        rule_id: { type: string, format: uuid, nullable: true }
+        fired_at: { type: string, format: date-time }
+        subject_type: { type: string }
+        subject_id: { type: string, format: uuid, nullable: true }
+        payload:
+          type: object
+          additionalProperties: true
 
     Role:
       type: object
@@ -4541,17 +5284,31 @@ components:
 
     PaymentGatewayConfig:
       type: object
+      description: |
+        Persisted credentials and toggle state for one payment gateway provider
+        (gcash, paymaya, card, cash). config_fields is a string-keyed map; secret
+        values are masked to "****" + last4 on read responses, so the UI must
+        treat fields starting with "****" as unchanged when re-saving.
       properties:
-        name:
+        id:
           type: string
-          example: "Metro Manila"
-        center:
-          $ref: "#/components/schemas/LatLng"
-        radius:
-          type: number
-          format: float
-          description: Service radius in meters
-          example: 15000.0
+          format: uuid
+        provider:
+          type: string
+          enum: [gcash, paymaya, card, cash]
+        config_fields:
+          type: object
+          additionalProperties:
+            type: string
+        is_active:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
 
     NearbyDriversResponse:
       type: object
@@ -4640,10 +5397,11 @@ components:
 
     ComplianceData:
       type: object
+      description: LTFRB regulatory compliance singleton, backed by the regulatory_compliance table.
       properties:
         accreditation_status:
           type: string
-          enum: [active, expiring, expired]
+          enum: [active, expiring, expired, pending]
         accreditation_expiry:
           type: string
           format: date-time
@@ -4652,7 +5410,83 @@ components:
           description: Percentage of drivers with valid documents (0–100)
         violation_count:
           type: integer
-          description: LTFRB-reportable violations in current period
+          description: LTFRB-reportable violations in current period (alias of violations_open)
+        violations_open:
+          type: integer
+          description: Count of open regulatory violations
+        violations_resolved:
+          type: integer
+          description: Count of resolved regulatory violations in current period
+        last_audit_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the last LTFRB audit, null if never audited
+
+    HeatmapPosition:
+      type: object
+      properties:
+        driver_id:
+          type: string
+          format: uuid
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        vehicle_type:
+          type: string
+          enum: [motorcycle, tricycle, car]
+        is_available:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+
+    HeatmapBounds:
+      type: object
+      properties:
+        north: { type: number, format: double }
+        south: { type: number, format: double }
+        east:  { type: number, format: double }
+        west:  { type: number, format: double }
+
+    DriverHeatmap:
+      type: object
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeatmapPosition"
+        bounds:
+          $ref: "#/components/schemas/HeatmapBounds"
+        generated_at:
+          type: string
+          format: date-time
+
+    InfraMetrics:
+      type: object
+      description: Aggregated infra metrics shown on the System Health page.
+      properties:
+        api_p50_ms:
+          type: number
+          description: HTTP request latency p50 over window_minutes
+        api_p95_ms:
+          type: number
+          description: HTTP request latency p95 over window_minutes
+        ws_connections:
+          type: integer
+          description: Current connected WebSocket client count from latest probe
+        db_query_p99_ms:
+          type: number
+          description: Database probe latency p99 over last 24h
+        sample_count:
+          type: integer
+          description: Number of HTTP samples contributing to p50/p95
+        window_minutes:
+          type: integer
+          description: Size of the rolling window used for HTTP percentiles
 
     IntegrationTestResult:
       type: object
