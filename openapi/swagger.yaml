@@ -3950,7 +3950,7 @@ components:
           nullable: true
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
         created_at:
           type: string
           format: date-time
@@ -4072,7 +4072,7 @@ components:
           description: Passenger's selected vehicle type
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
           default: cash
           description: Payment method for this ride
 
@@ -4144,7 +4144,7 @@ components:
           description: Vehicle type for this ride
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
           description: Payment method used for ride
         cancelled_by:
           type: string
@@ -4550,6 +4550,9 @@ components:
     SurgeConfig:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         enabled:
           type: boolean
         max_multiplier:
@@ -4568,6 +4571,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BlackoutHour"
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+        updated_by_name:
+          type: string
+          description: Admin display name resolved via LEFT JOIN users on updated_by.
 
     GeoJSONFeatureCollection:
       type: object
@@ -5133,14 +5145,32 @@ components:
         note: { type: string }
         occurred_at: { type: string, format: date-time }
 
+    IncidentLocationPoint:
+      type: object
+      required: [lat, lng, recorded_at]
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+        recorded_at: { type: string, format: date-time }
+
     IncidentDetail:
       type: object
+      # location_trail intentionally omitted from required so older clients
+      # that predate migration 025 still validate against this schema.
       required: [incident, status_history]
       properties:
         incident: { $ref: "#/components/schemas/Incident" }
         status_history:
           type: array
           items: { $ref: "#/components/schemas/IncidentStatusEvent" }
+        location_trail:
+          type: array
+          description: |
+            GPS pings captured during the incident's active window (between
+            created_at and resolved_at). Populated by the driver_location_history
+            write-path while the driver has an unresolved incident; empty when
+            no pings were recorded.
+          items: { $ref: "#/components/schemas/IncidentLocationPoint" }
 
     AlertRule:
       type: object
@@ -5594,7 +5624,7 @@ components:
 
     PaymentMethod:
       type: string
-      enum: [cash, card]
+      enum: [cash, card, gcash, paymaya]
 
     PaymentStatus:
       type: string

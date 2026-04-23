@@ -2317,7 +2317,7 @@ export interface components {
             estimated_fare: number;
             driver?: components["schemas"]["DriverSummary"] | null;
             /** @enum {string} */
-            payment_method: "cash" | "card";
+            payment_method: "cash" | "card" | "gcash" | "paymaya";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -2402,7 +2402,7 @@ export interface components {
              * @default cash
              * @enum {string}
              */
-            payment_method: "cash" | "card";
+            payment_method: "cash" | "card" | "gcash" | "paymaya";
         };
         RideResponse: {
             /**
@@ -2460,7 +2460,7 @@ export interface components {
              * @description Payment method used for ride
              * @enum {string}
              */
-            payment_method?: "cash" | "card";
+            payment_method?: "cash" | "card" | "gcash" | "paymaya";
             /**
              * @description Set only when status is `cancelled`
              * @enum {string|null}
@@ -2721,6 +2721,8 @@ export interface components {
             updated_by_name?: string;
         };
         SurgeConfig: {
+            /** Format: uuid */
+            id?: string;
             enabled?: boolean;
             max_multiplier?: number;
             trigger_ratio?: number;
@@ -2731,6 +2733,12 @@ export interface components {
              */
             zones?: components["schemas"]["SurgeZone"][];
             blackout_hours?: components["schemas"]["BlackoutHour"][];
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string;
+            /** @description Admin display name resolved via LEFT JOIN users on updated_by. */
+            updated_by_name?: string;
         };
         GeoJSONFeatureCollection: {
             /** @enum {string} */
@@ -3090,9 +3098,24 @@ export interface components {
             /** Format: date-time */
             occurred_at: string;
         };
+        IncidentLocationPoint: {
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lng: number;
+            /** Format: date-time */
+            recorded_at: string;
+        };
         IncidentDetail: {
             incident: components["schemas"]["Incident"];
             status_history: components["schemas"]["IncidentStatusEvent"][];
+            /**
+             * @description GPS pings captured during the incident's active window (between
+             *     created_at and resolved_at). Populated by the driver_location_history
+             *     write-path while the driver has an unresolved incident; empty when
+             *     no pings were recorded.
+             */
+            location_trail?: components["schemas"]["IncidentLocationPoint"][];
         };
         AlertRule: {
             /** Format: uuid */
@@ -3381,7 +3404,7 @@ export interface components {
             documents: components["schemas"]["DriverDocumentResponse"][];
         };
         /** @enum {string} */
-        PaymentMethod: "cash" | "card";
+        PaymentMethod: "cash" | "card" | "gcash" | "paymaya";
         /** @enum {string} */
         PaymentStatus: "pending" | "completed" | "failed" | "refunded";
         PaymentResponse: {

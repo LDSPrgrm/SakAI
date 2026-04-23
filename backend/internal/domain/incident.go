@@ -37,8 +37,17 @@ type IncidentStatusEvent struct {
 	OccurredAt   time.Time  `json:"occurred_at"`
 }
 
+// IncidentLocationPoint is one GPS ping captured during an active incident.
+// Rows only exist for drivers with an unresolved incident at ping time.
+type IncidentLocationPoint struct {
+	Lat        float64   `json:"lat"`
+	Lng        float64   `json:"lng"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // IncidentDetail is the aggregate returned by GET /admin/incidents/{id}.
 type IncidentDetail struct {
-	Incident      *Incident             `json:"incident"`
-	StatusHistory []*IncidentStatusEvent `json:"status_history"`
+	Incident      *Incident               `json:"incident"`
+	StatusHistory []*IncidentStatusEvent  `json:"status_history"`
+	LocationTrail []*IncidentLocationPoint `json:"location_trail"`
 }

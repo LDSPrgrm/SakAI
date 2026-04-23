@@ -20,6 +20,7 @@ import (
 	"github.com/sakai/backend/internal/delivery/http/router"
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/alerting"
+	"github.com/sakai/backend/internal/infrastructure/notifications"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
 	"github.com/sakai/backend/internal/infrastructure/health"
@@ -108,7 +109,7 @@ func main() {
 		cfg.AccessTokenExpiry,
 		cfg.RefreshTokenExpiry,
 	)
-	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo)
+	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo, incidentRepo)
 	fareCalc := usecase.NewFareCalculator()
 	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
@@ -186,7 +187,9 @@ func main() {
 	// must honour this context and exit cleanly within the shutdown window.
 	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
 	go health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run(workerCtx)
-	go alerting.New(alertRepo, pool, 5*time.Minute).Run(workerCtx)
+	notifier := notifications.NewNotifier(pool)
+	go alerting.New(alertRepo, pool, 5*time.Minute).WithNotifier(notifier).Run(workerCtx)
+	go notifications.NewDispatcher(pool, 30*time.Second, 20).Run(workerCtx)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{

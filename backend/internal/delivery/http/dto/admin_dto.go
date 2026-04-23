@@ -111,16 +111,25 @@ type IncidentStatusEventDTO struct {
 	OccurredAt   time.Time `json:"occurred_at"`
 }
 
+// IncidentLocationPointDTO is one GPS ping captured during an active incident.
+type IncidentLocationPointDTO struct {
+	Lat        float64   `json:"lat"`
+	Lng        float64   `json:"lng"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // IncidentDetailDTO is returned by GET /admin/incidents/{id}.
 type IncidentDetailDTO struct {
-	Incident      *IncidentDTO             `json:"incident"`
-	StatusHistory []IncidentStatusEventDTO `json:"status_history"`
+	Incident      *IncidentDTO               `json:"incident"`
+	StatusHistory []IncidentStatusEventDTO   `json:"status_history"`
+	LocationTrail []IncidentLocationPointDTO `json:"location_trail"`
 }
 
 func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
 	res := &IncidentDetailDTO{
 		Incident:      NewIncidentDTO(d.Incident),
 		StatusHistory: make([]IncidentStatusEventDTO, 0, len(d.StatusHistory)),
+		LocationTrail: make([]IncidentLocationPointDTO, 0, len(d.LocationTrail)),
 	}
 	for _, ev := range d.StatusHistory {
 		item := IncidentStatusEventDTO{
@@ -144,6 +153,13 @@ func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
 			item.ActorID = &s
 		}
 		res.StatusHistory = append(res.StatusHistory, item)
+	}
+	for _, p := range d.LocationTrail {
+		res.LocationTrail = append(res.LocationTrail, IncidentLocationPointDTO{
+			Lat:        p.Lat,
+			Lng:        p.Lng,
+			RecordedAt: p.RecordedAt,
+		})
 	}
 	return res
 }

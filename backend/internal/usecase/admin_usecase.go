@@ -306,7 +306,8 @@ func (uc *adminUseCase) ResolveIncident(ctx context.Context, actorID, incidentID
 	return nil
 }
 
-// GetIncident returns the incident plus its full status-history timeline.
+// GetIncident returns the incident, its full status-history timeline, and any
+// driver GPS pings captured while the incident was open.
 func (uc *adminUseCase) GetIncident(ctx context.Context, incidentID uuid.UUID) (*domain.IncidentDetail, error) {
 	inc, err := uc.incidentRepo.GetIncidentByID(ctx, incidentID)
 	if err != nil {
@@ -316,7 +317,11 @@ func (uc *adminUseCase) GetIncident(ctx context.Context, incidentID uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	return &domain.IncidentDetail{Incident: inc, StatusHistory: history}, nil
+	trail, err := uc.incidentRepo.ListLocationTrail(ctx, incidentID)
+	if err != nil {
+		return nil, err
+	}
+	return &domain.IncidentDetail{Incident: inc, StatusHistory: history, LocationTrail: trail}, nil
 }
 
 // AssignIncident reassigns an incident to another support operator (or clears

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { X, ShieldAlert, User, Car, Clock, UserCog } from 'lucide-react';
+import { X, ShieldAlert, User, Car, Clock, UserCog, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -27,6 +27,7 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
   const detail = incidentQuery.data ?? null;
   const incident = detail?.incident ?? null;
   const history = detail?.status_history ?? [];
+  const trail = detail?.location_trail ?? [];
 
   const assignees = useMemo(() => {
     const rows = candidatesQuery.data ?? [];
@@ -155,6 +156,33 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
                   </li>
                 ))}
               </ol>
+            </section>
+
+            <section>
+              <p className="text-xs uppercase tracking-wide text-text-muted mb-1.5 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" /> Location Trail
+                {trail.length > 0 && (
+                  <span className="text-text-muted normal-case font-normal">
+                    ({trail.length} ping{trail.length === 1 ? '' : 's'})
+                  </span>
+                )}
+              </p>
+              {trail.length === 0 ? (
+                <p className="text-sm text-text-muted pl-0.5">
+                  No GPS pings captured for this incident.
+                </p>
+              ) : (
+                <ul className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border text-xs">
+                  {trail.map((p, i) => (
+                    <li key={`${p.recorded_at}-${i}`} className="flex items-center justify-between px-3 py-1.5">
+                      <span className="font-mono text-text-main">
+                        {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
+                      </span>
+                      <span className="text-text-muted">{formatDate(p.recorded_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             {incident.status !== 'resolved' && (
