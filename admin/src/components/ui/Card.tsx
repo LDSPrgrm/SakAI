@@ -3,14 +3,17 @@ import { cn } from '@/lib/utils';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
+  surface?: 'flat' | 'raised';
 }
 
-export function Card({ className, children, interactive, ...props }: CardProps) {
+export function Card({ className, children, interactive, surface = 'flat', ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "bg-surface border border-border rounded-xl shadow-sm",
-        interactive && "transition-colors duration-200 hover:border-primary/40 hover:shadow-md",
+        'relative overflow-hidden bg-surface border border-border rounded-xl shadow-sm',
+        surface === 'raised' &&
+          'bg-gradient-to-b from-white/[0.025] to-transparent before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent',
+        interactive && 'transition-colors duration-200 hover:border-primary/40 hover:shadow-md',
         className,
       )}
       {...props}

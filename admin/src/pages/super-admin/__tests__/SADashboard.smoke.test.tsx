@@ -47,16 +47,16 @@ describe('SADashboard smoke test', () => {
 
   it('renders loading state initially', () => {
     renderWithClient(<SADashboard />);
-    expect(screen.getByText('Loading...')).toBeTruthy();
+    expect(screen.getByText(/loading dispatch console/i)).toBeTruthy();
   });
 
   it('renders KPI cards after data loads', async () => {
     renderWithClient(<SADashboard />);
     await waitFor(() =>
-      expect(screen.getByText('Super Admin Dashboard')).toBeTruthy(),
+      expect(screen.getByText('Dispatch Console')).toBeTruthy(),
     );
-    expect(screen.getByText('Total Riders')).toBeTruthy();
-    expect(screen.getByText('Total Drivers')).toBeTruthy();
+    expect(screen.getByText('Riders')).toBeTruthy();
+    expect(screen.getByText('Drivers')).toBeTruthy();
     expect(screen.getByText('Rides Today')).toBeTruthy();
   });
 });
