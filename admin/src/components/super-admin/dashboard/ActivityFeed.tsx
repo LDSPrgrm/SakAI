@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
-import {
-  AlertTriangle, Info, Inbox, Shield, CheckCircle2, RefreshCw, ChevronRight, ChevronDown,
-  type LucideIcon,
-} from 'lucide-react';
+import { Inbox, ChevronRight, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { EmptyState } from './EmptyState';
 import { cn } from '@/lib/utils';
+import { iconFor, type FeedEvent } from '@/components/super-admin/shared/activityMeta';
 
-export interface FeedEvent {
-  id: string | number;
-  type: string;
-  message: string;
-  time: string;
-  isAlert: boolean;
-}
+export type { FeedEvent };
 
 type Filter = 'all' | 'alerts';
 
@@ -21,31 +13,6 @@ interface ActivityFeedProps {
   events: FeedEvent[];
   className?: string;
   initialVisible?: number;
-}
-
-const SECURITY_TYPES = new Set(['login', 'logout', 'permission', 'role']);
-const APPROVE_TYPES  = new Set(['approve', 'complete', 'payout', 'create']);
-const UPDATE_TYPES   = new Set(['update', 'update_status', 'update_fares', 'edit', 'modify']);
-
-function iconFor(event: FeedEvent): { Icon: LucideIcon; tone: string; family: string } {
-  const type = event.type.toLowerCase();
-  if (event.isAlert) {
-    return { Icon: AlertTriangle, tone: 'bg-danger/10 text-danger ring-danger/20', family: 'Alert' };
-  }
-  if (SECURITY_TYPES.has(type)) {
-    return {
-      Icon: Shield,
-      tone: 'bg-[var(--color-sa-accent-soft)] text-[var(--color-sa-accent)] ring-[var(--color-sa-accent)]/20',
-      family: 'Security',
-    };
-  }
-  if (APPROVE_TYPES.has(type)) {
-    return { Icon: CheckCircle2, tone: 'bg-success/10 text-success ring-success/20', family: 'Approve' };
-  }
-  if (UPDATE_TYPES.has(type) || type.startsWith('update')) {
-    return { Icon: RefreshCw, tone: 'bg-primary/10 text-primary ring-primary/20', family: 'Update' };
-  }
-  return { Icon: Info, tone: 'bg-surface-hover text-text-muted ring-border', family: 'Event' };
 }
 
 export function ActivityFeed({ events, className, initialVisible = 6 }: ActivityFeedProps) {
