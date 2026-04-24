@@ -1,20 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { RefreshCw, Users, Car, Activity, Clock, Server, PhilippinePeso } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { KPICard } from '@/components/super-admin/dashboard/KPICard';
-import { RidesChart } from '@/components/super-admin/dashboard/RidesChart';
-import { RevenueChart } from '@/components/super-admin/dashboard/RevenueChart';
-import { VehicleDistribution } from '@/components/super-admin/dashboard/VehicleDistribution';
-import { ActivityFeed } from '@/components/super-admin/dashboard/ActivityFeed';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  useDashboardMetrics, useRidesChart, useRevenueChart,
-  useVehicleDistribution, useActivityFeed,
-} from '@/hooks/useMetrics';
+  RefreshCw, Activity, Clock, Server, PhilippinePeso,
+  ShieldAlert, ShieldCheck, Wallet, Users, Gauge,
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { KPICard } from '@/components/super-admin/dashboard/KPICard';
+import { ServiceStatusBanner } from '@/components/super-admin/dashboard/ServiceStatusBanner';
+import { ActionQueueCard } from '@/components/super-admin/dashboard/ActionQueueCard';
+import { useDashboardMetrics, useDriverHeatmap } from '@/hooks/useMetrics';
+import { useInfraMetrics } from '@/hooks/useSystem';
+import { useKycQueue, useIncidents } from '@/hooks/useSafety';
+import { usePayouts } from '@/hooks/usePayments';
 import { formatPHP, cn } from '@/lib/utils';
 
-type Period = '24h' | '7d' | '30d';
+const LATENCY_GREEN = 250;
+const LATENCY_YELLOW = 500;
 
-const PERIODS: Period[] = ['24h', '7d', '30d'];
+function latencyTone(ms: number | undefined): 'success' | 'warning' | 'danger' | 'muted' {
+  if (ms == null) return 'muted';
+  if (ms < LATENCY_GREEN) return 'success';
+  if (ms < LATENCY_YELLOW) return 'warning';
+  return 'danger';
+}
+
+const TONE_TEXT: Record<string, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  muted: 'text-text-muted',
+};
 
 function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => new Date());
@@ -27,35 +42,42 @@ function useNow(intervalMs = 30_000) {
 
 export function SADashboard() {
   const metricsQuery = useDashboardMetrics();
-  const ridesChartQuery = useRidesChart();
-  const revenueChartQuery = useRevenueChart();
-  const vehicleQuery = useVehicleDistribution();
-  const activityQuery = useActivityFeed();
-
-  const [period, setPeriod] = useState<Period>('30d');
+  const heatmapQuery = useDriverHeatmap();
+  const infraQuery = useInfraMetrics({ refetchInterval: 30_000 });
+  const kycQuery = useKycQueue();
+  const incidentsQuery = useIncidents();
+  const payoutsQuery = usePayouts();
   const now = useNow();
+
+  const metrics = metricsQuery.data;
+  const isLoading = !metrics;
+  const isFetching = metricsQuery.isFetching;
 
   const refetchAll = () => {
     void metricsQuery.refetch();
-    void ridesChartQuery.refetch();
-    void revenueChartQuery.refetch();
-    void vehicleQuery.refetch();
-    void activityQuery.refetch();
+    void heatmapQuery.refetch();
+    void infraQuery.refetch();
+    void kycQuery.refetch();
+    void incidentsQuery.refetch();
+    void payoutsQuery.refetch();
   };
 
-  const metrics = metricsQuery.data;
-  const ridesChart = ridesChartQuery.data;
-  const revenueChart = revenueChartQuery.data;
-  const vehicleData = vehicleQuery.data;
-  const activity = activityQuery.data;
+  const onlineDrivers = heatmapQuery.data?.positions.length ?? 0;
+  const apiP95 = infraQuery.data?.api_p95_ms;
+  const p95Tone = latencyTone(apiP95);
 
-  const isLoading = !metrics || !ridesChart || !revenueChart || !vehicleData || !activity;
-  const isFetching =
-    metricsQuery.isFetching ||
-    ridesChartQuery.isFetching ||
-    revenueChartQuery.isFetching ||
-    vehicleQuery.isFetching ||
-    activityQuery.isFetching;
+  const pendingKyc = useMemo(
+    () => (kycQuery.data ?? []).filter((k) => k.status === 'pending').length,
+    [kycQuery.data],
+  );
+  const openIncidents = useMemo(
+    () => (incidentsQuery.data ?? []).filter((i) => i.status === 'open' || i.status === 'investigating' || i.status === 'escalated').length,
+    [incidentsQuery.data],
+  );
+  const pendingPayouts = useMemo(
+    () => (payoutsQuery.data ?? []).filter((p) => p.status === 'pending').length,
+    [payoutsQuery.data],
+  );
 
   if (isLoading) {
     return (
@@ -90,20 +112,6 @@ export function SADashboard() {
       trend: metrics.revenue_trend,
     },
     {
-      title: 'Riders',
-      value: (metrics.total_riders ?? 0).toLocaleString(),
-      icon: Users,
-      tone: 'primary' as const,
-      trend: metrics.riders_trend,
-    },
-    {
-      title: 'Drivers',
-      value: (metrics.total_drivers ?? 0).toLocaleString(),
-      icon: Car,
-      tone: 'primary' as const,
-      trend: metrics.drivers_trend,
-    },
-    {
       title: 'Rides Today',
       value: (metrics.rides_today ?? 0).toLocaleString(),
       icon: Activity,
@@ -128,12 +136,8 @@ export function SADashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Editorial header */}
       <header className="flex flex-col gap-3 pb-2 border-b border-border/60">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="overline text-[var(--color-sa-accent)]">
-            Super Admin · Operations
-          </span>
           <div className="flex items-center gap-2 text-xs text-text-muted tabular-nums">
             <span className="relative flex w-2 h-2">
               <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-60" />
@@ -142,57 +146,32 @@ export function SADashboard() {
             <span className="hidden sm:inline">{dateLabel} · Manila</span>
             <span className="font-mono text-text-main">{timestamp}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refetchAll}
+            disabled={isFetching}
+            title="Refresh"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+            Refresh
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-col gap-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-text-main tracking-tight leading-none">
-              Dispatch Console
-            </h1>
-            <p className="text-sm text-text-muted">
-              Real-time pulse of SakAI rides, revenue, and platform health.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div
-              role="tablist"
-              aria-label="Time period"
-              className="flex rounded-lg border border-border bg-background p-0.5"
-            >
-              {PERIODS.map((p) => (
-                <button
-                  key={p}
-                  role="tab"
-                  aria-selected={period === p}
-                  onClick={() => setPeriod(p)}
-                  className={cn(
-                    'px-3 py-1 text-xs font-semibold rounded-md transition-colors uppercase tracking-wider tabular-nums',
-                    period === p
-                      ? 'bg-[var(--color-sa-accent)] text-black'
-                      : 'text-text-muted hover:text-text-main hover:bg-surface-hover',
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refetchAll}
-              disabled={isFetching}
-              title="Refresh all panels"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
-              Refresh
-            </Button>
-          </div>
+        <div className="flex flex-col gap-1 min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold text-text-main tracking-tight leading-none">
+            Dispatch Console
+          </h1>
+          <p className="text-sm text-text-muted">
+            Real-time pulse of SakAI rides, revenue, and platform health.
+          </p>
         </div>
       </header>
 
-      {/* Uniform 6-up KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <ServiceStatusBanner />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map((k, i) => (
           <div key={k.title} className="kpi-rise" style={{ animationDelay: `${i * 55}ms` }}>
             <KPICard
@@ -207,16 +186,85 @@ export function SADashboard() {
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <RidesChart data={ridesChart} period={period} accent="sa" className="lg:col-span-8" />
-        <RevenueChart data={revenueChart} period={period} className="lg:col-span-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-primary/10 text-primary ring-1 ring-primary/20 flex-shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              Drivers Online
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+                {onlineDrivers.toLocaleString()}
+              </span>
+              <span className="text-xs text-text-muted">live supply</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 flex items-center gap-4">
+          <div className={cn('w-11 h-11 rounded-lg flex items-center justify-center ring-1 flex-shrink-0',
+            p95Tone === 'success' && 'bg-success/10 text-success ring-success/20',
+            p95Tone === 'warning' && 'bg-warning/10 text-warning ring-warning/20',
+            p95Tone === 'danger'  && 'bg-danger/10 text-danger ring-danger/20',
+            p95Tone === 'muted'   && 'bg-surface-hover text-text-muted ring-border',
+          )}>
+            <Gauge className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              API P95 Latency
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className={cn('text-2xl font-bold tabular-nums leading-none', TONE_TEXT[p95Tone])}>
+                {apiP95 != null ? `${Math.round(apiP95)}ms` : '—'}
+              </span>
+              <span className="text-xs text-text-muted">
+                {p95Tone === 'success' && 'healthy'}
+                {p95Tone === 'warning' && 'elevated'}
+                {p95Tone === 'danger'  && 'degraded'}
+                {p95Tone === 'muted'   && 'no data'}
+              </span>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Bottom row — items-start so Fleet Mix keeps its natural height */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        <VehicleDistribution data={vehicleData} className="lg:col-span-4" />
-        <ActivityFeed events={activity} className="lg:col-span-8" />
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Action Queue
+        </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ActionQueueCard
+            label="KYC Pending"
+            count={pendingKyc}
+            to="/super-admin/safety"
+            icon={ShieldCheck}
+            tone="amber"
+            isLoading={kycQuery.isLoading}
+            emptyHint="Queue empty"
+          />
+          <ActionQueueCard
+            label="Open Incidents"
+            count={openIncidents}
+            to="/super-admin/safety"
+            icon={ShieldAlert}
+            tone={openIncidents > 0 ? 'danger' : 'success'}
+            isLoading={incidentsQuery.isLoading}
+            emptyHint="None open"
+          />
+          <ActionQueueCard
+            label="Payouts Pending"
+            count={pendingPayouts}
+            to="/super-admin/payments"
+            icon={Wallet}
+            tone="primary"
+            isLoading={payoutsQuery.isLoading}
+            emptyHint="All paid out"
+          />
+        </div>
       </div>
     </div>
   );
