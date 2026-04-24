@@ -1,22 +1,17 @@
 import React from 'react';
-import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
 import { RefreshCw, Users, Car, Activity, Clock, Server } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PhpIcon } from '@/components/ui/PhpIcon';
-import { SummaryCard } from '@/components/shared/SummaryCard';
+import { KPICard } from '@/components/super-admin/dashboard/KPICard';
+import { RidesChart } from '@/components/super-admin/dashboard/RidesChart';
+import { RevenueChart } from '@/components/super-admin/dashboard/RevenueChart';
+import { VehicleDistribution } from '@/components/super-admin/dashboard/VehicleDistribution';
+import { ActivityFeed } from '@/components/super-admin/dashboard/ActivityFeed';
 import {
   useDashboardMetrics, useRidesChart, useRevenueChart,
   useVehicleDistribution, useActivityFeed,
 } from '@/hooks/useMetrics';
 import { formatPHP } from '@/lib/utils';
-import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
-
-const COLORS = CHART_COLORS;
-const TOOLTIP_STYLE = DARK_TOOLTIP_STYLE;
 
 export function SADashboard() {
   const metricsQuery = useDashboardMetrics();
@@ -40,6 +35,12 @@ export function SADashboard() {
   const activity = activityQuery.data;
 
   const isLoading = !metrics || !ridesChart || !revenueChart || !vehicleData || !activity;
+  const isFetching =
+    metricsQuery.isFetching ||
+    ridesChartQuery.isFetching ||
+    revenueChartQuery.isFetching ||
+    vehicleQuery.isFetching ||
+    activityQuery.isFetching;
 
   if (isLoading) {
     return (
@@ -50,182 +51,79 @@ export function SADashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Super Admin Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-text-main tracking-tight">Super Admin Dashboard</h1>
         <Button
           variant="outline"
           size="sm"
           onClick={refetchAll}
-          disabled={metricsQuery.isFetching}
+          disabled={isFetching}
+          title="Refresh all panels"
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`w-4 h-4 ${metricsQuery.isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <KPICard
           title="Total Riders"
           value={(metrics.total_riders ?? 0).toLocaleString()}
-          icon={<Users className="w-5 h-5 text-primary" />}
-          trend={metrics.riders_trend ?? ''}
+          icon={Users}
+          iconTone="primary"
+          trend={metrics.riders_trend}
         />
-        <SummaryCard
+        <KPICard
           title="Total Drivers"
           value={(metrics.total_drivers ?? 0).toLocaleString()}
-          icon={<Car className="w-5 h-5 text-primary" />}
-          trend={metrics.drivers_trend ?? ''}
+          icon={Car}
+          iconTone="primary"
+          trend={metrics.drivers_trend}
         />
-        <SummaryCard
+        <KPICard
           title="Rides Today"
           value={(metrics.rides_today ?? 0).toLocaleString()}
-          icon={<Activity className="w-5 h-5 text-primary" />}
-          trend={metrics.rides_trend ?? ''}
+          icon={Activity}
+          iconTone="primary"
+          trend={metrics.rides_trend}
         />
-        <SummaryCard
+        <KPICard
           title="Revenue Today"
           value={formatPHP(metrics.revenue_today ?? 0)}
-          icon={<PhpIcon className="w-5 h-5 text-success" />}
-          trend={metrics.revenue_trend ?? ''}
+          icon={PhpIcon}
+          iconTone="success"
+          trend={metrics.revenue_trend}
         />
-        <SummaryCard
-          title="Avg Wait Time"
-          value={`${metrics.avg_wait_minutes ?? 0} mins`}
-          icon={<Clock className="w-5 h-5 text-warning" />}
-          trend={metrics.wait_trend ?? ''}
+        <KPICard
+          title="Avg Wait"
+          value={`${metrics.avg_wait_minutes ?? 0} min`}
+          icon={Clock}
+          iconTone="warning"
+          trend={metrics.wait_trend}
           trendDownIsGood
         />
-        <SummaryCard
-          title="Platform Uptime"
+        <KPICard
+          title="Uptime"
           value={`${metrics.platform_uptime ?? 0}%`}
-          icon={<Server className="w-5 h-5 text-success" />}
+          icon={Server}
+          iconTone="success"
         />
       </div>
 
-      {/* Row 2: Rides Chart + Activity Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Rides Over Time */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Rides Over Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={ridesChart} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                <Tooltip {...TOOLTIP_STYLE} />
-                <Line
-                  type="monotone"
-                  dataKey="rides"
-                  stroke="#1A73E8"
-                  strokeWidth={2}
-                  dot={{ fill: '#1A73E8', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {activity.map((item) => (
-                <li key={item.id} className="flex items-start gap-3">
-                  <span
-                    className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${item.isAlert ? 'bg-danger' : 'bg-primary'
-                      }`}
-                  />
-                  <div className="min-w-0">
-                    <p
-                      className={`text-sm leading-snug ${item.isAlert ? 'text-danger' : 'text-text-main'
-                        }`}
-                    >
-                      {item.message}
-                    </p>
-                    <p className="text-xs text-text-muted mt-0.5">{item.time}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <RidesChart data={ridesChart} className="lg:col-span-8" />
+        <RevenueChart data={revenueChart} className="lg:col-span-4" />
       </div>
 
-      {/* Row 3: Revenue Chart + Vehicle Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue by Week */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Revenue by Week</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={revenueChart} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                <YAxis
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                  tickFormatter={(v) => `₱${v / 1000}k`}
-                />
-                <Tooltip {...TOOLTIP_STYLE} cursor={false} />
-                {revenueChart.some((p) => p.gcash != null || p.cash != null || p.paymaya != null || p.card != null) ? (
-                  <>
-                    <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
-                    <Bar dataKey="gcash" stackId="a" fill={COLORS[0]} name="GCash" />
-                    <Bar dataKey="cash" stackId="a" fill={COLORS[1]} name="Cash" />
-                    <Bar dataKey="paymaya" stackId="a" fill={COLORS[2]} name="PayMaya" />
-                    <Bar dataKey="card" stackId="a" fill={COLORS[3]} name="Card" radius={[4, 4, 0, 0]} />
-                  </>
-                ) : (
-                  <Bar dataKey="revenue" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
-                )}
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Vehicle Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vehicle Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={vehicleData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={3}
-                >
-                  {vehicleData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, '']} />
-                <Legend
-                  iconType="circle"
-                  wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Bottom row: vehicle + activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <VehicleDistribution data={vehicleData} className="lg:col-span-4" />
+        <ActivityFeed events={activity} className="lg:col-span-8" />
       </div>
     </div>
   );

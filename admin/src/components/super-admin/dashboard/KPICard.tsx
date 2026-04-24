@@ -1,47 +1,76 @@
-// KPI summary card — spec superadmin.md §4.1 Dashboard
-// Shows current value + trend arrow + percentage change vs previous period.
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
+
+type IconTone = 'primary' | 'success' | 'warning' | 'danger';
 
 interface KPICardProps {
   title: string;
   value: string | number;
-  /** e.g. "+12%" or "-3%" */
   trend?: string;
-  /** icon component from lucide-react */
+  trendDownIsGood?: boolean;
   icon?: React.ElementType;
+  iconTone?: IconTone;
   className?: string;
 }
 
-export function KPICard({ title, value, trend, icon: Icon, className }: KPICardProps) {
-  const isPositive = trend ? trend.startsWith('+') : undefined;
-  const isNegative = trend ? trend.startsWith('-') : undefined;
+const TONE_STYLES: Record<IconTone, string> = {
+  primary: 'bg-primary/10 text-primary',
+  success: 'bg-success/10 text-success',
+  warning: 'bg-warning/10 text-warning',
+  danger:  'bg-danger/10 text-danger',
+};
+
+export function KPICard({
+  title,
+  value,
+  trend,
+  trendDownIsGood = false,
+  icon: Icon,
+  iconTone = 'primary',
+  className,
+}: KPICardProps) {
+  const isPositive = trend?.startsWith('+');
+  const isNegative = trend?.startsWith('-');
+  const hasDirection = isPositive || isNegative;
+  const isGood = hasDirection ? (trendDownIsGood ? isNegative : isPositive) : null;
 
   const TrendIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Minus;
-  const trendColor = isPositive
-    ? 'text-success'
-    : isNegative
-    ? 'text-danger'
-    : 'text-text-muted';
+  const trendPillClasses =
+    isGood === true
+      ? 'bg-success/10 text-success'
+      : isGood === false
+      ? 'bg-danger/10 text-danger'
+      : 'bg-surface-hover text-text-muted';
 
   return (
-    <div className={cn('bg-surface border border-border rounded-xl p-5 flex flex-col gap-3', className)}>
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-text-muted font-medium">{title}</p>
+    <Card
+      interactive
+      className={cn('p-5 flex flex-col gap-4 focus-within:ring-2 focus-within:ring-primary/50', className)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium text-text-muted truncate">{title}</p>
         {Icon && (
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-primary" />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', TONE_STYLES[iconTone])}>
+            <Icon className="w-5 h-5" />
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-text-main tabular-nums">{value}</p>
-      {trend && (
-        <div className={cn('flex items-center gap-1 text-xs font-medium', trendColor)}>
-          <TrendIcon className="w-3.5 h-3.5" />
-          <span>{trend} vs previous period</span>
+      <p className="text-3xl font-bold text-text-main tabular-nums tracking-tight leading-none">
+        {value}
+      </p>
+      {trend ? (
+        <div className="flex items-center gap-2">
+          <span className={cn('inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-xs font-semibold tabular-nums', trendPillClasses)}>
+            <TrendIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
+            {trend}
+          </span>
+          <span className="text-xs text-text-muted">vs last</span>
         </div>
+      ) : (
+        <div className="h-[22px]" aria-hidden />
       )}
-    </div>
+    </Card>
   );
 }

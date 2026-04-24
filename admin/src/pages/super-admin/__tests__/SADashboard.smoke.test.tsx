@@ -19,6 +19,7 @@ vi.mock('recharts', () => {
     React.createElement(React.Fragment, null, children ?? null);
   return {
     ResponsiveContainer: Noop, LineChart: Noop, Line: Noop,
+    AreaChart: Noop, Area: Noop,
     BarChart: Noop, Bar: Noop, PieChart: Noop, Pie: Noop, Cell: Noop,
     XAxis: Noop, YAxis: Noop, CartesianGrid: Noop, Tooltip: Noop, Legend: Noop,
   };
