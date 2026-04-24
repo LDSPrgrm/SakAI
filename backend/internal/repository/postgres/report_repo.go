@@ -62,6 +62,12 @@ func (r *reportRepo) getChartDataRange(ctx context.Context, reportType string, f
 		return r.querySafetyIncidents(ctx, start, end)
 	case "kyc-processing":
 		return r.queryKycProcessing(ctx, start, end)
+	case "rides":
+		return r.queryDashboardRides(ctx, start, end)
+	case "revenue":
+		return r.queryDashboardRevenue(ctx, start, end)
+	case "vehicles":
+		return r.queryDashboardVehicles(ctx, start, end)
 	default:
 		return nil, fmt.Errorf("unknown report type %q", reportType)
 	}
@@ -211,7 +217,7 @@ func (r *reportRepo) queryRideVolume(ctx context.Context, start, end time.Time) 
 
 func (r *reportRepo) queryVehicleDistribution(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
 	const q = `
-		SELECT COALESCE(vehicle_type, 'unknown') AS label, COUNT(*) AS value
+		SELECT COALESCE(ride_type, 'unknown') AS label, COUNT(*) AS value
 		FROM rides
 		WHERE created_at::date BETWEEN $1 AND $2
 		GROUP BY 1
@@ -267,6 +273,55 @@ func (r *reportRepo) queryKycProcessing(ctx context.Context, start, end time.Tim
 		LEFT JOIN per_day p ON p.d = days.d
 		ORDER BY days.d`
 	return r.scanKV(ctx, q, []string{"label", "approved", "rejected"}, start, end)
+}
+
+// Dashboard chart variants — return frontend-ready {name, <metric>} shape so
+// SADashboard can render Recharts series without client-side reshaping.
+
+func (r *reportRepo) queryDashboardRides(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT created_at::date AS d, COUNT(*) AS cnt
+			FROM rides
+			WHERE created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name, COALESCE(p.cnt, 0) AS rides
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "rides"}, start, end)
+}
+
+func (r *reportRepo) queryDashboardRevenue(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT processed_at::date AS d, SUM(amount) AS amt
+			FROM ride_payments
+			WHERE status = 'completed' AND processed_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name, COALESCE(p.amt, 0)::float AS revenue
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "revenue"}, start, end)
+}
+
+func (r *reportRepo) queryDashboardVehicles(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		SELECT COALESCE(ride_type, 'unknown') AS name, COUNT(*) AS value
+		FROM rides
+		WHERE created_at::date BETWEEN $1 AND $2
+		GROUP BY 1
+		ORDER BY value DESC`
+	return r.scanKV(ctx, q, []string{"name", "value"}, start, end)
 }
 
 // --- helpers -----------------------------------------------------------------
