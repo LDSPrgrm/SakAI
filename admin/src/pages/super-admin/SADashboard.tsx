@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RefreshCw, Users, Car, Activity, Clock, Server, PhilippinePeso } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/super-admin/dashboard/KPICard';
@@ -57,19 +57,6 @@ export function SADashboard() {
     vehicleQuery.isFetching ||
     activityQuery.isFetching;
 
-  const revenueSpark = useMemo(() => {
-    if (!revenueChart) return [];
-    return revenueChart.map((p) => ({
-      name: p.name,
-      value:
-        (p.revenue ?? 0) +
-        (p.gcash ?? 0) +
-        (p.cash ?? 0) +
-        (p.paymaya ?? 0) +
-        (p.card ?? 0),
-    }));
-  }, [revenueChart]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-text-muted text-sm">
@@ -93,6 +80,51 @@ export function SADashboard() {
     day: 'numeric',
     year: 'numeric',
   }).format(now);
+
+  const kpis = [
+    {
+      title: 'Revenue Today',
+      value: formatPHP(metrics.revenue_today ?? 0),
+      icon: PhilippinePeso,
+      tone: 'sa-accent' as const,
+      trend: metrics.revenue_trend,
+    },
+    {
+      title: 'Riders',
+      value: (metrics.total_riders ?? 0).toLocaleString(),
+      icon: Users,
+      tone: 'primary' as const,
+      trend: metrics.riders_trend,
+    },
+    {
+      title: 'Drivers',
+      value: (metrics.total_drivers ?? 0).toLocaleString(),
+      icon: Car,
+      tone: 'primary' as const,
+      trend: metrics.drivers_trend,
+    },
+    {
+      title: 'Rides Today',
+      value: (metrics.rides_today ?? 0).toLocaleString(),
+      icon: Activity,
+      tone: 'sa-accent' as const,
+      trend: metrics.rides_trend,
+    },
+    {
+      title: 'Avg Wait',
+      value: `${metrics.avg_wait_minutes ?? 0}m`,
+      icon: Clock,
+      tone: 'warning' as const,
+      trend: metrics.wait_trend,
+      trendDownIsGood: true,
+    },
+    {
+      title: 'Uptime',
+      value: `${metrics.platform_uptime ?? 0}%`,
+      icon: Server,
+      tone: 'success' as const,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-5">
@@ -122,7 +154,6 @@ export function SADashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Period segmented control */}
             <div
               role="tablist"
               aria-label="Time period"
@@ -160,76 +191,20 @@ export function SADashboard() {
         </div>
       </header>
 
-      {/* KPI rhythm: lead Revenue + 5 compact stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 kpi-rise" style={{ animationDelay: '0ms' }}>
-          <KPICard
-            variant="lead"
-            eyebrow="Revenue Today"
-            title="Gross receipts · PHP"
-            value={formatPHP(metrics.revenue_today ?? 0)}
-            icon={PhilippinePeso}
-            iconTone="sa-accent"
-            trend={metrics.revenue_trend}
-            subtext="vs yesterday"
-            sparkline={revenueSpark}
-          />
-        </div>
-
-        <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            {
-              title: 'Riders',
-              value: (metrics.total_riders ?? 0).toLocaleString(),
-              icon: Users,
-              tone: 'primary' as const,
-              trend: metrics.riders_trend,
-            },
-            {
-              title: 'Drivers',
-              value: (metrics.total_drivers ?? 0).toLocaleString(),
-              icon: Car,
-              tone: 'primary' as const,
-              trend: metrics.drivers_trend,
-            },
-            {
-              title: 'Rides Today',
-              value: (metrics.rides_today ?? 0).toLocaleString(),
-              icon: Activity,
-              tone: 'sa-accent' as const,
-              trend: metrics.rides_trend,
-            },
-            {
-              title: 'Avg Wait',
-              value: `${metrics.avg_wait_minutes ?? 0}m`,
-              icon: Clock,
-              tone: 'warning' as const,
-              trend: metrics.wait_trend,
-              trendDownIsGood: true,
-            },
-            {
-              title: 'Uptime',
-              value: `${metrics.platform_uptime ?? 0}%`,
-              icon: Server,
-              tone: 'success' as const,
-            },
-          ].map((k, i) => (
-            <div
-              key={k.title}
-              className="kpi-rise"
-              style={{ animationDelay: `${60 + i * 60}ms` }}
-            >
-              <KPICard
-                title={k.title}
-                value={k.value}
-                icon={k.icon}
-                iconTone={k.tone}
-                trend={k.trend}
-                trendDownIsGood={k.trendDownIsGood}
-              />
-            </div>
-          ))}
-        </div>
+      {/* Uniform 6-up KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {kpis.map((k, i) => (
+          <div key={k.title} className="kpi-rise" style={{ animationDelay: `${i * 55}ms` }}>
+            <KPICard
+              title={k.title}
+              value={k.value}
+              icon={k.icon}
+              iconTone={k.tone}
+              trend={k.trend}
+              trendDownIsGood={k.trendDownIsGood}
+            />
+          </div>
+        ))}
       </div>
 
       {/* Charts row */}
@@ -238,8 +213,8 @@ export function SADashboard() {
         <RevenueChart data={revenueChart} period={period} className="lg:col-span-4" />
       </div>
 
-      {/* Bottom row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Bottom row — items-start so Fleet Mix keeps its natural height */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         <VehicleDistribution data={vehicleData} className="lg:col-span-4" />
         <ActivityFeed events={activity} className="lg:col-span-8" />
       </div>
