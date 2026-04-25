@@ -34,11 +34,12 @@ vi.mock('@/api/super-admin/metrics', () => ({
 
 vi.mock('@/api/super-admin/system', () => ({
   systemApi: {
-    getSystemServices: vi.fn().mockResolvedValue([
-      { name: 'api', status: 'ok' },
-      { name: 'websocket', status: 'ok' },
+    getServices: vi.fn().mockResolvedValue([
+      { name: 'api', status: 'ok', latency_ms: 110, uptime_pct: 99.98 },
+      { name: 'websocket', status: 'ok', latency_ms: 80, uptime_pct: 99.99 },
     ]),
     getInfraMetrics: vi.fn().mockResolvedValue({ api_p95_ms: 180 }),
+    getFeatureFlags: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -62,6 +63,31 @@ vi.mock('@/api/super-admin/payments', () => ({
       { id: 'p1', status: 'pending' },
       { id: 'p2', status: 'done' },
     ]),
+    getGatewayConfigs: vi.fn().mockResolvedValue([
+      { id: 'c1', provider: 'gcash',   is_active: true,  updated_at: new Date().toISOString() },
+      { id: 'c2', provider: 'paymaya', is_active: false, updated_at: new Date().toISOString() },
+      { id: 'c3', provider: 'cash',    is_active: true,  updated_at: new Date().toISOString() },
+    ]),
+  },
+}));
+
+vi.mock('@/api/super-admin/audit', () => ({
+  auditApi: {
+    getLogs: vi.fn().mockResolvedValue([
+      {
+        id: 'a1', action: 'approve', actor_name: 'Maria',
+        resource_type: 'kyc', resource_id: 'k-1', timestamp: new Date().toISOString(),
+      },
+    ]),
+  },
+}));
+
+vi.mock('@/api/super-admin/reports', () => ({
+  reportsApi: {
+    getChartData: vi.fn().mockResolvedValue([
+      { label: 'GCash', value: 45 },
+      { label: 'Cash', value: 30 },
+    ]),
   },
 }));
 
@@ -72,13 +98,13 @@ describe('SADashboard smoke test', () => {
 
   it('renders loading state initially', () => {
     renderWithClient(<SADashboard />);
-    expect(screen.getByText(/loading dispatch console/i)).toBeTruthy();
+    expect(screen.getByText(/loading superadmin dashboard/i)).toBeTruthy();
   });
 
   it('renders KPI cards after data loads', async () => {
     renderWithClient(<SADashboard />);
     await waitFor(() =>
-      expect(screen.getByText('Dispatch Console')).toBeTruthy(),
+      expect(screen.getByText('Superadmin Dashboard')).toBeTruthy(),
     );
     expect(screen.getByText('Revenue Today')).toBeTruthy();
     expect(screen.getByText('Rides Today')).toBeTruthy();
@@ -89,7 +115,7 @@ describe('SADashboard smoke test', () => {
   it('renders live ops + action queue', async () => {
     renderWithClient(<SADashboard />);
     await waitFor(() =>
-      expect(screen.getByText('Dispatch Console')).toBeTruthy(),
+      expect(screen.getByText('Superadmin Dashboard')).toBeTruthy(),
     );
     expect(screen.getByText('Drivers Online')).toBeTruthy();
     expect(screen.getByText('API P95 Latency')).toBeTruthy();
@@ -98,14 +124,15 @@ describe('SADashboard smoke test', () => {
     expect(screen.getByText('Payouts Pending')).toBeTruthy();
   });
 
-  it('does not render removed dashboard widgets', async () => {
+  it('renders new expansion sections', async () => {
     renderWithClient(<SADashboard />);
     await waitFor(() =>
-      expect(screen.getByText('Dispatch Console')).toBeTruthy(),
+      expect(screen.getByText('Superadmin Dashboard')).toBeTruthy(),
     );
-    expect(screen.queryByText('Super Admin · Operations')).toBeNull();
-    expect(screen.queryByText('Riders')).toBeNull();
-    expect(screen.queryByText('Drivers')).toBeNull();
-    expect(screen.queryByText(/recent activity/i)).toBeNull();
+    expect(screen.getByText('Total Riders')).toBeTruthy();
+    expect(screen.getByText('Total Drivers')).toBeTruthy();
+    expect(screen.getByText('Service Health')).toBeTruthy();
+    expect(screen.getByText('Payments')).toBeTruthy();
+    expect(screen.getByText('Recent Admin Activity')).toBeTruthy();
   });
 });

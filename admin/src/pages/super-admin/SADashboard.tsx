@@ -1,17 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   RefreshCw, Activity, Clock, Server, PhilippinePeso,
-  ShieldAlert, ShieldCheck, Wallet, Users, Gauge,
+  ShieldAlert, ShieldCheck, Wallet, Users, Gauge, Car,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { KPICard } from '@/components/super-admin/dashboard/KPICard';
 import { ServiceStatusBanner } from '@/components/super-admin/dashboard/ServiceStatusBanner';
 import { ActionQueueCard } from '@/components/super-admin/dashboard/ActionQueueCard';
+import { ServiceHealthGrid } from '@/components/super-admin/dashboard/ServiceHealthGrid';
+import { PaymentSplitCard } from '@/components/super-admin/dashboard/PaymentSplitCard';
+import { GatewayStatusBoard } from '@/components/super-admin/dashboard/GatewayStatusBoard';
+import { ActivityFeed } from '@/components/super-admin/dashboard/ActivityFeed';
+import type { FeedEvent } from '@/components/super-admin/shared/activityMeta';
 import { useDashboardMetrics, useDriverHeatmap } from '@/hooks/useMetrics';
-import { useInfraMetrics } from '@/hooks/useSystem';
+import { useInfraMetrics, useSystemServices } from '@/hooks/useSystem';
 import { useKycQueue, useIncidents } from '@/hooks/useSafety';
-import { usePayouts } from '@/hooks/usePayments';
+import { usePayouts, useGatewayConfigs } from '@/hooks/usePayments';
+import { useAuditLog } from '@/hooks/useAuditLog';
+import { useReportChart } from '@/hooks/useReports';
+import type { AuditLog } from '@/types/super-admin/audit';
 import { formatPHP, cn } from '@/lib/utils';
 
 const LATENCY_GREEN = 250;
@@ -40,6 +48,35 @@ function useNow(intervalMs = 30_000) {
   return now;
 }
 
+const ALERT_ACTIONS = new Set(['delete', 'reject', 'suspend', 'revoke']);
+
+function relativeTime(iso?: string): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffMs = Date.now() - then;
+  const mins = Math.round(diffMs / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.round(hrs / 24);
+  return `${days}d`;
+}
+
+function auditLogToFeedEvent(entry: AuditLog, index: number): FeedEvent {
+  const actor = entry.actor_name ?? 'Admin';
+  const action = entry.action ?? 'event';
+  const resource = [entry.resource_type, entry.resource_id].filter(Boolean).join(' ');
+  return {
+    id: entry.id ?? `audit-${index}`,
+    type: action,
+    message: `${actor} ${action.replace(/_/g, ' ')}${resource ? ` · ${resource}` : ''}`,
+    time: relativeTime(entry.timestamp),
+    isAlert: ALERT_ACTIONS.has(action.toLowerCase()),
+  };
+}
+
 export function SADashboard() {
   const metricsQuery = useDashboardMetrics();
   const heatmapQuery = useDriverHeatmap();
@@ -47,6 +84,10 @@ export function SADashboard() {
   const kycQuery = useKycQueue();
   const incidentsQuery = useIncidents();
   const payoutsQuery = usePayouts();
+  const servicesQuery = useSystemServices({ refetchInterval: 30_000 });
+  const gatewaysQuery = useGatewayConfigs();
+  const auditQuery = useAuditLog();
+  const paymentSplitQuery = useReportChart('payment-methods');
   const now = useNow();
 
   const metrics = metricsQuery.data;
@@ -60,6 +101,10 @@ export function SADashboard() {
     void kycQuery.refetch();
     void incidentsQuery.refetch();
     void payoutsQuery.refetch();
+    void servicesQuery.refetch();
+    void gatewaysQuery.refetch();
+    void auditQuery.refetch();
+    void paymentSplitQuery.refetch();
   };
 
   const onlineDrivers = heatmapQuery.data?.positions.length ?? 0;
@@ -79,10 +124,15 @@ export function SADashboard() {
     [payoutsQuery.data],
   );
 
+  const activityEvents = useMemo<FeedEvent[]>(
+    () => (auditQuery.data ?? []).slice(0, 30).map(auditLogToFeedEvent),
+    [auditQuery.data],
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-text-muted text-sm">
-        Loading dispatch console…
+        Loading superadmin dashboard…
       </div>
     );
   }
@@ -161,7 +211,7 @@ export function SADashboard() {
 
         <div className="flex flex-col gap-1 min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold text-text-main tracking-tight leading-none">
-            Dispatch Console
+            Superadmin Dashboard
           </h1>
           <p className="text-sm text-text-muted">
             Real-time pulse of SakAI rides, revenue, and platform health.
@@ -184,6 +234,50 @@ export function SADashboard() {
             />
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-primary/10 text-primary ring-1 ring-primary/20 flex-shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              Total Riders
+            </span>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+                {(metrics.total_riders ?? 0).toLocaleString()}
+              </span>
+              {metrics.riders_trend && (
+                <span className="text-xs text-success tabular-nums">
+                  {metrics.riders_trend}
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-[var(--color-sa-accent-soft)] text-[var(--color-sa-accent)] ring-1 ring-[var(--color-sa-accent)]/20 flex-shrink-0">
+            <Car className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              Total Drivers
+            </span>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+                {(metrics.total_drivers ?? 0).toLocaleString()}
+              </span>
+              {metrics.drivers_trend && (
+                <span className="text-xs text-success tabular-nums">
+                  {metrics.drivers_trend}
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -265,6 +359,40 @@ export function SADashboard() {
             emptyHint="All paid out"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Service Health
+        </span>
+        <ServiceHealthGrid
+          services={servicesQuery.data ?? []}
+          isLoading={servicesQuery.isLoading}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Payments
+        </span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <PaymentSplitCard
+            className="lg:col-span-1"
+            query={paymentSplitQuery}
+          />
+          <GatewayStatusBoard
+            className="lg:col-span-2"
+            configs={gatewaysQuery.data ?? []}
+            isLoading={gatewaysQuery.isLoading}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Recent Admin Activity
+        </span>
+        <ActivityFeed events={activityEvents} initialVisible={6} />
       </div>
     </div>
   );
