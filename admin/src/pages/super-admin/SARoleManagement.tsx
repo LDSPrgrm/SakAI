@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,15 +11,18 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { ActionMenu, type ActionMenuItem } from '@/components/super-admin/shared/ActionMenu';
+import { RoleBadge } from '@/components/super-admin/shared/RoleBadge';
 import {
   useRoles, useCreateRole, useUpdateRole, useDeleteRole, useDuplicateRole,
 } from '@/hooks/useRoles';
 import { formatDate } from '@/utils/formatDate';
 import {
-  PermissionGrid, PERM_ROWS, emptyGrid, fromPermissions, toPermissions, permSummary,
+  PermissionGrid, PERM_ROWS, emptyGrid, fromPermissions, toPermissions,
   type PermGrid,
 } from '@/components/super-admin/forms/PermissionGrid';
-import type { AdminRoleDefinition, RolePermission, RolePermissionKey } from '@/types/super-admin';
+import type { AdminRoleDefinition, RolePermissionKey } from '@/types/super-admin';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
@@ -62,6 +65,25 @@ export function SARoleManagement() {
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
     useForm<RoleFormValues>({ resolver: zodResolver(roleSchema) });
+
+  // ── ESC close + body scroll lock for modals ───────────────────────────────
+
+  useEffect(() => {
+    const isOpen = modalOpen || !!viewingRole;
+    if (!isOpen) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      if (viewingRole) setViewingRole(null);
+      else setModalOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [modalOpen, viewingRole]);
 
   // ── Open helpers ──────────────────────────────────────────────────────────
 
@@ -196,78 +218,96 @@ export function SARoleManagement() {
                       No roles found.
                     </TableCell>
                   </TableRow>
-                ) : roles.map((role) => (
-                  <TableRow key={role.id} className={role.is_system ? 'opacity-70' : ''}>
-                    <TableCell className="font-semibold text-text-main">
-                      {displayName(role.name)}
-                    </TableCell>
-                    <TableCell className="text-sm text-text-muted max-w-[180px] truncate">
-                      {role.description || '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={role.name === 'super_admin' ? 'warning' : 'default'}>
-                        {role.name === 'super_admin' ? 'Superadmin' : 'Admin'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={role.is_system ? 'info' : 'default'}>
-                        {role.is_system ? 'System' : 'Custom'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-text-muted">
-                        <Users className="w-3.5 h-3.5" />
-                        {role.admin_count ?? 0}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-text-muted">
-                      {permSummary(role.permissions)}
-                    </TableCell>
-                    <TableCell className="text-sm text-text-muted">
-                      {role.created_at ? formatDate(role.created_at) : '—'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" title="View permissions"
-                          onClick={() => openView(role)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                ) : roles.map((role) => {
+                  const isSuper = role.name === 'super_admin';
+                  const adminCount = role.admin_count ?? 0;
+                  const reads = role.permissions.filter((p) => p.read).length;
+                  const writes = role.permissions.filter((p) => p.write).length;
 
-                        {role.name !== 'super_admin' && (
-                          <Button variant="ghost" size="icon" title="Edit role"
-                            onClick={() => openEdit(role)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        )}
+                  const items: ActionMenuItem[] = [
+                    {
+                      key: 'view',
+                      label: 'View permissions',
+                      icon: Eye,
+                      onClick: () => openView(role),
+                    },
+                  ];
+                  if (!isSuper) {
+                    items.push({
+                      key: 'edit',
+                      label: 'Edit role',
+                      icon: Pencil,
+                      onClick: () => openEdit(role),
+                    });
+                  }
+                  if (!role.is_system) {
+                    items.push({
+                      key: 'duplicate',
+                      label: 'Duplicate role',
+                      icon: Copy,
+                      onClick: () => { handleDuplicate(role).catch(() => {}); },
+                    });
+                    if (adminCount === 0) {
+                      items.push({
+                        key: 'delete',
+                        label: 'Delete role',
+                        icon: Trash2,
+                        variant: 'danger',
+                        separatorBefore: true,
+                        onClick: () => setDeleteConfirm({ open: true, role }),
+                      });
+                    }
+                  }
 
-                        {!role.is_system && (
-                          <>
-                            <Button variant="ghost" size="icon" title="Duplicate role"
-                              onClick={() => handleDuplicate(role).catch(() => {})}>
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={(role.admin_count ?? 0) > 0
-                                ? 'Cannot delete — reassign admins first'
-                                : 'Delete role'}
-                              disabled={(role.admin_count ?? 0) > 0}
-                              onClick={() => setDeleteConfirm({ open: true, role })}
-                              className="text-danger hover:text-danger disabled:opacity-30"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-
-                        {role.name === 'super_admin' && (
-                          <span className="text-xs text-text-muted italic px-2">System role</span>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  return (
+                    <TableRow key={role.id} className={role.is_system ? 'opacity-70' : ''}>
+                      <TableCell className="font-semibold text-text-main">
+                        {displayName(role.name)}
+                      </TableCell>
+                      <TableCell className="text-sm text-text-muted max-w-[180px] truncate">
+                        {role.description || '—'}
+                      </TableCell>
+                      <TableCell>
+                        <RoleBadge role={isSuper ? 'superadmin' : 'admin'} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={role.is_system ? 'system' : 'custom'} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm text-text-muted">
+                          <Users className="w-3.5 h-3.5" />
+                          {adminCount}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-background border border-border text-text-muted"
+                            title={`${reads} read permission${reads === 1 ? '' : 's'}`}
+                          >
+                            <Eye className="w-3 h-3" />
+                            {reads}
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-background border border-border text-text-muted"
+                            title={`${writes} write permission${writes === 1 ? '' : 's'}`}
+                          >
+                            <Pencil className="w-3 h-3" />
+                            {writes}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-text-muted">
+                        {role.created_at ? formatDate(role.created_at) : '—'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end">
+                          <ActionMenu items={items} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -276,8 +316,12 @@ export function SARoleManagement() {
 
       {/* ── Create / Edit Modal ── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-surface border border-border rounded-xl w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-black/60 animate-[role-fade_120ms_ease-out]"
+            onClick={() => setModalOpen(false)}
+          />
+          <div className="relative bg-surface border border-border rounded-xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col animate-[role-pop_150ms_ease-out]">
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
               <h2 className="text-base font-semibold text-text-main">
@@ -356,8 +400,12 @@ export function SARoleManagement() {
 
       {/* ── View Permissions Modal ── */}
       {viewingRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-surface border border-border rounded-xl w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-black/60 animate-[role-fade_120ms_ease-out]"
+            onClick={() => setViewingRole(null)}
+          />
+          <div className="relative bg-surface border border-border rounded-xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col animate-[role-pop_150ms_ease-out]">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border flex-shrink-0">
               <h2 className="text-base font-semibold text-text-main">
                 Permissions — {displayName(viewingRole.name)}
@@ -394,6 +442,14 @@ export function SARoleManagement() {
         onConfirm={handleDelete}
         onClose={() => setDeleteConfirm({ open: false, role: null })}
       />
+
+      <style>{`
+        @keyframes role-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes role-pop {
+          from { opacity: 0; transform: scale(0.97); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

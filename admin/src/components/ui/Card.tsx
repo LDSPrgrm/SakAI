@@ -10,9 +10,12 @@ export function Card({ className, children, interactive, surface = 'flat', ...pr
   return (
     <div
       className={cn(
-        'relative overflow-hidden bg-surface border border-border rounded-xl shadow-sm',
+        'relative bg-surface border border-border rounded-xl shadow-sm',
+        // Only `raised` variant needs clipping — its `before:` pseudo edge would
+        // otherwise bleed past the rounded corners. Flat cards stay
+        // overflow-visible so popovers / tooltips inside them are not clipped.
         surface === 'raised' &&
-          'bg-gradient-to-b from-white/[0.025] to-transparent before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent',
+          'overflow-hidden bg-gradient-to-b from-white/[0.025] to-transparent before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent',
         interactive && 'transition-colors duration-200 hover:border-primary/40 hover:shadow-md',
         className,
       )}
