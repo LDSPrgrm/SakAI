@@ -7,7 +7,7 @@ import { FLAG_KEYS } from '@/constants/featureFlags';
 
 // Backend seeds one flag per cashless method. The admin UI collapses these
 // into a single "Cashless Payments" row; toggling it fans out to all three.
-const CASHLESS_PROVIDER_KEYS = ['payment_gcash', 'payment_paymaya', 'payment_card'];
+const CASHLESS_PROVIDER_KEYS = ['gcash_payments', 'paymaya_payments', 'card_payments'];
 const CASHLESS_PROVIDER_SET = new Set(CASHLESS_PROVIDER_KEYS);
 
 export function compressCashlessFlags(flags: FeatureFlag[]): FeatureFlag[] {

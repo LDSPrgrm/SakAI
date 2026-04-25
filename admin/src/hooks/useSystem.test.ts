@@ -42,12 +42,12 @@ describe('useIsCashlessEnabled', () => {
 });
 
 describe('compressCashlessFlags', () => {
-  it('collapses payment_gcash/paymaya/card rows into a single synthetic row', () => {
+  it('collapses gcash/paymaya/card payment rows into a single synthetic row', () => {
     const out = compressCashlessFlags([
-      { key: 'surge_pricing',   label: 'Surge', enabled: true },
-      { key: 'payment_gcash',   label: 'GCash', enabled: true },
-      { key: 'payment_paymaya', label: 'PayMaya', enabled: true },
-      { key: 'payment_card',    label: 'Card', enabled: true },
+      { key: 'surge_pricing',    label: 'Surge', enabled: true },
+      { key: 'gcash_payments',   label: 'GCash', enabled: true },
+      { key: 'paymaya_payments', label: 'PayMaya', enabled: true },
+      { key: 'card_payments',    label: 'Card', enabled: true },
     ]);
     expect(out.map((f) => f.key)).toEqual(['surge_pricing', 'cashless_payments']);
     expect(out.find((f) => f.key === 'cashless_payments')?.enabled).toBe(true);
@@ -55,9 +55,9 @@ describe('compressCashlessFlags', () => {
 
   it('marks synthetic cashless flag disabled when any underlying method is disabled', () => {
     const out = compressCashlessFlags([
-      { key: 'payment_gcash',   label: 'GCash', enabled: true },
-      { key: 'payment_paymaya', label: 'PayMaya', enabled: false },
-      { key: 'payment_card',    label: 'Card', enabled: true },
+      { key: 'gcash_payments',   label: 'GCash', enabled: true },
+      { key: 'paymaya_payments', label: 'PayMaya', enabled: false },
+      { key: 'card_payments',    label: 'Card', enabled: true },
     ]);
     expect(out.find((f) => f.key === 'cashless_payments')?.enabled).toBe(false);
   });
