@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { UpdatedByFooter } from '@/components/super-admin/shared/UpdatedByFooter';
 import type { PaymentGatewayConfig } from '@/api/super-admin/payments';
 import { useIsCashlessEnabled } from '@/hooks/useSystem';
 import { cn } from '@/lib/utils';
@@ -102,6 +104,11 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
     .map((c) => c.provider)
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
+  const configByProvider = configs.reduce<Record<string, PaymentGatewayConfig>>((acc, c) => {
+    if (c.provider) acc[c.provider] = c;
+    return acc;
+  }, {});
+
   return (
     <Card>
       <CardHeader>
@@ -165,12 +172,11 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
                   'text-xs text-text-muted flex items-center gap-2',
                   locked ? 'cursor-not-allowed' : 'cursor-pointer',
                 )}>
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 accent-primary disabled:cursor-not-allowed"
+                  <Checkbox
                     checked={shownActive}
                     disabled={locked}
-                    onChange={(e) => setActive((a) => ({ ...a, [provider]: e.target.checked }))}
+                    onCheckedChange={(checked) => setActive((a) => ({ ...a, [provider]: checked }))}
+                    aria-label={`${label} enabled`}
                   />
                   Enabled
                 </label>
@@ -210,16 +216,19 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleSave(provider)}
-                  disabled={savingProvider === provider || locked}
-                >
-                  {savingProvider === provider ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
+              <UpdatedByFooter
+                name={configByProvider[provider]?.updated_by ?? null}
+                actions={
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleSave(provider)}
+                    disabled={savingProvider === provider || locked}
+                  >
+                    {savingProvider === provider ? 'Saving…' : 'Save'}
+                  </Button>
+                }
+              />
             </div>
           );
         })}

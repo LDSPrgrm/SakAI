@@ -56,3 +56,25 @@ describe('<GatewayProvidersSection /> cashless gating', () => {
     expect(cashCheckbox).not.toBeDisabled();
   });
 });
+
+describe('<GatewayProvidersSection /> per-provider footer', () => {
+  it('renders an UpdatedByFooter with the Save button in its actions slot per provider', () => {
+    mockCashless.mockReturnValue(true);
+    render(<GatewayProvidersSection configs={configs} onSave={vi.fn()} />);
+
+    // One "Never updated" line per provider — backend mocks omit updated_by.
+    expect(screen.getAllByText('Never updated')).toHaveLength(configs.length);
+
+    // Save button(s) live inside each provider card; one per provider.
+    expect(screen.getAllByRole('button', { name: 'Save' })).toHaveLength(configs.length);
+  });
+
+  it('shows the named author when updated_by is a non-UUID value', () => {
+    mockCashless.mockReturnValue(true);
+    const named: PaymentGatewayConfig[] = [
+      { provider: 'gcash', is_active: true, config_fields: {}, updated_by: 'Maria Reyes' },
+    ];
+    render(<GatewayProvidersSection configs={named} onSave={vi.fn()} />);
+    expect(screen.getByText('Maria Reyes')).toBeInTheDocument();
+  });
+});
