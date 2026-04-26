@@ -61,7 +61,7 @@ vi.mock('@/hooks/useRoles', () => ({
 }));
 
 // Import after mocks so the component picks them up.
-import { SAAdminManagement } from '../SAAdminManagement';
+import { SAAdminManagement } from './SAAdminManagement';
 
 function renderPage() {
   const client = new QueryClient({

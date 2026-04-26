@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SADashboard } from '../SADashboard';
+import { SADashboard } from './SADashboard';
 
 function renderWithClient(ui: React.ReactElement) {
   const client = new QueryClient({
