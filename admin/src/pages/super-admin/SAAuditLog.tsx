@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Check,
-  Copy,
   Download,
   Eye,
   FileSearch,
@@ -115,63 +114,22 @@ function humanizeResourceType(type: string | null | undefined): string {
     .join(' ');
 }
 
-function truncate(str: string | null | undefined, max = 24): string {
-  if (!str) return '—';
-  if (str.length <= max) return str;
-  return str.slice(0, max) + '…';
-}
-
 function hasDiff(log: AuditLogEntry): boolean {
   return log.before_state !== null || log.after_state !== null;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isUuid(value: string | null | undefined): boolean {
-  return !!value && UUID_RE.test(value);
-}
-
-function ResourceIdCell({ value }: { value: string | null | undefined }) {
-  const [copied, setCopied] = useState(false);
-
-  if (!value) return <span className="text-text-muted">—</span>;
-
-  const uuid = isUuid(value);
-  const display = uuid ? value.slice(0, 8) + '…' : value;
-
-  if (!uuid) {
-    return (
-      <span className="text-xs font-mono text-text-main" title={value}>
-        {display}
-      </span>
-    );
-  }
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title={copied ? 'Copied!' : `Copy ${value}`}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-hover px-2 py-0.5 text-xs font-mono text-text-muted hover:text-text-main hover:border-text-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-    >
-      <span>{display}</span>
-      {copied ? (
-        <Check className="w-3 h-3 text-success" />
-      ) : (
-        <Copy className="w-3 h-3" />
-      )}
-    </button>
-  );
-}
-
 function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // not JSON — fall through to null
+    }
+    return null;
+  }
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     return value as Record<string, unknown>;
   }
@@ -194,10 +152,11 @@ interface DiffSideProps {
 
 function DiffSide({ state, changedKeys, tone }: DiffSideProps) {
   if (state === null) {
+    const message = tone === 'before' ? 'No prior state' : 'No resulting state';
     return (
-      <pre className="bg-background rounded-lg p-3 text-xs text-text-muted">
-        null
-      </pre>
+      <div className="bg-background rounded-lg p-3 text-xs text-text-muted italic">
+        {message}
+      </div>
     );
   }
 
@@ -451,8 +410,6 @@ export function SAAuditLog() {
                 <TableHead>Admin</TableHead>
                 <TableHead>Action</TableHead>
                 <TableHead>Resource Type</TableHead>
-                <TableHead>Resource ID</TableHead>
-                <TableHead>Reason</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -547,19 +504,6 @@ export function SAAuditLog() {
                     {/* Resource Type */}
                     <TableCell className="text-sm text-text-main capitalize whitespace-nowrap">
                       {humanizeResourceType(log.resource_type)}
-                    </TableCell>
-
-                    {/* Resource ID */}
-                    <TableCell>
-                      <ResourceIdCell value={log.resource_id} />
-                    </TableCell>
-
-                    {/* Reason */}
-                    <TableCell
-                      className="text-sm text-text-muted max-w-[160px]"
-                      title={log.reason ?? ''}
-                    >
-                      {log.reason ? truncate(log.reason, 32) : '—'}
                     </TableCell>
 
                     {/* Actions */}
