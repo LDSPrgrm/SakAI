@@ -55,7 +55,7 @@ describe('<Sidebar /> grouping', () => {
   it('renders every section label when all permissions granted', () => {
     setPerms(() => true);
     renderSidebar();
-    for (const label of ['Overview', 'Operations', 'Finance', 'Safety', 'System']) {
+    for (const label of ['Overview', 'Operations', 'Finance', 'Safety']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
@@ -66,7 +66,7 @@ describe('<Sidebar /> grouping', () => {
     renderSidebar();
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.queryByText('Finance')).not.toBeInTheDocument();
-    expect(screen.queryByText('System')).not.toBeInTheDocument();
+    expect(screen.queryByText('Safety')).not.toBeInTheDocument();
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.queryByText('Payments & Earnings')).not.toBeInTheDocument();
   });

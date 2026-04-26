@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import {
   AlertTriangle,
-  LayoutDashboard, Users, Car, CreditCard, ShieldAlert, BarChart3, Settings
+  LayoutDashboard, Users, Car, CreditCard, ShieldAlert, BarChart3
 } from 'lucide-react';
 import { PhpIcon } from '@/components/ui/PhpIcon';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,12 +53,6 @@ const navSections: NavSection[] = [
     items: [
       { path: '/admin/safety',  label: 'Safety & Compliance', icon: ShieldAlert, perm: 'safety_incidents' },
       { path: '/admin/reports', label: 'Reports & Analytics', icon: BarChart3,   perm: 'reports' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { path: '/admin/settings', label: 'Settings', icon: Settings, perm: 'system_config' },
     ],
   },
 ];
