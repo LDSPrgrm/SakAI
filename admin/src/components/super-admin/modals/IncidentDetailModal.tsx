@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, ShieldAlert, User, Car, Clock, UserCog, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import {
   useIncident, useAssignIncident, useResolveIncident, useAssigneeCandidates,
 } from '@/hooks/useSafety';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { formatDate } from '@/utils/formatDate';
 
 export interface IncidentDetailModalProps {
@@ -22,6 +24,7 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
   const assignMut = useAssignIncident();
   const resolveMut = useResolveIncident();
 
+  const panelRef = useRef<HTMLDivElement>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
 
   const detail = incidentQuery.data ?? null;
@@ -34,12 +37,43 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
     return rows.filter((a) => !a.role || ASSIGNABLE_ROLES.has(a.role));
   }, [candidatesQuery.data]);
 
+  const assigneeOptions = useMemo<SelectOption[]>(
+    () => [
+      { label: 'Unassigned', value: '' },
+      ...assignees.map((a) => ({
+        label: a.role ? `${a.name || a.id} (${a.role})` : a.name || a.id,
+        value: a.id,
+      })),
+    ],
+    [assignees],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+  }, [open]);
+
+  useFocusTrap(panelRef, open);
+
   if (!open) return null;
 
-  async function handleAssign(e: React.ChangeEvent<HTMLSelectElement>) {
+  async function handleAssign(value: string) {
     if (!incident) return;
-    const value = e.target.value || null;
-    await assignMut.mutateAsync({ id: incident.id!, assigneeId: value }).catch(() => undefined);
+    const next = value || null;
+    await assignMut.mutateAsync({ id: incident.id!, assigneeId: next }).catch(() => undefined);
   }
 
   async function handleResolve() {
@@ -53,7 +87,11 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto focus:outline-none"
+      >
         <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-main" aria-label="Close">
           <X className="w-5 h-5" />
         </button>
@@ -109,20 +147,13 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
               <p className="text-xs uppercase tracking-wide text-text-muted mb-1.5 flex items-center gap-1.5">
                 <UserCog className="w-3.5 h-3.5" /> Assigned To
               </p>
-              <select
+              <Select
                 value={incident.assigned_to ?? ''}
-                onChange={handleAssign}
+                onValueChange={handleAssign}
+                options={assigneeOptions}
                 disabled={assignMut.isPending}
-                className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Unassigned</option>
-                {assignees.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name || a.id}
-                    {a.role ? ` (${a.role})` : ''}
-                  </option>
-                ))}
-              </select>
+                aria-label="Assign incident"
+              />
             </section>
 
             <section>

@@ -45,7 +45,7 @@ const saNavSections: NavSection[] = [
     items: [
       { path: '/super-admin/fares',    label: 'Fare Config',        icon: PhilippinePeso, perm: 'fare_config' },
       { path: '/super-admin/payments', label: 'Financial Controls', icon: Banknote,       perm: 'payments' },
-      { path: '/super-admin/safety',   label: 'Safety & KYC',       icon: ShieldCheck,    perm: 'safety_incidents' },
+      { path: '/super-admin/safety',   label: 'Safety & Compliance', icon: ShieldCheck,   perm: 'safety_incidents' },
       { path: '/super-admin/lgu',      label: 'LGU & Coverage',     icon: Building2,      perm: 'system_config' },
     ],
   },
