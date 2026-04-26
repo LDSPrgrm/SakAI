@@ -1,6 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, Eye, FileSearch, Search, X } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/Card';
+import {
+  Check,
+  Copy,
+  Download,
+  Eye,
+  FileSearch,
+  LogIn,
+  LogOut,
+  Pencil,
+  Plus,
+  Search,
+  SearchX,
+  Trash2,
+  X,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Table,
   TableBody,
@@ -23,15 +39,54 @@ import type { AuditLogEntry } from '@/types/super-admin';
 
 type ActionType = AuditLogEntry['action'];
 
-const ACTION_VARIANTS: Record<ActionType, 'info' | 'default' | 'danger' | 'success'> = {
+const ACTION_VARIANTS: Record<string, 'info' | 'default' | 'danger' | 'success' | 'warning'> = {
   create: 'info',
   update: 'default',
+  update_surge: 'warning',
   delete: 'danger',
   approve: 'success',
   reject: 'danger',
   login: 'default',
   logout: 'default',
 };
+
+const ACTION_ICONS: Record<string, LucideIcon> = {
+  create: Plus,
+  update: Pencil,
+  update_surge: Zap,
+  delete: Trash2,
+  approve: Check,
+  reject: X,
+  login: LogIn,
+  logout: LogOut,
+};
+
+const QUICK_FILTERS: { value: string; label: string }[] = [
+  { value: '', label: 'All' },
+  { value: 'update', label: 'Update' },
+  { value: 'update_surge', label: 'Update Surge' },
+  { value: 'approve', label: 'Approve' },
+  { value: 'reject', label: 'Reject' },
+];
+
+function actionVariant(action: ActionType | string | null | undefined) {
+  if (!action) return 'default' as const;
+  return ACTION_VARIANTS[String(action).toLowerCase()] ?? 'default';
+}
+
+function actionIcon(action: ActionType | string | null | undefined): LucideIcon | null {
+  if (!action) return null;
+  return ACTION_ICONS[String(action).toLowerCase()] ?? null;
+}
+
+function humanizeAction(action: ActionType | string | null | undefined): string {
+  if (!action) return '—';
+  return String(action)
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
 
 const ACTION_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'All Actions' },
@@ -68,6 +123,52 @@ function truncate(str: string | null | undefined, max = 24): string {
 
 function hasDiff(log: AuditLogEntry): boolean {
   return log.before_state !== null || log.after_state !== null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(value: string | null | undefined): boolean {
+  return !!value && UUID_RE.test(value);
+}
+
+function ResourceIdCell({ value }: { value: string | null | undefined }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!value) return <span className="text-text-muted">—</span>;
+
+  const uuid = isUuid(value);
+  const display = uuid ? value.slice(0, 8) + '…' : value;
+
+  if (!uuid) {
+    return (
+      <span className="text-xs font-mono text-text-main" title={value}>
+        {display}
+      </span>
+    );
+  }
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={copied ? 'Copied!' : `Copy ${value}`}
+      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-hover px-2 py-0.5 text-xs font-mono text-text-muted hover:text-text-main hover:border-text-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+    >
+      <span>{display}</span>
+      {copied ? (
+        <Check className="w-3 h-3 text-success" />
+      ) : (
+        <Copy className="w-3 h-3" />
+      )}
+    </button>
+  );
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -270,7 +371,7 @@ export function SAAuditLog() {
       !search ||
       (log.actor_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
       (log.resource_type ?? '').toLowerCase().includes(search.toLowerCase());
-    const matchesAction = !actionFilter || log.action === actionFilter;
+    const matchesAction = !actionFilter || String(log.action).toLowerCase() === actionFilter;
     return matchesSearch && matchesAction;
   });
 
@@ -289,28 +390,60 @@ export function SAAuditLog() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="flex-1 min-w-48">
-          <Input
-            placeholder="Search by admin or resource type…"
-            icon={<Search className="w-4 h-4" />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <Select
-          value={actionFilter}
-          onValueChange={setActionFilter}
-          options={ACTION_OPTIONS}
-          aria-label="Filter by action"
-          className="w-44"
-        />
-      </div>
-
       {/* Table */}
       <Card>
-        <CardContent className="pt-6 px-0 overflow-x-auto">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CardTitle>Activity</CardTitle>
+              {!isLoading && (
+                <Badge variant="default">
+                  {filteredLogs.length.toLocaleString('en-PH')}{' '}
+                  {filteredLogs.length === 1 ? 'entry' : 'entries'}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <Input
+                placeholder="Search by admin or resource type…"
+                icon={<Search className="w-4 h-4" />}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full sm:w-64"
+              />
+              <Select
+                value={actionFilter}
+                onValueChange={setActionFilter}
+                options={ACTION_OPTIONS}
+                aria-label="Filter by action"
+                className="w-full sm:w-44"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2 overflow-x-auto">
+            {QUICK_FILTERS.map((opt) => {
+              const Icon = opt.value ? actionIcon(opt.value) : null;
+              const active = actionFilter === opt.value;
+              return (
+                <button
+                  key={opt.value || 'all'}
+                  type="button"
+                  onClick={() => setActionFilter(opt.value)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+                    active
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-surface-hover text-text-muted border-border hover:text-text-main hover:border-text-muted/40',
+                  )}
+                >
+                  {Icon && <Icon className="w-3 h-3" />}
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -340,15 +473,49 @@ export function SAAuditLog() {
                     colSpan={7}
                     className="text-center text-text-muted py-10"
                   >
-                    <div className="flex flex-col items-center gap-2">
-                      <FileSearch className="w-8 h-8 text-text-muted/60" />
-                      <span>No audit log entries found.</span>
-                    </div>
+                    {logs.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <FileSearch className="w-8 h-8 text-text-muted/60" />
+                        <span>No audit log entries found.</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <SearchX className="w-8 h-8 text-text-muted/60" />
+                        <span>No entries match your filters.</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSearch('');
+                            setActionFilter('');
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLogs.map((log) => (
-                  <TableRow key={log.id}>
+                filteredLogs.map((log) => {
+                  const rowHasDiff = hasDiff(log);
+                  return (
+                  <TableRow
+                    key={log.id}
+                    className={rowHasDiff
+                      ? 'cursor-pointer hover:bg-surface-hover/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60'
+                      : undefined}
+                    tabIndex={rowHasDiff ? 0 : undefined}
+                    onClick={rowHasDiff ? () => setSelectedLog(log) : undefined}
+                    onKeyDown={rowHasDiff
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedLog(log);
+                          }
+                        }
+                      : undefined}
+                  >
                     {/* Timestamp */}
                     <TableCell className="whitespace-nowrap text-sm text-text-muted">
                       {formatTimestamp(log.timestamp)}
@@ -366,9 +533,15 @@ export function SAAuditLog() {
 
                     {/* Action */}
                     <TableCell>
-                      <Badge variant={ACTION_VARIANTS[log.action]}>
-                        {log.action}
-                      </Badge>
+                      {(() => {
+                        const Icon = actionIcon(log.action);
+                        return (
+                          <Badge variant={actionVariant(log.action)} className="gap-1">
+                            {Icon && <Icon className="w-3 h-3" />}
+                            {humanizeAction(log.action)}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
 
                     {/* Resource Type */}
@@ -378,12 +551,7 @@ export function SAAuditLog() {
 
                     {/* Resource ID */}
                     <TableCell>
-                      <span
-                        className="text-xs font-mono text-text-muted"
-                        title={log.resource_id ?? ''}
-                      >
-                        {truncate(log.resource_id, 20)}
-                      </span>
+                      <ResourceIdCell value={log.resource_id} />
                     </TableCell>
 
                     {/* Reason */}
@@ -396,11 +564,14 @@ export function SAAuditLog() {
 
                     {/* Actions */}
                     <TableCell className="text-right">
-                      {hasDiff(log) ? (
+                      {rowHasDiff ? (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedLog(log)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLog(log);
+                          }}
                           title="View diff"
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -409,7 +580,8 @@ export function SAAuditLog() {
                       ) : null}
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
