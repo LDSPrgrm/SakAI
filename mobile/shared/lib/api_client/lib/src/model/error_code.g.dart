@@ -19,6 +19,7 @@ const ErrorCode _$REFRESH_TOKEN_INVALID = const ErrorCode._(
 );
 const ErrorCode _$VALIDATION_ERROR = const ErrorCode._('VALIDATION_ERROR');
 const ErrorCode _$FORBIDDEN = const ErrorCode._('FORBIDDEN');
+const ErrorCode _$NOT_FOUND = const ErrorCode._('NOT_FOUND');
 const ErrorCode _$RIDE_NOT_FOUND = const ErrorCode._('RIDE_NOT_FOUND');
 const ErrorCode _$USER_NOT_FOUND = const ErrorCode._('USER_NOT_FOUND');
 const ErrorCode _$DOCUMENT_NOT_FOUND = const ErrorCode._('DOCUMENT_NOT_FOUND');
@@ -74,11 +75,18 @@ const ErrorCode _$FILE_TOO_LARGE = const ErrorCode._('FILE_TOO_LARGE');
 const ErrorCode _$INVALID_FILE_FORMAT = const ErrorCode._(
   'INVALID_FILE_FORMAT',
 );
+const ErrorCode _$INVALID_DOCUMENT_TYPE = const ErrorCode._(
+  'INVALID_DOCUMENT_TYPE',
+);
 const ErrorCode _$RATE_LIMIT_EXCEEDED = const ErrorCode._(
   'RATE_LIMIT_EXCEEDED',
 );
 const ErrorCode _$INTERNAL_SERVER_ERROR = const ErrorCode._(
   'INTERNAL_SERVER_ERROR',
+);
+const ErrorCode _$DRIVER_TOO_FAR = const ErrorCode._('DRIVER_TOO_FAR');
+const ErrorCode _$DRIVER_TOO_FAR_FROM_DESTINATION = const ErrorCode._(
+  'DRIVER_TOO_FAR_FROM_DESTINATION',
 );
 
 ErrorCode _$valueOf(String name) {
@@ -97,6 +105,8 @@ ErrorCode _$valueOf(String name) {
       return _$VALIDATION_ERROR;
     case 'FORBIDDEN':
       return _$FORBIDDEN;
+    case 'NOT_FOUND':
+      return _$NOT_FOUND;
     case 'RIDE_NOT_FOUND':
       return _$RIDE_NOT_FOUND;
     case 'USER_NOT_FOUND':
@@ -151,10 +161,16 @@ ErrorCode _$valueOf(String name) {
       return _$FILE_TOO_LARGE;
     case 'INVALID_FILE_FORMAT':
       return _$INVALID_FILE_FORMAT;
+    case 'INVALID_DOCUMENT_TYPE':
+      return _$INVALID_DOCUMENT_TYPE;
     case 'RATE_LIMIT_EXCEEDED':
       return _$RATE_LIMIT_EXCEEDED;
     case 'INTERNAL_SERVER_ERROR':
       return _$INTERNAL_SERVER_ERROR;
+    case 'DRIVER_TOO_FAR':
+      return _$DRIVER_TOO_FAR;
+    case 'DRIVER_TOO_FAR_FROM_DESTINATION':
+      return _$DRIVER_TOO_FAR_FROM_DESTINATION;
     default:
       throw ArgumentError(name);
   }
@@ -168,6 +184,7 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$REFRESH_TOKEN_INVALID,
   _$VALIDATION_ERROR,
   _$FORBIDDEN,
+  _$NOT_FOUND,
   _$RIDE_NOT_FOUND,
   _$USER_NOT_FOUND,
   _$DOCUMENT_NOT_FOUND,
@@ -195,8 +212,11 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$ALREADY_RATED,
   _$FILE_TOO_LARGE,
   _$INVALID_FILE_FORMAT,
+  _$INVALID_DOCUMENT_TYPE,
   _$RATE_LIMIT_EXCEEDED,
   _$INTERNAL_SERVER_ERROR,
+  _$DRIVER_TOO_FAR,
+  _$DRIVER_TOO_FAR_FROM_DESTINATION,
 ]);
 
 Serializer<ErrorCode> _$errorCodeSerializer = _$ErrorCodeSerializer();
@@ -210,6 +230,7 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'REFRESH_TOKEN_INVALID': 'REFRESH_TOKEN_INVALID',
     'VALIDATION_ERROR': 'VALIDATION_ERROR',
     'FORBIDDEN': 'FORBIDDEN',
+    'NOT_FOUND': 'NOT_FOUND',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
     'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
@@ -237,8 +258,11 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'ALREADY_RATED': 'ALREADY_RATED',
     'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
     'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
+    'INVALID_DOCUMENT_TYPE': 'INVALID_DOCUMENT_TYPE',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
+    'DRIVER_TOO_FAR': 'DRIVER_TOO_FAR',
+    'DRIVER_TOO_FAR_FROM_DESTINATION': 'DRIVER_TOO_FAR_FROM_DESTINATION',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'EMAIL_ALREADY_REGISTERED': 'EMAIL_ALREADY_REGISTERED',
@@ -248,6 +272,7 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'REFRESH_TOKEN_INVALID': 'REFRESH_TOKEN_INVALID',
     'VALIDATION_ERROR': 'VALIDATION_ERROR',
     'FORBIDDEN': 'FORBIDDEN',
+    'NOT_FOUND': 'NOT_FOUND',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
     'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
@@ -275,8 +300,11 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'ALREADY_RATED': 'ALREADY_RATED',
     'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
     'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
+    'INVALID_DOCUMENT_TYPE': 'INVALID_DOCUMENT_TYPE',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
+    'DRIVER_TOO_FAR': 'DRIVER_TOO_FAR',
+    'DRIVER_TOO_FAR_FROM_DESTINATION': 'DRIVER_TOO_FAR_FROM_DESTINATION',
   };
 
   @override

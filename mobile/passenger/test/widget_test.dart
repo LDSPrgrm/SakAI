@@ -46,6 +46,9 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout({required String refreshToken}) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 class _FakeRideRepository implements RideRepository {

@@ -50,6 +50,9 @@ type UserRepository interface {
 
 	// UpdatePassword sets a new bcrypt password hash for the user.
 	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+
+	// Delete permanently removes a user record and associated data (e.g., vehicle).
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // TokenRepository manages opaque refresh tokens (stored server-side).
@@ -355,6 +358,7 @@ type AuthUseCase interface {
 	// GetUserByID is a helper for the auth middleware and /users/me endpoint.
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
+	DeleteAccount(ctx context.Context, userID uuid.UUID) error
 }
 
 // RideUseCase defines the ride lifecycle contract.

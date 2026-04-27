@@ -58,39 +58,52 @@ class DriverAuthRepositoryImpl implements DriverAuthRepository {
     required String vehicleType,
   }) async {
     try {
-      // Use raw Dio to send vehicle_type which isn't yet in the generated client
-      final response = await _client.dio.post(
-        '/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'password': password,
-          'role': 'driver',
-          'vehicle': {
-            'make': vehicleMake,
-            'model': vehicleModel,
-            'plate': vehiclePlate,
-            'color': vehicleColor,
-            'vehicle_type': vehicleType,
-          },
-        },
+      final vehicle = VehicleInput(
+        (b) => b
+          ..make = vehicleMake
+          ..model = vehicleModel
+          ..plate = vehiclePlate
+          ..color = vehicleColor
+          ..vehicleType = _mapVehicleType(vehicleType),
       );
-      final data = response.data as Map<String, dynamic>;
-      if (data.isEmpty) {
-        debugPrint('[AuthRepo] Register failed: Empty response');
+
+      final request = RegisterRequest(
+        (b) => b
+          ..name = name
+          ..email = email
+          ..password = password
+          ..role = RegisterRequestRoleEnum.driver
+          ..vehicle.replace(vehicle),
+      );
+
+      final response = await _client.getAuthApi().authRegister(
+        registerRequest: request,
+      );
+
+      final data = response.data;
+      if (data == null) {
         throw const AuthException(userMessage: 'Empty response from server');
       }
-      debugPrint('[AuthRepo] Register success for $email');
+
       return AuthSession(
-        accessToken: data['access_token'] as String,
-        refreshToken: data['refresh_token'] as String,
-        accessTokenExpiresAt: DateTime.parse(
-          data['access_token_expires_at'] as String,
-        ),
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        accessTokenExpiresAt: data.accessTokenExpiresAt,
       );
     } on DioException catch (e) {
       throw _fromDio(e);
     }
+  }
+
+  VehicleInputVehicleTypeEnum _mapVehicleType(String type) {
+    final lower = type.toLowerCase();
+    if (lower.contains('motorcycle')) {
+      return VehicleInputVehicleTypeEnum.motorcycle;
+    }
+    if (lower.contains('tricycle')) {
+      return VehicleInputVehicleTypeEnum.tricycle;
+    }
+    return VehicleInputVehicleTypeEnum.car;
   }
 
   @override
@@ -131,6 +144,15 @@ class DriverAuthRepositoryImpl implements DriverAuthRepository {
     if (refreshToken.isEmpty) return;
     final request = LogoutRequest((b) => b..refreshToken = refreshToken);
     await _client.getAuthApi().authLogout(logoutRequest: request);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await _client.getUsersApi().usersMeDelete();
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
   }
 
   AuthException _fromDio(DioException e) {

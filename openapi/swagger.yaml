@@ -180,6 +180,42 @@ paths:
                 code: NO_DRIVERS_AVAILABLE
                 message: "No drivers of requested type within range"
 
+  /drivers/nearby/all:
+    get:
+      tags: [Driver]
+      summary: Get all nearby drivers grouping by type
+      description: |
+        Returns aggregated counts and sample locations for all available vehicle types in the vicinity.
+        Used for the initial ride request screen to show available options.
+      operationId: getNearbyDriversAllTypes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: radius_m
+          in: query
+          schema: { type: number, format: double, default: 5000 }
+      responses:
+        "200":
+          description: Aggregated nearby drivers
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/NearbyDriver"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── Auth ──────────────────────────────────────────────────────────────────
 
   /auth/register:
@@ -323,6 +359,19 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "401":
           $ref: "#/components/responses/Unauthorized"
+    delete:
+      summary: Delete current user account
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Account deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /users/me/payment-methods:
     get:
@@ -467,6 +516,132 @@ paths:
                 code: PAYMENT_METHOD_NOT_FOUND
                 message: "Payment method not found"
 
+  /users/me/saved-places:
+    get:
+      tags: [Users]
+      summary: List saved places
+      description: |
+        Returns a list of saved places (home, work, etc.) for the current passenger.
+      operationId: savedPlacesList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of saved places
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedPlace"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Users]
+      summary: Add a saved place
+      description: |
+        Creates a new saved place for the passenger.
+      operationId: savedPlacesCreate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedPlaceCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/saved-places/{placeId}:
+    delete:
+      tags: [Users]
+      summary: Remove a saved place
+      description: |
+        Deletes a saved place by ID.
+      operationId: savedPlacesDelete
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Place not found
+
+  /promotions:
+    get:
+      tags: [Users]
+      summary: List available promotions
+      description: |
+        Returns a list of active promotions/vouchers available for the authenticated passenger.
+      operationId: promotionsList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Promotion"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /promotions/validate:
+    post:
+      tags: [Users]
+      summary: Validate a promotion code
+      description: |
+        Checks if a specific promo code is valid for the current user and returns discount details.
+      operationId: promotionsValidate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionValidateRequest"
+      responses:
+        "200":
+          description: Promotion is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PROMO_INVALID
+                message: "This code has expired or is not valid for your account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── Driver ────────────────────────────────────────────────────────────────
 
   /driver/status:
@@ -542,6 +717,36 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+
+  /driver/rides:
+    get:
+      tags: [Driver]
+      summary: List authenticated driver's ride history
+      description: Returns a paginated list of rides completed or cancelled by the driver.
+      operationId: adminListDriverRides
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Driver's ride list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rides:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RideResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /driver/rides/incoming:
     get:
@@ -4161,6 +4366,10 @@ components:
           nullable: true
           description: Free-text cancellation reason
           example: "Driver was too far away"
+        decline_count:
+          type: integer
+          description: Number of times this ride was declined by drivers
+          default: 0
         created_at:
           type: string
           format: date-time
@@ -5827,3 +6036,116 @@ components:
         lastUpdated:
           type: string
           format: date-time
+
+    SavedPlace:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - latitude
+        - longitude
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Home"
+        address:
+          type: string
+          example: "123 Main St, City, Country"
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [home, work, other]
+          default: other
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    SavedPlaceCreateRequest:
+      type: object
+      required:
+        - name
+        - address
+        - latitude
+        - longitude
+      properties:
+        name:
+          type: string
+          example: "Office"
+        address:
+          type: string
+          example: "456 Business Rd, City, Country"
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [home, work, other]
+          default: other
+
+    # ── Promotions ──────────────────────────────────────────────────────────
+
+    Promotion:
+      type: object
+      required: [id, code, description, discountValue, discountType, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: "WELCOME50"
+        title:
+          type: string
+          example: "50% Off First Ride"
+        description:
+          type: string
+          example: "Get 50% discount on your first ride, up to $5."
+        discountValue:
+          type: number
+          format: double
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+          example: "percentage"
+        maxDiscount:
+          type: number
+          format: double
+          nullable: true
+          description: Maximum discount amount for percentage types
+        minRideAmount:
+          type: number
+          format: double
+          nullable: true
+          description: Minimum ride fare required to apply this promo
+        expiresAt:
+          type: string
+          format: date-time
+        terms:
+          type: string
+          nullable: true
+
+    PromotionValidateRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          example: "SAKAI2026"
+        rideFare:
+          type: number
+          format: double
+          nullable: true
+          description: Optional fare to check if minimum amount criteria is met

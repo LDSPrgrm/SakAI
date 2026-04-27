@@ -3,7 +3,6 @@ import 'package:driver/features/home/views/driver_home_screen.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/features/active_ride/repositories/active_ride_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

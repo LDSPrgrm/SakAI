@@ -1,7 +1,8 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -45,10 +46,10 @@ abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
   String? get resourceId;
 
   @BuiltValueField(wireName: r'before_state')
-  JsonObject? get beforeState;
+  BuiltMap<String, JsonObject?>? get beforeState;
 
   @BuiltValueField(wireName: r'after_state')
-  JsonObject? get afterState;
+  BuiltMap<String, JsonObject?>? get afterState;
 
   @BuiltValueField(wireName: r'reason')
   String? get reason;
@@ -129,14 +130,14 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
       yield r'before_state';
       yield serializers.serialize(
         object.beforeState,
-        specifiedType: const FullType.nullable(JsonObject),
+        specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
       );
     }
     if (object.afterState != null) {
       yield r'after_state';
       yield serializers.serialize(
         object.afterState,
-        specifiedType: const FullType.nullable(JsonObject),
+        specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
       );
     }
     if (object.reason != null) {
@@ -221,18 +222,18 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
         case r'before_state':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(JsonObject),
-          ) as JsonObject?;
+            specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+          ) as BuiltMap<String, JsonObject?>?;
           if (valueDes == null) continue;
-          result.beforeState = valueDes;
+          result.beforeState.replace(valueDes);
           break;
         case r'after_state':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(JsonObject),
-          ) as JsonObject?;
+            specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+          ) as BuiltMap<String, JsonObject?>?;
           if (valueDes == null) continue;
-          result.afterState = valueDes;
+          result.afterState.replace(valueDes);
           break;
         case r'reason':
           final valueDes = serializers.deserialize(

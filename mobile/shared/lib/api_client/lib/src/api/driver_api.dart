@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 import 'dart:async';
@@ -7,7 +7,9 @@ import 'package:built_value/json_object.dart';
 import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 
+import 'package:built_collection/built_collection.dart';
 import 'package:sakai_api_client/src/api_util.dart';
+import 'package:sakai_api_client/src/model/admin_list_driver_rides200_response.dart';
 import 'package:sakai_api_client/src/model/date.dart';
 import 'package:sakai_api_client/src/model/driver_document_response.dart';
 import 'package:sakai_api_client/src/model/driver_documents_list_response.dart';
@@ -17,6 +19,7 @@ import 'package:sakai_api_client/src/model/driver_status_response.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
 import 'package:sakai_api_client/src/model/get_nearby_drivers200_response.dart';
 import 'package:sakai_api_client/src/model/location_update_request.dart';
+import 'package:sakai_api_client/src/model/nearby_driver.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 
 class DriverApi {
@@ -26,6 +29,95 @@ class DriverApi {
   final Serializers _serializers;
 
   const DriverApi(this._dio, this._serializers);
+
+  /// List authenticated driver&#39;s ride history
+  /// Returns a paginated list of rides completed or cancelled by the driver.
+  ///
+  /// Parameters:
+  /// * [page] - Page number (1-indexed)
+  /// * [limit] - Items per page
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AdminListDriverRides200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AdminListDriverRides200Response>> adminListDriverRides({ 
+    int? page = 1,
+    int? limit = 20,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/driver/rides';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (page != null) r'page': encodeQueryParameter(_serializers, page, const FullType(int)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(int)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AdminListDriverRides200Response? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(AdminListDriverRides200Response),
+      ) as AdminListDriverRides200Response;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AdminListDriverRides200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
 
   /// Get status of a specific document
   /// Retrieve the status and details of an uploaded document. Only the document owner can access this endpoint. 
@@ -730,6 +822,98 @@ class DriverApi {
     }
 
     return Response<GetNearbyDrivers200Response>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Get all nearby drivers grouping by type
+  /// Returns aggregated counts and sample locations for all available vehicle types in the vicinity. Used for the initial ride request screen to show available options. 
+  ///
+  /// Parameters:
+  /// * [lat] 
+  /// * [lng] 
+  /// * [radiusM] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, BuiltList<NearbyDriver>>] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<BuiltMap<String, BuiltList<NearbyDriver>>>> getNearbyDriversAllTypes({ 
+    required double lat,
+    required double lng,
+    double? radiusM = 5000,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/drivers/nearby/all';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      r'lat': encodeQueryParameter(_serializers, lat, const FullType(double)),
+      r'lng': encodeQueryParameter(_serializers, lng, const FullType(double)),
+      if (radiusM != null) r'radius_m': encodeQueryParameter(_serializers, radiusM, const FullType(double)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BuiltMap<String, BuiltList<NearbyDriver>>? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(BuiltMap, [FullType(String), FullType(BuiltList)]),
+      ) as BuiltMap<String, BuiltList<NearbyDriver>>;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BuiltMap<String, BuiltList<NearbyDriver>>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

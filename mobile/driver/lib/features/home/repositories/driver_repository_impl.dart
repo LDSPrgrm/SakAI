@@ -21,13 +21,6 @@ class DriverRepositoryImpl implements DriverRepository {
       );
       debugPrint('[DRIVER_REPO] goOnline success');
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails.
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        debugPrint('[DRIVER_REPO] goOnline success (2xx, body parse issue)');
-        return;
-      }
       debugPrint(
         '[DRIVER_REPO] goOnline failed: ${e.response?.statusCode} ${e.message}',
       );
@@ -47,13 +40,6 @@ class DriverRepositoryImpl implements DriverRepository {
       );
       debugPrint('[DRIVER_REPO] goOffline success');
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails.
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        debugPrint('[DRIVER_REPO] goOffline success (2xx, body parse issue)');
-        return;
-      }
       debugPrint(
         '[DRIVER_REPO] goOffline failed: ${e.response?.statusCode} ${e.message}',
       );
@@ -94,11 +80,6 @@ class DriverRepositoryImpl implements DriverRepository {
       return response.data;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      // 2xx = success even if body parsing fails.
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        return null; // WS will deliver the offer.
-      }
       throw _fromDio(e);
     } catch (_) {
       return null;

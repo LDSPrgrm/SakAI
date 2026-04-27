@@ -1,8 +1,9 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/kyc_document.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -32,11 +33,11 @@ abstract class KycEntry implements Built<KycEntry, KycEntryBuilder> {
   DateTime? get submittedAt;
 
   @BuiltValueField(wireName: r'docs')
-  BuiltList<String>? get docs;
+  BuiltList<KycDocument>? get docs;
 
   @BuiltValueField(wireName: r'status')
   KycEntryStatusEnum? get status;
-  // enum statusEnum {  pending,  approved,  rejected,  };
+  // enum statusEnum {  pending,  approved,  rejected,  needs_more_info,  };
 
   KycEntry._();
 
@@ -93,7 +94,7 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
       yield r'docs';
       yield serializers.serialize(
         object.docs,
-        specifiedType: const FullType(BuiltList, [FullType(String)]),
+        specifiedType: const FullType(BuiltList, [FullType(KycDocument)]),
       );
     }
     if (object.status != null) {
@@ -157,8 +158,8 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
         case r'docs':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(String)]),
-          ) as BuiltList<String>;
+            specifiedType: const FullType(BuiltList, [FullType(KycDocument)]),
+          ) as BuiltList<KycDocument>;
           result.docs.replace(valueDes);
           break;
         case r'status':
@@ -205,6 +206,8 @@ class KycEntryStatusEnum extends EnumClass {
   static const KycEntryStatusEnum approved = _$kycEntryStatusEnum_approved;
   @BuiltValueEnumConst(wireName: r'rejected')
   static const KycEntryStatusEnum rejected = _$kycEntryStatusEnum_rejected;
+  @BuiltValueEnumConst(wireName: r'needs_more_info')
+  static const KycEntryStatusEnum needsMoreInfo = _$kycEntryStatusEnum_needsMoreInfo;
 
   static Serializer<KycEntryStatusEnum> get serializer => _$kycEntryStatusEnumSerializer;
 

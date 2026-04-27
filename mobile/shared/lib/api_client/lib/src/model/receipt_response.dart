@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -48,7 +48,7 @@ abstract class ReceiptResponse implements Built<ReceiptResponse, ReceiptResponse
 
   @BuiltValueField(wireName: r'paymentMethod')
   PaymentMethod get paymentMethod;
-  // enum paymentMethodEnum {  cash,  card,  };
+  // enum paymentMethodEnum {  cash,  card,  gcash,  paymaya,  };
 
   @BuiltValueField(wireName: r'paymentStatus')
   PaymentStatus get paymentStatus;

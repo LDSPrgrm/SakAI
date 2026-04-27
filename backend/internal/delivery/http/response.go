@@ -26,6 +26,8 @@ var errorCodeMap = []struct {
 	{domain.ErrNoDriversAvailable, http.StatusServiceUnavailable, "NO_DRIVERS_AVAILABLE"},
 	{domain.ErrForbidden, http.StatusForbidden, "FORBIDDEN"},
 	{domain.ErrCannotGoOffline, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
+	{domain.ErrUnpaidRideBlocked, http.StatusForbidden, "UNPAID_RIDE_BLOCKED"},
+	{domain.ErrInvalidRideType, http.StatusBadRequest, "INVALID_RIDE_TYPE"},
 	// Document errors
 	{domain.ErrInvalidDocumentType, http.StatusBadRequest, "INVALID_DOCUMENT_TYPE"},
 	{domain.ErrFileTooLarge, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE"},
@@ -43,6 +45,7 @@ var errorCodeMap = []struct {
 	// Tip errors
 	{domain.ErrInvalidTipAmount, http.StatusBadRequest, "INVALID_TIP_AMOUNT"},
 	{domain.ErrTipAlreadyAdded, http.StatusConflict, "TIP_ALREADY_ADDED"},
+	{domain.ErrTipExceedsLimit, http.StatusBadRequest, "TIP_EXCEEDS_LIMIT"},
 	// Payment method errors
 	{domain.ErrPaymentMethodUnsupported, http.StatusBadRequest, "PAYMENT_METHOD_UNSUPPORTED"},
 	{domain.ErrPaymentMethodDuplicate, http.StatusConflict, "PAYMENT_METHOD_DUPLICATE"},

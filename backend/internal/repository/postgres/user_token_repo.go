@@ -120,6 +120,33 @@ func (r *userRepo) CreateWithTokens(
 	})
 }
 
+func (r *userRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return database.Transact(ctx, r.db, func(tx pgx.Tx) error {
+		// Delete refresh tokens first
+		const delTokens = `DELETE FROM refresh_tokens WHERE user_id = $1`
+		if _, err := tx.Exec(ctx, delTokens, id); err != nil {
+			return err
+		}
+
+		// Delete vehicle if it exists
+		const delVehicle = `DELETE FROM vehicles WHERE user_id = $1`
+		if _, err := tx.Exec(ctx, delVehicle, id); err != nil {
+			return err
+		}
+
+		// Finally delete the user
+		const delUser = `DELETE FROM users WHERE id = $1`
+		res, err := tx.Exec(ctx, delUser, id)
+		if err != nil {
+			return err
+		}
+		if res.RowsAffected() == 0 {
+			return domain.ErrNotFound
+		}
+		return nil
+	})
+}
+
 // ListByRole returns a paginated list of users filtered by role and an
 // optional case-insensitive substring search against name or email.
 func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*domain.User, int, error) {

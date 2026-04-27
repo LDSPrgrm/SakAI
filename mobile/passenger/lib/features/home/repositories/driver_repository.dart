@@ -22,38 +22,29 @@ class DriverRepository {
     LatLng location,
   ) async {
     try {
-      final resp = await _client.dio.get(
-        '/drivers/nearby/all',
-        queryParameters: {
-          'lat': location.latitude,
-          'lng': location.longitude,
-          'radius_m': 5000,
-        },
+      final response = await _client.getDriverApi().getNearbyDriversAllTypes(
+        lat: location.latitude,
+        lng: location.longitude,
+        radiusM: 5000,
       );
 
-      final data = resp.data;
+      final data = response.data;
       if (data == null) return {};
 
-      final outer = data is Map<String, dynamic> ? data['data'] : null;
-      if (outer is! Map<String, dynamic>) return {};
-
       final result = <String, List<NearbyDriver>>{};
-      for (final entry in outer.entries) {
-        final driversList = entry.value is List ? entry.value as List : [];
-        result[entry.key] = driversList.map((d) {
-          final m = d as Map<String, dynamic>;
-          final loc = m['location'] as Map<String, dynamic>? ?? {};
-          return NearbyDriver(
-            id: m['id'] as String? ?? '',
-            name: m['name'] as String? ?? 'Driver',
-            location: LatLng(
-              (loc['lat'] as num?)?.toDouble() ?? 0.0,
-              (loc['lng'] as num?)?.toDouble() ?? 0.0,
-            ),
-            heading: (m['heading'] as num?)?.toDouble() ?? 0.0,
-            vehicleType: _parseVehicleType(m['vehicle_type']),
-          );
-        }).toList();
+      for (final entry in data.entries) {
+        final driversList = entry.value;
+        result[entry.key] = driversList
+            .map(
+              (d) => NearbyDriver(
+                id: d.id,
+                name: d.name,
+                location: LatLng(d.location.lat, d.location.lng),
+                heading: d.heading ?? 0.0,
+                vehicleType: _parseVehicleType(d.vehicleType.toString()),
+              ),
+            )
+            .toList();
       }
 
       final total = result.values.fold<int>(0, (a, b) => a + b.length);

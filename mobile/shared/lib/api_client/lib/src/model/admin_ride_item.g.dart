@@ -254,6 +254,8 @@ class _$AdminRideItem extends AdminRideItem {
   @override
   final String? cancellationReasonText;
   @override
+  final int? declineCount;
+  @override
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
@@ -283,6 +285,7 @@ class _$AdminRideItem extends AdminRideItem {
     this.cancelledBy,
     this.cancellationReason,
     this.cancellationReasonText,
+    this.declineCount,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -318,6 +321,7 @@ class _$AdminRideItem extends AdminRideItem {
         cancelledBy == other.cancelledBy &&
         cancellationReason == other.cancellationReason &&
         cancellationReasonText == other.cancellationReasonText &&
+        declineCount == other.declineCount &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -346,6 +350,7 @@ class _$AdminRideItem extends AdminRideItem {
     _$hash = $jc(_$hash, cancelledBy.hashCode);
     _$hash = $jc(_$hash, cancellationReason.hashCode);
     _$hash = $jc(_$hash, cancellationReasonText.hashCode);
+    _$hash = $jc(_$hash, declineCount.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -376,6 +381,7 @@ class _$AdminRideItem extends AdminRideItem {
           ..add('cancelledBy', cancelledBy)
           ..add('cancellationReason', cancellationReason)
           ..add('cancellationReasonText', cancellationReasonText)
+          ..add('declineCount', declineCount)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -487,6 +493,11 @@ class AdminRideItemBuilder
   set cancellationReasonText(covariant String? cancellationReasonText) =>
       _$this._cancellationReasonText = cancellationReasonText;
 
+  int? _declineCount;
+  int? get declineCount => _$this._declineCount;
+  set declineCount(covariant int? declineCount) =>
+      _$this._declineCount = declineCount;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(covariant DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -523,6 +534,7 @@ class AdminRideItemBuilder
       _cancelledBy = $v.cancelledBy;
       _cancellationReason = $v.cancellationReason;
       _cancellationReasonText = $v.cancellationReasonText;
+      _declineCount = $v.declineCount;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -582,6 +594,7 @@ class AdminRideItemBuilder
             cancelledBy: cancelledBy,
             cancellationReason: cancellationReason,
             cancellationReasonText: cancellationReasonText,
+            declineCount: declineCount,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
               r'AdminRideItem',

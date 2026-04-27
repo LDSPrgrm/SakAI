@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -11,9 +11,10 @@ part 'ride_arrive_request.g.dart';
 /// RideArriveRequest
 ///
 /// Properties:
-/// * [driverLocation] 
+/// * [driverLocation] - Driver's current GPS coordinates at time of arrival
 @BuiltValue()
 abstract class RideArriveRequest implements Built<RideArriveRequest, RideArriveRequestBuilder> {
+  /// Driver's current GPS coordinates at time of arrival
   @BuiltValueField(wireName: r'driver_location')
   LatLng get driverLocation;
 

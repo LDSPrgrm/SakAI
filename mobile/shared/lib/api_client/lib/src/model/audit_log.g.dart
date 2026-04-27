@@ -22,9 +22,9 @@ class _$AuditLog extends AuditLog {
   @override
   final String? resourceId;
   @override
-  final JsonObject? beforeState;
+  final BuiltMap<String, JsonObject?>? beforeState;
   @override
-  final JsonObject? afterState;
+  final BuiltMap<String, JsonObject?>? afterState;
   @override
   final String? reason;
 
@@ -131,13 +131,17 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   String? get resourceId => _$this._resourceId;
   set resourceId(String? resourceId) => _$this._resourceId = resourceId;
 
-  JsonObject? _beforeState;
-  JsonObject? get beforeState => _$this._beforeState;
-  set beforeState(JsonObject? beforeState) => _$this._beforeState = beforeState;
+  MapBuilder<String, JsonObject?>? _beforeState;
+  MapBuilder<String, JsonObject?> get beforeState =>
+      _$this._beforeState ??= MapBuilder<String, JsonObject?>();
+  set beforeState(MapBuilder<String, JsonObject?>? beforeState) =>
+      _$this._beforeState = beforeState;
 
-  JsonObject? _afterState;
-  JsonObject? get afterState => _$this._afterState;
-  set afterState(JsonObject? afterState) => _$this._afterState = afterState;
+  MapBuilder<String, JsonObject?>? _afterState;
+  MapBuilder<String, JsonObject?> get afterState =>
+      _$this._afterState ??= MapBuilder<String, JsonObject?>();
+  set afterState(MapBuilder<String, JsonObject?>? afterState) =>
+      _$this._afterState = afterState;
 
   String? _reason;
   String? get reason => _$this._reason;
@@ -157,8 +161,8 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
       _action = $v.action;
       _resourceType = $v.resourceType;
       _resourceId = $v.resourceId;
-      _beforeState = $v.beforeState;
-      _afterState = $v.afterState;
+      _beforeState = $v.beforeState?.toBuilder();
+      _afterState = $v.afterState?.toBuilder();
       _reason = $v.reason;
       _$v = null;
     }
@@ -179,20 +183,38 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   AuditLog build() => _build();
 
   _$AuditLog _build() {
-    final _$result =
-        _$v ??
-        _$AuditLog._(
-          id: id,
-          timestamp: timestamp,
-          actorId: actorId,
-          ipAddress: ipAddress,
-          action: action,
-          resourceType: resourceType,
-          resourceId: resourceId,
-          beforeState: beforeState,
-          afterState: afterState,
-          reason: reason,
+    _$AuditLog _$result;
+    try {
+      _$result =
+          _$v ??
+          _$AuditLog._(
+            id: id,
+            timestamp: timestamp,
+            actorId: actorId,
+            ipAddress: ipAddress,
+            action: action,
+            resourceType: resourceType,
+            resourceId: resourceId,
+            beforeState: _beforeState?.build(),
+            afterState: _afterState?.build(),
+            reason: reason,
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'beforeState';
+        _beforeState?.build();
+        _$failedField = 'afterState';
+        _afterState?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'AuditLog',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

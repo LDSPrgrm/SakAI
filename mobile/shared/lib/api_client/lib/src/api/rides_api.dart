@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 import 'dart:async';
@@ -17,6 +17,7 @@ import 'package:sakai_api_client/src/model/payment_response.dart';
 import 'package:sakai_api_client/src/model/rating_response.dart';
 import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/ride_arrive_request.dart';
+import 'package:sakai_api_client/src/model/ride_complete_request.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 import 'package:sakai_api_client/src/model/submit_rating_request.dart';
@@ -611,7 +612,7 @@ class RidesApi {
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
-  /// * [rideArriveRequest] 
+  /// * [rideCompleteRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -623,7 +624,7 @@ class RidesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<RideResponse>> rideComplete({ 
     required String rideId,
-    required RideArriveRequest rideArriveRequest,
+    required RideCompleteRequest rideCompleteRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -654,8 +655,8 @@ class RidesApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(RideArriveRequest);
-      _bodyData = _serializers.serialize(rideArriveRequest, specifiedType: _type);
+      const _type = FullType(RideCompleteRequest);
+      _bodyData = _serializers.serialize(rideCompleteRequest, specifiedType: _type);
 
     } catch(error, stackTrace) {
       throw DioException(

@@ -93,12 +93,6 @@ class AuthRepositoryImpl implements AuthRepository {
         return const SessionCheckResult.unauthenticated();
       }
 
-      // 2xx = session is valid even if body parsing fails (generated client bug).
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        return const SessionCheckResult.authenticated();
-      }
-
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
@@ -124,6 +118,15 @@ class AuthRepositoryImpl implements AuthRepository {
     if (refreshToken.isEmpty) return;
     final request = LogoutRequest((b) => b..refreshToken = refreshToken);
     await _client.getAuthApi().authLogout(logoutRequest: request);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await _client.getUsersApi().usersMeDelete();
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
   }
 
   AuthException _fromDio(DioException e) {

@@ -15,8 +15,8 @@ Name | Type | Description | Notes
 **action** | **String** |  | [optional] 
 **resourceType** | **String** |  | [optional] 
 **resourceId** | **String** |  | [optional] 
-**beforeState** | [**JsonObject**](.md) |  | [optional] 
-**afterState** | [**JsonObject**](.md) |  | [optional] 
+**beforeState** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md) |  | [optional] 
+**afterState** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md) |  | [optional] 
 **reason** | **String** |  | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

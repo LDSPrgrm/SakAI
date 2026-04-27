@@ -112,3 +112,16 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+func (h *AuthHandler) DeleteMe(c *gin.Context) {
+	userID, ok := c.MustGet("userID").(uuid.UUID)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": "TOKEN_INVALID", "message": "invalid token context"})
+		return
+	}
+	if err := h.uc.DeleteAccount(c.Request.Context(), userID); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

@@ -12,6 +12,8 @@ const KycEntryStatusEnum _$kycEntryStatusEnum_approved =
     const KycEntryStatusEnum._('approved');
 const KycEntryStatusEnum _$kycEntryStatusEnum_rejected =
     const KycEntryStatusEnum._('rejected');
+const KycEntryStatusEnum _$kycEntryStatusEnum_needsMoreInfo =
+    const KycEntryStatusEnum._('needsMoreInfo');
 
 KycEntryStatusEnum _$kycEntryStatusEnumValueOf(String name) {
   switch (name) {
@@ -21,6 +23,8 @@ KycEntryStatusEnum _$kycEntryStatusEnumValueOf(String name) {
       return _$kycEntryStatusEnum_approved;
     case 'rejected':
       return _$kycEntryStatusEnum_rejected;
+    case 'needsMoreInfo':
+      return _$kycEntryStatusEnum_needsMoreInfo;
     default:
       throw ArgumentError(name);
   }
@@ -31,6 +35,7 @@ final BuiltSet<KycEntryStatusEnum> _$kycEntryStatusEnumValues =
       _$kycEntryStatusEnum_pending,
       _$kycEntryStatusEnum_approved,
       _$kycEntryStatusEnum_rejected,
+      _$kycEntryStatusEnum_needsMoreInfo,
     ]);
 
 Serializer<KycEntryStatusEnum> _$kycEntryStatusEnumSerializer =
@@ -42,11 +47,13 @@ class _$KycEntryStatusEnumSerializer
     'pending': 'pending',
     'approved': 'approved',
     'rejected': 'rejected',
+    'needsMoreInfo': 'needs_more_info',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'pending': 'pending',
     'approved': 'approved',
     'rejected': 'rejected',
+    'needs_more_info': 'needsMoreInfo',
   };
 
   @override
@@ -81,7 +88,7 @@ class _$KycEntry extends KycEntry {
   @override
   final DateTime? submittedAt;
   @override
-  final BuiltList<String>? docs;
+  final BuiltList<KycDocument>? docs;
   @override
   final KycEntryStatusEnum? status;
 
@@ -160,9 +167,10 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
   DateTime? get submittedAt => _$this._submittedAt;
   set submittedAt(DateTime? submittedAt) => _$this._submittedAt = submittedAt;
 
-  ListBuilder<String>? _docs;
-  ListBuilder<String> get docs => _$this._docs ??= ListBuilder<String>();
-  set docs(ListBuilder<String>? docs) => _$this._docs = docs;
+  ListBuilder<KycDocument>? _docs;
+  ListBuilder<KycDocument> get docs =>
+      _$this._docs ??= ListBuilder<KycDocument>();
+  set docs(ListBuilder<KycDocument>? docs) => _$this._docs = docs;
 
   KycEntryStatusEnum? _status;
   KycEntryStatusEnum? get status => _$this._status;

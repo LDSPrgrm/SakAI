@@ -26,6 +26,7 @@ Name | Type | Description | Notes
 **cancelledBy** | **String** | Set only when status is `cancelled` | [optional] 
 **cancellationReason** | **String** | Predefined cancellation reason code | [optional] 
 **cancellationReasonText** | **String** | Free-text cancellation reason | [optional] 
+**declineCount** | **int** | Number of times this ride was declined by drivers | [optional] [default to 0]
 **createdAt** | [**DateTime**](DateTime.md) |  | 
 **updatedAt** | [**DateTime**](DateTime.md) |  | 
 **passengerName** | **String** |  | [optional] 

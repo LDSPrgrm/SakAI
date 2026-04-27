@@ -74,10 +74,10 @@ class RideOfferManager extends ChangeNotifier {
         notifyListeners();
         return;
       } on DioException catch (e) {
-        final statusCode = e.response?.statusCode;
-        if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        // If it's a 409, the offer might have already been accepted or expired.
+        if (e.response?.statusCode == 409) {
           _accepting = false;
-          onAccepted?.call(_offer.rideId);
+          _error = 'This offer is no longer available.';
           notifyListeners();
           return;
         }
@@ -112,14 +112,7 @@ class RideOfferManager extends ChangeNotifier {
       _declining = false;
       onDeclined?.call();
       notifyListeners();
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        _declining = false;
-        onDeclined?.call();
-        notifyListeners();
-        return;
-      }
+    } on DioException catch (_) {
       _declining = false;
       _error = 'Failed to decline. Please try again.';
       notifyListeners();

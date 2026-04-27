@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -50,7 +50,7 @@ abstract class UserRideItem implements Built<UserRideItem, UserRideItemBuilder> 
 
   @BuiltValueField(wireName: r'payment_method')
   UserRideItemPaymentMethodEnum get paymentMethod;
-  // enum paymentMethodEnum {  cash,  card,  };
+  // enum paymentMethodEnum {  cash,  card,  gcash,  paymaya,  };
 
   @BuiltValueField(wireName: r'created_at')
   DateTime get createdAt;
@@ -265,6 +265,10 @@ class UserRideItemPaymentMethodEnum extends EnumClass {
   static const UserRideItemPaymentMethodEnum cash = _$userRideItemPaymentMethodEnum_cash;
   @BuiltValueEnumConst(wireName: r'card')
   static const UserRideItemPaymentMethodEnum card = _$userRideItemPaymentMethodEnum_card;
+  @BuiltValueEnumConst(wireName: r'gcash')
+  static const UserRideItemPaymentMethodEnum gcash = _$userRideItemPaymentMethodEnum_gcash;
+  @BuiltValueEnumConst(wireName: r'paymaya')
+  static const UserRideItemPaymentMethodEnum paymaya = _$userRideItemPaymentMethodEnum_paymaya;
 
   static Serializer<UserRideItemPaymentMethodEnum> get serializer => _$userRideItemPaymentMethodEnumSerializer;
 

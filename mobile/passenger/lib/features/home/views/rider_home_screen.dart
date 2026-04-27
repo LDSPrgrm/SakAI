@@ -67,7 +67,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     final authInterceptor = ref.read(authInterceptorProvider);
     final areas = await ServiceAreaRepository(
       authInterceptor: authInterceptor,
-    ).fetchServiceAreas();
+    ).getServiceAreas();
     if (mounted) {
       setState(() => _serviceAreas = areas);
 
@@ -75,7 +75,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       final currentPos = ref.read(homeNotifierProvider).currentLatLng;
       if (currentPos == null && areas.isNotEmpty && _mapController != null) {
         _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(areas.first.center, 12),
+          CameraUpdate.newLatLngZoom(areas.first.polygon.first, 12),
         );
       }
     }
@@ -131,7 +131,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     double minDistance = double.infinity;
 
     for (final area in _serviceAreas) {
-      final distance = _calculateDistance(currentLoc, area.center);
+      final distance = _calculateDistance(currentLoc, area.polygon.first);
       if (distance < minDistance) {
         minDistance = distance;
         nearest = area;
@@ -143,7 +143,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ignore: unused_element
   bool _isInsideArea(LatLng? loc, ServiceArea area) {
     if (loc == null) return false;
-    return _calculateDistance(loc, area.center) <= area.radius;
+    return area.contains(loc);
   }
 
   double _calculateDistance(LatLng p1, LatLng p2) {

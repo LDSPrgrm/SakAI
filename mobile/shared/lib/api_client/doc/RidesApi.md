@@ -292,7 +292,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideComplete**
-> RideResponse rideComplete(rideId, rideArriveRequest)
+> RideResponse rideComplete(rideId, rideCompleteRequest)
 
 Driver completes the ride at dropoff
 
@@ -304,10 +304,10 @@ import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getRidesApi();
 final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
-final RideArriveRequest rideArriveRequest = ; // RideArriveRequest | 
+final RideCompleteRequest rideCompleteRequest = ; // RideCompleteRequest | 
 
 try {
-    final response = api.rideComplete(rideId, rideArriveRequest);
+    final response = api.rideComplete(rideId, rideCompleteRequest);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling RidesApi->rideComplete: $e\n');
@@ -319,7 +319,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rideId** | **String**| UUID of the ride | 
- **rideArriveRequest** | [**RideArriveRequest**](RideArriveRequest.md)|  | 
+ **rideCompleteRequest** | [**RideCompleteRequest**](RideCompleteRequest.md)|  | 
 
 ### Return type
 

@@ -21,9 +21,7 @@ class DriverRatingRepositoryImpl implements DriverRatingRepository {
         rideId: rideId,
         submitRatingRequest: request,
       );
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) return;
+    } on DioException catch (_) {
       rethrow;
     }
   }

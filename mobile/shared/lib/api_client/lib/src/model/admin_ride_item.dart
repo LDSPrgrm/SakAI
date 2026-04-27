@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -35,6 +35,7 @@ part 'admin_ride_item.g.dart';
 /// * [cancelledBy] - Set only when status is `cancelled`
 /// * [cancellationReason] - Predefined cancellation reason code
 /// * [cancellationReasonText] - Free-text cancellation reason
+/// * [declineCount] - Number of times this ride was declined by drivers
 /// * [createdAt] 
 /// * [updatedAt] 
 /// * [passengerName] 
@@ -57,7 +58,8 @@ abstract class AdminRideItem implements RideResponse, Built<AdminRideItem, Admin
   factory AdminRideItem([void updates(AdminRideItemBuilder b)]) = _$AdminRideItem;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(AdminRideItemBuilder b) => b;
+  static void _defaults(AdminRideItemBuilder b) => b
+      ..declineCount = 0;
 
   @BuiltValueSerializer(custom: true)
   static Serializer<AdminRideItem> get serializer => _$AdminRideItemSerializer();
@@ -160,6 +162,13 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
       object.createdAt,
       specifiedType: const FullType(DateTime),
     );
+    if (object.declineCount != null) {
+      yield r'decline_count';
+      yield serializers.serialize(
+        object.declineCount,
+        specifiedType: const FullType(int),
+      );
+    }
     if (object.driver != null) {
       yield r'driver';
       yield serializers.serialize(
@@ -342,6 +351,13 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
             specifiedType: const FullType(DateTime),
           ) as DateTime;
           result.createdAt = valueDes;
+          break;
+        case r'decline_count':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.declineCount = valueDes;
           break;
         case r'driver':
           final valueDes = serializers.deserialize(

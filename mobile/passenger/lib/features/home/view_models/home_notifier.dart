@@ -5,14 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver;
+import 'package:sakai_shared/sakai_shared.dart'
+    hide LatLng, NearbyDriver, ServiceArea;
 import 'package:uuid/uuid.dart';
 
 import '../../ride/models/ride_exception.dart';
 import '../../../app/providers.dart';
 import '../models/ride_type_option.dart';
 import '../models/nearby_driver.dart';
+import '../models/service_area.dart';
 import '../repositories/driver_repository.dart';
+import '../repositories/service_area_repository.dart';
 
 enum HomeStatus {
   idle,
@@ -31,7 +34,8 @@ class HomeState {
   final RideEntity? createdRide;
   final VehicleType? selectedRideType;
   final List<RideTypeOption> rideTypeOptions;
-  final List<NearbyDriver> nearbyDrivers; // Consolidated nearby drivers
+  final List<NearbyDriver> nearbyDrivers;
+  final List<ServiceArea> serviceAreas;
 
   const HomeState({
     required this.status,
@@ -43,6 +47,7 @@ class HomeState {
     this.selectedRideType,
     this.rideTypeOptions = const [],
     this.nearbyDrivers = const [],
+    this.serviceAreas = const [],
   });
 
   HomeState copyWith({
@@ -60,6 +65,7 @@ class HomeState {
     bool clearSelectedRideType = false,
     List<RideTypeOption>? rideTypeOptions,
     List<NearbyDriver>? nearbyDrivers,
+    List<ServiceArea>? serviceAreas,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -73,6 +79,7 @@ class HomeState {
           : (selectedRideType ?? this.selectedRideType),
       rideTypeOptions: rideTypeOptions ?? this.rideTypeOptions,
       nearbyDrivers: nearbyDrivers ?? this.nearbyDrivers,
+      serviceAreas: serviceAreas ?? this.serviceAreas,
     );
   }
 
@@ -97,7 +104,19 @@ class HomeNotifier extends Notifier<HomeState> {
       _stopLocationStreaming();
       _stopNearbyDriverPolling();
     });
+    _fetchServiceAreas();
     return const HomeState(status: HomeStatus.idle);
+  }
+
+  Future<void> _fetchServiceAreas() async {
+    try {
+      final authInterceptor = ref.read(authInterceptorProvider);
+      final repo = ServiceAreaRepository(authInterceptor: authInterceptor);
+      final areas = await repo.getServiceAreas();
+      state = state.copyWith(serviceAreas: areas);
+    } catch (e) {
+      debugPrint('[HomeNotifier] Failed to fetch service areas: $e');
+    }
   }
 
   /// Starts consolidated periodic polling for nearby drivers.
@@ -319,10 +338,38 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(selectedRideType: type);
   }
 
+  bool _isLocationInServiceArea(RideLocation location) {
+    if (state.serviceAreas.isEmpty) {
+      return true; // Default to true if not loaded yet
+    }
+
+    final point = LatLng(location.lat, location.lng);
+    for (final area in state.serviceAreas) {
+      if (area.contains(point)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<RideEntity?> requestRide() async {
     final pickup = state.pickup;
     final destination = state.destination;
     final rideType = state.selectedRideType;
+
+    if (pickup != null && !_isLocationInServiceArea(pickup)) {
+      state = state.copyWith(
+        errorMessage: 'Pickup location is outside our service area.',
+      );
+      return null;
+    }
+
+    if (destination != null && !_isLocationInServiceArea(destination)) {
+      state = state.copyWith(
+        errorMessage: 'Destination location is outside our service area.',
+      );
+      return null;
+    }
     debugPrint(
       '[HOME] requestRide called: pickup=$pickup, destination=$destination, rideType=$rideType',
     );

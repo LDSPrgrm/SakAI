@@ -90,6 +90,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	{
 		// Session recovery
 		authed.GET("/users/me", d.Auth.GetMe)
+		authed.DELETE("/users/me", d.Auth.DeleteMe)
 		authed.GET("/rides/active", d.Ride.GetActive)
 
 		// Driver-only routes

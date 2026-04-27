@@ -8,6 +8,7 @@ import '../features/home/repositories/driver_repository_impl.dart';
 import '../features/home/services/gps_location_service.dart';
 import '../features/active_ride/repositories/active_ride_repository.dart';
 import '../features/active_ride/repositories/active_ride_repository_impl.dart';
+import '../features/earnings/repositories/earnings_repository.dart';
 
 // Note: tokenStorageProvider, onboardingServiceProvider, authStateProvider are
 // provided by sakai_shared or defined below to avoid conflicts.
@@ -39,6 +40,11 @@ final driverRepositoryProvider = Provider<DriverRepository>((ref) {
 /// Active ride repository — domain boundary for ride state transitions.
 final activeRideRepositoryProvider = Provider<ActiveRideRepository>((ref) {
   return ActiveRideRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Earnings repository — domain boundary for historical and session earnings.
+final earningsRepositoryProvider = Provider<EarningsRepository>((ref) {
+  return EarningsRepositoryImpl(ref.watch(apiClientProvider));
 });
 
 /// WebSocket client singleton for real-time events.

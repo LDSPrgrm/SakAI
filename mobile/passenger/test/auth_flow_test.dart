@@ -113,6 +113,9 @@ class _FakeAuthRepository implements AuthRepository {
       throw AuthException(userMessage: 'Logout failed');
     }
   }
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 class _FakeRideRepository implements RideRepository {

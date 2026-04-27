@@ -62,8 +62,9 @@ class RideRepositoryImpl implements RideRepository {
               ? null
               : destination.address
           ..notes = notes
-          ..rideType = rideTypeEnum
-          ..paymentMethod = paymentMethodEnum,
+          ..rideType = rideTypeEnum ?? RideRequestBodyRideTypeEnum.car
+          ..paymentMethod =
+              paymentMethodEnum ?? RideRequestBodyPaymentMethodEnum.cash,
       );
 
       debugPrint(
@@ -87,54 +88,8 @@ class RideRepositoryImpl implements RideRepository {
       debugPrint(
         '[RIDE_REPO] DioException: ${e.response?.statusCode} ${e.message}',
       );
-      debugPrint('[RIDE_REPO] Response data: ${e.response?.data}');
-      // 2xx = success even if body parsing fails (generated client bug).
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        final data = e.response?.data;
-        if (data is Map<String, dynamic>) {
-          debugPrint('[RIDE_REPO] Ride created via fallback');
-          return _entityFromJson(data);
-        }
-      }
       throw _fromDio(e);
     }
-  }
-
-  /// Manually parses a raw JSON map into a [RideEntity].
-  RideEntity _entityFromJson(Map<String, dynamic> json) {
-    final originData = json['origin'] as Map<String, dynamic>;
-    final destData = json['destination'] as Map<String, dynamic>;
-    final driverData = json['driver'] as Map<String, dynamic>?;
-
-    String? driverVehicle;
-    if (driverData != null) {
-      final v = driverData['vehicle'] as Map<String, dynamic>?;
-      if (v != null) {
-        driverVehicle =
-            '${v['make']} ${v['model']} · ${v['plate']} · ${v['color']}';
-      }
-    }
-
-    return RideEntity(
-      id: json['id'] as String,
-      status: RideState.fromString(json['status'] as String),
-      origin: RideLocation(
-        lat: (originData['lat'] as num).toDouble(),
-        lng: (originData['lng'] as num).toDouble(),
-        address: json['origin_address'] as String? ?? '',
-      ),
-      destination: RideLocation(
-        lat: (destData['lat'] as num).toDouble(),
-        lng: (destData['lng'] as num).toDouble(),
-        address: json['destination_address'] as String? ?? '',
-      ),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-      driverName: driverData?['name'] as String?,
-      driverVehicle: driverVehicle,
-      cancelledBy: null,
-    );
   }
 
   @override
@@ -147,12 +102,6 @@ class RideRepositoryImpl implements RideRepository {
     } on DioException catch (e) {
       // 404 = no active ride — not an error condition
       if (e.response?.statusCode == 404) return null;
-      // 2xx = success even if body parsing fails (generated client bug).
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        final data = e.response?.data;
-        if (data is Map<String, dynamic>) return _entityFromJson(data);
-      }
       throw _fromDio(e);
     }
   }
@@ -165,92 +114,29 @@ class RideRepositoryImpl implements RideRepository {
   }) async {
     debugPrint('[RIDE_REPO] Cancelling ride: $rideId, reasonCode: $reasonCode');
     try {
-      // Send cancellation request with reason_code and reason_text directly
-      // using Dio to bypass stale generated CancelRequest model
-      final dio = _client.dio;
-      final response = await dio.post(
-        '/rides/$rideId/cancel',
-        data: <String, dynamic>{
-          'reason_code': reasonCode,
-          // ignore: use_null_aware_elements
-          if (reasonText != null) 'reason_text': reasonText,
-        },
-      );
-      debugPrint(
-        '[RIDE_REPO] Cancel ride succeeded (HTTP ${response.statusCode})',
-      );
-      if (response.data != null) {
-        debugPrint(
-          '[RIDE_REPO] Cancelled ride status: ${response.data['status']}',
-        );
+      CancelRequestReasonCodeEnum code;
+      try {
+        code = CancelRequestReasonCodeEnum.valueOf(reasonCode ?? 'other');
+      } catch (_) {
+        code = CancelRequestReasonCodeEnum.other;
       }
+
+      await _client.getRidesApi().rideCancel(
+        rideId: rideId,
+        cancelRequest: CancelRequest(
+          (b) => b
+            ..reasonCode = code
+            ..reasonText = reasonText,
+        ),
+      );
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails (generated client bug).
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        debugPrint(
-          '[RIDE_REPO] Cancel ride succeeded (2xx, parsing error ignored)',
-        );
-        return;
-      }
-      debugPrint(
-        '[RIDE_REPO] Cancel ride failed (Dio): ${e.response?.statusCode} ${e.message}',
-      );
-      if (e.response?.data != null) {
-        debugPrint('[RIDE_REPO] Error body: ${e.response?.data}');
-      }
       throw _fromDio(e);
-    } catch (e, st) {
-      debugPrint('[RIDE_REPO] Cancel ride failed (Unexpected): $e');
-      debugPrint('[RIDE_REPO] Stack: $st');
-      rethrow;
     }
   }
 
   // -------------------------------------------------------------------------
   // Mapping helpers
   // -------------------------------------------------------------------------
-
-  /// Manually parses a raw JSON map into a [RideResponse] when the
-  /// generated client fails to deserialize 2xx responses.
-  // ignore: unused_element
-  RideResponse _parseRideResponse(Map<String, dynamic> json) {
-    return $RideResponse((b) {
-      b.id = json['id'] as String;
-
-      final statusStr = json['status'] as String;
-      try {
-        b.status = RideStatus.valueOf(statusStr);
-      } catch (_) {
-        b.status = RideStatus.requested;
-      }
-
-      final originData = json['origin'] as Map<String, dynamic>;
-      b.origin.lat = (originData['lat'] as num).toDouble();
-      b.origin.lng = (originData['lng'] as num).toDouble();
-
-      final destData = json['destination'] as Map<String, dynamic>;
-      b.destination.lat = (destData['lat'] as num).toDouble();
-      b.destination.lng = (destData['lng'] as num).toDouble();
-
-      b.originAddress = json['origin_address'] as String?;
-      b.destinationAddress = json['destination_address'] as String?;
-      b.createdAt = DateTime.parse(json['created_at'] as String);
-      b.updatedAt = DateTime.parse(json['updated_at'] as String);
-
-      // Passenger is required by the schema but may be missing in 2xx responses
-      final passengerData = json['passenger'] as Map<String, dynamic>?;
-      b.passenger = $UserProfile((pb) {
-        pb.id = passengerData != null ? passengerData['id'] as String : '';
-        pb.name = passengerData != null
-            ? (passengerData['name'] as String? ?? '')
-            : '';
-        pb.createdAt = _parseDateTime(passengerData?['created_at']);
-      });
-    });
-  }
-
   RideEntity _toEntity(RideResponse r) {
     final driver = r.driver;
     String? driverVehicle;
@@ -328,15 +214,6 @@ class RideRepositoryImpl implements RideRepository {
         return 'This ride cannot be cancelled. It may already be completed or cancelled.';
       default:
         return 'Ride request failed. Please try again.';
-    }
-  }
-
-  DateTime _parseDateTime(dynamic value) {
-    if (value == null) return DateTime.now();
-    try {
-      return DateTime.parse(value as String);
-    } catch (_) {
-      return DateTime.now();
     }
   }
 }
