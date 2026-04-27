@@ -1,52 +1,108 @@
-// Revenue by week — stacked bar chart by payment method (PHP values).
-// Spec: superadmin.md §4.1 Charts
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { cn } from '@/lib/utils';
+import { Wallet } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { EmptyState } from './EmptyState';
+import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+import { formatPHP } from '@/lib/utils';
 
 interface DataPoint {
   name: string;
-  cash?: number;
+  revenue?: number;
   gcash?: number;
+  cash?: number;
   paymaya?: number;
   card?: number;
 }
 
+type Period = '24h' | '7d' | '30d';
+
 interface RevenueChartProps {
   data: DataPoint[];
   className?: string;
+  height?: number;
+  period?: Period;
 }
 
-const METHOD_COLORS = {
-  cash:    '#6B7280',
-  gcash:   '#1A73E8',
-  paymaya: '#4CAF50',
-  card:    '#FF9800',
+const AXIS_TICK = { fill: 'var(--color-text-muted)', fontSize: 11, fontFeatureSettings: '"tnum"' } as const;
+
+const PERIOD_LABEL: Record<Period, string> = {
+  '24h': 'Last 24 hours',
+  '7d':  'Last 7 days',
+  '30d': 'Last 30 days',
 };
 
-export function RevenueChart({ data, className }: RevenueChartProps) {
+function seriesTotal(d: DataPoint): number {
+  return (d.revenue ?? 0) + (d.gcash ?? 0) + (d.cash ?? 0) + (d.paymaya ?? 0) + (d.card ?? 0);
+}
+
+export function RevenueChart({ data, className, height = 240, period = '30d' }: RevenueChartProps) {
+  const hasData = !!data && data.length > 0 && data.some((p) => seriesTotal(p) > 0);
+  const hasSplit = !!data?.some((p) => p.gcash != null || p.cash != null || p.paymaya != null || p.card != null);
+  const total = hasData ? data.reduce((s, p) => s + seriesTotal(p), 0) : 0;
+
   return (
-    <div className={cn('bg-surface border border-border rounded-xl p-5', className)}>
-      <p className="text-sm font-semibold text-text-main mb-4">Revenue by Week (₱)</p>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} />
-          <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
-            tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`} />
-          <Tooltip
-            contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8 }}
-            formatter={(v: number, name: string) => [`₱${v.toLocaleString('en-PH')}`, name]}
+    <Card className={className}>
+      <CardHeader className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sa-accent)]" aria-hidden />
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider">Revenue</CardTitle>
+          </div>
+          <span className="overline">PHP · {PERIOD_LABEL[period]}</span>
+        </div>
+        {hasData && (
+          <p className="text-xs text-text-muted tabular-nums">
+            <span className="text-text-main font-semibold">{formatPHP(total)}</span> total
+          </p>
+        )}
+      </CardHeader>
+      <CardContent className="p-5 pt-4">
+        {!hasData ? (
+          <EmptyState
+            icon={Wallet}
+            title="No revenue posted"
+            description="Payments appear once rides complete and settle."
+            hint={PERIOD_LABEL[period]}
           />
-          <Legend />
-          <Bar dataKey="gcash"   stackId="rev" fill={METHOD_COLORS.gcash}   name="GCash"   />
-          <Bar dataKey="paymaya" stackId="rev" fill={METHOD_COLORS.paymaya} name="PayMaya" />
-          <Bar dataKey="card"    stackId="rev" fill={METHOD_COLORS.card}    name="Card"    />
-          <Bar dataKey="cash"    stackId="rev" fill={METHOD_COLORS.cash}    name="Cash"    radius={[4,4,0,0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }} barCategoryGap="35%">
+              <CartesianGrid stroke="var(--color-border)" strokeDasharray="2 4" vertical={false} opacity={0.4} />
+              <XAxis
+                dataKey="name"
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={24}
+              />
+              <YAxis
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                allowDecimals={false}
+                tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+              />
+              <Tooltip {...DARK_TOOLTIP_STYLE} cursor={{ fill: 'var(--color-surface-hover)', opacity: 0.4 }} formatter={(v: number) => formatPHP(v)} />
+              {hasSplit ? (
+                <>
+                  <Legend wrapperStyle={{ color: 'var(--color-text-muted)', fontSize: 11 }} iconSize={8} />
+                  <Bar dataKey="gcash"   stackId="a" fill={CHART_COLORS[0]} barSize={14} name="GCash" />
+                  <Bar dataKey="cash"    stackId="a" fill={CHART_COLORS[1]} barSize={14} name="Cash" />
+                  <Bar dataKey="paymaya" stackId="a" fill={CHART_COLORS[2]} barSize={14} name="PayMaya" />
+                  <Bar dataKey="card"    stackId="a" fill={CHART_COLORS[3]} barSize={14} name="Card" radius={[3, 3, 0, 0]} />
+                </>
+              ) : (
+                <Bar dataKey="revenue" fill="var(--color-sa-accent)" barSize={14} radius={[3, 3, 0, 0]} />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
   );
 }

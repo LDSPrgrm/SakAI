@@ -5,7 +5,7 @@ import {
   adminRequestBlob,
   unwrapList,
   extractArray,
-} from '../_request';
+} from './_request';
 
 const originalFetch = global.fetch;
 

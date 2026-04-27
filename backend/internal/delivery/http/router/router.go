@@ -37,10 +37,14 @@ type Deps struct {
 	WS             *ws.Handler
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
-	PerfSampler    middleware.PerfSampler
+	PerfSampler middleware.PerfSampler
 	// FilesRoot is the absolute directory that backs authenticated
 	// GET /files/* responses. Empty disables the route.
-	FilesRoot      string
+	FilesRoot string
+	// AuthUC + RoleUC back the dynamic permission middleware. Both must be
+	// supplied for admin routes to function.
+	AuthUC domain.AuthUseCase
+	RoleUC domain.RoleUseCase
 }
 
 // New builds and returns the configured Gin engine.
@@ -54,6 +58,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.Perf(d.PerfSampler))
+
+	// Permission guard factory — superadmin bypass, 30s LRU cache.
+	requirePerm := middleware.NewPermissionGuard(d.AuthUC, d.RoleUC)
 
 	api := r.Group("/api")
 
@@ -97,125 +104,125 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		}
 
 		// ─── Super Admin / Admin Routes ──────────────────────────────────────────
+		// All admin routes use dynamic permission gating via requirePerm("key", "read"|"write").
+		// Superadmin bypasses inside the middleware. Permission keys map to the
+		// role_permissions DB table (see TEST_ACCOUNTS.md for the canonical matrix).
 		admin := authed.Group("/admin")
 		{
 			// Self-scoped: any authenticated user may read their own role's
-			// permissions to drive sidebar/UI gating. No RequireRole wrapper
-			// so non-superadmin admins (operations/finance/support/admin)
-			// can still fetch.
+			// permissions to drive sidebar/UI gating. No guard.
 			admin.GET("/me/permissions", d.Role.GetMyPermissions)
 
-			// Dashboard
-			admin.GET("/dashboard", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.GetDashboard)
+			// Self-scoped password change — any authenticated admin may change
+			// their own password. Gate by authentication only (no permission key).
+			admin.PUT("/auth/password", d.Auth.ChangePassword)
 
-			// Auth
-			admin.PUT("/auth/password", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Auth.ChangePassword)
-
-			// Metrics
-			admin.GET("/metrics/riders", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRiders)
-			admin.GET("/metrics/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetDrivers)
-			admin.GET("/metrics/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Metrics.GetRides)
-			admin.GET("/metrics/revenue", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Metrics.GetRevenue)
-			admin.GET("/metrics/wait-time", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetWaitTime)
-			admin.GET("/drivers/heatmap", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Metrics.GetDriverHeatmap)
+			// Dashboard + metrics
+			admin.GET("/dashboard", requirePerm("dashboard", "read"), d.Admin.GetDashboard)
+			admin.GET("/metrics/riders", requirePerm("dashboard", "read"), d.Metrics.GetRiders)
+			admin.GET("/metrics/drivers", requirePerm("dashboard", "read"), d.Metrics.GetDrivers)
+			admin.GET("/metrics/rides", requirePerm("dashboard", "read"), d.Metrics.GetRides)
+			admin.GET("/metrics/revenue", requirePerm("payments", "read"), d.Metrics.GetRevenue)
+			admin.GET("/metrics/wait-time", requirePerm("dashboard", "read"), d.Metrics.GetWaitTime)
+			admin.GET("/drivers/heatmap", requirePerm("dashboard", "read"), d.Metrics.GetDriverHeatmap)
 
 			// Admin Management
-			admin.GET("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ListAdmins)
-			admin.POST("/users", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.CreateAdmin)
-			admin.PUT("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.UpdateAdminStatus)
-			admin.DELETE("/users/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.DeactivateAdmin)
-			admin.GET("/users/:id/activity", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.GetAdminActivity)
-			admin.PUT("/users/:id/password", middleware.RequireRole(domain.RoleSuperadmin), d.Admin.ResetUserPassword)
+			admin.GET("/users", requirePerm("admin_management", "read"), d.Admin.ListAdmins)
+			admin.POST("/users", requirePerm("admin_management", "write"), d.Admin.CreateAdmin)
+			admin.PUT("/users/:id", requirePerm("admin_management", "write"), d.Admin.UpdateAdminStatus)
+			admin.DELETE("/users/:id", requirePerm("admin_management", "write"), d.Admin.DeactivateAdmin)
+			admin.GET("/users/:id/activity", requirePerm("admin_management", "read"), d.Admin.GetAdminActivity)
+			admin.PUT("/users/:id/password", requirePerm("admin_management", "write"), d.Admin.ResetUserPassword)
 
 			// Role Management
-			admin.GET("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.ListRoles)
-			admin.POST("/roles", middleware.RequireRole(domain.RoleSuperadmin), d.Role.CreateRole)
-			admin.GET("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRole)
-			admin.PUT("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.UpdateRole)
-			admin.DELETE("/roles/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DeleteRole)
-			admin.GET("/roles/:id/permissions", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRolePermissions)
-			admin.GET("/roles/:id/admins", middleware.RequireRole(domain.RoleSuperadmin), d.Role.GetRoleAdmins)
-			admin.POST("/roles/:id/duplicate", middleware.RequireRole(domain.RoleSuperadmin), d.Role.DuplicateRole)
+			admin.GET("/roles", requirePerm("role_management", "read"), d.Role.ListRoles)
+			admin.POST("/roles", requirePerm("role_management", "write"), d.Role.CreateRole)
+			admin.GET("/roles/:id", requirePerm("role_management", "read"), d.Role.GetRole)
+			admin.PUT("/roles/:id", requirePerm("role_management", "write"), d.Role.UpdateRole)
+			admin.DELETE("/roles/:id", requirePerm("role_management", "write"), d.Role.DeleteRole)
+			admin.GET("/roles/:id/permissions", requirePerm("role_management", "read"), d.Role.GetRolePermissions)
+			admin.GET("/roles/:id/admins", requirePerm("role_management", "read"), d.Role.GetRoleAdmins)
+			admin.POST("/roles/:id/duplicate", requirePerm("role_management", "write"), d.Role.DuplicateRole)
 
 			// Ride & User browsing
-			admin.GET("/rides", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Admin.ListRides)
-			admin.GET("/users/passengers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListPassengers)
-			admin.GET("/users/drivers", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListDrivers)
+			admin.GET("/rides", requirePerm("user_management", "read"), d.Admin.ListRides)
+			admin.GET("/users/passengers", requirePerm("user_management", "read"), d.Admin.ListPassengers)
+			admin.GET("/users/drivers", requirePerm("user_management", "read"), d.Admin.ListDrivers)
 
 			// Fare & Surge
-			admin.GET("/fares", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetConfig)
-			admin.PUT("/fares", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateFares)
-			admin.GET("/fares/surge", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Fare.GetSurgeConfig)
-			admin.PUT("/surge", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.UpdateSurge)
-			admin.POST("/fares/simulate", middleware.RequireRole(domain.RoleSuperadmin), d.Fare.SimulateFare)
+			admin.GET("/fares", requirePerm("fare_config", "read"), d.Fare.GetConfig)
+			admin.PUT("/fares", requirePerm("fare_config", "write"), d.Fare.UpdateFares)
+			admin.GET("/fares/surge", requirePerm("fare_config", "read"), d.Fare.GetSurgeConfig)
+			admin.PUT("/surge", requirePerm("fare_config", "write"), d.Fare.UpdateSurge)
+			admin.POST("/fares/simulate", requirePerm("fare_config", "read"), d.Fare.SimulateFare)
 
 			// Payments
-			admin.GET("/payments/transactions", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations), d.Payment.ListTransactions)
-			admin.GET("/payments/summary", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetSummary)
-			admin.GET("/payments/payouts", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.ListPayouts)
-			admin.PUT("/payments/payouts/:id/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.ApprovePayout)
-			admin.POST("/payments/payouts/approve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.BatchApprovePayouts)
-			admin.GET("/payments/config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.GetGatewayConfigs)
-			admin.PUT("/payments/config/:provider", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateGatewayConfig)
-			admin.GET("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance), d.Payment.GetCommissionSettings)
-			admin.PUT("/payments/commission-config", middleware.RequireRole(domain.RoleSuperadmin), d.Payment.UpdateCommissionSettings)
+			admin.GET("/payments/transactions", requirePerm("payments", "read"), d.Payment.ListTransactions)
+			admin.GET("/payments/summary", requirePerm("payments", "read"), d.Payment.GetSummary)
+			admin.GET("/payments/payouts", requirePerm("payouts", "read"), d.Payment.ListPayouts)
+			admin.PUT("/payments/payouts/:id/approve", requirePerm("payouts", "write"), d.Payment.ApprovePayout)
+			admin.POST("/payments/payouts/approve", requirePerm("payouts", "write"), d.Payment.BatchApprovePayouts)
+			admin.GET("/payments/config", requirePerm("payments", "read"), d.Payment.GetGatewayConfigs)
+			admin.PUT("/payments/config/:provider", requirePerm("payments", "write"), d.Payment.UpdateGatewayConfig)
+			admin.GET("/payments/commission-config", requirePerm("payments", "read"), d.Payment.GetCommissionSettings)
+			admin.PUT("/payments/commission-config", requirePerm("payments", "write"), d.Payment.UpdateCommissionSettings)
 
 			// Safety & Incidents
-			admin.GET("/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
-			admin.GET("/support-staff", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListAssigneeCandidates)
-			admin.GET("/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.GetIncident)
-			admin.PUT("/incidents/:id/assign", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.AssignIncident)
-			admin.PUT("/incidents/:id/resolve", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
-			admin.GET("/safety/incidents", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleSupport), d.Admin.ListIncidents)
-			admin.PUT("/safety/incidents/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Admin.ResolveIncident)
-			admin.GET("/safety/kyc", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.ListKyc)
-			admin.PUT("/safety/kyc/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.UpdateKyc)
-			admin.POST("/safety/kyc/batch", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.BatchKyc)
-			admin.GET("/safety/compliance", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Safety.GetCompliance)
+			admin.GET("/incidents", requirePerm("safety_incidents", "read"), d.Admin.ListIncidents)
+			admin.GET("/support-staff", requirePerm("safety_incidents", "read"), d.Admin.ListAssigneeCandidates)
+			admin.GET("/incidents/:id", requirePerm("safety_incidents", "read"), d.Admin.GetIncident)
+			admin.PUT("/incidents/:id/assign", requirePerm("safety_incidents", "write"), d.Admin.AssignIncident)
+			admin.PUT("/incidents/:id/resolve", requirePerm("safety_incidents", "write"), d.Admin.ResolveIncident)
+			admin.GET("/safety/incidents", requirePerm("safety_incidents", "read"), d.Admin.ListIncidents)
+			admin.PUT("/safety/incidents/:id", requirePerm("safety_incidents", "write"), d.Admin.ResolveIncident)
+			admin.GET("/safety/kyc", requirePerm("kyc_verification", "read"), d.Safety.ListKyc)
+			admin.PUT("/safety/kyc/:id", requirePerm("kyc_verification", "write"), d.Safety.UpdateKyc)
+			admin.POST("/safety/kyc/batch", requirePerm("kyc_verification", "write"), d.Safety.BatchKyc)
+			admin.GET("/safety/compliance", requirePerm("ltfrb_compliance", "read"), d.Safety.GetCompliance)
 
 			// System
-			admin.GET("/system/services", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.ListServices)
-			admin.GET("/system/infra-metrics", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.System.GetInfraMetrics)
-			admin.GET("/system/feature-flags", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListFeatureFlags)
-			admin.PUT("/system/feature-flags/:key", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateFeatureFlag)
-			admin.GET("/system/integrations", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListIntegrations)
-			admin.PUT("/system/integrations/:service", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateIntegration)
-			admin.POST("/system/integrations/:service/test", middleware.RequireRole(domain.RoleSuperadmin), d.System.TestIntegration)
-			admin.GET("/system/notification-templates", middleware.RequireRole(domain.RoleSuperadmin), d.System.ListNotificationTemplates)
-			admin.PUT("/system/notification-templates/:event", middleware.RequireRole(domain.RoleSuperadmin), d.System.UpdateNotificationTemplate)
+			admin.GET("/system/services", requirePerm("system_health", "read"), d.System.ListServices)
+			admin.GET("/system/infra-metrics", requirePerm("system_health", "read"), d.System.GetInfraMetrics)
+			admin.GET("/system/feature-flags", requirePerm("system_config", "read"), d.System.ListFeatureFlags)
+			admin.PUT("/system/feature-flags/:key", requirePerm("system_config", "write"), d.System.UpdateFeatureFlag)
+			admin.GET("/system/integrations", requirePerm("system_config", "read"), d.System.ListIntegrations)
+			admin.PUT("/system/integrations/:service", requirePerm("system_config", "write"), d.System.UpdateIntegration)
+			admin.POST("/system/integrations/:service/test", requirePerm("system_config", "write"), d.System.TestIntegration)
+			admin.GET("/system/notification-templates", requirePerm("system_config", "read"), d.System.ListNotificationTemplates)
+			admin.PUT("/system/notification-templates/:event", requirePerm("system_config", "write"), d.System.UpdateNotificationTemplate)
 
 			// Reports
-			admin.GET("/reports/list", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Report.ListReports)
-			admin.GET("/reports/chart/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations, domain.RoleSupport), d.Report.GetChartData)
-			admin.POST("/reports/export/:type", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleFinance, domain.RoleOperations), d.Report.ExportReport)
+			admin.GET("/reports/list", requirePerm("reports", "read"), d.Report.ListReports)
+			admin.GET("/reports/chart/:type", requirePerm("reports", "read"), d.Report.GetChartData)
+			admin.POST("/reports/export/:type", requirePerm("reports", "write"), d.Report.ExportReport)
 
 			// Audit Log
-			admin.GET("/audit", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.List)
-			admin.GET("/audit/export", middleware.RequireRole(domain.RoleSuperadmin), d.Audit.Export)
-			admin.POST("/audit", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations, domain.RoleFinance, domain.RoleSupport), d.Audit.Create)
+			admin.GET("/audit", requirePerm("audit_log", "read"), d.Audit.List)
+			admin.GET("/audit/export", requirePerm("audit_log", "read"), d.Audit.Export)
+			admin.POST("/audit", requirePerm("audit_log", "write"), d.Audit.Create)
 
 			// Service areas (admin view — includes inactive) + LGU partnerships
 			if d.ServiceArea != nil {
-				admin.GET("/service-areas", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.ServiceArea.ListAdmin)
-				admin.POST("/service-areas", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Create)
-				admin.PUT("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Update)
-				admin.DELETE("/service-areas/:id", middleware.RequireRole(domain.RoleSuperadmin), d.ServiceArea.Delete)
+				admin.GET("/service-areas", requirePerm("ltfrb_compliance", "read"), d.ServiceArea.ListAdmin)
+				admin.POST("/service-areas", requirePerm("ltfrb_compliance", "write"), d.ServiceArea.Create)
+				admin.PUT("/service-areas/:id", requirePerm("ltfrb_compliance", "write"), d.ServiceArea.Update)
+				admin.DELETE("/service-areas/:id", requirePerm("ltfrb_compliance", "write"), d.ServiceArea.Delete)
 			}
 			if d.LGUPartnership != nil {
-				admin.GET("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.List)
-				admin.GET("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.LGUPartnership.Get)
-				admin.POST("/lgu-partnerships", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Create)
-				admin.PUT("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Update)
-				admin.DELETE("/lgu-partnerships/:id", middleware.RequireRole(domain.RoleSuperadmin), d.LGUPartnership.Delete)
+				admin.GET("/lgu-partnerships", requirePerm("ltfrb_compliance", "read"), d.LGUPartnership.List)
+				admin.GET("/lgu-partnerships/:id", requirePerm("ltfrb_compliance", "read"), d.LGUPartnership.Get)
+				admin.POST("/lgu-partnerships", requirePerm("ltfrb_compliance", "write"), d.LGUPartnership.Create)
+				admin.PUT("/lgu-partnerships/:id", requirePerm("ltfrb_compliance", "write"), d.LGUPartnership.Update)
+				admin.DELETE("/lgu-partnerships/:id", requirePerm("ltfrb_compliance", "write"), d.LGUPartnership.Delete)
 			}
 
-			// Alerts — superadmin only
+			// Alerts
 			if d.Alert != nil {
-				admin.GET("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.ListRules)
-				admin.POST("/alerts/rules", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.CreateRule)
-				admin.PUT("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.UpdateRule)
-				admin.DELETE("/alerts/rules/:id", middleware.RequireRole(domain.RoleSuperadmin), d.Alert.DeleteRule)
-				admin.GET("/alerts/events", middleware.RequireRole(domain.RoleSuperadmin, domain.RoleOperations), d.Alert.ListEvents)
+				admin.GET("/alerts/rules", requirePerm("system_config", "read"), d.Alert.ListRules)
+				admin.POST("/alerts/rules", requirePerm("system_config", "write"), d.Alert.CreateRule)
+				admin.PUT("/alerts/rules/:id", requirePerm("system_config", "write"), d.Alert.UpdateRule)
+				admin.DELETE("/alerts/rules/:id", requirePerm("system_config", "write"), d.Alert.DeleteRule)
+				admin.GET("/alerts/events", requirePerm("system_health", "read"), d.Alert.ListEvents)
 			}
 		}
 

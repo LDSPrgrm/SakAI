@@ -1,8 +1,27 @@
 // React Query hooks for system services, feature flags, integrations, notification templates.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { systemApi } from '@/api/super-admin/system';
+import { systemApi, type FeatureFlag } from '@/api/super-admin/system';
 import { api, type HealthResponse } from '@/lib/api';
+import { FLAG_KEYS } from '@/constants/featureFlags';
+
+// Backend seeds one flag per cashless method. The admin UI collapses these
+// into a single "Cashless Payments" row; toggling it fans out to all three.
+const CASHLESS_PROVIDER_KEYS = ['gcash_payments', 'paymaya_payments', 'card_payments'];
+const CASHLESS_PROVIDER_SET = new Set(CASHLESS_PROVIDER_KEYS);
+
+export function compressCashlessFlags(flags: FeatureFlag[]): FeatureFlag[] {
+  const cashless = flags.filter((f) => f.key && CASHLESS_PROVIDER_SET.has(f.key));
+  const rest = flags.filter((f) => !f.key || !CASHLESS_PROVIDER_SET.has(f.key));
+  if (cashless.length === 0) return rest;
+  const synthetic: FeatureFlag = {
+    key: FLAG_KEYS.CASHLESS_PAYMENTS,
+    label: 'Cashless Payments',
+    description: 'Accept GCash, PayMaya, and card payments. When off, only Cash is accepted app-wide.',
+    enabled: cashless.every((f) => f.enabled ?? false),
+  };
+  return [...rest, synthetic];
+}
 
 const SYSTEM_KEY = ['admin', 'system'] as const;
 const INTEGRATIONS_KEY = [...SYSTEM_KEY, 'integrations'] as const;
@@ -37,7 +56,17 @@ export function useFeatureFlags() {
   return useQuery({
     queryKey: FLAGS_KEY,
     queryFn: () => systemApi.getFeatureFlags(),
+    select: compressCashlessFlags,
   });
+}
+
+// Defaults to true so cashless UI isn't prematurely gated while the flag
+// query is loading or in the failure state — the backend is still the
+// authority at ride/payment creation time.
+export function useIsCashlessEnabled(): boolean {
+  const { data } = useFeatureFlags();
+  const flag = data?.find((f) => f.key === FLAG_KEYS.CASHLESS_PAYMENTS);
+  return flag ? flag.enabled : true;
 }
 
 export function useSystemServices(options?: { refetchInterval?: number }) {
@@ -83,8 +112,15 @@ export function useUpdateTemplate() {
 export function useToggleFlag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ key, enabled }: { key: string; enabled: boolean }) =>
-      systemApi.toggleFlag(key, enabled),
+    mutationFn: async ({ key, enabled }: { key: string; enabled: boolean }) => {
+      if (key === FLAG_KEYS.CASHLESS_PAYMENTS) {
+        await Promise.all(
+          CASHLESS_PROVIDER_KEYS.map((k) => systemApi.toggleFlag(k, enabled)),
+        );
+        return;
+      }
+      await systemApi.toggleFlag(key, enabled);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: FLAGS_KEY }),
   });
 }

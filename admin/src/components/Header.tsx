@@ -2,7 +2,9 @@ import React from 'react';
 import { Search, LogOut, Menu } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
+import { NotificationBell } from './layout/NotificationBell';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -10,6 +12,8 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle }: HeaderProps) {
   const { logout } = useAuth();
+  const { can } = usePermissions();
+  const canSeeNotifications = can('audit_log', 'read');
 
   return (
     <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 gap-3">
@@ -32,6 +36,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+        {canSeeNotifications && <NotificationBell />}
         <Button
           variant="ghost"
           size="sm"

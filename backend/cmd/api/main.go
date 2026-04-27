@@ -178,6 +178,8 @@ func main() {
 		WS:             ws.NewHandler(hub),
 		PerfSampler:    systemRepo,
 		FilesRoot:      cfg.UploadDir,
+		AuthUC:         authUC,
+		RoleUC:         roleUC,
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

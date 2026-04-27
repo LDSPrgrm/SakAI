@@ -28,7 +28,6 @@ import { Reports } from '@/pages/Reports';
 // Pages that pull react-hook-form + zod — lazy-load so the libs don't bloat the
 // entry chunk for admins who never hit them.
 const FareSurge = lazy(() => import('@/pages/FareSurge').then(m => ({ default: m.FareSurge })));
-const Settings  = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })));
 
 // Super Admin pages
 const SADashboard = lazy(() => import('@/pages/super-admin/SADashboard').then(m => ({ default: m.SADashboard })));
@@ -119,11 +118,6 @@ export default function App() {
             } />
             <Route path="reports" element={
               <RequirePermission permission="reports"><Reports /></RequirePermission>
-            } />
-            <Route path="settings" element={
-              <RequirePermission permission="system_config">
-                <Suspense fallback={<PageLoader />}><Settings /></Suspense>
-              </RequirePermission>
             } />
           </Route>
 

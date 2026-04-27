@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -31,6 +32,7 @@ import {
 } from '@/hooks/usePayments';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
+import { csvRow } from '@/utils/csv';
 import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
 import { GatewayProvidersSection } from '@/components/super-admin/payments/GatewayProvidersSection';
 import { TransactionDetailModal } from '@/components/super-admin/modals/TransactionDetailModal';
@@ -133,14 +135,17 @@ export function SAPayments() {
   // ── CSV download ───────────────────────────────────────────────────────────
 
   function downloadCsv() {
-    const headers = 'Transaction ID,Ride ID,Rider,Driver,Amount,Commission,Method,Status,Date\n';
-    const rows = filtered
-      .map(
-        (t) =>
-          `${t.id},${t.ride_id},${t.rider_name},${t.driver_name},${t.amount},${t.commission},${t.payment_method},${t.status},${t.created_at}`
-      )
-      .join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const header = csvRow([
+      'Transaction ID', 'Ride ID', 'Rider', 'Driver',
+      'Amount', 'Commission', 'Method', 'Status', 'Date',
+    ]);
+    const rows = filtered.map((t) =>
+      csvRow([
+        t.id, t.ride_id, t.rider_name, t.driver_name,
+        t.amount, t.commission, t.payment_method, t.status, t.created_at,
+      ]),
+    );
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -155,10 +160,10 @@ export function SAPayments() {
     <div className="space-y-6 p-6">
 
       {/* Page title */}
-      <h1 className="text-2xl font-bold text-text-main">Payments</h1>
+      <h1 className="text-2xl font-bold text-text-main">Financial Controls</h1>
 
       {/* Section 1 — Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           title="Total Revenue"
           value={formatPHP(summary.total_revenue ?? 0)}
@@ -219,10 +224,18 @@ export function SAPayments() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.length === 0 ? (
+                  {transactionsQuery.isPending && filtered.length === 0 ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={`txn-skel-${i}`}>
+                        <TableCell colSpan={7} className="py-3">
+                          <div className="h-4 bg-surface-hover rounded animate-pulse" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : filtered.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-center text-text-muted py-10"
                       >
                         No transactions found.
@@ -346,17 +359,13 @@ export function SAPayments() {
                         const someSelected =
                           pendingIds.some((id) => selectedPayoutIds.has(id)) && !allSelected;
                         return (
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-border accent-primary"
+                          <Checkbox
                             disabled={pendingIds.length === 0}
                             checked={allSelected}
-                            ref={(el) => {
-                              if (el) el.indeterminate = someSelected;
-                            }}
-                            onChange={(e) => {
+                            indeterminate={someSelected}
+                            onCheckedChange={(checked) => {
                               setSelectedPayoutIds(
-                                e.target.checked ? new Set(pendingIds) : new Set(),
+                                checked ? new Set(pendingIds) : new Set(),
                               );
                             }}
                             aria-label="Select all pending payouts"
@@ -372,7 +381,15 @@ export function SAPayments() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payouts.length === 0 ? (
+                  {payoutsQuery.isPending && payouts.length === 0 ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={`payout-skel-${i}`}>
+                        <TableCell colSpan={6} className="py-3">
+                          <div className="h-4 bg-surface-hover rounded animate-pulse" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : payouts.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -386,14 +403,12 @@ export function SAPayments() {
                       <TableRow key={payout.id}>
                         <TableCell>
                           {payout.status === 'pending' ? (
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-border accent-primary"
+                            <Checkbox
                               checked={selectedPayoutIds.has(payout.id)}
-                              onChange={(e) => {
+                              onCheckedChange={(checked) => {
                                 setSelectedPayoutIds((prev) => {
                                   const next = new Set(prev);
-                                  if (e.target.checked) next.add(payout.id);
+                                  if (checked) next.add(payout.id);
                                   else next.delete(payout.id);
                                   return next;
                                 });

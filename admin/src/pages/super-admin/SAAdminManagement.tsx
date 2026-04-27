@@ -1,35 +1,42 @@
-import React, { useState } from 'react';
-import { Plus, Search, Pencil, Ban, CheckCircle, X, Trash2, Activity, Key } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Plus,
+  Search,
+  Pencil,
+  Ban,
+  CheckCircle,
+  X,
+  Trash2,
+  Activity,
+  Key,
+  Users as UsersIcon,
+  ShieldCheck,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { RoleBadge } from '@/components/super-admin/shared/RoleBadge';
+import { ActionMenu, type ActionMenuItem } from '@/components/super-admin/shared/ActionMenu';
 import { useQueryClient } from '@tanstack/react-query';
 import { adminsApi } from '@/api/super-admin/admins';
 import { useAdmins } from '@/hooks/useAdmins';
 import { useRoles } from '@/hooks/useRoles';
 import { useAuth } from '@/hooks/useAuth';
-import { formatDate } from '@/utils/formatDate';
+import { formatDate, formatRelativeTime } from '@/utils/formatDate';
 import { displayRole } from '@/utils/displayRole';
+import { generatePassword } from '@/utils/generatePassword';
 import { AdminForm, type AdminFormValues } from '@/components/super-admin/forms/AdminForm';
 import { PasswordResetResultModal } from '@/components/super-admin/modals/PasswordResetResultModal';
-import type { AdminUser, AdminRole, AdminRoleDefinition } from '@/types/super-admin';
+import { cn } from '@/lib/utils';
+import type { AdminUser, AdminRoleDefinition } from '@/types/super-admin';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-const ROLE_BADGE: Record<string, 'danger' | 'info' | 'warning' | 'default'> = {
-  admin:      'info',
-  superadmin: 'danger',
-  operations: 'info',
-  finance:    'warning',
-  support:    'default',
-};
 
 const ROLE_LABELS: Record<string, string> = {
   admin:      'Admin',
@@ -43,8 +50,11 @@ function roleLabel(role: string): string {
   return ROLE_LABELS[role] ?? role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function roleBadgeVariant(role: string): 'danger' | 'info' | 'warning' | 'default' {
-  return ROLE_BADGE[role] ?? 'default';
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -57,10 +67,18 @@ export function SAAdminManagement() {
   const rolesQuery = useRoles();
   const admins: AdminUser[] = adminsQuery.data ?? [];
   const roleDefs: AdminRoleDefinition[] = rolesQuery.data ?? [];
+
+  const adminsById = useMemo(() => {
+    const map = new Map<string, AdminUser>();
+    for (const a of admins) map.set(a.id, a);
+    return map;
+  }, [admins]);
+
   const invalidateAdminsAndRoles = () => {
     qc.invalidateQueries({ queryKey: ['admin', 'admins'] });
     qc.invalidateQueries({ queryKey: ['admin', 'roles'] });
   };
+
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -75,13 +93,6 @@ export function SAAdminManagement() {
 
   const [resetResult, setResetResult] = useState<{ open: boolean; password?: string; admin?: AdminUser | null }>({ open: false });
   const [formInitial, setFormInitial] = useState<Partial<AdminFormValues> | undefined>(undefined);
-
-  function generatePassword() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let pass = '';
-    for (let i = 0; i < 10; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    return pass;
-  }
 
   async function openAdd() {
     setEditingAdmin(null);
@@ -176,28 +187,56 @@ export function SAAdminManagement() {
     setConfirmModal({ open: false, type: 'suspend', admin: null });
   }
 
-  const superAdminCount = admins.filter((a) => a.role === 'superadmin').length;
+  const totals = useMemo(() => {
+    let active = 0;
+    let suspended = 0;
+    let supers = 0;
+    for (const a of admins) {
+      if (a.status === 'active' || !a.status) active++;
+      if (a.status === 'suspended') suspended++;
+      if (a.role === 'superadmin') supers++;
+    }
+    return { total: admins.length, active, suspended, supers };
+  }, [admins]);
 
-  const filtered = admins.filter((a) => {
+  const superAdminCount = totals.supers;
+
+  const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return (
+    if (!q) return admins;
+    return admins.filter((a) =>
       a.name.toLowerCase().includes(q) ||
       a.email.toLowerCase().includes(q) ||
-      displayRole(a, roleDefs).toLowerCase().includes(q)
+      displayRole(a, roleDefs).toLowerCase().includes(q),
     );
-  });
+  }, [admins, roleDefs, search]);
+
+  const isLoading = adminsQuery.isPending;
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Admin Management</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text-main">Admin Management</h1>
+          <p className="text-sm text-text-muted mt-1">
+            Manage operator and back-office accounts, roles, and access.
+          </p>
+        </div>
         <Button onClick={openAdd} className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Add Admin
         </Button>
+      </div>
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiTile label="Total admins"   value={totals.total}     accent="text-text-main"  icon={UsersIcon} />
+        <KpiTile label="Active"          value={totals.active}    accent="text-success"    icon={CheckCircle} />
+        <KpiTile label="Suspended"       value={totals.suspended} accent="text-warning"    icon={Ban} />
+        <KpiTile label="Super admins"    value={totals.supers}    accent="text-primary"    icon={ShieldCheck} />
       </div>
 
       {/* Table Card */}
@@ -211,8 +250,8 @@ export function SAAdminManagement() {
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs"
             />
-            <span className="text-sm text-text-muted">
-              {filtered.length} admin{filtered.length !== 1 ? 's' : ''}
+            <span className="text-sm text-text-muted tabular-nums">
+              Showing {filtered.length} of {admins.length}
             </span>
           </div>
         </CardHeader>
@@ -221,42 +260,111 @@ export function SAAdminManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name / Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Date Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Name / Email</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Role</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Status</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Last Login</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Created By</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide">Date Created</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-text-muted py-10">
-                      No admins found.
+                {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+
+                {!isLoading && filtered.length === 0 && (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={7} className="py-12">
+                      <EmptyState
+                        searching={search.length > 0}
+                        onClear={() => setSearch('')}
+                        onAdd={openAdd}
+                      />
                     </TableCell>
                   </TableRow>
                 )}
-                {filtered.map((admin) => {
+
+                {!isLoading && filtered.map((admin) => {
                   const isSelf = admin.id === currentUserId;
                   const isLastSuperAdmin =
                     admin.role === 'superadmin' && superAdminCount === 1;
                   const canAct = !isSelf && !isLastSuperAdmin;
+                  const role = displayRole(admin, roleDefs);
+
+                  const creatorName = admin.created_by
+                    ? adminsById.get(admin.created_by)?.name ?? null
+                    : null;
+
+                  const items: ActionMenuItem[] = [
+                    {
+                      key: 'activity',
+                      label: 'View activity',
+                      icon: Activity,
+                      asLink: { to: `/super-admin/audit?actor_id=${admin.id}` },
+                    },
+                    {
+                      key: 'edit',
+                      label: 'Edit admin',
+                      icon: Pencil,
+                      onClick: () => openEdit(admin),
+                    },
+                  ];
+
+                  if (canAct && admin.status !== 'deactivated') {
+                    items.push({
+                      key: 'reset',
+                      label: 'Reset password',
+                      icon: Key,
+                      onClick: () => setConfirmModal({ open: true, type: 'reset_password', admin }),
+                      separatorBefore: true,
+                    });
+                    items.push({
+                      key: 'suspend',
+                      label: admin.status === 'suspended' ? 'Reactivate' : 'Suspend',
+                      icon: admin.status === 'suspended' ? CheckCircle : Ban,
+                      variant: 'warning',
+                      onClick: () =>
+                        setConfirmModal({
+                          open: true,
+                          type: admin.status === 'suspended' ? 'activate' : 'suspend',
+                          admin,
+                        }),
+                    });
+                    items.push({
+                      key: 'deactivate',
+                      label: 'Deactivate',
+                      icon: Trash2,
+                      variant: 'danger',
+                      onClick: () => setConfirmModal({ open: true, type: 'deactivate', admin }),
+                    });
+                  }
 
                   return (
                     <TableRow key={admin.id}>
                       {/* Name / Email */}
                       <TableCell>
-                        <p className="font-semibold text-text-main">{admin.name}</p>
-                        <p className="text-xs text-text-muted">{admin.email}</p>
+                        <div className="flex items-center gap-3 min-w-[14rem]">
+                          <div
+                            className={cn(
+                              'flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold',
+                              admin.role === 'superadmin'
+                                ? 'bg-warning/10 text-warning'
+                                : 'bg-primary/10 text-primary',
+                            )}
+                            aria-hidden="true"
+                          >
+                            {getInitials(admin.name)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-text-main truncate">{admin.name}</p>
+                            <p className="text-xs text-text-muted truncate">{admin.email}</p>
+                          </div>
+                        </div>
                       </TableCell>
 
                       {/* Role */}
                       <TableCell>
-                        <Badge variant={roleBadgeVariant(displayRole(admin, roleDefs))}>
-                          {roleLabel(displayRole(admin, roleDefs))}
-                        </Badge>
+                        <RoleBadge role={role} />
                       </TableCell>
 
                       {/* Status */}
@@ -266,15 +374,26 @@ export function SAAdminManagement() {
 
                       {/* Last Login */}
                       <TableCell className="text-sm text-text-muted">
-                        {admin.last_login_at ? formatDate(admin.last_login_at) : 'Never'}
+                        {admin.last_login_at ? (
+                          <div className="flex flex-col leading-tight">
+                            <span className="text-text-main">{formatDate(admin.last_login_at)}</span>
+                            <span className="text-xs text-text-muted/80">
+                              {formatRelativeTime(admin.last_login_at)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-text-muted/50" aria-label="Never logged in">—</span>
+                        )}
                       </TableCell>
 
                       {/* Created By */}
-                      <TableCell className="text-sm text-text-muted">
-                        {admin.created_by ? (
-                          <span className="font-mono text-xs">{admin.created_by.substring(0, 8)}…</span>
+                      <TableCell className="text-sm">
+                        {!admin.created_by ? (
+                          <span className="text-xs italic text-text-muted">System</span>
+                        ) : creatorName ? (
+                          <span className="text-text-main">{creatorName}</span>
                         ) : (
-                          <span className="text-xs italic">System</span>
+                          <span className="text-xs italic text-text-muted">Unknown</span>
                         )}
                       </TableCell>
 
@@ -286,55 +405,31 @@ export function SAAdminManagement() {
                       {/* Actions */}
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Link to={`/super-admin/audit?actor_id=${admin.id}`}>
-                            <Button variant="ghost" size="icon" title="View activity" className="text-text-muted hover:text-primary">
-                              <Activity className="w-4 h-4" />
-                            </Button>
-                          </Link>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit admin"
-                            onClick={() => openEdit(admin)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-
-                          {canAct && admin.status !== 'deactivated' && (
+                          {!canAct ? (
+                            // Self-row and last-superadmin: only View activity + Edit are
+                            // available; render inline so the two routine actions stay
+                            // one click away.
                             <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Reset password"
-                                onClick={() => setConfirmModal({ open: true, type: 'reset_password', admin })}
+                              <Link
+                                to={`/super-admin/audit?actor_id=${admin.id}`}
+                                aria-label="View activity"
+                                title="View activity"
+                                className="inline-flex items-center justify-center rounded-lg p-2 text-text-muted hover:bg-surface-hover hover:text-text-main transition-colors"
                               >
-                                <Key className="w-4 h-4" />
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={admin.status === 'suspended' ? 'Activate' : 'Suspend'}
-                                className="text-warning hover:text-warning"
-                                onClick={() => setConfirmModal({ open: true, type: admin.status === 'suspended' ? 'activate' : 'suspend', admin })}
+                                <Activity className="w-4 h-4" />
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => openEdit(admin)}
+                                aria-label="Edit admin"
+                                title="Edit admin"
+                                className="inline-flex items-center justify-center rounded-lg p-2 text-text-muted hover:bg-surface-hover hover:text-text-main transition-colors"
                               >
-                                {admin.status === 'suspended'
-                                  ? <CheckCircle className="w-4 h-4" />
-                                  : <Ban className="w-4 h-4" />
-                                }
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Deactivate admin"
-                                className="text-danger hover:text-danger"
-                                onClick={() => setConfirmModal({ open: true, type: 'deactivate', admin })}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                                <Pencil className="w-4 h-4" />
+                              </button>
                             </>
+                          ) : (
+                            <ActionMenu items={items} />
                           )}
                         </div>
                       </TableCell>
@@ -349,13 +444,25 @@ export function SAAdminManagement() {
 
       {/* Add / Edit Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-surface border border-border rounded-xl w-full max-w-md shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-[adminmodal-fade_120ms_ease-out]">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-md shadow-2xl animate-[adminmodal-pop_150ms_ease-out]">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border">
-              <h2 className="text-base font-semibold text-text-main">
-                {editingAdmin ? 'Edit Admin' : 'Add Admin'}
-              </h2>
-              <Button variant="ghost" size="icon" onClick={() => { setApiError(null); setModalOpen(false); }}>
+              <div>
+                <h2 className="text-base font-semibold text-text-main">
+                  {editingAdmin ? 'Edit admin' : 'Add admin'}
+                </h2>
+                <p className="text-xs text-text-muted mt-0.5">
+                  {editingAdmin
+                    ? `Update ${editingAdmin.name}'s account details and role.`
+                    : 'Create a new back-office account with role-based permissions.'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { setApiError(null); setModalOpen(false); }}
+                aria-label="Close"
+              >
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -369,6 +476,14 @@ export function SAAdminManagement() {
               onCancel={() => { setApiError(null); setModalOpen(false); }}
             />
           </div>
+
+          <style>{`
+            @keyframes adminmodal-fade { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes adminmodal-pop {
+              from { opacity: 0; transform: scale(0.97); }
+              to   { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
         </div>
       )}
 
@@ -411,6 +526,85 @@ export function SAAdminManagement() {
           password={resetResult.password ?? ''}
           onClose={() => setResetResult({ open: false, password: undefined, admin: null })}
         />
+      )}
+    </div>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+interface KpiTileProps {
+  label: string;
+  value: number;
+  accent: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+function KpiTile({ label, value, accent, icon: Icon }: KpiTileProps) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center bg-background', accent)}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs uppercase tracking-wide text-text-muted">{label}</p>
+        <p className={cn('text-xl font-bold tabular-nums leading-tight', accent)}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <TableRow className="hover:bg-transparent">
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-border/40 animate-pulse" />
+          <div className="space-y-1.5">
+            <div className="h-3 w-32 bg-border/40 rounded animate-pulse" />
+            <div className="h-2 w-40 bg-border/30 rounded animate-pulse" />
+          </div>
+        </div>
+      </TableCell>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableCell key={i}><div className="h-3 w-20 bg-border/40 rounded animate-pulse" /></TableCell>
+      ))}
+      <TableCell className="text-right"><div className="h-3 w-8 bg-border/40 rounded animate-pulse ml-auto" /></TableCell>
+    </TableRow>
+  );
+}
+
+interface EmptyStateProps {
+  searching: boolean;
+  onClear: () => void;
+  onAdd: () => void;
+}
+
+function EmptyState({ searching, onClear, onAdd }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center text-center gap-3">
+      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+        <UsersIcon className="w-5 h-5 text-primary" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-text-main">
+          {searching ? 'No admins match your search' : 'No admins yet'}
+        </p>
+        <p className="text-xs text-text-muted mt-1">
+          {searching
+            ? 'Try a different name, email, or role.'
+            : 'Create the first back-office account to get started.'}
+        </p>
+      </div>
+      {searching ? (
+        <Button variant="outline" size="sm" onClick={onClear}>
+          Clear search
+        </Button>
+      ) : (
+        <Button size="sm" onClick={onAdd} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Add Admin
+        </Button>
       )}
     </div>
   );

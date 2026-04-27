@@ -4,13 +4,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
+import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search, Lock } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
   usePaymentSummary, useTransactions, usePayouts, useApprovePayout,
 } from '@/hooks/usePayments';
 import { useExportReport } from '@/hooks/useReports';
+import { useIsCashlessEnabled } from '@/hooks/useSystem';
+
+const CASHLESS_METHODS = new Set(['gcash', 'paymaya', 'card']);
 import type { Transaction, DriverPayout } from '@/types/super-admin';
 import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
@@ -70,6 +73,7 @@ export function Payments() {
   const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
   const summary = summaryQuery.data;
   const loading = summaryQuery.isPending || transactionsQuery.isPending || payoutsQuery.isPending;
+  const cashlessEnabled = useIsCashlessEnabled();
 
   const openPayoutConfirm = (payout: DriverPayout) => {
     setPayoutConfirm({ open: true, payout });
@@ -99,6 +103,7 @@ export function Payments() {
 
   const filtered = useMemo(() => {
     return transactions.filter(txn => {
+      if (!cashlessEnabled && CASHLESS_METHODS.has(txn.payment_method)) return false;
       if (q) {
         const matchesSearch =
           txn.id.toLowerCase().includes(q) ||
@@ -113,7 +118,7 @@ export function Payments() {
       const ts = new Date(txn.created_at).getTime();
       return ts >= fromMs && ts <= toMs;
     });
-  }, [transactions, q, fromMs, toMs]);
+  }, [transactions, q, fromMs, toMs, cashlessEnabled]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / TRANSACTIONS_PER_PAGE));
   const clampedPage = Math.min(page, pageCount);
@@ -139,6 +144,20 @@ export function Payments() {
           </Button>
         </div>
       </div>
+
+      {!cashlessEnabled && (
+        <div
+          role="status"
+          className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-lg"
+        >
+          <Lock className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-danger">
+            Cashless payments are disabled. Showing cash transactions only. Toggle the
+            <strong> cashless_payments </strong>
+            flag in System Config &rarr; Feature Flags to re-enable.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <SummaryCard

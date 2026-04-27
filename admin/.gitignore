@@ -9,3 +9,5 @@ coverage/
 .claudeignore
 .kiro/
 .vite/
+.playwright-mcp/
+*.png

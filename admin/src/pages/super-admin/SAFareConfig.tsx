@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { Switch } from '@/components/ui/Switch';
 import { SaveBanner } from '@/components/shared/SaveBanner';
+import { FareChangePreview } from '@/components/super-admin/modals/FareChangePreview';
+import { UpdatedByFooter } from '@/components/super-admin/shared/UpdatedByFooter';
 import {
   useFareConfigs, useSurgeConfig,
   useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
@@ -94,12 +96,10 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
     onBannerShow();
   }
 
-  const vehicleLabel = VEHICLE_TABS.find((v) => v.value === config.vehicle_type)?.label ?? config.vehicle_type;
-
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FARE_FIELDS.map(({ key, label, unit }) => (
             <div key={key}>
               <label className="block text-sm font-medium text-text-muted mb-1">
@@ -120,25 +120,23 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <p className="text-xs text-text-muted">
-            Last updated by{' '}
-            <span className="text-text-main">{config.updated_by_name || config.updated_by || '—'}</span>
-          </p>
-          <Button type="submit" size="sm" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving…' : 'Save Changes'}
-          </Button>
-        </div>
+        <UpdatedByFooter
+          name={config.updated_by_name || config.updated_by}
+          actions={
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving…' : 'Save Changes'}
+            </Button>
+          }
+        />
       </form>
 
-      <ConfirmModal
+      <FareChangePreview
         open={confirmOpen}
-        title="Confirm Fare Update"
-        message={`This will affect all new bookings for ${vehicleLabel}. Continue?`}
-        variant="danger"
-        confirmLabel="Yes, Save"
+        before={config}
+        after={pendingValues ? { ...pendingValues, vehicle_type: config.vehicle_type } : null}
+        loading={updateFares.isPending}
         onConfirm={handleConfirm}
-        onClose={() => { setConfirmOpen(false); setPendingValues(null); }}
+        onCancel={() => { setConfirmOpen(false); setPendingValues(null); }}
       />
     </>
   );
@@ -244,7 +242,7 @@ export function SAFareConfig() {
         <SaveBanner visible={bannerVisible} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* ── Left: Base Fare Config ─────────────────────────────────────── */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -301,19 +299,11 @@ export function SAFareConfig() {
                   <p className="font-medium text-text-main">Enable Auto-Surge</p>
                   <p className="text-xs text-text-muted">Based on demand/supply ratio</p>
                 </div>
-                <button
+                <Switch
+                  checked={surgeEnabled}
+                  onCheckedChange={setSurgeEnabled}
                   aria-label={surgeEnabled ? 'Disable auto-surge' : 'Enable auto-surge'}
-                  aria-checked={surgeEnabled}
-                  role="switch"
-                  onClick={() => setSurgeEnabled((v) => !v)}
-                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${surgeEnabled ? 'bg-primary' : 'bg-border'
-                    }`}
-                >
-                  <div
-                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${surgeEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                  />
-                </button>
+                />
               </div>
 
               {/* Max Multiplier */}
@@ -363,12 +353,7 @@ export function SAFareConfig() {
               </Button>
 
               {surgeConfig && (
-                <p className="text-xs text-text-muted">
-                  Last updated by{' '}
-                  <span className="text-text-main">
-                    {surgeConfig.updated_by_name || surgeConfig.updated_by || '—'}
-                  </span>
-                </p>
+                <UpdatedByFooter name={surgeConfig.updated_by_name} />
               )}
             </CardContent>
           </Card>

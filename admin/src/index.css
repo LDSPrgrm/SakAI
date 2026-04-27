@@ -16,7 +16,30 @@
   --color-success: #34A853;
   --color-warning: #FBBC05;
   --color-danger: #EA4335;
+
+  /* Super Admin brand alias — amber signature for SA surfaces. */
+  --color-sa-accent: #FBBC05;
+  --color-sa-accent-strong: #E0A800;
+  --color-sa-accent-soft: rgba(251, 188, 5, 0.12);
 }
+
+/* Utility: uppercase overline tag used in editorial headers. */
+.overline {
+  font-size: 11px;
+  line-height: 1.1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* Utility: staggered fade-up for KPI reveal. */
+@keyframes kpi-rise {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+.kpi-rise { animation: kpi-rise 420ms cubic-bezier(.2,.7,.2,1) both; }
+
 
 body {
   background-color: var(--color-background);

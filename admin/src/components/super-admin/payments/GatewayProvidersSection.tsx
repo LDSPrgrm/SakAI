@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { UpdatedByFooter } from '@/components/super-admin/shared/UpdatedByFooter';
 import type { PaymentGatewayConfig } from '@/api/super-admin/payments';
+import { useIsCashlessEnabled } from '@/hooks/useSystem';
+import { cn } from '@/lib/utils';
+
+const CASHLESS_PROVIDERS = new Set(['gcash', 'paymaya', 'card']);
 
 // Per-provider field schemas. Mirrors the INTEGRATION_SCHEMAS pattern in
 // SASystemConfig — secret fields are masked on read by the backend, so we
@@ -51,6 +57,7 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
   const [active, setActive] = useState<Record<string, boolean>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
+  const cashlessEnabled = useIsCashlessEnabled();
 
   // Sync local draft when server data arrives or refreshes.
   useEffect(() => {
@@ -97,6 +104,11 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
     .map((c) => c.provider)
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
+  const configByProvider = configs.reduce<Record<string, PaymentGatewayConfig>>((acc, c) => {
+    if (c.provider) acc[c.provider] = c;
+    return acc;
+  }, {});
+
   return (
     <Card>
       <CardHeader>
@@ -111,6 +123,19 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
           </p>
         </div>
 
+        {!cashlessEnabled && (
+          <div
+            role="status"
+            className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-lg"
+          >
+            <Lock className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-danger">
+              Cashless payments are disabled via the <strong>cashless_payments</strong> feature flag.
+              GCash, PayMaya, and Card providers are locked. Re-enable in System Config &rarr; Feature Flags.
+            </p>
+          </div>
+        )}
+
         {allProviders.length === 0 && (
           <p className="text-sm text-text-muted text-center py-6">
             No payment gateways configured. Run the gateway seed migration or add a provider via SQL.
@@ -121,21 +146,37 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
           const schema = PROVIDER_SCHEMAS[provider] ?? [];
           const label = PROVIDER_LABELS[provider] ?? provider;
           const fields = draft[provider] ?? {};
+          const isCashless = CASHLESS_PROVIDERS.has(provider);
+          const locked = isCashless && !cashlessEnabled;
+          const shownActive = locked ? false : (active[provider] ?? false);
           return (
-            <div key={provider} className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
+            <div
+              key={provider}
+              aria-disabled={locked || undefined}
+              className={cn(
+                'p-4 bg-surface-hover rounded-lg border border-border space-y-3',
+                locked && 'opacity-60',
+              )}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-text-main">{label}</h4>
-                  <Badge variant={active[provider] ? 'success' : 'default'}>
-                    {active[provider] ? 'Active' : 'Inactive'}
+                  <h4 className="text-sm font-semibold text-text-main flex items-center gap-1.5">
+                    {locked && <Lock className="w-3.5 h-3.5 text-text-muted" />}
+                    {label}
+                  </h4>
+                  <Badge variant={shownActive ? 'success' : 'default'}>
+                    {shownActive ? 'Active' : locked ? 'Locked' : 'Inactive'}
                   </Badge>
                 </div>
-                <label className="text-xs text-text-muted flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 accent-primary"
-                    checked={active[provider] ?? false}
-                    onChange={(e) => setActive((a) => ({ ...a, [provider]: e.target.checked }))}
+                <label className={cn(
+                  'text-xs text-text-muted flex items-center gap-2',
+                  locked ? 'cursor-not-allowed' : 'cursor-pointer',
+                )}>
+                  <Checkbox
+                    checked={shownActive}
+                    disabled={locked}
+                    onCheckedChange={(checked) => setActive((a) => ({ ...a, [provider]: checked }))}
+                    aria-label={`${label} enabled`}
                   />
                   Enabled
                 </label>
@@ -175,16 +216,19 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleSave(provider)}
-                  disabled={savingProvider === provider}
-                >
-                  {savingProvider === provider ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
+              <UpdatedByFooter
+                name={configByProvider[provider]?.updated_by ?? null}
+                actions={
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleSave(provider)}
+                    disabled={savingProvider === provider || locked}
+                  >
+                    {savingProvider === provider ? 'Saving…' : 'Save'}
+                  </Button>
+                }
+              />
             </div>
           );
         })}

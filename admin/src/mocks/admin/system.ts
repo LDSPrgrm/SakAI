@@ -20,15 +20,15 @@ export const notificationTemplates = [
 ];
 
 export const featureFlags: FeatureFlag[] = [
-  { key: 'surge_pricing', label: 'Surge Pricing', description: 'Enable dynamic surge pricing based on demand/supply ratio.', enabled: true },
-  { key: 'vehicle_motorcycle', label: 'Motorcycle Rides', description: 'Allow motorcycle ride bookings.', enabled: true },
-  { key: 'vehicle_tricycle', label: 'Tricycle Rides', description: 'Allow tricycle ride bookings.', enabled: true },
-  { key: 'vehicle_car', label: 'Car Rides', description: 'Allow 4-seater car ride bookings.', enabled: true },
-  { key: 'payment_gcash', label: 'GCash Payments', description: 'Accept GCash as a payment method.', enabled: true },
-  { key: 'payment_paymaya', label: 'PayMaya Payments', description: 'Accept PayMaya as a payment method.', enabled: true },
-  { key: 'payment_card', label: 'Card Payments', description: 'Accept credit/debit card payments.', enabled: true },
+  { key: 'surge_pricing',    label: 'Surge Pricing',    description: 'Enable dynamic surge pricing based on demand/supply ratio.', enabled: true },
+  { key: 'motorcycle_rides', label: 'Motorcycle Rides', description: 'Allow motorcycle ride bookings.', enabled: true },
+  { key: 'tricycle_rides',   label: 'Tricycle Rides',   description: 'Allow tricycle ride bookings.', enabled: true },
+  { key: 'car_rides',        label: 'Car Rides',        description: 'Allow 4-seater car ride bookings.', enabled: true },
+  { key: 'gcash_payments',   label: 'GCash Payments',   description: 'Accept GCash as a payment method.', enabled: true },
+  { key: 'paymaya_payments', label: 'PayMaya Payments', description: 'Accept PayMaya as a payment method.', enabled: true },
+  { key: 'card_payments',    label: 'Card Payments',    description: 'Accept credit/debit card payments.', enabled: true },
+  { key: 'cash_payments',    label: 'Cash Payments',    description: 'Accept cash payments.', enabled: true },
   { key: 'maintenance_mode', label: 'Maintenance Mode', description: 'Disable ride booking and show a maintenance message to users.', enabled: false },
-  { key: 'driver_onboarding', label: 'Driver Onboarding', description: 'Allow new driver registrations.', enabled: true },
 ];
 
 export const services: SystemService[] = [
