@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
@@ -93,38 +94,60 @@ class ActiveRideController {
   }
 
   void _handleStatusChanged(Map<String, dynamic> payload) {
-    final statusStr = payload['status'] as String?;
-    if (statusStr == null) return;
+    try {
+      final event = standardSerializers.deserializeWith(
+        WsEventRideStatusChanged.serializer,
+        payload,
+      );
+      if (event == null) return;
 
-    final rideStatus = RideState.fromString(statusStr);
-    final current = _state.value;
-    if (current == null) return;
+      final rideStatus = RideState.fromString(event.status.name);
+      final current = _state.value;
+      if (current == null) return;
 
-    final newStep = _stepFromRideState(rideStatus);
-    _state = AsyncValue.data(
-      current.copyWith(currentStep: newStep, errorMessage: null),
-    );
-    _stateController.add(_state);
+      final newStep = _stepFromRideState(rideStatus);
+      _state = AsyncValue.data(
+        current.copyWith(currentStep: newStep, errorMessage: null),
+      );
+      _stateController.add(_state);
 
-    if (rideStatus == RideState.completed) {
-      onCompleted?.call(rideId);
-    } else if (rideStatus == RideState.cancelled) {
-      onCancelled?.call(rideId);
+      if (rideStatus == RideState.completed) {
+        onCompleted?.call(rideId);
+      } else if (rideStatus == RideState.cancelled) {
+        onCancelled?.call(rideId);
+      }
+    } catch (e, st) {
+      debugPrint(
+        '[PASSENGER] Failed to deserialize WsEventRideStatusChanged: $e\n$st',
+      );
     }
   }
 
   void _handleDriverLocation(Map<String, dynamic> payload) {
-    final lat = payload['lat'] as double?;
-    final lng = payload['lng'] as double?;
-    if (lat == null || lng == null) return;
+    try {
+      final event = standardSerializers.deserializeWith(
+        WsEventDriverLocationUpdated.serializer,
+        payload,
+      );
+      if (event == null) return;
 
-    final current = _state.value;
-    if (current == null) return;
+      final current = _state.value;
+      if (current == null) return;
 
-    _state = AsyncValue.data(
-      current.copyWith(driverLocation: gmaps.LatLng(lat, lng)),
-    );
-    _stateController.add(_state);
+      _state = AsyncValue.data(
+        current.copyWith(
+          driverLocation: gmaps.LatLng(
+            event.location.lat.toDouble(),
+            event.location.lng.toDouble(),
+          ),
+        ),
+      );
+      _stateController.add(_state);
+    } catch (e, st) {
+      debugPrint(
+        '[PASSENGER] Failed to deserialize WsEventDriverLocationUpdated: $e\n$st',
+      );
+    }
   }
 
   void _handleRideCancelled() {

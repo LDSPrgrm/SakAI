@@ -69,3 +69,32 @@ type SetStatusResponse struct {
 	DriverID string              `json:"driver_id"`
 	Status   domain.DriverStatus `json:"status"`
 }
+
+type NearbyDriverResponse struct {
+	ID           string        `json:"id"`
+	Name         string        `json:"name"`
+	VehicleMake  string        `json:"vehicle_make"`
+	VehicleModel string        `json:"vehicle_model"`
+	VehiclePlate string        `json:"vehicle_plate"`
+	VehicleType  string        `json:"vehicle_type"`
+	Rating       *float64      `json:"rating"`
+	DistanceM    *float64      `json:"distance_m"`
+	Location     domain.LatLng `json:"location"`
+	Heading      *float64      `json:"heading"`
+}
+
+func NewNearbyDriverResponse(d *domain.NearbyDriver) NearbyDriverResponse {
+	dist := d.DistanceM
+	return NearbyDriverResponse{
+		ID:           d.ID,
+		Name:         d.Name,
+		VehicleMake:  d.VehicleMake,
+		VehicleModel: d.VehicleModel,
+		VehiclePlate: d.VehiclePlate,
+		VehicleType:  d.VehicleType,
+		Rating:       d.Rating,
+		DistanceM:    &dist,
+		Location:     domain.LatLng{Lat: d.Lat, Lng: d.Lng},
+		Heading:      d.Heading,
+	}
+}

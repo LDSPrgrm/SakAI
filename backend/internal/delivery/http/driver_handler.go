@@ -96,7 +96,12 @@ func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": drivers})
+	resp := make([]dto.NearbyDriverResponse, 0, len(drivers))
+	for _, d := range drivers {
+		resp = append(resp, dto.NewNearbyDriverResponse(&d))
+	}
+
+	c.JSON(http.StatusOK, gin.H{"drivers": resp})
 }
 
 // GetEarnings handles GET /driver/earnings?from=&to=&page=&limit=.
@@ -179,5 +184,14 @@ func (h *DriverHandler) GetNearbyDriversAllTypes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": drivers})
+	resp := make(map[domain.RideType][]dto.NearbyDriverResponse)
+	for rt, list := range drivers {
+		dtoList := make([]dto.NearbyDriverResponse, 0, len(list))
+		for _, d := range list {
+			dtoList = append(dtoList, dto.NewNearbyDriverResponse(&d))
+		}
+		resp[rt] = dtoList
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

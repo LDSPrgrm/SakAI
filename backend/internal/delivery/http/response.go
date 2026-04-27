@@ -55,6 +55,8 @@ var errorCodeMap = []struct {
 	// Proximity validation errors
 	{domain.ErrDriverTooFarFromPickup, http.StatusConflict, "DRIVER_TOO_FAR"},
 	{domain.ErrDriverTooFarFromDestination, http.StatusConflict, "DRIVER_TOO_FAR_FROM_DESTINATION"},
+	{domain.ErrPromotionExpired, http.StatusUnprocessableEntity, "PROMOTION_EXPIRED"},
+	{domain.ErrPromotionMinAmountNotMet, http.StatusBadRequest, "PROMOTION_MIN_AMOUNT_NOT_MET"},
 }
 
 // respondError writes a structured error response mapped from the domain error.

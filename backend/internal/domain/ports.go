@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,StripeClient,EarningsRepository
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,SavedPlaceRepository,PromotionRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,TipUseCase,SavedPlaceUseCase,PromotionUseCase,StripeClient,EarningsRepository
 
 import (
 	"context"
@@ -142,6 +142,7 @@ type NearbyDriver struct {
 	DistanceM    float64 `json:"distance_m"`
 	Lat          float64 `json:"-"` // not serialized directly
 	Lng          float64 `json:"-"` // not serialized directly
+	Heading      *float64 `json:"heading,omitempty"`
 }
 
 // Location returns the nested location object expected by the mobile API client.
@@ -689,3 +690,37 @@ type PaymentMethodRepository interface {
 	// ExistsByUser checks if a payment method belongs to a user (for authorization).
 	ExistsByUser(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 }
+
+// ─── Saved Places ────────────────────────────────────────────────────────────
+
+// SavedPlaceRepository manages persistent storage for user's saved locations.
+type SavedPlaceRepository interface {
+	Create(ctx context.Context, place *SavedPlace) error
+	GetByID(ctx context.Context, id uuid.UUID) (*SavedPlace, error)
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*SavedPlace, error)
+	Update(ctx context.Context, place *SavedPlace) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+// SavedPlaceUseCase defines business logic for saved places.
+type SavedPlaceUseCase interface {
+	AddPlace(ctx context.Context, userID uuid.UUID, name, address string, lat, lng float64, placeType SavedPlaceType) (*SavedPlace, error)
+	ListPlaces(ctx context.Context, userID uuid.UUID) ([]*SavedPlace, error)
+	UpdatePlace(ctx context.Context, userID, placeID uuid.UUID, name, address *string, lat, lng *float64, placeType *SavedPlaceType) (*SavedPlace, error)
+	DeletePlace(ctx context.Context, userID, placeID uuid.UUID) error
+}
+
+// ─── Promotions ──────────────────────────────────────────────────────────────
+
+// PromotionRepository manages promotion data.
+type PromotionRepository interface {
+	GetByCode(ctx context.Context, code string) (*Promotion, error)
+	ListActive(ctx context.Context) ([]*Promotion, error)
+}
+
+// PromotionUseCase defines business logic for promotions.
+type PromotionUseCase interface {
+	ValidateCode(ctx context.Context, code string, rideFare *float64) (*Promotion, error)
+	ListActive(ctx context.Context) ([]*Promotion, error)
+}
+

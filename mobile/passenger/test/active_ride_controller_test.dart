@@ -212,7 +212,11 @@ void main() {
       wsClient.addEvent(
         WsEvent(
           type: WsEventNames.rideStatusChanged,
-          payload: {'status': 'arrived'},
+          payload: {
+            'ride_id': 'ride-123',
+            'status': 'arrived',
+            'updated_at': now.toIso8601String(),
+          },
         ),
       );
 
@@ -268,7 +272,10 @@ void main() {
       wsClient.addEvent(
         WsEvent(
           type: WsEventNames.driverLocationUpdated,
-          payload: {'lat': 40.7128, 'lng': -74.0060},
+          payload: {
+            'ride_id': 'ride-123',
+            'location': {'lat': 40.7128, 'lng': -74.0060},
+          },
         ),
       );
 
@@ -318,7 +325,12 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Push WS event
-      wsClient.addEvent(WsEvent(type: WsEventNames.rideCancelled, payload: {}));
+      wsClient.addEvent(
+        WsEvent(
+          type: WsEventNames.rideCancelled,
+          payload: {'ride_id': 'ride-123', 'reason': 'CANCELLED_BY_DRIVER'},
+        ),
+      );
 
       await Future.delayed(const Duration(milliseconds: 50));
       expect(cancelledRideId, 'ride-123');

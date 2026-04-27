@@ -49,4 +49,7 @@ var (
 	// Proximity validation errors
 	ErrDriverTooFarFromPickup = errors.New("driver must be within 50 meters of pickup location")
 	ErrDriverTooFarFromDestination = errors.New("driver must be within 100 meters of destination")
+	// Promotion errors
+	ErrPromotionExpired         = errors.New("promotion expired")
+	ErrPromotionMinAmountNotMet = errors.New("ride fare below minimum amount for promotion")
 )

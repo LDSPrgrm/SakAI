@@ -3,6 +3,7 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -34,6 +35,8 @@ type Deps struct {
 	ServiceArea    *handler.ServiceAreaHandler
 	LGUPartnership *handler.LGUPartnershipHandler
 	Alert          *handler.AlertHandler
+	Promotion      *handler.PromotionHandler
+	SavedPlace     *handler.SavedPlaceHandler
 	WS             *ws.Handler
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
@@ -66,7 +69,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 	// ── Health check ──────────────────────────────────────────────────────────
 	api.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "ok",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"version":   "1.0.0", // TODO: Get from config/build info
+		})
 	})
 
 	// ── Public: service area coverage (mobile discovery) ─────────────────────
@@ -258,6 +265,23 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Nearby drivers (passenger only)
 		authed.GET("/drivers/nearby", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDrivers)
 		authed.GET("/drivers/nearby/all", middleware.RequireRole(domain.RolePassenger), d.Driver.GetNearbyDriversAllTypes)
+
+		// Saved places (passenger only)
+		savedPlaces := authed.Group("/users/me/saved-places")
+		savedPlaces.Use(middleware.RequireRole(domain.RolePassenger))
+		{
+			savedPlaces.GET("", d.SavedPlace.List)
+			savedPlaces.POST("", d.SavedPlace.Create)
+			savedPlaces.DELETE("/:placeId", d.SavedPlace.Delete)
+		}
+
+		// Promotions (passenger only)
+		promos := authed.Group("/promotions")
+		promos.Use(middleware.RequireRole(domain.RolePassenger))
+		{
+			promos.GET("", d.Promotion.ListActive)
+			promos.POST("/validate", d.Promotion.Validate)
+		}
 
 		// Payment method routes (passenger only)
 		paymentMethods := authed.Group("/users/me/payment-methods")

@@ -1,0 +1,130 @@
+﻿[
+    {
+        "message":  "[PASSENGER] Failed to deserialize WsEventRideStatusChanged: Deserializing to \u0027WsEventRideStatusChanged\u0027 failed due to: Tried to construct class \"WsEventRideStatusChanged\" with null for non-nullable field \"updatedAt\".",
+        "error":  null
+    },
+    {
+        "message":  "#0      BuiltJsonSerializers._deserialize (package:built_value/src/built_json_serializers.dart:189:11)",
+        "error":  null
+    },
+    {
+        "message":  "#1      BuiltJsonSerializers.deserialize (package:built_value/src/built_json_serializers.dart:125:18)",
+        "error":  null
+    },
+    {
+        "message":  "#2      BuiltJsonSerializers.deserializeWith (package:built_value/src/built_json_serializers.dart:42:12)",
+        "error":  null
+    },
+    {
+        "message":  "#3      ActiveRideController._handleStatusChanged (package:passenger/features/active_ride/view_models/active_ride_notifier.dart:98:41)",
+        "error":  null
+    },
+    {
+        "message":  "#4      ActiveRideController._setupWebSocketListener.\u003canonymous closure\u003e (package:passenger/features/active_ride/view_models/active_ride_notifier.dart:84:11)",
+        "error":  null
+    },
+    {
+        "message":  "#5      StackZoneSpecification._registerUnaryCallback.\u003canonymous closure\u003e.\u003canonymous closure\u003e (package:stack_trace/src/stack_zone_specification.dart:127:36)",
+        "error":  null
+    },
+    {
+        "message":  "#6      StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)",
+        "error":  null
+    },
+    {
+        "message":  "#7      StackZoneSpecification._registerUnaryCallback.\u003canonymous closure\u003e (package:stack_trace/src/stack_zone_specification.dart:127:24)",
+        "error":  null
+    },
+    {
+        "message":  "#8      _rootRunUnary (dart:async/zone_root.dart:48:47)",
+        "error":  null
+    },
+    {
+        "message":  "#9      _CustomZone.runUnary (dart:async/zone.dart:733:19)",
+        "error":  null
+    },
+    {
+        "message":  "#10     _CustomZone.runUnaryGuarded (dart:async/zone.dart:633:7)",
+        "error":  null
+    },
+    {
+        "message":  "#11     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)",
+        "error":  null
+    },
+    {
+        "message":  "#12     _DelayedData.perform (dart:async/stream_impl.dart:573:14)",
+        "error":  null
+    },
+    {
+        "message":  "#13     _PendingEvents.handleNext (dart:async/stream_impl.dart:678:11)",
+        "error":  null
+    },
+    {
+        "message":  "#14     _PendingEvents.schedule.\u003canonymous closure\u003e (dart:async/stream_impl.dart:649:7)",
+        "error":  null
+    },
+    {
+        "message":  "#15     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)",
+        "error":  null
+    },
+    {
+        "message":  "#16     StackZoneSpecification._registerCallback.\u003canonymous closure\u003e (package:stack_trace/src/stack_zone_specification.dart:114:48)",
+        "error":  null
+    },
+    {
+        "message":  "#17     _rootRun (dart:async/zone_root.dart:27:47)",
+        "error":  null
+    },
+    {
+        "message":  "#18     _CustomZone.run (dart:async/zone.dart:726:19)",
+        "error":  null
+    },
+    {
+        "message":  "#19     _CustomZone.runGuarded (dart:async/zone.dart:625:7)",
+        "error":  null
+    },
+    {
+        "message":  "#20     _CustomZone.bindCallbackGuarded.\u003canonymous closure\u003e (dart:async/zone.dart:666:23)",
+        "error":  null
+    },
+    {
+        "message":  "#21     StackZoneSpecification._run (package:stack_trace/src/stack_zone_specification.dart:207:15)",
+        "error":  null
+    },
+    {
+        "message":  "#22     StackZoneSpecification._registerCallback.\u003canonymous closure\u003e (package:stack_trace/src/stack_zone_specification.dart:114:48)",
+        "error":  null
+    },
+    {
+        "message":  "#23     _rootRun (dart:async/zone_root.dart:35:13)",
+        "error":  null
+    },
+    {
+        "message":  "#24     _CustomZone.run (dart:async/zone.dart:726:19)",
+        "error":  null
+    },
+    {
+        "message":  "#25     _CustomZone.runGuarded (dart:async/zone.dart:625:7)",
+        "error":  null
+    },
+    {
+        "message":  "#26     _CustomZone.bindCallbackGuarded.\u003canonymous closure\u003e (dart:async/zone.dart:666:23)",
+        "error":  null
+    },
+    {
+        "message":  "#27     _microtaskLoop (dart:async/schedule_microtask.dart:40:35)",
+        "error":  null
+    },
+    {
+        "message":  "#28     _startMicrotaskLoop (dart:async/schedule_microtask.dart:49:5)",
+        "error":  null
+    },
+    {
+        "message":  "",
+        "error":  null
+    },
+    {
+        "message":  null,
+        "error":  "Expected: \u003c2\u003e\n  Actual: \u003c1\u003e\n"
+    }
+]

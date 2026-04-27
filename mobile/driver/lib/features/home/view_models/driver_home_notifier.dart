@@ -214,73 +214,10 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   WsEventRideRequested? _parseRideRequested(Map<String, dynamic> payload) {
     try {
       debugPrint('[DRIVER] _parseRideRequested payload: $payload');
-
-      final rideId = payload['ride_id'] as String?;
-      if (rideId == null || rideId.isEmpty) {
-        debugPrint('[DRIVER] Missing ride_id in payload');
-        return null;
-      }
-
-      // Parse passenger profile
-      final passengerData = payload['passenger'] as Map<String, dynamic>?;
-      final roleStr = (passengerData?['role'] as String?) ?? 'passenger';
-      final passengerRole = UserProfileRoleEnum.valueOf(roleStr);
-
-      // Parse createdAt - use current time as fallback if not present
-      DateTime createdAt;
-      try {
-        final createdAtStr = passengerData?['created_at'] as String?;
-        createdAt = createdAtStr != null
-            ? DateTime.parse(createdAtStr)
-            : DateTime.now();
-      } catch (_) {
-        createdAt = DateTime.now();
-      }
-
-      final passenger = $UserProfile(
-        (pb) => pb
-          ..id = (passengerData?['id'] as String?) ?? ''
-          ..name = (passengerData?['name'] as String?) ?? 'Unknown'
-          ..email = (passengerData?['email'] as String?) ?? ''
-          ..role = passengerRole
-          ..createdAt = createdAt,
+      return standardSerializers.deserializeWith(
+        WsEventRideRequested.serializer,
+        payload,
       );
-
-      // Parse origin coordinates
-      final originData = payload['origin'] as Map<String, dynamic>?;
-      final originLat = (originData?['lat'] as num?)?.toDouble() ?? 0.0;
-      final originLng = (originData?['lng'] as num?)?.toDouble() ?? 0.0;
-
-      // Parse destination coordinates
-      final destData = payload['destination'] as Map<String, dynamic>?;
-      final destLat = (destData?['lat'] as num?)?.toDouble() ?? 0.0;
-      final destLng = (destData?['lng'] as num?)?.toDouble() ?? 0.0;
-
-      // Parse expires_at
-      final expiresAtStr = payload['expires_at'] as String?;
-      final expiresAt = expiresAtStr != null
-          ? DateTime.parse(expiresAtStr)
-          : DateTime.now().add(const Duration(minutes: 5));
-
-      final offer = WsEventRideRequested(
-        (b) => b
-          ..rideId = rideId
-          ..passenger = passenger
-          ..origin = (LatLngBuilder()
-            ..lat = originLat
-            ..lng = originLng)
-          ..destination = (LatLngBuilder()
-            ..lat = destLat
-            ..lng = destLng)
-          ..originAddress = (payload['origin_address'] as String?) ?? ''
-          ..destinationAddress =
-              (payload['destination_address'] as String?) ?? ''
-          ..notes = (payload['notes'] as String?) ?? ''
-          ..expiresAt = expiresAt,
-      );
-
-      debugPrint('[DRIVER] Successfully parsed ride request: $rideId');
-      return offer;
     } catch (e, stackTrace) {
       debugPrint('[DRIVER] Failed to parse ride requested: $e');
       debugPrint('[DRIVER] Stack trace: $stackTrace');

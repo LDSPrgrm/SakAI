@@ -20,10 +20,10 @@ import (
 	"github.com/sakai/backend/internal/delivery/http/router"
 	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/infrastructure/alerting"
-	"github.com/sakai/backend/internal/infrastructure/notifications"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
 	"github.com/sakai/backend/internal/infrastructure/health"
+	"github.com/sakai/backend/internal/infrastructure/notifications"
 	"github.com/sakai/backend/internal/infrastructure/storage"
 	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
@@ -101,6 +101,8 @@ func main() {
 	serviceAreaRepo := postgres.NewServiceAreaRepo(pool)
 	lguRepo := postgres.NewLGUPartnershipRepo(pool)
 	alertRepo := postgres.NewAlertRepo(pool)
+	savedPlaceRepo := postgres.NewSavedPlaceRepo(pool)
+	promoRepo := postgres.NewPromotionRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -127,6 +129,8 @@ func main() {
 	serviceAreaUC := usecase.NewServiceAreaUseCase(serviceAreaRepo, auditRepo)
 	lguUC := usecase.NewLGUPartnershipUseCase(lguRepo, auditRepo)
 	alertUC := usecase.NewAlertUseCase(alertRepo, auditRepo)
+	savedPlaceUC := usecase.NewSavedPlaceUseCase(savedPlaceRepo)
+	promotionUC := usecase.NewPromotionUseCase(promoRepo)
 
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
@@ -175,6 +179,8 @@ func main() {
 		ServiceArea:    handler.NewServiceAreaHandler(serviceAreaUC),
 		LGUPartnership: handler.NewLGUPartnershipHandler(lguUC),
 		Alert:          handler.NewAlertHandler(alertUC),
+		Promotion:      handler.NewPromotionHandler(promotionUC),
+		SavedPlace:     handler.NewSavedPlaceHandler(savedPlaceUC),
 		WS:             ws.NewHandler(hub),
 		PerfSampler:    systemRepo,
 		FilesRoot:      cfg.UploadDir,
