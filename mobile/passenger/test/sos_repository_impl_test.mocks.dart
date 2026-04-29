@@ -9,21 +9,23 @@ import 'package:dio/dio.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:sakai_api_client/sakai_api_client.dart' as _i4;
 import 'package:sakai_api_client/src/model/add_ride_tip_request.dart' as _i7;
-import 'package:sakai_api_client/src/model/cancel_request.dart' as _i12;
+import 'package:sakai_api_client/src/model/cancel_request.dart' as _i13;
+import 'package:sakai_api_client/src/model/incident.dart' as _i3;
 import 'package:sakai_api_client/src/model/payment_process_request.dart'
     as _i10;
 import 'package:sakai_api_client/src/model/payment_response.dart' as _i9;
-import 'package:sakai_api_client/src/model/rating_response.dart' as _i16;
+import 'package:sakai_api_client/src/model/rating_response.dart' as _i18;
 import 'package:sakai_api_client/src/model/receipt_response.dart' as _i8;
-import 'package:sakai_api_client/src/model/ride_arrive_request.dart' as _i11;
-import 'package:sakai_api_client/src/model/ride_complete_request.dart' as _i13;
-import 'package:sakai_api_client/src/model/ride_request_body.dart' as _i15;
-import 'package:sakai_api_client/src/model/ride_response.dart' as _i3;
-import 'package:sakai_api_client/src/model/submit_rating_request.dart' as _i17;
+import 'package:sakai_api_client/src/model/ride_arrive_request.dart' as _i12;
+import 'package:sakai_api_client/src/model/ride_complete_request.dart' as _i14;
+import 'package:sakai_api_client/src/model/ride_request_body.dart' as _i16;
+import 'package:sakai_api_client/src/model/ride_response.dart' as _i11;
+import 'package:sakai_api_client/src/model/submit_rating_request.dart' as _i19;
 import 'package:sakai_api_client/src/model/tip_response.dart' as _i6;
+import 'package:sakai_api_client/src/model/trigger_sos_request.dart' as _i17;
 import 'package:sakai_api_client/src/model/user_ride_list_response.dart'
-    as _i14;
-import 'package:sakai_shared/repositories/sos_repository.dart' as _i18;
+    as _i15;
+import 'package:sakai_shared/repositories/sos_repository.dart' as _i20;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -45,8 +47,8 @@ class _FakeResponse_0<T> extends _i1.SmartFake implements _i2.Response<T> {
     : super(parent, parentInvocation);
 }
 
-class _FakeRideResponse_1 extends _i1.SmartFake implements _i3.RideResponse {
-  _FakeRideResponse_1(Object parent, Invocation parentInvocation)
+class _FakeIncident_1 extends _i1.SmartFake implements _i3.Incident {
+  _FakeIncident_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -176,7 +178,7 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
           as _i5.Future<_i2.Response<_i9.PaymentResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideAccept({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideAccept({
     required String? rideId,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -195,8 +197,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideAccept, [], {
                   #rideId: rideId,
@@ -210,12 +212,12 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideArrive({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideArrive({
     required String? rideId,
-    required _i11.RideArriveRequest? rideArriveRequest,
+    required _i12.RideArriveRequest? rideArriveRequest,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -234,8 +236,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideArrive, [], {
                   #rideId: rideId,
@@ -250,12 +252,12 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideCancel({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideCancel({
     required String? rideId,
-    _i12.CancelRequest? cancelRequest,
+    _i13.CancelRequest? cancelRequest,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -274,8 +276,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideCancel, [], {
                   #rideId: rideId,
@@ -290,12 +292,12 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideComplete({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideComplete({
     required String? rideId,
-    required _i13.RideCompleteRequest? rideCompleteRequest,
+    required _i14.RideCompleteRequest? rideCompleteRequest,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -314,8 +316,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideComplete, [], {
                   #rideId: rideId,
@@ -330,10 +332,10 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideDecline({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideDecline({
     required String? rideId,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -352,8 +354,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideDecline, [], {
                   #rideId: rideId,
@@ -367,10 +369,10 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideGet({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideGet({
     required String? rideId,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -389,8 +391,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideGet, [], {
                   #rideId: rideId,
@@ -404,10 +406,10 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideGetActive({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideGetActive({
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -424,8 +426,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideGetActive, [], {
                   #cancelToken: cancelToken,
@@ -438,10 +440,10 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i14.UserRideListResponse>> rideList({
+  _i5.Future<_i2.Response<_i15.UserRideListResponse>> rideList({
     int? page = 1,
     int? limit = 20,
     String? status,
@@ -465,8 +467,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i5.Future<_i2.Response<_i14.UserRideListResponse>>.value(
-                  _FakeResponse_0<_i14.UserRideListResponse>(
+                _i5.Future<_i2.Response<_i15.UserRideListResponse>>.value(
+                  _FakeResponse_0<_i15.UserRideListResponse>(
                     this,
                     Invocation.method(#rideList, [], {
                       #page: page,
@@ -482,12 +484,12 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
                   ),
                 ),
           )
-          as _i5.Future<_i2.Response<_i14.UserRideListResponse>>);
+          as _i5.Future<_i2.Response<_i15.UserRideListResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideRequest({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideRequest({
     required String? idempotencyKey,
-    required _i15.RideRequestBody? rideRequestBody,
+    required _i16.RideRequestBody? rideRequestBody,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -506,8 +508,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideRequest, [], {
                   #idempotencyKey: idempotencyKey,
@@ -522,10 +524,10 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i3.RideResponse>> rideStart({
+  _i5.Future<_i2.Response<_i11.RideResponse>> rideStart({
     required String? rideId,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -544,8 +546,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i3.RideResponse>>.value(
-              _FakeResponse_0<_i3.RideResponse>(
+            returnValue: _i5.Future<_i2.Response<_i11.RideResponse>>.value(
+              _FakeResponse_0<_i11.RideResponse>(
                 this,
                 Invocation.method(#rideStart, [], {
                   #rideId: rideId,
@@ -559,12 +561,52 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i3.RideResponse>>);
+          as _i5.Future<_i2.Response<_i11.RideResponse>>);
 
   @override
-  _i5.Future<_i2.Response<_i16.RatingResponse>> submitRating({
+  _i5.Future<_i2.Response<_i3.Incident>> rideTriggerSOS({
     required String? rideId,
-    required _i17.SubmitRatingRequest? submitRatingRequest,
+    required _i17.TriggerSOSRequest? triggerSOSRequest,
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#rideTriggerSOS, [], {
+              #rideId: rideId,
+              #triggerSOSRequest: triggerSOSRequest,
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue: _i5.Future<_i2.Response<_i3.Incident>>.value(
+              _FakeResponse_0<_i3.Incident>(
+                this,
+                Invocation.method(#rideTriggerSOS, [], {
+                  #rideId: rideId,
+                  #triggerSOSRequest: triggerSOSRequest,
+                  #cancelToken: cancelToken,
+                  #headers: headers,
+                  #extra: extra,
+                  #validateStatus: validateStatus,
+                  #onSendProgress: onSendProgress,
+                  #onReceiveProgress: onReceiveProgress,
+                }),
+              ),
+            ),
+          )
+          as _i5.Future<_i2.Response<_i3.Incident>>);
+
+  @override
+  _i5.Future<_i2.Response<_i18.RatingResponse>> submitRating({
+    required String? rideId,
+    required _i19.SubmitRatingRequest? submitRatingRequest,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -583,8 +625,8 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i5.Future<_i2.Response<_i16.RatingResponse>>.value(
-              _FakeResponse_0<_i16.RatingResponse>(
+            returnValue: _i5.Future<_i2.Response<_i18.RatingResponse>>.value(
+              _FakeResponse_0<_i18.RatingResponse>(
                 this,
                 Invocation.method(#submitRating, [], {
                   #rideId: rideId,
@@ -599,35 +641,35 @@ class MockRidesApi extends _i1.Mock implements _i4.RidesApi {
               ),
             ),
           )
-          as _i5.Future<_i2.Response<_i16.RatingResponse>>);
+          as _i5.Future<_i2.Response<_i18.RatingResponse>>);
 }
 
 /// A class which mocks [SOSRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSOSRepository extends _i1.Mock implements _i18.SOSRepository {
+class MockSOSRepository extends _i1.Mock implements _i20.SOSRepository {
   MockSOSRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<_i3.RideResponse> triggerSOS(String? rideId, {String? reason}) =>
+  _i5.Future<_i3.Incident> triggerSOS(String? rideId, {String? reason}) =>
       (super.noSuchMethod(
             Invocation.method(#triggerSOS, [rideId], {#reason: reason}),
-            returnValue: _i5.Future<_i3.RideResponse>.value(
-              _FakeRideResponse_1(
+            returnValue: _i5.Future<_i3.Incident>.value(
+              _FakeIncident_1(
                 this,
                 Invocation.method(#triggerSOS, [rideId], {#reason: reason}),
               ),
             ),
           )
-          as _i5.Future<_i3.RideResponse>);
+          as _i5.Future<_i3.Incident>);
 
   @override
-  _i5.Future<_i3.RideResponse?> getActiveIncident(String? rideId) =>
+  _i5.Future<_i3.Incident?> getActiveIncident(String? rideId) =>
       (super.noSuchMethod(
             Invocation.method(#getActiveIncident, [rideId]),
-            returnValue: _i5.Future<_i3.RideResponse?>.value(),
+            returnValue: _i5.Future<_i3.Incident?>.value(),
           )
-          as _i5.Future<_i3.RideResponse?>);
+          as _i5.Future<_i3.Incident?>);
 }

@@ -2126,7 +2126,7 @@ class AdminApi {
   }
 
   /// Get infrastructure performance metrics
-  /// Aggregated p50/p95 request latency, WebSocket connection count, and DB query p99 latency used by the System Health page. Values are derived from the perf-timing middleware and health-probe goroutine — no more hardcoded SystemHealth.tsx constants. 
+  /// Aggregated p50/p95 request latency, WebSocket connection count, and DB query p99 latency used by the System Health page. Values are derived from the perf-timing middleware and health-probe goroutine â€” no more hardcoded SystemHealth.tsx constants. 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -4415,7 +4415,7 @@ class AdminApi {
     );
   }
 
-  /// List service areas (admin — includes inactive)
+  /// List service areas (admin â€” includes inactive)
   /// Returns every configured service area, including inactive ones, for admin management views. Unlike the public list, this endpoint does not filter by &#x60;active&#x60; status. 
   ///
   /// Parameters:

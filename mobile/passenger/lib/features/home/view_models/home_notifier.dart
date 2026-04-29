@@ -328,6 +328,7 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(
       status: HomeStatus.idle,
       clearDestination: true,
+      clearSelectedRideType: true,
       nearbyDrivers: [],
       rideTypeOptions: [],
     );

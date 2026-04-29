@@ -14,6 +14,8 @@ abstract class Routes {
   static const rideHistory = '/ride-history';
   static const rideDetail = '/ride-history/:rideId';
   static const receipt = '/receipt/:rideId';
+  static const savedPlaces = '/saved-places';
+  static const promotions = '/promotions';
 
   // Settings & Support
   static const settings = '/settings';

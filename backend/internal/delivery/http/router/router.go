@@ -105,6 +105,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		driverOnly.Use(middleware.RequireRole(domain.RoleDriver))
 		{
 			driverOnly.PUT("/status", d.Driver.SetStatus)
+			driverOnly.GET("/status", d.Driver.GetStatus)
 			driverOnly.PUT("/location", d.Driver.UpdateLocation)
 			driverOnly.GET("/rides/incoming", d.Driver.GetIncomingRide)
 			driverOnly.GET("/rides", d.Ride.ListDriverRides)
@@ -242,6 +243,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			rides.POST("", middleware.RequireRole(domain.RolePassenger), d.Ride.RequestRide)
 			rides.GET("/:rideId", d.Ride.GetByID)
 			rides.POST("/:rideId/cancel", d.Ride.Cancel)
+			rides.POST("/:rideId/sos", d.Ride.TriggerSOS)
 
 			// Driver lifecycle transitions
 			driverRides := rides.Group("/:rideId")

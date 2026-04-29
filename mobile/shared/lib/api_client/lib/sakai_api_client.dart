@@ -133,6 +133,7 @@ export 'package:sakai_api_client/src/model/surge_zone.dart';
 export 'package:sakai_api_client/src/model/system_service.dart';
 export 'package:sakai_api_client/src/model/tip_response.dart';
 export 'package:sakai_api_client/src/model/transaction.dart';
+export 'package:sakai_api_client/src/model/trigger_sos_request.dart';
 export 'package:sakai_api_client/src/model/update_admin_status_request.dart';
 export 'package:sakai_api_client/src/model/update_payment_config_request.dart';
 export 'package:sakai_api_client/src/model/update_role_request.dart';

@@ -184,6 +184,7 @@ Class | Method | HTTP request | Description
 [*DriverApi*](doc/DriverApi.md) | [**driverGetDocumentStatus**](doc/DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
 [*DriverApi*](doc/DriverApi.md) | [**driverGetEarnings**](doc/DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [*DriverApi*](doc/DriverApi.md) | [**driverGetIncomingRide**](doc/DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
+[*DriverApi*](doc/DriverApi.md) | [**driverGetStatus**](doc/DriverApi.md#drivergetstatus) | **GET** /driver/status | Get current driver online/offline status
 [*DriverApi*](doc/DriverApi.md) | [**driverListDocuments**](doc/DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [*DriverApi*](doc/DriverApi.md) | [**driverSetStatus**](doc/DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [*DriverApi*](doc/DriverApi.md) | [**driverUpdateLocation**](doc/DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
@@ -203,6 +204,7 @@ Class | Method | HTTP request | Description
 [*RidesApi*](doc/RidesApi.md) | [**rideList**](doc/RidesApi.md#ridelist) | **GET** /rides | List user&#39;s ride history
 [*RidesApi*](doc/RidesApi.md) | [**rideRequest**](doc/RidesApi.md#riderequest) | **POST** /rides | Request a new ride
 [*RidesApi*](doc/RidesApi.md) | [**rideStart**](doc/RidesApi.md#ridestart) | **POST** /rides/{rideId}/start | Driver starts the ride after passenger boards
+[*RidesApi*](doc/RidesApi.md) | [**rideTriggerSOS**](doc/RidesApi.md#ridetriggersos) | **POST** /rides/{rideId}/sos | Trigger SOS/Emergency for an active ride
 [*RidesApi*](doc/RidesApi.md) | [**submitRating**](doc/RidesApi.md#submitrating) | **POST** /rides/{rideId}/rating | Submit a rating for the other party in a ride
 [*SystemApi*](doc/SystemApi.md) | [**getServiceAreas**](doc/SystemApi.md#getserviceareas) | **GET** /service-area | Get platform service areas
 [*SystemApi*](doc/SystemApi.md) | [**healthCheck**](doc/SystemApi.md#healthcheck) | **GET** /health | Health check
@@ -216,8 +218,8 @@ Class | Method | HTTP request | Description
 [*UsersApi*](doc/UsersApi.md) | [**savedPlacesCreate**](doc/UsersApi.md#savedplacescreate) | **POST** /users/me/saved-places | Add a saved place
 [*UsersApi*](doc/UsersApi.md) | [**savedPlacesDelete**](doc/UsersApi.md#savedplacesdelete) | **DELETE** /users/me/saved-places/{placeId} | Remove a saved place
 [*UsersApi*](doc/UsersApi.md) | [**savedPlacesList**](doc/UsersApi.md#savedplaceslist) | **GET** /users/me/saved-places | List saved places
+[*UsersApi*](doc/UsersApi.md) | [**usersDeleteMe**](doc/UsersApi.md#usersdeleteme) | **DELETE** /users/me | Delete current user account
 [*UsersApi*](doc/UsersApi.md) | [**usersGetMe**](doc/UsersApi.md#usersgetme) | **GET** /users/me | Get the authenticated user&#39;s profile
-[*UsersApi*](doc/UsersApi.md) | [**usersMeDelete**](doc/UsersApi.md#usersmedelete) | **DELETE** /users/me | Delete current user account
 
 
 ## Documentation For Models
@@ -339,6 +341,7 @@ Class | Method | HTTP request | Description
  - [SystemService](doc/SystemService.md)
  - [TipResponse](doc/TipResponse.md)
  - [Transaction](doc/Transaction.md)
+ - [TriggerSOSRequest](doc/TriggerSOSRequest.md)
  - [UpdateAdminStatusRequest](doc/UpdateAdminStatusRequest.md)
  - [UpdatePaymentConfigRequest](doc/UpdatePaymentConfigRequest.md)
  - [UpdateRoleRequest](doc/UpdateRoleRequest.md)

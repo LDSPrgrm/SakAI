@@ -361,6 +361,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
     delete:
       summary: Delete current user account
+      operationId: usersDeleteMe
       tags:
         - Users
       security:
@@ -645,6 +646,25 @@ paths:
   # ── Driver ────────────────────────────────────────────────────────────────
 
   /driver/status:
+    get:
+      tags: [Driver]
+      summary: Get current driver online/offline status
+      description: |
+        Returns the driver's current availability status.
+      operationId: driverGetStatus
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverStatusResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     put:
       tags: [Driver]
       summary: Set driver online/offline status
@@ -1268,6 +1288,50 @@ paths:
               example:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Rides cannot be cancelled once they are in progress"
+
+  /rides/{rideId}/sos:
+    post:
+      tags: [Rides]
+      summary: Trigger SOS/Emergency for an active ride
+      description: |
+        Signals an emergency for the given ride.
+        This notifies admin support and records the current GPS trail for security purposes.
+        Both the passenger and the assigned driver may trigger this.
+      operationId: rideTriggerSOS
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerSOSRequest"
+      responses:
+        "201":
+          description: SOS triggered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in a state that allows SOS triggering
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE
+                message: "Cannot trigger SOS for an inactive ride"
 
   # ── Admin ─────────────────────────────────────────────────────────────────
 
@@ -4999,6 +5063,24 @@ components:
         pending_settlements:
           type: number
 
+    TriggerSOSRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Brief description of the emergency or reason for SOS
+          maxLength: 500
+          example: "Unsafe driving behavior"
+        lat:
+          type: number
+          format: double
+          description: Current latitude of the reporter
+        lng:
+          type: number
+          format: double
+          description: Current longitude of the reporter
+
     CommissionConfig:
       type: object
       properties:
@@ -5688,8 +5770,8 @@ components:
       properties:
         north: { type: number, format: double }
         south: { type: number, format: double }
-        east:  { type: number, format: double }
-        west:  { type: number, format: double }
+        east: { type: number, format: double }
+        west: { type: number, format: double }
 
     DriverHeatmap:
       type: object

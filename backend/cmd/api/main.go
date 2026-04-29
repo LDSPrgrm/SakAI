@@ -113,7 +113,7 @@ func main() {
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo, incidentRepo)
 	fareCalc := usecase.NewFareCalculator()
-	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
+	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, incidentRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)

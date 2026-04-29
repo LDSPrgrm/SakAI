@@ -11,14 +11,15 @@ import (
 )
 
 type rideUseCase struct {
-	rideRepo      domain.RideRepository
-	driverRepo    domain.DriverRepository
+	rideRepo       domain.RideRepository
+	driverRepo     domain.DriverRepository
+	incidentRepo   domain.IncidentRepository
 	fareCalculator *FareCalculator
 }
 
 // NewRideUseCase creates a new domain.RideUseCase.
-func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository, fareCalculator *FareCalculator) domain.RideUseCase {
-	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo, fareCalculator: fareCalculator}
+func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository, incidentRepo domain.IncidentRepository, fareCalculator *FareCalculator) domain.RideUseCase {
+	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo, incidentRepo: incidentRepo, fareCalculator: fareCalculator}
 }
 
 func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType domain.RideType, paymentMethod domain.PaymentMethod) (*domain.Ride, error) {
@@ -322,4 +323,42 @@ func (uc *rideUseCase) transition(ctx context.Context, callerID, rideID uuid.UUI
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
+}
+
+func (uc *rideUseCase) TriggerSOS(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID, reason string) (*domain.Incident, error) {
+	ride, err := uc.rideRepo.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify participant
+	if ride.PassengerID != userID && (ride.DriverID == nil || *ride.DriverID != userID) {
+		return nil, domain.ErrForbidden
+	}
+
+	triggeredBy := "rider"
+	if role == domain.RoleDriver {
+		triggeredBy = "driver"
+	}
+
+	if ride.DriverID == nil {
+		return nil, errors.New("no driver assigned to this ride")
+	}
+
+	incident := &domain.Incident{
+		ID:          uuid.New(),
+		RideID:      rideID,
+		TriggeredBy: triggeredBy,
+		RiderID:     ride.PassengerID,
+		DriverID:    *ride.DriverID,
+		Type:        "sos_triggered",
+		Status:      "open",
+		CreatedAt:   time.Now(),
+	}
+
+	if err := uc.incidentRepo.Create(ctx, incident); err != nil {
+		return nil, err
+	}
+
+	return incident, nil
 }

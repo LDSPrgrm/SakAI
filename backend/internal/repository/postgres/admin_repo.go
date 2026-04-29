@@ -443,6 +443,14 @@ func (r *incidentRepo) RecordLocationPing(ctx context.Context, incidentID, drive
 	return err
 }
 
+func (r *incidentRepo) Create(ctx context.Context, i *domain.Incident) error {
+	const q = `
+		INSERT INTO incidents (id, ride_id, triggered_by, rider_id, driver_id, type, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	_, err := r.db.Exec(ctx, q, i.ID, i.RideID, i.TriggeredBy, i.RiderID, i.DriverID, i.Type, i.Status, i.CreatedAt)
+	return err
+}
+
 // --- System Metrics Repository ---
 
 type systemMetricsRepo struct{ db *pgxpool.Pool }

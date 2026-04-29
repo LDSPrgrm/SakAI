@@ -9,6 +9,7 @@ export 'api/sakai_api_support.dart';
 
 // Domain models (new — stable wrappers around generated types)
 export 'models/models.dart';
+export 'repositories/sos_repository.dart';
 
 // WebSocket client (new)
 export 'ws/ws_events.dart';

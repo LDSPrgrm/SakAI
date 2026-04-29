@@ -418,6 +418,40 @@ class MockUsersApi extends _i1.Mock implements _i3.UsersApi {
           as _i4.Future<_i2.Response<_i9.BuiltList<_i12.SavedPlace>>>);
 
   @override
+  _i4.Future<_i2.Response<void>> usersDeleteMe({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#usersDeleteMe, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue: _i4.Future<_i2.Response<void>>.value(
+              _FakeResponse_0<void>(
+                this,
+                Invocation.method(#usersDeleteMe, [], {
+                  #cancelToken: cancelToken,
+                  #headers: headers,
+                  #extra: extra,
+                  #validateStatus: validateStatus,
+                  #onSendProgress: onSendProgress,
+                  #onReceiveProgress: onReceiveProgress,
+                }),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Response<void>>);
+
+  @override
   _i4.Future<_i2.Response<_i14.UserProfile>> usersGetMe({
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -450,38 +484,4 @@ class MockUsersApi extends _i1.Mock implements _i3.UsersApi {
             ),
           )
           as _i4.Future<_i2.Response<_i14.UserProfile>>);
-
-  @override
-  _i4.Future<_i2.Response<void>> usersMeDelete({
-    _i2.CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    _i2.ValidateStatus? validateStatus,
-    _i2.ProgressCallback? onSendProgress,
-    _i2.ProgressCallback? onReceiveProgress,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#usersMeDelete, [], {
-              #cancelToken: cancelToken,
-              #headers: headers,
-              #extra: extra,
-              #validateStatus: validateStatus,
-              #onSendProgress: onSendProgress,
-              #onReceiveProgress: onReceiveProgress,
-            }),
-            returnValue: _i4.Future<_i2.Response<void>>.value(
-              _FakeResponse_0<void>(
-                this,
-                Invocation.method(#usersMeDelete, [], {
-                  #cancelToken: cancelToken,
-                  #headers: headers,
-                  #extra: extra,
-                  #validateStatus: validateStatus,
-                  #onSendProgress: onSendProgress,
-                  #onReceiveProgress: onReceiveProgress,
-                }),
-              ),
-            ),
-          )
-          as _i4.Future<_i2.Response<void>>);
 }

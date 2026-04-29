@@ -12,6 +12,8 @@ import '../features/ride_offer/views/ride_offer_screen.dart';
 import '../features/active_ride/views/active_ride_screen.dart';
 import '../features/earnings/views/earnings_screen.dart';
 import '../features/ride_complete/views/driver_rating_screen.dart';
+import '../features/documents/views/documents_screen.dart';
+import '../features/documents/views/upload_document_screen.dart';
 import 'providers.dart';
 
 abstract class Routes {
@@ -24,7 +26,10 @@ abstract class Routes {
   static const rideActive = '/ride/active';
   static const earnings = '/earnings';
   static const rideRating = '/ride-complete/rating';
+  static const documents = '/documents';
+  static const uploadDocument = '/documents/upload';
 }
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final listenable = ValueNotifier<AuthStateModel>(ref.read(authStateProvider));
@@ -127,6 +132,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             passengerName: passengerName,
           );
         },
+      ),
+      GoRoute(
+        path: Routes.documents,
+        builder: (context, state) => const DocumentsScreen(),
+      ),
+      GoRoute(
+        path: Routes.uploadDocument,
+        builder: (context, state) => const UploadDocumentScreen(),
       ),
     ],
   );

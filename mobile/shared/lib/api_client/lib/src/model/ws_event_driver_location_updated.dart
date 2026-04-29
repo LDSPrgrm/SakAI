@@ -8,12 +8,12 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_driver_location_updated.g.dart';
 
-/// **Event:** `driver.location_updated` **Direction:** server → passenger Pushed on every `PUT /driver/location` call during an active ride. Use to animate the driver pin on the passenger's map in real time. 
+/// **Event:** `driver.location_updated` **Direction:** server â†’ passenger Pushed on every `PUT /driver/location` call during an active ride. Use to animate the driver pin on the passenger's map in real time. 
 ///
 /// Properties:
 /// * [rideId] 
 /// * [location] 
-/// * [heading] - Compass heading in degrees (0–360). Use to rotate driver icon.
+/// * [heading] - Compass heading in degrees (0â€“360). Use to rotate driver icon.
 @BuiltValue()
 abstract class WsEventDriverLocationUpdated implements Built<WsEventDriverLocationUpdated, WsEventDriverLocationUpdatedBuilder> {
   @BuiltValueField(wireName: r'ride_id')
@@ -22,7 +22,7 @@ abstract class WsEventDriverLocationUpdated implements Built<WsEventDriverLocati
   @BuiltValueField(wireName: r'location')
   LatLng get location;
 
-  /// Compass heading in degrees (0–360). Use to rotate driver icon.
+  /// Compass heading in degrees (0â€“360). Use to rotate driver icon.
   @BuiltValueField(wireName: r'heading')
   double? get heading;
 

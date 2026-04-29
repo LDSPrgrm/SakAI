@@ -123,6 +123,7 @@ doc/SystemApi.md
 doc/SystemService.md
 doc/TipResponse.md
 doc/Transaction.md
+doc/TriggerSOSRequest.md
 doc/UpdateAdminStatusRequest.md
 doc/UpdatePaymentConfigRequest.md
 doc/UpdateRoleRequest.md
@@ -276,6 +277,7 @@ lib/src/model/surge_zone.dart
 lib/src/model/system_service.dart
 lib/src/model/tip_response.dart
 lib/src/model/transaction.dart
+lib/src/model/trigger_sos_request.dart
 lib/src/model/update_admin_status_request.dart
 lib/src/model/update_payment_config_request.dart
 lib/src/model/update_role_request.dart
@@ -297,21 +299,3 @@ lib/src/model/ws_event_ride_requested.dart
 lib/src/model/ws_event_ride_status_changed.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/admin_assign_incident_request_test.dart
-test/alert_event_test.dart
-test/alert_rule_input_test.dart
-test/alert_rule_test.dart
-test/create_audit_entry_request_test.dart
-test/driver_heatmap_test.dart
-test/heatmap_bounds_test.dart
-test/heatmap_position_test.dart
-test/incident_detail_test.dart
-test/incident_location_point_test.dart
-test/incident_status_event_test.dart
-test/infra_metrics_test.dart
-test/kyc_document_test.dart
-test/lgu_partnership_input_test.dart
-test/lgu_partnership_test.dart
-test/reset_password_request_test.dart
-test/service_area_input_test.dart
-test/surge_zone_test.dart

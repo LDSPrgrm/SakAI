@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_cancelled.g.dart';
 
-/// **Event:** `ride.cancelled` **Direction:** server → both passenger and driver Fired when either party cancels. Both apps should exit the ride flow and display an appropriate message based on `cancelled_by`. 
+/// **Event:** `ride.cancelled` **Direction:** server â†’ both passenger and driver Fired when either party cancels. Both apps should exit the ride flow and display an appropriate message based on `cancelled_by`. 
 ///
 /// Properties:
 /// * [rideId] 

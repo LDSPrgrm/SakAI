@@ -13,6 +13,7 @@ Method | HTTP request | Description
 [**driverGetDocumentStatus**](DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
 [**driverGetEarnings**](DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
+[**driverGetStatus**](DriverApi.md#drivergetstatus) | **GET** /driver/status | Get current driver online/offline status
 [**driverListDocuments**](DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
@@ -185,6 +186,45 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**RideResponse**](RideResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **driverGetStatus**
+> DriverStatusResponse driverGetStatus()
+
+Get current driver online/offline status
+
+Returns the driver's current availability status. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+
+try {
+    final response = api.driverGetStatus();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverGetStatus: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**DriverStatusResponse**](DriverStatusResponse.md)
 
 ### Authorization
 

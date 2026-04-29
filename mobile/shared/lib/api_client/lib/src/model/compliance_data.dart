@@ -13,7 +13,7 @@ part 'compliance_data.g.dart';
 /// Properties:
 /// * [accreditationStatus] 
 /// * [accreditationExpiry] 
-/// * [driverComplianceRate] - Percentage of drivers with valid documents (0–100)
+/// * [driverComplianceRate] - Percentage of drivers with valid documents (0â€“100)
 /// * [violationCount] - LTFRB-reportable violations in current period (alias of violations_open)
 /// * [violationsOpen] - Count of open regulatory violations
 /// * [violationsResolved] - Count of resolved regulatory violations in current period
@@ -27,7 +27,7 @@ abstract class ComplianceData implements Built<ComplianceData, ComplianceDataBui
   @BuiltValueField(wireName: r'accreditation_expiry')
   DateTime? get accreditationExpiry;
 
-  /// Percentage of drivers with valid documents (0–100)
+  /// Percentage of drivers with valid documents (0â€“100)
   @BuiltValueField(wireName: r'driver_compliance_rate')
   num? get driverComplianceRate;
 

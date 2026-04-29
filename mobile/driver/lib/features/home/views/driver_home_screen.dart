@@ -431,6 +431,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                       icon: Icons.payments_outlined,
                       onPressed: () => context.push(Routes.earnings),
                     ),
+                    const SizedBox(height: 12),
+                    SakaiSecondaryButton(
+                      label: 'Manage documents',
+                      icon: Icons.description_outlined,
+                      onPressed: () => context.push(Routes.documents),
+                    ),
                     const SizedBox(height: 8),
                   ],
                 ),
@@ -498,6 +504,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 context.push(Routes.earnings);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('My Documents'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.documents);
               },
             ),
             const Divider(),

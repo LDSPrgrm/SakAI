@@ -394,6 +394,32 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 	respondOK(c, h.rideResponse(ride))
 }
 
+func (h *RideHandler) TriggerSOS(c *gin.Context) {
+	rideID, err := uuid.Parse(c.Param("rideId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid ride ID"})
+		return
+	}
+
+	var req dto.TriggerSOSRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+
+	userID := c.MustGet("userID").(uuid.UUID)
+	role := contextUserRole(c)
+	incident, err := h.uc.TriggerSOS(c.Request.Context(), userID, role, rideID, req.Reason)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Publish SOS event to WebSocket for system monitoring or ride participants if needed
+	// For now just respond OK as the incident is persisted and will be tracked by DriverUseCase trail
+	respondOK(c, dto.NewIncidentDTO(incident))
+}
+
 // driverTransition is a shared helper for driver-only state-advancing endpoints.
 func (h *RideHandler) driverTransition(c *gin.Context, fn func(driverID, rideID uuid.UUID) (*domain.Ride, error), event ws.EventType) {
 	rideID, err := uuid.Parse(c.Param("rideId"))

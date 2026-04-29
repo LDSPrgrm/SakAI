@@ -10,6 +10,8 @@ import 'package:passenger/features/active_ride/models/active_ride_state.dart';
 import 'package:passenger/features/active_ride/view_models/active_ride_notifier.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import 'sos_repository_impl_test.mocks.dart';
+
 class MockWsClient implements WsClient {
   final _controller = StreamController<WsEvent>.broadcast();
   @override
@@ -73,15 +75,18 @@ ResponseBody _jsonResponse(Object data, int statusCode) {
 void main() {
   late SakaiApiClient client;
   late MockWsClient wsClient;
+  late MockSOSRepository sosRepository;
   late ActiveRideController controller;
 
   setUp(() {
     client = SakaiApiClient(basePathOverride: 'https://api.test');
     wsClient = MockWsClient();
+    sosRepository = MockSOSRepository();
     controller = ActiveRideController(
       rideId: 'ride-123',
       client: client,
       wsClient: wsClient,
+      sosRepository: sosRepository,
     );
   });
 

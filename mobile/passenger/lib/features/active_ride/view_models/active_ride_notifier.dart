@@ -20,6 +20,7 @@ class ActiveRideController {
   final String rideId;
   final SakaiApiClient _client;
   final WsClient _wsClient;
+  final SOSRepository _sosRepository;
 
   late final StreamController<AsyncValue<ActiveRideState>> _stateController =
       StreamController<AsyncValue<ActiveRideState>>.broadcast(
@@ -41,8 +42,25 @@ class ActiveRideController {
     required this.rideId,
     required SakaiApiClient client,
     required WsClient wsClient,
+    required SOSRepository sosRepository,
   }) : _client = client,
-       _wsClient = wsClient;
+       _wsClient = wsClient,
+       _sosRepository = sosRepository;
+
+  Future<void> triggerSOS({String? reason}) async {
+    try {
+      await _sosRepository.triggerSOS(rideId, reason: reason);
+    } catch (e, st) {
+      debugPrint('[PASSENGER] SOS trigger failed: $e\n$st');
+      final current = _state.value;
+      if (current != null) {
+        _state = AsyncValue.data(
+          current.copyWith(errorMessage: 'Failed to trigger SOS alert'),
+        );
+        _stateController.add(_state);
+      }
+    }
+  }
 
   void _startLoading() {
     if (_loadingStarted) return;

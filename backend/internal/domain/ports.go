@@ -330,6 +330,9 @@ type IncidentRepository interface {
 	// RecordLocationPing appends one trail point bound to an incident_id.
 	// Called only when FindActiveByDriver returned at least one id.
 	RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error
+
+	// Create inserts a new incident record.
+	Create(ctx context.Context, incident *Incident) error
 }
 
 // SystemMetricsRepository aggregates platform-wide KPIs.
@@ -373,6 +376,7 @@ type RideUseCase interface {
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation LatLng) (*Ride, error)
 	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)
+	TriggerSOS(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reason string) (*Incident, error)
 }
 
 // DriverUseCase defines driver operational actions.
@@ -390,6 +394,8 @@ type DriverUseCase interface {
 	// GetEarnings lists earnings for the authenticated driver over an optional
 	// date range with pagination.
 	GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*DriverEarnings, int, error)
+	// GetStatus returns the current operational status of a driver.
+	GetStatus(ctx context.Context, driverID uuid.UUID) (*Driver, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.

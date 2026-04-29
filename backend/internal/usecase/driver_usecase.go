@@ -113,3 +113,7 @@ func (uc *driverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, lng 
 	}
 	return result, nil
 }
+
+func (uc *driverUseCase) GetStatus(ctx context.Context, driverID uuid.UUID) (*domain.Driver, error) {
+	return uc.driverRepo.GetByUserID(ctx, driverID)
+}

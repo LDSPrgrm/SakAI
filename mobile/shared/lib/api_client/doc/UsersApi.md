@@ -19,8 +19,8 @@ Method | HTTP request | Description
 [**savedPlacesCreate**](UsersApi.md#savedplacescreate) | **POST** /users/me/saved-places | Add a saved place
 [**savedPlacesDelete**](UsersApi.md#savedplacesdelete) | **DELETE** /users/me/saved-places/{placeId} | Remove a saved place
 [**savedPlacesList**](UsersApi.md#savedplaceslist) | **GET** /users/me/saved-places | List saved places
+[**usersDeleteMe**](UsersApi.md#usersdeleteme) | **DELETE** /users/me | Delete current user account
 [**usersGetMe**](UsersApi.md#usersgetme) | **GET** /users/me | Get the authenticated user&#39;s profile
-[**usersMeDelete**](UsersApi.md#usersmedelete) | **DELETE** /users/me | Delete current user account
 
 
 # **getUserRating**
@@ -439,6 +439,42 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **usersDeleteMe**
+> usersDeleteMe()
+
+Delete current user account
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getUsersApi();
+
+try {
+    api.usersDeleteMe();
+} on DioException catch (e) {
+    print('Exception when calling UsersApi->usersDeleteMe: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **usersGetMe**
 > UserProfile usersGetMe()
 
@@ -466,42 +502,6 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**UserProfile**](UserProfile.md)
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **usersMeDelete**
-> usersMeDelete()
-
-Delete current user account
-
-### Example
-```dart
-import 'package:sakai_api_client/api.dart';
-
-final api = SakaiApiClient().getUsersApi();
-
-try {
-    api.usersMeDelete();
-} on DioException catch (e) {
-    print('Exception when calling UsersApi->usersMeDelete: $e\n');
-}
-```
-
-### Parameters
-This endpoint does not need any parameter.
-
-### Return type
-
-void (empty response body)
 
 ### Authorization
 

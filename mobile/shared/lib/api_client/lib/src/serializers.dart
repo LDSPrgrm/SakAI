@@ -130,6 +130,7 @@ import 'package:sakai_api_client/src/model/surge_zone.dart';
 import 'package:sakai_api_client/src/model/system_service.dart';
 import 'package:sakai_api_client/src/model/tip_response.dart';
 import 'package:sakai_api_client/src/model/transaction.dart';
+import 'package:sakai_api_client/src/model/trigger_sos_request.dart';
 import 'package:sakai_api_client/src/model/update_admin_status_request.dart';
 import 'package:sakai_api_client/src/model/update_payment_config_request.dart';
 import 'package:sakai_api_client/src/model/update_role_request.dart';
@@ -270,6 +271,7 @@ part 'serializers.g.dart';
   SystemService,
   TipResponse,
   Transaction,
+  TriggerSOSRequest,
   UpdateAdminStatusRequest,
   UpdatePaymentConfigRequest,
   UpdateRoleRequest,

@@ -12,19 +12,20 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func newRideUC(ctrl *gomock.Controller) (domain.RideUseCase, *mocks.MockRideRepository, *mocks.MockDriverRepository) {
+func newRideUC(ctrl *gomock.Controller) (domain.RideUseCase, *mocks.MockRideRepository, *mocks.MockDriverRepository, *mocks.MockIncidentRepository) {
 	rideRepo := mocks.NewMockRideRepository(ctrl)
 	driverRepo := mocks.NewMockDriverRepository(ctrl)
+	incidentRepo := mocks.NewMockIncidentRepository(ctrl)
 	fareCalc := usecase.NewFareCalculator()
-	uc := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
-	return uc, rideRepo, driverRepo
+	uc := usecase.NewRideUseCase(rideRepo, driverRepo, incidentRepo, fareCalc)
+	return uc, rideRepo, driverRepo, incidentRepo
 }
 
 func TestRideUseCase_RequestRide_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	driverID := uuid.New()
 	idem := "idem-key-1"
@@ -61,7 +62,7 @@ func TestRideUseCase_RequestRide_Idempotent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	existing := testutil.NewTestRide(passengerID)
 
@@ -80,7 +81,7 @@ func TestRideUseCase_RequestRide_PassengerHasActiveRide(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 
 	rideRepo.EXPECT().GetByIdempotencyKey(gomock.Any(), gomock.Any()).Return(nil, domain.ErrNotFound)
@@ -96,7 +97,7 @@ func TestRideUseCase_RequestRide_NoDrivers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 
 	rideRepo.EXPECT().GetByIdempotencyKey(gomock.Any(), gomock.Any()).Return(nil, domain.ErrNotFound)
@@ -113,7 +114,7 @@ func TestRideUseCase_Accept_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
 		r.DriverID = &driverID
@@ -134,7 +135,7 @@ func TestRideUseCase_Accept_Forbidden(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	otherDriver := uuid.New()
 	assignedDriver := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
@@ -153,7 +154,7 @@ func TestRideUseCase_Cancel_ByPassenger(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	ride := testutil.NewTestRide(passengerID)
 	reasonCode := "changed_plans"
@@ -173,7 +174,7 @@ func TestRideUseCase_Cancel_WithReasonCode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	estimatedFare := 150.0
 	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
@@ -209,7 +210,7 @@ func TestRideUseCase_Cancel_FeeApplication(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	estimatedFare := 500.0
 	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
@@ -244,7 +245,7 @@ func TestRideUseCase_Cancel_InProgressBlocked(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
 		r.Status = domain.RideStatusInProgress
@@ -263,7 +264,7 @@ func TestRideUseCase_Cancel_InvalidTransition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
 		r.Status = domain.RideStatusCompleted
@@ -281,7 +282,7 @@ func TestRideUseCase_Decline_ReMatchFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	newDriverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
@@ -319,7 +320,7 @@ func TestRideUseCase_Decline_NoDriversAvailable(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
 		r.DriverID = &driverID
@@ -352,7 +353,7 @@ func TestRideUseCase_Complete_SuccessWithFareCalculation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
 		r.DriverID = &driverID
@@ -405,7 +406,7 @@ func TestRideUseCase_Complete_WrongDriver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	wrongDriverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
@@ -427,7 +428,7 @@ func TestRideUseCase_Complete_InvalidStateTransition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, _ := newRideUC(ctrl)
+	uc, rideRepo, _, _ := newRideUC(ctrl)
 	driverID := uuid.New()
 	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
 		r.DriverID = &driverID
@@ -448,7 +449,7 @@ func TestRideUseCase_Decline_MultipleSequentialDeclines(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, rideRepo, driverRepo := newRideUC(ctrl)
+	uc, rideRepo, driverRepo, _ := newRideUC(ctrl)
 	passengerID := uuid.New()
 	firstDriverID := uuid.New()
 	secondDriverID := uuid.New()
@@ -502,5 +503,97 @@ func TestRideUseCase_Decline_MultipleSequentialDeclines(t *testing.T) {
 	}
 	if result2.Ride.DeclineCount != 2 {
 		t.Errorf("second decline: expected decline_count 2, got %d", result2.Ride.DeclineCount)
+	}
+}
+
+func TestRideUseCase_Arrive_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, rideRepo, _, _ := newRideUC(ctrl)
+	driverID := uuid.New()
+	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
+		r.DriverID = &driverID
+		r.Status = domain.RideStatusAccepted
+		r.Origin = domain.LatLng{Lat: 14.5, Lng: 120.9}
+	})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+	rideRepo.EXPECT().UpdateStatus(gomock.Any(), ride.ID, domain.RideStatusArrived).Return(nil)
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+
+	// Within 50m of origin
+	_, err := uc.Arrive(context.Background(), driverID, ride.ID, ride.Origin)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestRideUseCase_Arrive_TooFar(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, rideRepo, _, _ := newRideUC(ctrl)
+	driverID := uuid.New()
+	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
+		r.DriverID = &driverID
+		r.Status = domain.RideStatusAccepted
+		r.Origin = domain.LatLng{Lat: 14.5, Lng: 120.9}
+	})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+
+	// Too far from origin (approx 100m away)
+	farLocation := domain.LatLng{Lat: 14.501, Lng: 120.901}
+	_, err := uc.Arrive(context.Background(), driverID, ride.ID, farLocation)
+	if err != domain.ErrDriverTooFarFromPickup {
+		t.Errorf("expected ErrDriverTooFarFromPickup, got %v", err)
+	}
+}
+
+func TestRideUseCase_Start_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, rideRepo, _, _ := newRideUC(ctrl)
+	driverID := uuid.New()
+	ride := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
+		r.DriverID = &driverID
+		r.Status = domain.RideStatusArrived
+	})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+	rideRepo.EXPECT().UpdateStatus(gomock.Any(), ride.ID, domain.RideStatusInProgress).Return(nil)
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+
+	_, err := uc.Start(context.Background(), driverID, ride.ID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestRideUseCase_TriggerSOS_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, rideRepo, _, incidentRepo := newRideUC(ctrl)
+	passengerID := uuid.New()
+	driverID := uuid.New()
+	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
+		r.DriverID = &driverID
+		r.Status = domain.RideStatusInProgress
+	})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+	incidentRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, i *domain.Incident) error {
+		if i.RideID != ride.ID || i.RiderID != passengerID || i.DriverID != driverID || i.Type != "sos_triggered" {
+			t.Errorf("unexpected incident data: %+v", i)
+		}
+		return nil
+	})
+
+	_, err := uc.TriggerSOS(context.Background(), passengerID, domain.RolePassenger, ride.ID, "Help!")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 }

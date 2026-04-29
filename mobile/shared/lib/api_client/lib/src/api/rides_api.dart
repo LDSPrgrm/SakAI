@@ -11,6 +11,7 @@ import 'package:sakai_api_client/src/api_util.dart';
 import 'package:sakai_api_client/src/model/add_ride_tip_request.dart';
 import 'package:sakai_api_client/src/model/cancel_request.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
+import 'package:sakai_api_client/src/model/incident.dart';
 import 'package:sakai_api_client/src/model/payment_failure_response.dart';
 import 'package:sakai_api_client/src/model/payment_process_request.dart';
 import 'package:sakai_api_client/src/model/payment_response.dart';
@@ -22,6 +23,7 @@ import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 import 'package:sakai_api_client/src/model/submit_rating_request.dart';
 import 'package:sakai_api_client/src/model/tip_response.dart';
+import 'package:sakai_api_client/src/model/trigger_sos_request.dart';
 import 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 
 class RidesApi {
@@ -321,7 +323,7 @@ class RidesApi {
   }
 
   /// Driver accepts the ride offer
-  /// Transitions: &#x60;requested&#x60; → &#x60;accepted&#x60;. Only the driver currently assigned to this ride may call this. Must be called before &#x60;expires_at&#x60; from the &#x60;ride.requested&#x60; WS event — otherwise the offer has already been reassigned and this returns &#x60;409&#x60;. Triggers: &#x60;ride.accepted&#x60; WebSocket event → passenger. 
+  /// Transitions: &#x60;requested&#x60; â†’ &#x60;accepted&#x60;. Only the driver currently assigned to this ride may call this. Must be called before &#x60;expires_at&#x60; from the &#x60;ride.requested&#x60; WS event â€” otherwise the offer has already been reassigned and this returns &#x60;409&#x60;. Triggers: &#x60;ride.accepted&#x60; WebSocket event â†’ passenger. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -402,7 +404,7 @@ class RidesApi {
   }
 
   /// Driver signals arrival at pickup
-  /// Transitions: &#x60;accepted&#x60; → &#x60;arrived&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. Requires driver to be within 50 meters of pickup location. 
+  /// Transitions: &#x60;accepted&#x60; â†’ &#x60;arrived&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. Requires driver to be within 50 meters of pickup location. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -505,7 +507,7 @@ class RidesApi {
   }
 
   /// Cancel an active ride
-  /// Permitted cancellation states: &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;. Cancellation is **not permitted** once the ride is &#x60;in_progress&#x60;. Either the passenger or the assigned driver may cancel. Triggers: &#x60;ride.cancelled&#x60; WebSocket event → both parties. 
+  /// Permitted cancellation states: &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;. Cancellation is **not permitted** once the ride is &#x60;in_progress&#x60;. Either the passenger or the assigned driver may cancel. Triggers: &#x60;ride.cancelled&#x60; WebSocket event â†’ both parties. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -608,7 +610,7 @@ class RidesApi {
   }
 
   /// Driver completes the ride at dropoff
-  /// Transitions: &#x60;in_progress&#x60; → &#x60;completed&#x60;. Driver status automatically returns to &#x60;online&#x60; after completion. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. Requires driver to be within 100 meters of destination location. 
+  /// Transitions: &#x60;in_progress&#x60; â†’ &#x60;completed&#x60;. Driver status automatically returns to &#x60;online&#x60; after completion. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. Requires driver to be within 100 meters of destination location. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -711,7 +713,7 @@ class RidesApi {
   }
 
   /// Driver declines the ride offer
-  /// Transitions: ride returns to &#x60;requested&#x60; and the matching engine finds another driver. Triggers: &#x60;ride.declined&#x60; WebSocket event → passenger (informs re-matching is in progress). 
+  /// Transitions: ride returns to &#x60;requested&#x60; and the matching engine finds another driver. Triggers: &#x60;ride.declined&#x60; WebSocket event â†’ passenger (informs re-matching is in progress). 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -873,7 +875,7 @@ class RidesApi {
   }
 
   /// Get the caller&#39;s current active ride
-  /// Returns the active ride for the authenticated user — whether they are the passenger or driver. A ride is \&quot;active\&quot; if its status is &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;, or &#x60;in_progress&#x60;.  **Call this on app launch / WebSocket reconnect** to re-hydrate local state before subscribing to WebSocket events. Returns &#x60;404&#x60; if no active ride exists. 
+  /// Returns the active ride for the authenticated user â€” whether they are the passenger or driver. A ride is \&quot;active\&quot; if its status is &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;, or &#x60;in_progress&#x60;.  **Call this on app launch / WebSocket reconnect** to re-hydrate local state before subscribing to WebSocket events. Returns &#x60;404&#x60; if no active ride exists. 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1148,7 +1150,7 @@ class RidesApi {
   }
 
   /// Driver starts the ride after passenger boards
-  /// Transitions: &#x60;arrived&#x60; → &#x60;in_progress&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. 
+  /// Transitions: &#x60;arrived&#x60; â†’ &#x60;in_progress&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -1217,6 +1219,109 @@ class RidesApi {
     }
 
     return Response<RideResponse>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Trigger SOS/Emergency for an active ride
+  /// Signals an emergency for the given ride. This notifies admin support and records the current GPS trail for security purposes. Both the passenger and the assigned driver may trigger this. 
+  ///
+  /// Parameters:
+  /// * [rideId] - UUID of the ride
+  /// * [triggerSOSRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Incident] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Incident>> rideTriggerSOS({ 
+    required String rideId,
+    required TriggerSOSRequest triggerSOSRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/rides/{rideId}/sos'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(TriggerSOSRequest);
+      _bodyData = _serializers.serialize(triggerSOSRequest, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Incident? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(Incident),
+      ) as Incident;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Incident>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
