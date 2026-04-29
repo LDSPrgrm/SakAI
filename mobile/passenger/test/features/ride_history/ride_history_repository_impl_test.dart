@@ -4,7 +4,6 @@ import 'package:mockito/mockito.dart';
 import 'package:dio/dio.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 import 'package:passenger/features/ride_history/repositories/ride_history_repository_impl.dart';
-import 'package:passenger/features/ride_history/repositories/ride_history_repository.dart';
 
 import 'ride_history_repository_impl_test.mocks.dart';
 

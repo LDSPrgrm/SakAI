@@ -4,15 +4,11 @@ import 'package:mockito/mockito.dart';
 import 'package:sakai_api_client/sakai_api_client.dart';
 import 'package:driver/features/documents/repositories/driver_document_repository_impl.dart';
 import 'package:dio/dio.dart';
-import 'package:built_collection/built_collection.dart';
 import 'dart:io';
 
 import 'driver_document_repository_test.mocks.dart';
 
-@GenerateNiceMocks([
-  MockSpec<SakaiApiClient>(),
-  MockSpec<DriverApi>(),
-])
+@GenerateNiceMocks([MockSpec<SakaiApiClient>(), MockSpec<DriverApi>()])
 void main() {
   late SakaiApiClient mockClient;
   late MockDriverApi mockDriverApi;
@@ -32,17 +28,21 @@ void main() {
 
   group('DriverDocumentRepository.listDocuments', () {
     test('returns list of documents on success', () async {
-      final mockResponse = DriverDocumentsListResponse((b) => b
-        ..documents.addAll([
-          DriverDocumentResponse((b) => b
-            ..id = '1'
-            ..driverId = 'driver1'
-            ..documentType = DocumentType.license
-            ..documentNumber = 'DL12345'
-            ..imageUrl = 'http://example.com/image.jpg'
-            ..uploadStatus = UploadStatus.approved
-            ..uploadedAt = DateTime.now().toUtc()),
-        ]));
+      final mockResponse = DriverDocumentsListResponse(
+        (b) => b
+          ..documents.addAll([
+            DriverDocumentResponse(
+              (b) => b
+                ..id = '1'
+                ..driverId = 'driver1'
+                ..documentType = DocumentType.license
+                ..documentNumber = 'DL12345'
+                ..imageUrl = 'http://example.com/image.jpg'
+                ..uploadStatus = UploadStatus.approved
+                ..uploadedAt = DateTime.now().toUtc(),
+            ),
+          ]),
+      );
 
       when(mockDriverApi.driverListDocuments()).thenAnswer(
         (_) async => Response(
@@ -77,21 +77,25 @@ void main() {
 
   group('DriverDocumentRepository.uploadDocument', () {
     test('calls upload API and returns document on success', () async {
-      final mockDoc = DriverDocumentResponse((b) => b
-        ..id = '2'
-        ..driverId = 'driver1'
-        ..documentType = DocumentType.registration
-        ..documentNumber = 'REG5678'
-        ..imageUrl = 'http://example.com/image2.jpg'
-        ..uploadStatus = UploadStatus.underReview
-        ..uploadedAt = DateTime.now().toUtc());
+      final mockDoc = DriverDocumentResponse(
+        (b) => b
+          ..id = '2'
+          ..driverId = 'driver1'
+          ..documentType = DocumentType.registration
+          ..documentNumber = 'REG5678'
+          ..imageUrl = 'http://example.com/image2.jpg'
+          ..uploadStatus = UploadStatus.underReview
+          ..uploadedAt = DateTime.now().toUtc(),
+      );
 
-      when(mockDriverApi.driverUploadDocument(
-        documentType: anyNamed('documentType'),
-        documentNumber: anyNamed('documentNumber'),
-        image: anyNamed('image'),
-        expiryDate: anyNamed('expiryDate'),
-      )).thenAnswer(
+      when(
+        mockDriverApi.driverUploadDocument(
+          documentType: anyNamed('documentType'),
+          documentNumber: anyNamed('documentNumber'),
+          image: anyNamed('image'),
+          expiryDate: anyNamed('expiryDate'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           data: mockDoc,
           requestOptions: RequestOptions(path: ''),
@@ -118,18 +122,22 @@ void main() {
 
   group('DriverDocumentRepository.getDocumentStatus', () {
     test('returns document on success', () async {
-      final mockDoc = DriverDocumentResponse((b) => b
-        ..id = '1'
-        ..driverId = 'driver1'
-        ..documentType = DocumentType.license
-        ..documentNumber = 'DL12345'
-        ..imageUrl = 'http://example.com/image.jpg'
-        ..uploadStatus = UploadStatus.approved
-        ..uploadedAt = DateTime.now().toUtc());
+      final mockDoc = DriverDocumentResponse(
+        (b) => b
+          ..id = '1'
+          ..driverId = 'driver1'
+          ..documentType = DocumentType.license
+          ..documentNumber = 'DL12345'
+          ..imageUrl = 'http://example.com/image.jpg'
+          ..uploadStatus = UploadStatus.approved
+          ..uploadedAt = DateTime.now().toUtc(),
+      );
 
-      when(mockDriverApi.driverGetDocumentStatus(
-        documentId: anyNamed('documentId'),
-      )).thenAnswer(
+      when(
+        mockDriverApi.driverGetDocumentStatus(
+          documentId: anyNamed('documentId'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           data: mockDoc,
           requestOptions: RequestOptions(path: ''),

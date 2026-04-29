@@ -439,9 +439,7 @@ void main() {
       await tester.pump();
 
       // Start the request
-      print('DEBUG: Calling notifier.requestRide()');
       final requestFuture = notifier.requestRide();
-      print('DEBUG: Pumping initial frame');
       await tester.pump();
 
       expect(
@@ -450,19 +448,13 @@ void main() {
       );
 
       // Advance clock to allow the 10ms delay in _FakeHomeNotifier to complete
-      print('DEBUG: Advancing clock by 10ms');
       await tester.pump(const Duration(milliseconds: 10));
-      print('DEBUG: Awaiting requestFuture');
       await requestFuture;
-      print('DEBUG: requestFuture completed');
 
       // Now verify navigation triggered by state change
-      print('DEBUG: Pumping after request completion');
       await tester.pump();
       // Wait for any potential navigation/animations
-      print('DEBUG: Calling pumpAndSettle');
       await tester.pumpAndSettle();
-      print('DEBUG: pumpAndSettle completed');
 
       // Waiting screen should be visible.
       expect(find.byKey(const Key('waiting_screen')), findsOneWidget);
