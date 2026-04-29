@@ -3815,6 +3815,16 @@ components:
             code: RATE_LIMIT_EXCEEDED
             message: "Too many requests. Please slow down."
 
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: "An unexpected error occurred"
+
   # ── Schemas ───────────────────────────────────────────────────────────────
   schemas:
     # -- Error ----------------------------------------------------------------
@@ -3878,6 +3888,11 @@ components:
         # Proximity
         - DRIVER_TOO_FAR
         - DRIVER_TOO_FAR_FROM_DESTINATION
+        # Promotions
+        - PROMO_INVALID
+        - PROMO_EXPIRED
+        - PROMO_NOT_FOUND
+        - PROMO_MIN_AMOUNT_NOT_MET
 
     ErrorResponse:
       type: object
