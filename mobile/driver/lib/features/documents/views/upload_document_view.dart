@@ -97,7 +97,7 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
                     children: [
                       // ignore: deprecated_member_use
                       DropdownButtonFormField<String>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: const InputDecoration(
                           labelText: 'Document Type',
                           border: OutlineInputBorder(),

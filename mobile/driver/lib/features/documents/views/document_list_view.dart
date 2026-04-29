@@ -4,7 +4,6 @@ import 'package:sakai_shared/sakai_shared.dart';
 import 'package:driver/features/documents/view_models/document_view_model.dart';
 import 'package:driver/features/documents/views/upload_document_view.dart';
 import 'package:intl/intl.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
 
 class DocumentListView extends ConsumerWidget {
   const DocumentListView({super.key});
