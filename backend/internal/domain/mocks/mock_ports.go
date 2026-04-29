@@ -251,17 +251,17 @@ func (m *MockRideRepository) EXPECT() *MockRideRepositoryMockRecorder {
 }
 
 // AssignDriver mocks base method.
-func (m *MockRideRepository) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID) error {
+func (m *MockRideRepository) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID, expectedStatus domain.RideStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignDriver", ctx, rideID, driverID)
+	ret := m.ctrl.Call(m, "AssignDriver", ctx, rideID, driverID, expectedStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AssignDriver indicates an expected call of AssignDriver.
-func (mr *MockRideRepositoryMockRecorder) AssignDriver(ctx, rideID, driverID any) *gomock.Call {
+func (mr *MockRideRepositoryMockRecorder) AssignDriver(ctx, rideID, driverID, expectedStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignDriver", reflect.TypeOf((*MockRideRepository)(nil).AssignDriver), ctx, rideID, driverID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignDriver", reflect.TypeOf((*MockRideRepository)(nil).AssignDriver), ctx, rideID, driverID, expectedStatus)
 }
 
 // CancelExpiredOffers mocks base method.
@@ -280,17 +280,17 @@ func (mr *MockRideRepositoryMockRecorder) CancelExpiredOffers(ctx, timeout any) 
 }
 
 // ClearDriver mocks base method.
-func (m *MockRideRepository) ClearDriver(ctx context.Context, rideID uuid.UUID) error {
+func (m *MockRideRepository) ClearDriver(ctx context.Context, rideID uuid.UUID, expectedStatus domain.RideStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearDriver", ctx, rideID)
+	ret := m.ctrl.Call(m, "ClearDriver", ctx, rideID, expectedStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ClearDriver indicates an expected call of ClearDriver.
-func (mr *MockRideRepositoryMockRecorder) ClearDriver(ctx, rideID any) *gomock.Call {
+func (mr *MockRideRepositoryMockRecorder) ClearDriver(ctx, rideID, expectedStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDriver", reflect.TypeOf((*MockRideRepository)(nil).ClearDriver), ctx, rideID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDriver", reflect.TypeOf((*MockRideRepository)(nil).ClearDriver), ctx, rideID, expectedStatus)
 }
 
 // Create mocks base method.
@@ -430,17 +430,17 @@ func (mr *MockRideRepositoryMockRecorder) ListByPassengerID(ctx, passengerID, fi
 }
 
 // SetCancelled mocks base method.
-func (m *MockRideRepository) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode, reasonText *string, cancellationFee *float64) error {
+func (m *MockRideRepository) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode, reasonText *string, cancellationFee *float64, expectedStatus domain.RideStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetCancelled", ctx, id, by, reasonCode, reasonText, cancellationFee)
+	ret := m.ctrl.Call(m, "SetCancelled", ctx, id, by, reasonCode, reasonText, cancellationFee, expectedStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetCancelled indicates an expected call of SetCancelled.
-func (mr *MockRideRepositoryMockRecorder) SetCancelled(ctx, id, by, reasonCode, reasonText, cancellationFee any) *gomock.Call {
+func (mr *MockRideRepositoryMockRecorder) SetCancelled(ctx, id, by, reasonCode, reasonText, cancellationFee, expectedStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCancelled", reflect.TypeOf((*MockRideRepository)(nil).SetCancelled), ctx, id, by, reasonCode, reasonText, cancellationFee)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCancelled", reflect.TypeOf((*MockRideRepository)(nil).SetCancelled), ctx, id, by, reasonCode, reasonText, cancellationFee, expectedStatus)
 }
 
 // UpdateRideFare mocks base method.
@@ -458,17 +458,17 @@ func (mr *MockRideRepositoryMockRecorder) UpdateRideFare(ctx, rideID, actualFare
 }
 
 // UpdateStatus mocks base method.
-func (m *MockRideRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.RideStatus) error {
+func (m *MockRideRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status, expectedStatus domain.RideStatus) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateStatus", ctx, id, status)
+	ret := m.ctrl.Call(m, "UpdateStatus", ctx, id, status, expectedStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateStatus indicates an expected call of UpdateStatus.
-func (mr *MockRideRepositoryMockRecorder) UpdateStatus(ctx, id, status any) *gomock.Call {
+func (mr *MockRideRepositoryMockRecorder) UpdateStatus(ctx, id, status, expectedStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockRideRepository)(nil).UpdateStatus), ctx, id, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockRideRepository)(nil).UpdateStatus), ctx, id, status, expectedStatus)
 }
 
 // MockDriverRepository is a mock of DriverRepository interface.
@@ -2534,6 +2534,21 @@ func (m *MockDriverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, l
 func (mr *MockDriverUseCaseMockRecorder) GetNearbyDriversAllTypes(ctx, lat, lng, radiusM any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNearbyDriversAllTypes", reflect.TypeOf((*MockDriverUseCase)(nil).GetNearbyDriversAllTypes), ctx, lat, lng, radiusM)
+}
+
+// GetStatus mocks base method.
+func (m *MockDriverUseCase) GetStatus(ctx context.Context, driverID uuid.UUID) (*domain.Driver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStatus", ctx, driverID)
+	ret0, _ := ret[0].(*domain.Driver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStatus indicates an expected call of GetStatus.
+func (mr *MockDriverUseCaseMockRecorder) GetStatus(ctx, driverID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockDriverUseCase)(nil).GetStatus), ctx, driverID)
 }
 
 // SetStatus mocks base method.

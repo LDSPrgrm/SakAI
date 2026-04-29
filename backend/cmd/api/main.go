@@ -135,7 +135,8 @@ func main() {
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
 
-	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	txManager := postgres.NewPgTransactionManager(pool)
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, txManager)
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
 	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)

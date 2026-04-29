@@ -127,11 +127,11 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 	}
 	// Clear the driver assignment in the DB first so the partial unique index
 	// on driver_id is freed and the ride can be matched to another driver.
-	if err := uc.rideRepo.ClearDriver(ctx, rideID); err != nil {
+	if err := uc.rideRepo.ClearDriver(ctx, rideID, domain.RideStatusRequested); err != nil {
 		return nil, err
 	}
 	// Reset status to requested and increment decline count.
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusRequested); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusRequested, domain.RideStatusRequested); err != nil {
 		return nil, err
 	}
 	if err := uc.rideRepo.IncrementDeclineCount(ctx, rideID); err != nil {
@@ -156,7 +156,7 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
 		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
 	}
-	if err := uc.rideRepo.AssignDriver(ctx, rideID, newDriverID); err != nil {
+	if err := uc.rideRepo.AssignDriver(ctx, rideID, newDriverID, domain.RideStatusRequested); err != nil {
 		log.Printf("[RIDE] Error assigning re-match driver for ride %s: %v", rideID, err)
 		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
 		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
@@ -185,7 +185,7 @@ func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, d
 		return nil, domain.ErrDriverTooFarFromPickup
 	}
 
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived, domain.RideStatusAccepted); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
@@ -242,7 +242,7 @@ func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID,
 	}
 
 	// Transition to completed status.
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusCompleted); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusCompleted, domain.RideStatusInProgress); err != nil {
 		return nil, err
 	}
 
@@ -300,7 +300,7 @@ func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain
 		}
 	}
 
-	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee); err != nil {
+	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee, ride.Status); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
@@ -319,7 +319,7 @@ func (uc *rideUseCase) transition(ctx context.Context, callerID, rideID uuid.UUI
 	if !ride.Status.CanTransitionTo(next) {
 		return nil, domain.ErrInvalidStateTransition
 	}
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, next); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, next, ride.Status); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
@@ -362,3 +362,4 @@ func (uc *rideUseCase) TriggerSOS(ctx context.Context, userID uuid.UUID, role do
 
 	return incident, nil
 }
+

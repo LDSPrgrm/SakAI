@@ -90,17 +90,16 @@ type RideRepository interface {
 	GetActiveByDriverID(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 
 	// UpdateStatus transitions a ride to a new status and bumps updated_at.
-	UpdateStatus(ctx context.Context, id uuid.UUID, status RideStatus) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status RideStatus, expectedStatus RideStatus) error
 
-	// AssignDriver sets the driver_id on a ride in the requested state.
-	AssignDriver(ctx context.Context, rideID, driverID uuid.UUID) error
+	// AssignDriver sets the driver_id on a ride if it is in the expected state.
+	AssignDriver(ctx context.Context, rideID, driverID uuid.UUID, expectedStatus RideStatus) error
 
-	// ClearDriver sets driver_id to NULL, used when a driver declines a ride.
-	ClearDriver(ctx context.Context, rideID uuid.UUID) error
+	// ClearDriver sets driver_id to NULL if it is in the expected state.
+	ClearDriver(ctx context.Context, rideID uuid.UUID, expectedStatus RideStatus) error
 
-	// SetCancelled transitions a ride to cancelled and records who cancelled,
-	// along with optional reason code and text, and any cancellation fee.
-	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error
+	// SetCancelled transitions a ride to cancelled if it matches the expected status.
+	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64, expectedStatus RideStatus) error
 
 	// CancelExpiredOffers cancels all rides that have been in "requested" status
 	// for longer than timeout. Returns the identity of the cancelled rides.
@@ -576,13 +575,13 @@ type RatingRepository interface {
 
 // RidePaymentRepository manages ride-specific payment transactions.
 type RidePaymentRepository interface {
-	// Create inserts a new ride payment record.
+	// Create inserts a new ride payment record. Supports transactions via context.
 	Create(ctx context.Context, payment *Payment) error
 
 	// GetByRideID returns the payment for a ride, or nil.
 	GetByRideID(ctx context.Context, rideID uuid.UUID) (*Payment, error)
 
-	// UpdateStatus changes the payment status (e.g., failed -> completed on retry).
+	// UpdateStatus changes the payment status. Supports transactions via context.
 	UpdateStatus(ctx context.Context, id uuid.UUID, status PaymentStatus, gatewayTxnID *string, processedAt time.Time, failureReason *string) error
 
 	// HasUnpaidBlock returns true if the passenger has any failed payment older than the given cutoff.
@@ -591,7 +590,7 @@ type RidePaymentRepository interface {
 
 // EarningsRepository manages driver earnings persistence.
 type EarningsRepository interface {
-	// Create inserts a new driver earnings record (called on ride completion).
+	// Create inserts a new driver earnings record (called on ride completion). Supports transactions via context.
 	Create(ctx context.Context, earnings *DriverEarnings) error
 
 	// ListByDriverID returns paginated earnings for a driver, optionally filtered by date range.
