@@ -3882,8 +3882,6 @@ components:
         - FILE_TOO_LARGE
         - INVALID_FILE_FORMAT
         - INVALID_DOCUMENT_TYPE
-        # Promotions
-        - PROMO_INVALID
         # Operational
         - RATE_LIMIT_EXCEEDED
         - INTERNAL_SERVER_ERROR
