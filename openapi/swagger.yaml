@@ -3751,6 +3751,16 @@ components:
             code: RATE_LIMIT_EXCEEDED
             message: "Too many requests. Please slow down."
 
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: "An unexpected error occurred"
+
   # ── Schemas ───────────────────────────────────────────────────────────────
   schemas:
     # -- Error ----------------------------------------------------------------
@@ -3808,6 +3818,8 @@ components:
         - FILE_TOO_LARGE
         - INVALID_FILE_FORMAT
         - INVALID_DOCUMENT_TYPE
+        # Promotions
+        - PROMO_INVALID
         # Operational
         - RATE_LIMIT_EXCEEDED
         - INTERNAL_SERVER_ERROR
