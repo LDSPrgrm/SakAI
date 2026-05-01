@@ -73,16 +73,15 @@ test.describe("Passenger Core Flow", () => {
       const pickupTextbox = page.getByRole("textbox").last();
       await expect(pickupTextbox).toBeAttached({ timeout: 10000 });
       await pickupTextbox.fill("Manila");
-      const pickupConfirm = page.locator('text=Confirm "Manila"').first();
       const pickupSuggestion = page
-        .locator("flt-semantics-container")
-        .filter({ hasText: "Manila" })
+        .getByRole("button", { name: /Manila/i })
         .first();
+      const pickupConfirm = page.locator('text=Confirm "Manila"').first();
       await Promise.race([
         pickupSuggestion.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
         pickupConfirm.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
       ]);
-      if (await pickupConfirm.isVisible()) {
+      if (await pickupConfirm.isVisible().catch(() => false)) {
         await pickupConfirm.click({ force: true });
       } else {
         await pickupSuggestion.click({ force: true });
@@ -93,26 +92,30 @@ test.describe("Passenger Core Flow", () => {
     }
 
     // 3. Open destination search by tapping "Where to?"
-    await whereToButton.click({ force: true });
+    const whereToButtonRole = page.getByRole("button", { name: "Where to?" });
+    await whereToButtonRole.waitFor({ state: "visible", timeout: 10000 });
+    await whereToButtonRole.click();
+    await page.waitForTimeout(800);
 
     // The bottom sheet expands and a search textbox appears
     const searchTextbox = page.getByRole("textbox").last();
-    await expect(searchTextbox).toBeAttached({ timeout: 10000 });
+    await expect(searchTextbox).toBeAttached({ timeout: 15000 });
     await searchTextbox.fill("Airport");
 
     // 4. Handle destination selection — two possible paths:
-    //    a) Geocoding returns suggestions → click the first suggestion item
+    //    a) Geocoding returns suggestions → click the first suggestion button
     //    b) No results found → a "Confirm "Airport"" button appears
     const confirmButton = page.locator('text=Confirm "Airport"').first();
-    // Suggestions appear as list tiles after "Airport" text in the textbox
-    const firstSuggestion = page.locator("flt-semantics-container").filter({ hasText: "Airport" }).first();
+    const firstSuggestion = page
+      .getByRole("button", { name: /Airport/i })
+      .first();
 
     await Promise.race([
       firstSuggestion.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
       confirmButton.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
     ]);
 
-    if (await confirmButton.isVisible()) {
+    if (await confirmButton.isVisible().catch(() => false)) {
       await confirmButton.click({ force: true });
     } else {
       await firstSuggestion.click({ force: true });

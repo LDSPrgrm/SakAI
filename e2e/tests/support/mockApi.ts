@@ -64,8 +64,8 @@ function ride(status: RideStatus = "requested", withDriver = false) {
     destination: { lat: 14.6091, lng: 121.0223 },
     origin_address: "SakAI E2E Pickup",
     destination_address: "Airport",
-    estimated_fare: 120.0,
-    actual_fare: status === "completed" ? 120.0 : null,
+    estimated_fare: 120.5,
+    actual_fare: status === "completed" ? 120.5 : null,
     ride_type: "car",
     payment_method: "cash",
     decline_count: 0,
@@ -87,6 +87,23 @@ async function json(route: Route, status: number, body: unknown) {
   });
 }
 
+function geocodeFor(query: string): { lat: number; lng: number; address: string } {
+  const q = query.toLowerCase();
+  if (q.includes("airport")) {
+    return {
+      lat: 14.5086,
+      lng: 121.0194,
+      address: "Ninoy Aquino International Airport, Pasay, Metro Manila, Philippines",
+    };
+  }
+  // Default to Manila for any other query so tests stay deterministic.
+  return {
+    lat: 14.5995,
+    lng: 120.9842,
+    address: "Manila, Metro Manila, Philippines",
+  };
+}
+
 export async function installMockApi(page: Page, state: MockApiState) {
   await page.route("**/*", async (route) => {
     const request = route.request();
@@ -102,6 +119,72 @@ export async function installMockApi(page: Page, state: MockApiState) {
           "access-control-allow-headers": "authorization,content-type,idempotency-key",
         },
       });
+    }
+
+    // ---- Third-party geocoding: Google Maps + Nominatim ---------------
+    // Tests must be deterministic and CORS-clean. We intercept all
+    // outbound geocoding traffic so queries always resolve to Manila /
+    // NAIA airport instead of hitting the real internet.
+    if (url.host === "maps.googleapis.com") {
+      if (url.pathname.endsWith("/place/autocomplete/json")) {
+        const input = url.searchParams.get("input") ?? "";
+        const loc = geocodeFor(input);
+        return json(route, 200, {
+          status: "OK",
+          predictions: [
+            {
+              description: loc.address,
+              place_id: `mock-${input.replace(/\W+/g, "-").toLowerCase()}`,
+              structured_formatting: {
+                main_text: input,
+                secondary_text: loc.address,
+              },
+            },
+          ],
+        });
+      }
+      if (url.pathname.endsWith("/geocode/json")) {
+        const address = url.searchParams.get("address") ?? "";
+        const loc = geocodeFor(address);
+        return json(route, 200, {
+          status: "OK",
+          results: [
+            {
+              formatted_address: loc.address,
+              geometry: { location: { lat: loc.lat, lng: loc.lng } },
+              place_id: `mock-${address.replace(/\W+/g, "-").toLowerCase()}`,
+            },
+          ],
+        });
+      }
+      // Anything else from Google Maps (tile fetches, JS SDK, etc.) — fall through.
+    }
+
+    if (url.host === "nominatim.openstreetmap.org") {
+      if (url.pathname === "/search") {
+        const q = url.searchParams.get("q") ?? "";
+        const loc = geocodeFor(q);
+        return json(route, 200, [
+          {
+            place_id: 1,
+            lat: String(loc.lat),
+            lon: String(loc.lng),
+            display_name: loc.address,
+            address: { city: "Manila", country: "Philippines" },
+          },
+        ]);
+      }
+      if (url.pathname === "/reverse") {
+        const lat = parseFloat(url.searchParams.get("lat") ?? "14.5995");
+        const lng = parseFloat(url.searchParams.get("lon") ?? "120.9842");
+        return json(route, 200, {
+          place_id: 1,
+          lat: String(lat),
+          lon: String(lng),
+          display_name: "Manila, Metro Manila, Philippines",
+          address: { city: "Manila", country: "Philippines" },
+        });
+      }
     }
 
     if (method === "POST" && path === "/auth/login") {
@@ -164,9 +247,9 @@ export async function installMockApi(page: Page, state: MockApiState) {
             vehicle_plate: "SAK-123",
             vehicle_type: "car",
             rating: 4.9,
-            distance_m: 300,
+            distance_m: 300.5,
             location: { lat: 14.5995, lng: 120.9842 },
-            heading: 90,
+            heading: 90.5,
           },
         ],
         motorcycle: [],
