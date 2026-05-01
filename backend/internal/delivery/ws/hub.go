@@ -31,6 +31,7 @@ const (
 	EventRideStatusChanged     EventType = "ride.status_changed"
 	EventRideCancelled         EventType = "ride.cancelled"
 	EventRideOfferExpired      EventType = "ride.offer_expired"
+	EventRideSOS               EventType = "ride.sos_triggered"
 	EventDriverLocationUpdated EventType = "driver.location_updated"
 )
 

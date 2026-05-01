@@ -43,6 +43,13 @@ class SettingsMenuScreen extends StatelessWidget {
             'Choose your preferred language',
             onTap: () => context.push(Routes.settingsLanguage),
           ),
+          _buildTile(
+            context,
+            Icons.place_outlined,
+            'Saved Places',
+            'Manage your saved locations',
+            onTap: () => context.push(Routes.savedPlaces),
+          ),
 
           const SizedBox(height: 16),
           _buildSectionHeader(context, 'Support'),

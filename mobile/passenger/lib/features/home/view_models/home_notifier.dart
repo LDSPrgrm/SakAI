@@ -97,6 +97,7 @@ class HomeNotifier extends Notifier<HomeState> {
   final _uuid = const Uuid();
   String? _idempotencyKey;
   Timer? _nearbyDriverPollTimer;
+  bool _initialized = false;
 
   @override
   HomeState build() {
@@ -104,7 +105,11 @@ class HomeNotifier extends Notifier<HomeState> {
       _stopLocationStreaming();
       _stopNearbyDriverPolling();
     });
-    _fetchServiceAreas();
+    // Only fetch service areas once during initialization.
+    if (!_initialized) {
+      _initialized = true;
+      unawaited(_fetchServiceAreas());
+    }
     return const HomeState(status: HomeStatus.idle);
   }
 
@@ -138,7 +143,10 @@ class HomeNotifier extends Notifier<HomeState> {
 
   /// Fetches nearby drivers and updates both ride type options and map markers from a single API call.
   Future<void> _fetchNearbyDrivers() async {
-    final currentPos = state.currentLatLng;
+    final pickup = state.pickup;
+    final currentPos =
+        state.currentLatLng ??
+        (pickup == null ? null : LatLng(pickup.lat, pickup.lng));
     if (currentPos == null) return;
 
     try {
@@ -328,6 +336,7 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(
       status: HomeStatus.idle,
       clearDestination: true,
+      clearSelectedRideType: true,
       nearbyDrivers: [],
       rideTypeOptions: [],
     );

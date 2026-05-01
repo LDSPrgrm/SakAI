@@ -74,6 +74,17 @@ func (h *DriverHandler) GetIncomingRide(c *gin.Context) {
 	respondOK(c, dto.NewRideResponse(ride, nil))
 }
 
+// GetStatus returns the current operational status of the authenticated driver.
+func (h *DriverHandler) GetStatus(c *gin.Context) {
+	driverID := c.MustGet("userID").(uuid.UUID)
+	status, err := h.uc.GetStatus(c.Request.Context(), driverID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, gin.H{"status": status})
+}
+
 // GetNearbyDrivers handles GET /drivers/nearby?lat=...&lng=...&radius=...&ride_type=...
 func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
 	lat, err := strconv.ParseFloat(c.Query("lat"), 64)

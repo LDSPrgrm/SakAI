@@ -11,6 +11,12 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+type mockTxManager struct{}
+
+func (m *mockTxManager) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
+}
+
 func TestPaymentProcessingUsecase_ChargeRide_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -29,7 +35,7 @@ func TestPaymentProcessingUsecase_ChargeRide_Success(t *testing.T) {
 	userRepo := mocks.NewMockUserRepository(ctrl)
 	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
 
-	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, &mockTxManager{})
 
 	// Ride repo expects the ride lookup
 	rideRepo.EXPECT().GetByID(gomock.Any(), rideID).Return(&domain.Ride{
@@ -92,7 +98,7 @@ func TestPaymentProcessingUsecase_ChargeRide_Failure(t *testing.T) {
 	userRepo := mocks.NewMockUserRepository(ctrl)
 	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
 
-	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, &mockTxManager{})
 
 	rideRepo.EXPECT().GetByID(gomock.Any(), rideID).Return(&domain.Ride{
 		ID:            rideID,
@@ -141,7 +147,7 @@ func TestPaymentProcessingUsecase_ChargeRide_RideNotFound(t *testing.T) {
 	userRepo := mocks.NewMockUserRepository(ctrl)
 	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
 
-	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, &mockTxManager{})
 
 	rideRepo.EXPECT().GetByID(gomock.Any(), rideID).Return(nil, domain.ErrNotFound)
 

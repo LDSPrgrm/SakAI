@@ -10,6 +10,9 @@ import '../features/active_ride/repositories/active_ride_repository.dart';
 import '../features/active_ride/repositories/active_ride_repository_impl.dart';
 import '../features/earnings/repositories/earnings_repository.dart';
 
+import '../features/documents/repositories/driver_document_repository.dart';
+import '../features/documents/repositories/driver_document_repository_impl.dart';
+
 // Note: tokenStorageProvider, onboardingServiceProvider, authStateProvider are
 // provided by sakai_shared or defined below to avoid conflicts.
 
@@ -45,6 +48,11 @@ final activeRideRepositoryProvider = Provider<ActiveRideRepository>((ref) {
 /// Earnings repository — domain boundary for historical and session earnings.
 final earningsRepositoryProvider = Provider<EarningsRepository>((ref) {
   return EarningsRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Driver documents repository — domain boundary for document uploads and status.
+final driverDocumentRepositoryProvider = Provider<DriverDocumentRepository>((ref) {
+  return DriverDocumentRepositoryImpl(ref.watch(apiClientProvider));
 });
 
 /// WebSocket client singleton for real-time events.

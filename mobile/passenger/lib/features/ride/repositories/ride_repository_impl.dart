@@ -149,6 +149,7 @@ class RideRepositoryImpl implements RideRepository {
 
     return RideEntity(
       id: r.id,
+      passengerId: r.passenger.id,
       status: RideState.fromString(r.status.name),
       origin: RideLocation(
         lat: r.origin.lat,

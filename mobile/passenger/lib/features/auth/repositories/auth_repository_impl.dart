@@ -123,7 +123,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> deleteAccount() async {
     try {
-      await _client.getUsersApi().usersMeDelete();
+      await _client.getUsersApi().usersDeleteMe();
     } on DioException catch (e) {
       throw _fromDio(e);
     }

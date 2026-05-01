@@ -75,6 +75,7 @@ type UserResponse struct {
 	Email     string          `json:"email"`
 	Role      domain.UserRole `json:"role"`
 	RoleID    *string         `json:"role_id,omitempty"`
+	Vehicle   *VehicleInfoDTO `json:"vehicle,omitempty"`
 	CreatedAt time.Time       `json:"created_at"`
 }
 
@@ -101,6 +102,16 @@ func NewUserResponse(u *domain.User) UserResponse {
 		s := u.RoleID.String()
 		r.RoleID = &s
 	}
+
+	if u.Vehicle != nil {
+		r.Vehicle = &VehicleInfoDTO{
+			Make:  u.Vehicle.Make,
+			Model: u.Vehicle.Model,
+			Color: u.Vehicle.Color,
+			Plate: u.Vehicle.Plate,
+		}
+	}
+
 	return r
 }
 

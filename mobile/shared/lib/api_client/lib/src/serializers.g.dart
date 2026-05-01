@@ -175,6 +175,7 @@ Serializers _$serializers =
           ..add(Transaction.serializer)
           ..add(TransactionPaymentMethodEnum.serializer)
           ..add(TransactionStatusEnum.serializer)
+          ..add(TriggerSOSRequest.serializer)
           ..add(UpdateAdminStatusRequest.serializer)
           ..add(UpdatePaymentConfigRequest.serializer)
           ..add(UpdateRoleRequest.serializer)

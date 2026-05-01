@@ -30,22 +30,26 @@ enum RideState {
   }
 }
 
-/// Domain entity for a ride. Mapped from `RideResponse` in `data/`.
-/// Shared between passenger and driver apps via `sakai_shared`.
+/// Domain entity for a ride.
+/// Consolidated from redundant models. Shared via `sakai_shared`.
 class RideEntity {
   const RideEntity({
     required this.id,
+    required this.passengerId,
     required this.status,
     required this.origin,
     required this.destination,
     required this.createdAt,
     required this.updatedAt,
+    this.driverId,
     this.driverName,
     this.driverVehicle,
     this.cancelledBy,
+    this.notes,
   });
 
   final String id;
+  final String passengerId;
   final RideState status;
   final RideLocation origin;
   final RideLocation destination;
@@ -53,59 +57,70 @@ class RideEntity {
   final DateTime updatedAt;
 
   /// Null until a driver has accepted.
+  final String? driverId;
   final String? driverName;
 
   /// e.g. "Toyota Vios · ABC 123 · White"
   final String? driverVehicle;
 
-  /// Set only when [status] is [RideStatus.cancelled].
+  /// Set only when [status] is [RideState.cancelled].
   final String? cancelledBy;
+
+  final String? notes;
 
   RideEntity copyWith({
     String? id,
+    String? passengerId,
     RideState? status,
     RideLocation? origin,
     RideLocation? destination,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? driverId,
     String? driverName,
     String? driverVehicle,
     String? cancelledBy,
+    String? notes,
   }) {
     return RideEntity(
       id: id ?? this.id,
+      passengerId: passengerId ?? this.passengerId,
       status: status ?? this.status,
       origin: origin ?? this.origin,
       destination: destination ?? this.destination,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      driverId: driverId ?? this.driverId,
       driverName: driverName ?? this.driverName,
       driverVehicle: driverVehicle ?? this.driverVehicle,
       cancelledBy: cancelledBy ?? this.cancelledBy,
+      notes: notes ?? this.notes,
     );
   }
 }
 
-enum PaymentMethod { cash, card }
+/// Domain payment method enum.
+/// Renamed to avoid collision with generated API client.
+enum RidePaymentMethod { cash, card }
 
-extension PaymentMethodExtension on PaymentMethod {
+extension RidePaymentMethodExtension on RidePaymentMethod {
   String get displayName {
     switch (this) {
-      case PaymentMethod.cash:
+      case RidePaymentMethod.cash:
         return 'Cash';
-      case PaymentMethod.card:
+      case RidePaymentMethod.card:
         return 'Card';
     }
   }
 
-  static PaymentMethod fromApi(String value) {
+  static RidePaymentMethod fromApi(String value) {
     switch (value.toLowerCase()) {
       case 'cash':
-        return PaymentMethod.cash;
+        return RidePaymentMethod.cash;
       case 'card':
-        return PaymentMethod.card;
+        return RidePaymentMethod.card;
       default:
-        return PaymentMethod.cash;
+        return RidePaymentMethod.cash;
     }
   }
 }

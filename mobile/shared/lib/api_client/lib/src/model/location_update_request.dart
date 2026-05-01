@@ -12,13 +12,13 @@ part 'location_update_request.g.dart';
 ///
 /// Properties:
 /// * [location] 
-/// * [heading] - Compass heading in degrees (0–360), optional. Used to rotate driver icon on map.
+/// * [heading] - Compass heading in degrees (0â€“360), optional. Used to rotate driver icon on map.
 @BuiltValue()
 abstract class LocationUpdateRequest implements Built<LocationUpdateRequest, LocationUpdateRequestBuilder> {
   @BuiltValueField(wireName: r'location')
   LatLng get location;
 
-  /// Compass heading in degrees (0–360), optional. Used to rotate driver icon on map.
+  /// Compass heading in degrees (0â€“360), optional. Used to rotate driver icon on map.
   @BuiltValueField(wireName: r'heading')
   double? get heading;
 

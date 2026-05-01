@@ -266,6 +266,17 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
             ),
 
           Positioned(
+            right: 16,
+            bottom: 220, // Sit above the bottom card
+            child: FloatingActionButton(
+              heroTag: 'sos_button',
+              onPressed: () => _showSOSConfirmation(context),
+              backgroundColor: Colors.red,
+              child: const Icon(Icons.sos, color: Colors.white, size: 32),
+            ),
+          ),
+
+          Positioned(
             bottom: 0,
             left: 0,
             right: 0,
@@ -312,6 +323,45 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
         ],
       ),
     );
+  }
+
+  Future<void> _showSOSConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Emergency SOS'),
+        content: const Text(
+          'This will alert our emergency team and local authorities. '
+          'Are you sure you want to trigger an SOS?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text(
+              'TRIGGER SOS',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await widget.controller.triggerSOS(reason: 'User triggered SOS from app');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('SOS Alert Sent! Help is on the way.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildStatusIndicator(ActiveRideStep step) {

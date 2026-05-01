@@ -113,7 +113,7 @@ func main() {
 	)
 	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo, incidentRepo)
 	fareCalc := usecase.NewFareCalculator()
-	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
+	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, incidentRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
@@ -135,10 +135,11 @@ func main() {
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
 
-	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	txManager := postgres.NewPgTransactionManager(pool)
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, txManager)
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
-	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
+	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient, cfg.Currency)
 
 	// Payment method repository and usecase
 	pmRepo := postgres.NewPaymentMethodRepo(pool)
@@ -186,6 +187,7 @@ func main() {
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
 		RoleUC:         roleUC,
+		AppVersion:     cfg.AppVersion,
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

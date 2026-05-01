@@ -56,7 +56,11 @@ class AuthInterceptor extends Interceptor {
     try {
       // Attempt to refresh.
       // We use a fresh Dio instance to avoid interceptor recursion.
-      final dio = _dioFactory(BaseOptions(baseUrl: err.requestOptions.baseUrl));
+      final dio = _dioFactory(BaseOptions(
+        baseUrl: err.requestOptions.baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
+      ));
       final response = await dio.post(
         '/auth/refresh',
         data: {'refresh_token': refreshToken},

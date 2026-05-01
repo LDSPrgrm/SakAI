@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
 )
@@ -26,7 +27,19 @@ func (r *ridePaymentRepo) Create(ctx context.Context, payment *domain.Payment) e
 			gateway_transaction_id, stripe_charge_id, idempotency_key,
 			gateway_response, processed_at, failure_reason, created_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
-	_, err := r.db.Exec(ctx, q,
+
+	// Use tx from context if available, otherwise fallback to pool.
+	var executor interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	} = r.db
+
+	if tx, ok := ctx.Value(txKey{}).(interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	}); ok {
+		executor = tx
+	}
+
+	_, err := executor.Exec(ctx, q,
 		payment.ID, payment.RideID, payment.PassengerID, payment.Amount, payment.Currency, payment.Method,
 		payment.Status, payment.GatewayTransactionID, payment.StripeChargeID, payment.IdempotencyKey,
 		payment.GatewayResponse, payment.ProcessedAt, payment.FailureReason, payment.CreatedAt,
@@ -52,7 +65,19 @@ func (r *ridePaymentRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status
 		    processed_at = $3,
 		    failure_reason = $4
 		WHERE id = $5`
-	_, err := r.db.Exec(ctx, q, status, gatewayTxnID, processedAt, failureReason, id)
+
+	// Use tx from context if available, otherwise fallback to pool.
+	var executor interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	} = r.db
+
+	if tx, ok := ctx.Value(txKey{}).(interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	}); ok {
+		executor = tx
+	}
+
+	_, err := executor.Exec(ctx, q, status, gatewayTxnID, processedAt, failureReason, id)
 	return err
 }
 

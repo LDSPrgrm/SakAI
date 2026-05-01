@@ -254,3 +254,61 @@ func TestUpdateAdminStatus_EmailUnchanged_NoCollisionCheck(t *testing.T) {
 		t.Fatalf("expected success, got %v", err)
 	}
 }
+
+func TestCreateAdmin_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	actor := uuid.New()
+	roleID := uuid.New()
+	m.role.EXPECT().GetRoleByID(gomock.Any(), roleID).Return(&domain.Role{
+		ID: roleID, Name: "operations", IsSystem: true,
+	}, nil)
+	m.user.EXPECT().GetByEmail(gomock.Any(), "new@admin.com").Return(nil, domain.ErrNotFound)
+	m.user.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
+	m.audit.EXPECT().Store(gomock.Any(), gomock.Any()).Return(nil)
+
+	_, err := uc.CreateAdmin(context.Background(), actor, "New Admin", "new@admin.com", "password123", domain.RoleOperations, &roleID)
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+}
+
+func TestDeactivateAdmin_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	actor := uuid.New()
+	target := uuid.New()
+	old := adminFixture(target, domain.RoleSupport)
+
+	m.user.EXPECT().GetByID(gomock.Any(), target).Return(old, nil)
+	m.admin.EXPECT().DeactivateAdmin(gomock.Any(), target).Return(nil)
+	m.audit.EXPECT().Store(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := uc.DeactivateAdmin(context.Background(), actor, target)
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+}
+
+func TestResetUserPassword_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	actor := uuid.New()
+	target := uuid.New()
+	old := adminFixture(target, domain.RoleSupport)
+
+	m.user.EXPECT().GetByID(gomock.Any(), target).Return(old, nil)
+	m.user.EXPECT().UpdatePassword(gomock.Any(), target, gomock.Any()).Return(nil)
+	m.audit.EXPECT().Store(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := uc.ResetUserPassword(context.Background(), actor, target, "newpassword123")
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+}

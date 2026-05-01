@@ -12,14 +12,14 @@ part 'ws_envelope.g.dart';
 ///
 /// Properties:
 /// * [event] - Event name
-/// * [payload] - Event-specific payload — see schemas below
+/// * [payload] - Event-specific payload â€” see schemas below
 @BuiltValue()
 abstract class WsEnvelope implements Built<WsEnvelope, WsEnvelopeBuilder> {
   /// Event name
   @BuiltValueField(wireName: r'event')
   String get event;
 
-  /// Event-specific payload — see schemas below
+  /// Event-specific payload â€” see schemas below
   @BuiltValueField(wireName: r'payload')
   JsonObject get payload;
 

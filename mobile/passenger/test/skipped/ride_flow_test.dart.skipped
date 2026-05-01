@@ -153,6 +153,7 @@
 //     await Future.delayed(const Duration(milliseconds: 100));
 //     return RideEntity(
 //       id: 'test-ride-id',
+//       passengerId: 'fake-passenger-id',
 //       status: RideState.requested,
 //       origin: origin,
 //       destination: destination,
@@ -272,7 +273,7 @@
 
 //         // Should be back on home screen
 //         expect(rideRepo.cancelCalled, isTrue);
-//         expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+//         expect(find.textContaining('Where to?'), findsOneWidget);
 //       }, createHttpClient: (_) => _MockHttpClient());
 //     });
 

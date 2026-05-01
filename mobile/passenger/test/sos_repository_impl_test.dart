@@ -15,48 +15,26 @@ void main() {
       final rideId = 'ride-123';
       final reason = 'Feeling unsafe';
 
-      // Expected behavior: Repository calls the API and returns updated ride with SOS flag
+      // Expected behavior: Repository calls the API and returns an Incident object
       // Since this is RED phase, we'll just mock the Interface for now to define expected contract
       final mockSos = MockSOSRepository();
-      final expectedRide = api.$RideResponse(
+      final expectedIncident = api.Incident(
         (b) => b
-          ..id = rideId
-          ..status = api.RideStatus.completed
-          ..origin.replace(
-            api.LatLng(
-              (l) => l
-                ..lat = 0.0
-                ..lng = 0.0,
-            ),
-          )
-          ..destination.replace(
-            api.LatLng(
-              (l) => l
-                ..lat = 0.0
-                ..lng = 0.0,
-            ),
-          )
-          ..originAddress = 'Origin'
-          ..destinationAddress = 'Destination'
-          ..passenger = api.$UserProfile(
-            (u) => u
-              ..id = 'p1'
-              ..name = 'User'
-              ..email = 'test@test.com'
-              ..role = api.UserProfileRoleEnum.passenger
-              ..createdAt = DateTime.now().toUtc(),
-          )
-          ..createdAt = DateTime.now().toUtc()
-          ..updatedAt = DateTime.now().toUtc(),
+          ..id = 'inc-123'
+          ..rideId = rideId
+          ..riderId = 'p1'
+          ..type = api.IncidentTypeEnum.sosTriggered
+          ..status = api.IncidentStatusEnum.open
+          ..createdAt = DateTime.now().toUtc(),
       );
 
       when(
         mockSos.triggerSOS(rideId, reason: reason),
-      ).thenAnswer((_) async => expectedRide);
+      ).thenAnswer((_) async => expectedIncident);
 
       final result = await mockSos.triggerSOS(rideId, reason: reason);
 
-      expect(result.id, equals(rideId));
+      expect(result.rideId, equals(rideId));
       verify(mockSos.triggerSOS(rideId, reason: reason)).called(1);
     });
 

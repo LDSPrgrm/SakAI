@@ -13,6 +13,7 @@ import '../features/cancelled_ride/repositories/cancelled_ride_repository.dart';
 import '../features/cancelled_ride/repositories/cancelled_ride_repository_impl.dart';
 import '../features/receipt/repositories/receipt_repository.dart';
 import '../features/receipt/repositories/receipt_repository_impl.dart';
+import '../features/support/repositories/sos_repository_impl.dart';
 import '../features/active_ride/models/active_ride_state.dart';
 import '../features/active_ride/view_models/active_ride_notifier.dart';
 export '../features/active_ride/view_models/active_ride_notifier.dart'
@@ -163,6 +164,11 @@ final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
   return ReceiptRepositoryImpl(ref.watch(apiClientProvider));
 });
 
+/// SOS repository - domain boundary over the generated API client.
+final sosRepositoryProvider = Provider<SOSRepository>((ref) {
+  return SOSRepositoryImpl(ref.watch(apiClientProvider).getRidesApi());
+});
+
 /// Active ride controller provider — keyed by ride ID.
 ///
 /// Usage: `ref.watch(activeRideProvider(rideId))` returns an
@@ -173,10 +179,12 @@ final activeRideProvider = Provider.family<ActiveRideController, String>((
 ) {
   final client = ref.watch(apiClientProvider);
   final wsClient = ref.watch(wsClientProvider);
+  final sosRepository = ref.watch(sosRepositoryProvider);
   final controller = ActiveRideController(
     rideId: rideId,
     client: client,
     wsClient: wsClient,
+    sosRepository: sosRepository,
   );
   ref.onDispose(() => controller.dispose());
   return controller;

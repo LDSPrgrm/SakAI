@@ -20,10 +20,12 @@ import '../features/payment_methods/views/add_payment_method_screen.dart';
 import '../features/settings/views/settings_menu_screen.dart';
 import '../features/settings/views/notification_settings_screen.dart';
 import '../features/settings/views/emergency_contacts_screen.dart';
-import '../features/settings/views/help_center_screen.dart';
+import '../features/support/views/support_screen.dart';
 import '../features/settings/views/terms_screen.dart';
 import '../features/settings/views/privacy_policy_screen.dart';
 import '../features/settings/views/language_selection_screen.dart';
+import '../features/saved_places/views/saved_places_screen.dart';
+import '../features/promotions/views/promotions_screen.dart';
 import 'providers.dart';
 import 'routes.dart';
 
@@ -48,6 +50,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isRegister = state.matchedLocation == Routes.register;
       final isAuthRoute = isWelcome || isLogin || isRegister;
 
+      // Guard: if we're already on splash, let the splash screen handle its own
+      // navigation via its listener. This prevents GoRouter from remounting the
+      // splash screen mid-flight when auth state flips during the async check,
+      // which would otherwise cause a redirect loop.
       if (isSplash) return null;
 
       if (authState.status == AuthStatus.unknown) {
@@ -168,7 +174,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.settingsHelp,
-        builder: (context, state) => const HelpCenterScreen(),
+        builder: (context, state) => const SupportScreen(),
       ),
       GoRoute(
         path: Routes.settingsTerms,
@@ -181,6 +187,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settingsLanguage,
         builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: Routes.savedPlaces,
+        builder: (context, state) => const SavedPlacesScreen(),
+      ),
+      GoRoute(
+        path: Routes.promotions,
+        builder: (context, state) => const PromotionsScreen(),
       ),
     ],
   );

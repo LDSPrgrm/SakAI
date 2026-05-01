@@ -643,7 +643,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         // Destination field
         _buildLocationTile(
           icon: Icons.place,
-          label: destination?.address ?? 'Saan kayo pupunta?',
+          label: destination?.address ?? 'Where to?',
           onTap: () => _openLocationSearch(LocationSearchMode.destination),
           scheme: scheme,
         ),
@@ -765,7 +765,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return SakaiTextField(
       controller: _searchController,
       focusNode: _searchFocus,
-      label: 'Saan kayo pupunta?',
+      label: 'Where to?',
       hint: 'Enter destination...',
       prefixIcon: Icon(Icons.search, color: scheme.primary),
       textInputAction: TextInputAction.search,

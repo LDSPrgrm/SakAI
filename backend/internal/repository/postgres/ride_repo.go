@@ -86,28 +86,52 @@ func (r *rideRepo) GetActiveByDriverID(ctx context.Context, dID uuid.UUID) (*dom
 	return r.scanRide(r.db.QueryRow(ctx, q, dID))
 }
 
-func (r *rideRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.RideStatus) error {
-	const q = `UPDATE rides SET status = $1, updated_at = $2 WHERE id = $3`
-	_, err := r.db.Exec(ctx, q, status, time.Now(), id)
-	return err
+func (r *rideRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.RideStatus, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET status = $1, updated_at = $2 WHERE id = $3 AND status = $4`
+	tag, err := r.db.Exec(ctx, q, status, time.Now(), id, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID) error {
-	const q = `UPDATE rides SET driver_id = $1, status = 'accepted', updated_at = NOW() WHERE id = $2`
-	_, err := r.db.Exec(ctx, q, driverID, rideID)
-	return err
+func (r *rideRepo) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET driver_id = $1, status = 'accepted', updated_at = NOW() WHERE id = $2 AND status = $3`
+	tag, err := r.db.Exec(ctx, q, driverID, rideID, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID) error {
-	const q = `UPDATE rides SET driver_id = NULL, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.Exec(ctx, q, rideID)
-	return err
+func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET driver_id = NULL, updated_at = NOW() WHERE id = $1 AND status = $2`
+	tag, err := r.db.Exec(ctx, q, rideID, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error {
-	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, fare = COALESCE($4, fare), updated_at = NOW() WHERE id = $5`
-	_, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id)
-	return err
+func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, fare = COALESCE($4, fare), updated_at = NOW() WHERE id = $5 AND status = $6`
+	tag, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
 func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duration) ([]domain.ExpiredOffer, error) {

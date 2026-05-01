@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
 import '../view_models/waiting_view_model.dart';
@@ -29,6 +32,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
   late final AnimationController _pulse;
   late final WaitingViewModel _vm;
   StreamSubscription<WsEvent>? _wsSub;
+  Timer? _e2ePollTimer;
 
   /// Guards against double-navigation when both the HTTP success callback
   /// and the WebSocket `rideCancelled` event fire in quick succession.
@@ -49,6 +53,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     _vm.addListener(_onVmChanged);
 
     _setupWebSocketListener();
+    _setupE2EPolling();
   }
 
   @override
@@ -57,7 +62,27 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     _vm.dispose();
     _pulse.dispose();
     _wsSub?.cancel();
+    _e2ePollTimer?.cancel();
     super.dispose();
+  }
+
+  void _setupE2EPolling() {
+    if (!kIsWeb || !isE2EMode()) return;
+    _e2ePollTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      if (!mounted || _navigating) return;
+      try {
+        final active = await ref.read(rideRepositoryProvider).getActiveRide();
+        if (!mounted) return;
+        if (active == null || active.id != widget.rideId) return;
+        if (active.status != RideState.requested) {
+          _e2ePollTimer?.cancel();
+          _navigating = true;
+          context.go(Routes.rideActive, extra: widget.rideId);
+        }
+      } catch (_) {
+        // E2E fallback only; normal WebSocket flow remains authoritative.
+      }
+    });
   }
 
   /// React to ViewModel state changes — navigation and snack bars stay here.

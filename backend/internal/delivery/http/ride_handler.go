@@ -282,8 +282,9 @@ func (h *RideHandler) Decline(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	// Publish decline event to the original driver.
-	_ = h.upsert.PublishToRide(c.Request.Context(), result.Ride, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
+	// Publish decline event to the passenger and the driver who declined.
+	_ = h.upsert.PublishToUser(c.Request.Context(), result.Ride.PassengerID, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
+	_ = h.upsert.PublishToUser(c.Request.Context(), driverID, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
 	// If a new driver was matched, send them a ride offer with complete payload.
 	if result.NewDriverFound && result.NewDriverID != nil {
 		log.Printf("[RIDE] Re-matching ride %s to new driver %s after decline", result.Ride.ID, *result.NewDriverID)
@@ -392,6 +393,42 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 	}
 	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideCancelled, gin.H{"ride_id": ride.ID, "cancelled_by": ride.CancelledBy, "reason_code": ride.CancellationReason})
 	respondOK(c, h.rideResponse(ride))
+}
+
+func (h *RideHandler) TriggerSOS(c *gin.Context) {
+	rideID, err := uuid.Parse(c.Param("rideId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid ride ID"})
+		return
+	}
+
+	var req dto.TriggerSOSRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+
+	userID := c.MustGet("userID").(uuid.UUID)
+	role := contextUserRole(c)
+	incident, err := h.uc.TriggerSOS(c.Request.Context(), userID, role, rideID, req.Reason)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Publish SOS event to WebSocket for system monitoring or ride participants
+	ride, rideErr := h.rideRepo.GetByID(c.Request.Context(), rideID)
+	if rideErr == nil {
+		payload := gin.H{
+			"ride_id":      ride.ID,
+			"incident_id":  incident.ID,
+			"triggered_by": incident.TriggeredBy,
+			"reason":       req.Reason,
+		}
+		_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideSOS, payload)
+	}
+
+	respondOK(c, dto.NewIncidentDTO(incident))
 }
 
 // driverTransition is a shared helper for driver-only state-advancing endpoints.

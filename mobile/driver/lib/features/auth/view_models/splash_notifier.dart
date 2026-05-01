@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../models/session_check_result.dart';
 
@@ -25,6 +29,18 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
     // Minimal delay for UX in production, can be zero in tests.
     await Future.delayed(Duration.zero);
 
+    // E2E bypass: skip backend call when running under Playwright tests.
+    // The ?sakai-e2e=true URL param signals a test environment where no backend is available.
+    if (kIsWeb && _isE2EMode()) {
+      final onboardingForE2E = ref.read(onboardingServiceProvider);
+      if (!onboardingForE2E.hasSeenWelcome()) {
+        ref.read(authStateProvider.notifier).markUnauthenticated();
+        return SplashState.welcome;
+      }
+      ref.read(authStateProvider.notifier).markUnauthenticated();
+      return SplashState.unauthenticated;
+    }
+
     final onboarding = ref.read(onboardingServiceProvider);
 
     // 1. First launch should always show onboarding welcome.
@@ -39,8 +55,9 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
     switch (result.status) {
       case SessionCheckStatus.authenticated:
         ref.read(authStateProvider.notifier).markAuthenticated();
-        // Connect WebSocket for real-time ride offers (was missing on session restore)
-        await ref.read(wsConnectionProvider).connectIfAuthenticated();
+        // Connect WebSocket in the background. 
+        // We don't want to block the splash screen transition for the handshake.
+        unawaited(ref.read(wsConnectionProvider).connectIfAuthenticated());
         // 2. Check for active ride recovery
         final hasActiveRide = await _checkForActiveRide();
         if (hasActiveRide) {
@@ -61,10 +78,22 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
   Future<bool> _checkForActiveRide() async {
     try {
       final rideRepo = ref.read(activeRideRepositoryProvider);
-      final activeRide = await rideRepo.getActiveRide();
+      final activeRide = await rideRepo
+          .getActiveRide()
+          .timeout(const Duration(seconds: 5));
       return activeRide != null;
     } catch (e) {
       // Non-fatal: if we can't check, default to home screen.
+      return false;
+    }
+  }
+
+  /// Returns true when the app is opened with `?sakai-e2e=true` query param.
+  /// Only relevant on Flutter Web; always returns false on other platforms.
+  static bool _isE2EMode() {
+    try {
+      return isE2EMode();
+    } catch (_) {
       return false;
     }
   }

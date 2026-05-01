@@ -10,7 +10,8 @@ import (
 // Config holds all runtime configuration loaded from environment variables.
 type Config struct {
 	// Server
-	Port string
+	Port       string
+	AppVersion string
 
 	// Database
 	DatabaseURL   string
@@ -34,8 +35,11 @@ type Config struct {
 	StripeSecretKey string
 
 	// Storage (driver documents)
-	UploadDir            string
-	UploadPublicBaseURL  string
+	UploadDir           string
+	UploadPublicBaseURL string
+
+	// Regional
+	Currency string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -44,6 +48,7 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		Port:                    getEnv("PORT", "8080"),
+		AppVersion:              getEnv("APP_VERSION", "1.0.0"),
 		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=disable"),
 		MigrationsDir:           getEnv("MIGRATIONS_DIR", "../migrations"),
 		RedisURL:                getEnv("REDIS_URL", "redis://localhost:6379/0"),
@@ -55,6 +60,7 @@ func Load() *Config {
 		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
 		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
 		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/api/files"),
+		Currency:                getEnv("CURRENCY", "USD"),
 	}
 
 	// Security: refuse to start with the default JWT secret outside of local dev.

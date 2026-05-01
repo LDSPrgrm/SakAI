@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../home/services/gps_location_service.dart';
 import '../models/driver_session.dart';
@@ -245,6 +247,22 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     state = state.copyWith(loading: true, errorMessage: null);
 
     try {
+      if (kIsWeb && isE2EMode()) {
+        state = state.copyWith(
+          online: targetOnline,
+          loading: false,
+          status: targetOnline
+              ? DriverSessionStatus.online
+              : DriverSessionStatus.offline,
+        );
+        if (targetOnline) {
+          _startIncomingRidePolling();
+        } else {
+          _stopIncomingRidePolling();
+        }
+        return;
+      }
+
       if (targetOnline) {
         debugPrint('[DRIVER] Calling goOnline()...');
         await repo.goOnline();

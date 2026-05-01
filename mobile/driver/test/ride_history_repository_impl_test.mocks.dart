@@ -15,11 +15,11 @@ import 'package:sakai_api_client/src/model/date.dart' as _i8;
 import 'package:sakai_api_client/src/model/driver_document_response.dart'
     as _i6;
 import 'package:sakai_api_client/src/model/driver_documents_list_response.dart'
-    as _i10;
+    as _i11;
 import 'package:sakai_api_client/src/model/driver_get_earnings200_response.dart'
     as _i7;
 import 'package:sakai_api_client/src/model/driver_status_request.dart' as _i12;
-import 'package:sakai_api_client/src/model/driver_status_response.dart' as _i11;
+import 'package:sakai_api_client/src/model/driver_status_response.dart' as _i10;
 import 'package:sakai_api_client/src/model/get_nearby_drivers200_response.dart'
     as _i14;
 import 'package:sakai_api_client/src/model/location_update_request.dart'
@@ -221,7 +221,42 @@ class MockDriverApi extends _i1.Mock implements _i3.DriverApi {
           as _i4.Future<_i2.Response<_i9.RideResponse>>);
 
   @override
-  _i4.Future<_i2.Response<_i10.DriverDocumentsListResponse>>
+  _i4.Future<_i2.Response<_i10.DriverStatusResponse>> driverGetStatus({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#driverGetStatus, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i4.Future<_i2.Response<_i10.DriverStatusResponse>>.value(
+                  _FakeResponse_0<_i10.DriverStatusResponse>(
+                    this,
+                    Invocation.method(#driverGetStatus, [], {
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Response<_i10.DriverStatusResponse>>);
+
+  @override
+  _i4.Future<_i2.Response<_i11.DriverDocumentsListResponse>>
   driverListDocuments({
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -241,9 +276,9 @@ class MockDriverApi extends _i1.Mock implements _i3.DriverApi {
             }),
             returnValue:
                 _i4.Future<
-                  _i2.Response<_i10.DriverDocumentsListResponse>
+                  _i2.Response<_i11.DriverDocumentsListResponse>
                 >.value(
-                  _FakeResponse_0<_i10.DriverDocumentsListResponse>(
+                  _FakeResponse_0<_i11.DriverDocumentsListResponse>(
                     this,
                     Invocation.method(#driverListDocuments, [], {
                       #cancelToken: cancelToken,
@@ -256,10 +291,10 @@ class MockDriverApi extends _i1.Mock implements _i3.DriverApi {
                   ),
                 ),
           )
-          as _i4.Future<_i2.Response<_i10.DriverDocumentsListResponse>>);
+          as _i4.Future<_i2.Response<_i11.DriverDocumentsListResponse>>);
 
   @override
-  _i4.Future<_i2.Response<_i11.DriverStatusResponse>> driverSetStatus({
+  _i4.Future<_i2.Response<_i10.DriverStatusResponse>> driverSetStatus({
     required _i12.DriverStatusRequest? driverStatusRequest,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -279,8 +314,8 @@ class MockDriverApi extends _i1.Mock implements _i3.DriverApi {
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i4.Future<_i2.Response<_i11.DriverStatusResponse>>.value(
-                  _FakeResponse_0<_i11.DriverStatusResponse>(
+                _i4.Future<_i2.Response<_i10.DriverStatusResponse>>.value(
+                  _FakeResponse_0<_i10.DriverStatusResponse>(
                     this,
                     Invocation.method(#driverSetStatus, [], {
                       #driverStatusRequest: driverStatusRequest,
@@ -294,7 +329,7 @@ class MockDriverApi extends _i1.Mock implements _i3.DriverApi {
                   ),
                 ),
           )
-          as _i4.Future<_i2.Response<_i11.DriverStatusResponse>>);
+          as _i4.Future<_i2.Response<_i10.DriverStatusResponse>>);
 
   @override
   _i4.Future<_i2.Response<void>> driverUpdateLocation({

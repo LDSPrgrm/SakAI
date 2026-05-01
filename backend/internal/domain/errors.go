@@ -51,5 +51,7 @@ var (
 	ErrDriverTooFarFromDestination = errors.New("driver must be within 100 meters of destination")
 	// Promotion errors
 	ErrPromotionExpired         = errors.New("promotion expired")
+	ErrPromotionInvalid         = errors.New("promotion code is invalid")
+	ErrPromotionNotFound        = errors.New("promotion code not found")
 	ErrPromotionMinAmountNotMet = errors.New("ride fare below minimum amount for promotion")
 )
