@@ -52,7 +52,7 @@ func (r *paymentRepo) ListTransactions(ctx context.Context, page, limit int) ([]
 		JOIN rides r ON r.id = p.ride_id
 		LEFT JOIN users rider  ON rider.id  = r.passenger_id
 		LEFT JOIN users driver ON driver.id = r.driver_id
-		LEFT JOIN commission_settings cs ON cs.vehicle_type = r.vehicle_type
+		LEFT JOIN commission_settings cs ON cs.vehicle_type = r.ride_type
 		ORDER BY p.created_at DESC
 		LIMIT $1 OFFSET $2`
 	rows, err := r.db.Query(ctx, q, limit, offset)
