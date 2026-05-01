@@ -20,10 +20,11 @@ import (
 //   20000007-... incidents
 //   20000008-... kyc_submissions
 //   20000009-... driver_documents
-//   2000000A-... service_areas
-//   2000000B-... lgu_partnerships
-//   2000000C-... alert_rules
+//   2000000a-... service_areas
+//   2000000b-... lgu_partnerships
+//   2000000c-... alert_rules
 //   2000000d-... audit_log_entries
+//   2000000e-... system_health_probes
 //   2000000f-... ratings
 //
 // NOTE: Postgres stores UUIDs in lowercase canonical form. LIKE filters MUST
@@ -39,6 +40,7 @@ var phaseSeeders = map[string]seederFn{
 	"users":  seedPhase1Users,
 	"rides":  seedPhase2Rides,
 	"safety": seedPhase3Safety,
+	"system": seedPhase4System,
 }
 
 // canonicalPhaseOrder defines the order phases must run in to satisfy
@@ -191,6 +193,26 @@ func wipeDemoRows(ctx context.Context, tx pgx.Tx, phases []string) error {
 		for _, q := range stmts {
 			if _, err := tx.Exec(ctx, q); err != nil {
 				return fmt.Errorf("wipe users-phase: %w", err)
+			}
+		}
+	}
+
+	// Phase 4 (system) wipe order: audit_log → lgu_partnerships → service_areas
+	// → alert_rules → system_health_probes. lgu before service_areas because of
+	// the FK (ON DELETE SET NULL — would still succeed but explicit ordering
+	// keeps reseed semantics deterministic). feature_flags rows are not deleted
+	// (mig 018 owns them); we only stamped a row, the upsert path overwrites.
+	if want["system"] {
+		stmts := []string{
+			`DELETE FROM audit_log_entries    WHERE id::text LIKE '2000000d-%'`,
+			`DELETE FROM lgu_partnerships     WHERE id::text LIKE '2000000b-%'`,
+			`DELETE FROM service_areas        WHERE id::text LIKE '2000000a-%'`,
+			`DELETE FROM alert_rules          WHERE id::text LIKE '2000000c-%'`,
+			`DELETE FROM system_health_probes WHERE id::text LIKE '2000000e-%'`,
+		}
+		for _, q := range stmts {
+			if _, err := tx.Exec(ctx, q); err != nil {
+				return fmt.Errorf("wipe system-phase: %w", err)
 			}
 		}
 	}
