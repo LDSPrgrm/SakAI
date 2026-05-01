@@ -454,6 +454,16 @@ func NewSystemMetricsRepo(db *pgxpool.Pool) domain.SystemMetricsRepository {
 func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.DashboardMetrics, error) {
 	m := &domain.DashboardMetrics{}
 
+	const qTotalRiders = `SELECT COUNT(*) FROM users WHERE role = 'passenger'`
+	if err := r.db.QueryRow(ctx, qTotalRiders).Scan(&m.TotalRiders); err != nil {
+		return nil, err
+	}
+
+	const qTotalDrivers = `SELECT COUNT(*) FROM users WHERE role = 'driver'`
+	if err := r.db.QueryRow(ctx, qTotalDrivers).Scan(&m.TotalDrivers); err != nil {
+		return nil, err
+	}
+
 	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {
 		return nil, err

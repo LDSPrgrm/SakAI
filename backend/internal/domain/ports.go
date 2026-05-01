@@ -338,6 +338,10 @@ type SystemMetricsRepository interface {
 }
 
 type DashboardMetrics struct {
+	// Total* are raw user counts (ever-registered).
+	TotalRiders  int
+	TotalDrivers int
+	// Active* are last-30-day engagement counts derived from rides.
 	ActiveRiders       int
 	ActiveDrivers      int
 	RidesToday         int

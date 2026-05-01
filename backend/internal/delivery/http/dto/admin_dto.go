@@ -8,12 +8,24 @@ import (
 )
 
 type DashboardResponse struct {
-	ActiveRiders       int     `json:"active_riders"`
-	ActiveDrivers      int     `json:"active_drivers"`
-	RidesToday         int     `json:"rides_today"`
-	RevenueToday       float64 `json:"revenue_today"`
+	// Raw user counts.
+	TotalRiders  int `json:"total_riders"`
+	TotalDrivers int `json:"total_drivers"`
+	// Last-30-day engagement counts derived from rides.
+	ActiveRiders  int `json:"active_riders"`
+	ActiveDrivers int `json:"active_drivers"`
+
+	RidesToday   int     `json:"rides_today"`
+	RevenueToday float64 `json:"revenue_today"`
+
+	// Wait time shipped in both seconds and minutes — frontend reads minutes,
+	// older clients still read seconds.
 	AvgWaitTimeSeconds float64 `json:"avg_wait_time_seconds"`
-	SystemUptime       float64 `json:"system_uptime"`
+	AvgWaitMinutes     float64 `json:"avg_wait_minutes"`
+
+	// Platform uptime shipped under both keys for the same reason.
+	SystemUptime    float64 `json:"system_uptime"`
+	PlatformUptime  float64 `json:"platform_uptime"`
 }
 
 // UpdateAdminStatusRequest is the body of PUT /admin/users/:id.
@@ -69,12 +81,16 @@ type IncidentDTO struct {
 
 func NewDashboardResponse(m *domain.DashboardMetrics) *DashboardResponse {
 	return &DashboardResponse{
+		TotalRiders:        m.TotalRiders,
+		TotalDrivers:       m.TotalDrivers,
 		ActiveRiders:       m.ActiveRiders,
 		ActiveDrivers:      m.ActiveDrivers,
 		RidesToday:         m.RidesToday,
 		RevenueToday:       m.RevenueToday,
 		AvgWaitTimeSeconds: m.AvgWaitTimeSeconds,
+		AvgWaitMinutes:     m.AvgWaitTimeSeconds / 60.0,
 		SystemUptime:       m.SystemUptime,
+		PlatformUptime:     m.SystemUptime,
 	}
 }
 
