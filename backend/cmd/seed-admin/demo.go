@@ -36,8 +36,9 @@ type seederFn func(ctx context.Context, tx pgx.Tx) error
 // is two lines: drop a `demo_<name>.go` file with a `seedPhaseN` function, then
 // register it here.
 var phaseSeeders = map[string]seederFn{
-	"users": seedPhase1Users,
-	"rides": seedPhase2Rides,
+	"users":  seedPhase1Users,
+	"rides":  seedPhase2Rides,
+	"safety": seedPhase3Safety,
 }
 
 // canonicalPhaseOrder defines the order phases must run in to satisfy
@@ -143,6 +144,23 @@ func wipeDemoRows(ctx context.Context, tx pgx.Tx, phases []string) error {
 	want := map[string]bool{}
 	for _, p := range phases {
 		want[p] = true
+	}
+
+	// Phase 3 (safety) must wipe before rides — incidents FK rides; before
+	// users — kyc_submissions, driver_documents.reviewed_by, incidents.rider_id
+	// FK users. driver_documents has submission_id ON DELETE SET NULL so order
+	// between docs and submissions is flexible; we still delete docs first.
+	if want["safety"] {
+		stmts := []string{
+			`DELETE FROM incidents        WHERE id::text LIKE '20000007-%'`,
+			`DELETE FROM driver_documents WHERE id::text LIKE '20000009-%'`,
+			`DELETE FROM kyc_submissions  WHERE id::text LIKE '20000008-%'`,
+		}
+		for _, q := range stmts {
+			if _, err := tx.Exec(ctx, q); err != nil {
+				return fmt.Errorf("wipe safety-phase: %w", err)
+			}
+		}
 	}
 
 	// Phase 2 (rides) must wipe before users because ride_payments / ratings /
