@@ -11,3 +11,4 @@ coverage/
 .vite/
 .playwright-mcp/
 *.png
+*.md
