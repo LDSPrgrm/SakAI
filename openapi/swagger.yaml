@@ -4899,6 +4899,9 @@ components:
         assigned_to:
           type: string
           nullable: true
+        assigned_to_name:
+          type: string
+          description: Display name of the assignee user, resolved via JOIN. Empty when unassigned.
         created_at:
           type: string
           format: date-time

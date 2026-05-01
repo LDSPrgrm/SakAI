@@ -2942,6 +2942,8 @@ export interface components {
             driver_id?: string;
             driver_name?: string;
             assigned_to?: string | null;
+            /** @description Display name of the assignee user, resolved via JOIN. Empty when unassigned. */
+            assigned_to_name?: string;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */

@@ -355,7 +355,7 @@ export function SASafetyCompliance() {
                           </TableCell>
                           <TableCell className="text-sm">
                             {inc.assigned_to ? (
-                              <span className="text-text-main">{inc.assigned_to}</span>
+                              <span className="text-text-main">{inc.assigned_to_name || inc.assigned_to}</span>
                             ) : (
                               <span className="text-text-muted italic">Unassigned</span>
                             )}

@@ -74,6 +74,7 @@ type IncidentDTO struct {
 	RiderID         string     `json:"rider_id"`
 	DriverID        string     `json:"driver_id"`
 	AssignedTo      *string    `json:"assigned_to,omitempty"`
+	AssignedToName  string     `json:"assigned_to_name,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
@@ -111,6 +112,7 @@ func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
 		s := i.AssignedTo.String()
 		dto.AssignedTo = &s
 	}
+	dto.AssignedToName = i.AssignedToName
 	return dto
 }
 

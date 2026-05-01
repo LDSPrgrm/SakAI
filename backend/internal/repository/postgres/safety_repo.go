@@ -23,7 +23,7 @@ func (r *safetyRepo) ListKyc(ctx context.Context) ([]*domain.KycEntry, error) {
 	const q = `
 		SELECT s.id, s.driver_id, COALESCE(u.name, ''), s.submitted_at, s.status,
 		       COALESCE(
-		         (SELECT array_agg(d.document_type ORDER BY d.uploaded_at)
+		         (SELECT array_agg(d.document_type::text ORDER BY d.uploaded_at)
 		          FROM driver_documents d
 		          WHERE d.submission_id = s.id OR (d.submission_id IS NULL AND d.driver_id = s.driver_id)),
 		         ARRAY[]::text[]
