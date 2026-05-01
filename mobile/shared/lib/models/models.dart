@@ -5,7 +5,6 @@
 library;
 
 export 'user.dart';
-export 'ride.dart';
 export 'driver.dart';
 export 'vehicle.dart';
 export 'error_response.dart';

@@ -282,8 +282,9 @@ func (h *RideHandler) Decline(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	// Publish decline event to the original driver.
-	_ = h.upsert.PublishToRide(c.Request.Context(), result.Ride, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
+	// Publish decline event to the passenger and the driver who declined.
+	_ = h.upsert.PublishToUser(c.Request.Context(), result.Ride.PassengerID, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
+	_ = h.upsert.PublishToUser(c.Request.Context(), driverID, ws.EventRideDeclined, gin.H{"ride_id": result.Ride.ID, "status": result.Ride.Status})
 	// If a new driver was matched, send them a ride offer with complete payload.
 	if result.NewDriverFound && result.NewDriverID != nil {
 		log.Printf("[RIDE] Re-matching ride %s to new driver %s after decline", result.Ride.ID, *result.NewDriverID)
@@ -415,8 +416,18 @@ func (h *RideHandler) TriggerSOS(c *gin.Context) {
 		return
 	}
 
-	// Publish SOS event to WebSocket for system monitoring or ride participants if needed
-	// For now just respond OK as the incident is persisted and will be tracked by DriverUseCase trail
+	// Publish SOS event to WebSocket for system monitoring or ride participants
+	ride, rideErr := h.rideRepo.GetByID(c.Request.Context(), rideID)
+	if rideErr == nil {
+		payload := gin.H{
+			"ride_id":      ride.ID,
+			"incident_id":  incident.ID,
+			"triggered_by": incident.TriggeredBy,
+			"reason":       req.Reason,
+		}
+		_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideSOS, payload)
+	}
+
 	respondOK(c, dto.NewIncidentDTO(incident))
 }
 

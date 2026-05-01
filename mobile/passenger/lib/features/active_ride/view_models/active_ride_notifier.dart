@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../models/active_ride_state.dart';
 
 /// Callback types for navigation actions from the notifier.
@@ -34,6 +36,7 @@ class ActiveRideController {
   AsyncValue<ActiveRideState> get state => _state;
 
   StreamSubscription<WsEvent>? _wsSubscription;
+  Timer? _e2ePollTimer;
   OnRideCompleted? onCompleted;
   OnRideCancelled? onCancelled;
   bool _loadingStarted = false;
@@ -77,6 +80,7 @@ class ActiveRideController {
       }
 
       _setupWebSocketListener();
+      _setupE2EPolling();
 
       _state = AsyncValue.data(ActiveRideState.fromRideResponse(response));
       _stateController.add(_state);
@@ -90,6 +94,36 @@ class ActiveRideController {
       _state = AsyncValue.error(Exception('Failed to load ride: $e'), st);
       _stateController.add(_state);
     }
+  }
+
+  void _setupE2EPolling() {
+    if (!kIsWeb || !isE2EMode() || _e2ePollTimer != null) return;
+    _e2ePollTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      if (_terminated) return;
+      try {
+        final apiResponse = await _client.getRidesApi().rideGet(
+          rideId: rideId,
+        );
+        final response = apiResponse.data;
+        if (response == null) return;
+        final rideStatus = RideState.fromString(response.status.name);
+        final nextState = ActiveRideState.fromRideResponse(response);
+        _state = AsyncValue.data(nextState);
+        _stateController.add(_state);
+        if (rideStatus == RideState.completed ||
+            rideStatus == RideState.cancelled) {
+          _terminated = true;
+          _e2ePollTimer?.cancel();
+          if (rideStatus == RideState.completed) {
+            onCompleted?.call(rideId);
+          } else {
+            onCancelled?.call(rideId);
+          }
+        }
+      } catch (_) {
+        // E2E fallback only; normal WebSocket flow remains authoritative.
+      }
+    });
   }
 
   void _setupWebSocketListener() {
@@ -111,6 +145,8 @@ class ActiveRideController {
     });
   }
 
+  bool _terminated = false;
+
   void _handleStatusChanged(Map<String, dynamic> payload) {
     try {
       final event = standardSerializers.deserializeWith(
@@ -129,10 +165,15 @@ class ActiveRideController {
       );
       _stateController.add(_state);
 
-      if (rideStatus == RideState.completed) {
-        onCompleted?.call(rideId);
-      } else if (rideStatus == RideState.cancelled) {
-        onCancelled?.call(rideId);
+      if (!_terminated &&
+          (rideStatus == RideState.completed ||
+              rideStatus == RideState.cancelled)) {
+        _terminated = true;
+        if (rideStatus == RideState.completed) {
+          onCompleted?.call(rideId);
+        } else {
+          onCancelled?.call(rideId);
+        }
       }
     } catch (e, st) {
       debugPrint(
@@ -170,8 +211,9 @@ class ActiveRideController {
 
   void _handleRideCancelled() {
     final current = _state.value;
-    if (current == null) return;
+    if (current == null || _terminated) return;
 
+    _terminated = true;
     _state = AsyncValue.data(current);
     _stateController.add(_state);
     onCancelled?.call(rideId);
@@ -205,6 +247,7 @@ class ActiveRideController {
 
   void dispose() {
     _wsSubscription?.cancel();
+    _e2ePollTimer?.cancel();
     _stateController.close();
   }
 }

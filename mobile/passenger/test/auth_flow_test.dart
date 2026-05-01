@@ -130,6 +130,7 @@ class _FakeRideRepository implements RideRepository {
   }) async {
     return RideEntity(
       id: 'fake-ride',
+      passengerId: 'fake-passenger-id',
       status: RideState.requested,
       origin: origin,
       destination: destination,
@@ -239,7 +240,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+      expect(find.textContaining('Where to?'), findsOneWidget);
       expect(await tokenStorage.hasToken(), isTrue);
       expect(await tokenStorage.getAccessToken(), 'test-access');
     });
@@ -257,7 +258,7 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
-      expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+      expect(find.textContaining('Where to?'), findsOneWidget);
     });
 
     testWidgets('unauthenticated first launch is redirected to welcome', (
@@ -355,7 +356,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+      expect(find.textContaining('Where to?'), findsOneWidget);
       expect(await tokenStorage.hasToken(), isTrue);
       expect(await tokenStorage.getAccessToken(), 'test-access-reg');
     });
@@ -372,7 +373,7 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
-      expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+      expect(find.textContaining('Where to?'), findsOneWidget);
 
       final container = ProviderScope.containerOf(
         tester.element(find.byType(PassengerApp)),
@@ -399,7 +400,7 @@ void main() {
 
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
-        expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+        expect(find.textContaining('Where to?'), findsOneWidget);
 
         // Open the drawer to reveal the logout button
         await tester.tap(find.byIcon(Icons.menu).first);

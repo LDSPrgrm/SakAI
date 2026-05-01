@@ -1,0 +1,17 @@
+{
+  "name": "sakai-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests for SakAI Flutter apps using Playwright",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "build:passenger": "cd ../mobile/passenger && flutter build web",
+    "build:driver": "cd ../mobile/driver && flutter build web",
+    "build:all": "npm run build:passenger && npm run build:driver"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "@types/node": "^20.11.0",
+    "serve": "^14.2.1"
+  }
+}

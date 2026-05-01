@@ -48,6 +48,7 @@ type Deps struct {
 	// supplied for admin routes to function.
 	AuthUC domain.AuthUseCase
 	RoleUC domain.RoleUseCase
+	AppVersion string
 }
 
 // New builds and returns the configured Gin engine.
@@ -72,7 +73,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "ok",
 			"timestamp": time.Now().Format(time.RFC3339),
-			"version":   "1.0.0", // TODO: Get from config/build info
+			"version":   d.AppVersion,
 		})
 	})
 

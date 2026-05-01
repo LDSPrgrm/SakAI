@@ -139,7 +139,7 @@ func main() {
 	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, txManager)
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
-	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
+	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient, cfg.Currency)
 
 	// Payment method repository and usecase
 	pmRepo := postgres.NewPaymentMethodRepo(pool)
@@ -187,6 +187,7 @@ func main() {
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
 		RoleUC:         roleUC,
+		AppVersion:     cfg.AppVersion,
 	}
 
 	engine := router.New(cfg.JWTSecret, deps)

@@ -63,6 +63,7 @@ class _FakeRideRepository implements RideRepository {
   }) async {
     return RideEntity(
       id: 'fake-ride',
+      passengerId: 'fake-passenger-id',
       status: RideState.requested,
       origin: origin,
       destination: destination,

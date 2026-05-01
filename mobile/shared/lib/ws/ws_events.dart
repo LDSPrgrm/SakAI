@@ -25,5 +25,6 @@ class WsEventNames {
   static const rideArrived = 'ride.arrived';
   static const rideStatusChanged = 'ride.status_changed';
   static const rideCancelled = 'ride.cancelled';
+  static const rideSosTriggered = 'ride.sos_triggered';
   static const driverLocationUpdated = 'driver.location_updated';
 }

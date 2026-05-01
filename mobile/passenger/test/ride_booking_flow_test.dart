@@ -120,6 +120,7 @@ class _FakeHomeNotifier extends HomeNotifier {
 
     final fakeRide = RideEntity(
       id: 'fake-ride-001',
+      passengerId: 'fake-passenger-id',
       status: RideState.requested,
       origin: state.pickup!,
       destination: state.destination!,

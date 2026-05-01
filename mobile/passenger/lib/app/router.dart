@@ -50,6 +50,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isRegister = state.matchedLocation == Routes.register;
       final isAuthRoute = isWelcome || isLogin || isRegister;
 
+      // Guard: if we're already on splash, let the splash screen handle its own
+      // navigation via its listener. This prevents GoRouter from remounting the
+      // splash screen mid-flight when auth state flips during the async check,
+      // which would otherwise cause a redirect loop.
       if (isSplash) return null;
 
       if (authState.status == AuthStatus.unknown) {
