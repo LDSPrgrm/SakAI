@@ -23,8 +23,12 @@ import (
 //   2000000A-... service_areas
 //   2000000B-... lgu_partnerships
 //   2000000C-... alert_rules
-//   2000000D-... audit_log_entries
-//   2000000F-... ratings
+//   2000000d-... audit_log_entries
+//   2000000f-... ratings
+//
+// NOTE: Postgres stores UUIDs in lowercase canonical form. LIKE filters MUST
+// use lowercase hex letters even when the seeder code uses uppercase literals
+// (Postgres normalizes them on insert). Always lowercase letters in wipe SQL.
 
 type seederFn func(ctx context.Context, tx pgx.Tx) error
 
@@ -33,6 +37,7 @@ type seederFn func(ctx context.Context, tx pgx.Tx) error
 // register it here.
 var phaseSeeders = map[string]seederFn{
 	"users": seedPhase1Users,
+	"rides": seedPhase2Rides,
 }
 
 // canonicalPhaseOrder defines the order phases must run in to satisfy
@@ -138,6 +143,23 @@ func wipeDemoRows(ctx context.Context, tx pgx.Tx, phases []string) error {
 	want := map[string]bool{}
 	for _, p := range phases {
 		want[p] = true
+	}
+
+	// Phase 2 (rides) must wipe before users because ride_payments / ratings /
+	// payouts FK back to demo users. If both phases are wiped, rides goes first.
+	if want["rides"] {
+		stmts := []string{
+			`DELETE FROM driver_payout_lines WHERE id::text LIKE '20000006-%'`,
+			`DELETE FROM driver_payouts      WHERE id::text LIKE '20000005-%'`,
+			`DELETE FROM ratings             WHERE id::text LIKE '2000000f-%'`,
+			`DELETE FROM ride_payments       WHERE id::text LIKE '20000004-%'`,
+			`DELETE FROM rides               WHERE id::text LIKE '20000003-%'`,
+		}
+		for _, q := range stmts {
+			if _, err := tx.Exec(ctx, q); err != nil {
+				return fmt.Errorf("wipe rides-phase: %w", err)
+			}
+		}
 	}
 
 	if want["users"] {
