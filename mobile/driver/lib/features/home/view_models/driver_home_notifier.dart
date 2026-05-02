@@ -318,8 +318,11 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// WS is the primary path — polling is a safety net for mobile network unreliability.
   void _startIncomingRidePolling() {
     _stopIncomingRidePolling();
+    final interval = (kIsWeb && isE2EMode())
+        ? const Duration(seconds: 2)
+        : const Duration(seconds: 15);
     _incomingRidePollTimer = Timer.periodic(
-      const Duration(seconds: 15),
+      interval,
       (_) => _pollIncomingRideOnce(),
     );
     // Poll immediately when starting.

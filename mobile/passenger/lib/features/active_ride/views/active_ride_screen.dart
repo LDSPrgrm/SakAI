@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
 import '../models/active_ride_state.dart';
@@ -196,10 +199,14 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
       initialTarget = gmaps.LatLng(ride.origin.lat, ride.origin.lng);
     }
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          gmaps.GoogleMap(
+    final mapWidget = (kIsWeb && isE2EMode())
+        ? Container(
+            key: const ValueKey('e2e-map-placeholder'),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            alignment: Alignment.center,
+            child: const Text('Map (E2E placeholder)'),
+          )
+        : gmaps.GoogleMap(
             initialCameraPosition: gmaps.CameraPosition(
               target: initialTarget,
               zoom: 14,
@@ -208,7 +215,12 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
             onMapCreated: (controller) => _mapController = controller,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-          ),
+          );
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          mapWidget,
 
           if (rideState.driverName != null)
             Positioned(

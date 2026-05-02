@@ -19,14 +19,21 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await _storage.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
-      debugPrint(
-        '[AuthInterceptor] Injected Bearer token for: ${options.path}',
-      );
-    } else {
-      debugPrint('[AuthInterceptor] NO token found for: ${options.path}');
+    // Wrap token read so a storage failure (e.g. flutter_secure_storage_web
+    // throwing OperationError on subtle-crypto decrypt) does not stall the
+    // Dio interceptor pipeline — handler.next must always run.
+    try {
+      final token = await _storage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+        debugPrint(
+          '[AuthInterceptor] Injected Bearer token for: ${options.path}',
+        );
+      } else {
+        debugPrint('[AuthInterceptor] NO token found for: ${options.path}');
+      }
+    } catch (e) {
+      debugPrint('[AuthInterceptor] Token read failed for ${options.path}: $e');
     }
     handler.next(options);
   }
