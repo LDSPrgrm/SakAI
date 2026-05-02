@@ -5,12 +5,21 @@ type RideStatus =
   | "accepted"
   | "arrived"
   | "in_progress"
-  | "completed";
+  | "completed"
+  | "cancelled";
+
+type CancelledByValue = "passenger" | "driver" | "system";
 
 export type MockApiState = {
   rideStatus: RideStatus;
   rideRequested: boolean;
   driverOnline: boolean;
+  rideCancelled: boolean;
+  cancelledBy?: CancelledByValue;
+  driverDeclined: boolean;
+  forceUnauthorizedOnce: boolean;
+  failNextRideCreate: boolean;
+  registerShouldFail: boolean;
 };
 
 export function createMockApiState(): MockApiState {
@@ -18,6 +27,11 @@ export function createMockApiState(): MockApiState {
     rideStatus: "requested",
     rideRequested: false,
     driverOnline: false,
+    rideCancelled: false,
+    driverDeclined: false,
+    forceUnauthorizedOnce: false,
+    failNextRideCreate: false,
+    registerShouldFail: false,
   };
 }
 
@@ -54,10 +68,15 @@ function driverSummary() {
   };
 }
 
-function ride(status: RideStatus = "requested", withDriver = false) {
+function ride(
+  status: RideStatus = "requested",
+  withDriver = false,
+  state?: MockApiState,
+) {
+  const isCancelled = status === "cancelled" || (state?.rideCancelled ?? false);
   return {
     id: "ride-e2e-1",
-    status,
+    status: isCancelled ? "cancelled" : status,
     passenger,
     driver: withDriver ? driverSummary() : null,
     origin: { lat: 14.5995, lng: 120.9842 },
@@ -66,11 +85,15 @@ function ride(status: RideStatus = "requested", withDriver = false) {
     destination_address: "Airport",
     estimated_fare: 120.5,
     actual_fare: status === "completed" ? 120.5 : null,
+    fare: isCancelled ? 0 : null,
     ride_type: "car",
     payment_method: "cash",
     decline_count: 0,
     created_at: now(),
     updated_at: now(),
+    cancelled_by: isCancelled ? state?.cancelledBy ?? "passenger" : null,
+    cancellation_reason: isCancelled ? "changed_plans" : null,
+    cancellation_reason_text: null,
   };
 }
 
@@ -81,22 +104,27 @@ async function json(route: Route, status: number, body: unknown) {
     headers: {
       "access-control-allow-origin": "*",
       "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-      "access-control-allow-headers": "authorization,content-type,idempotency-key",
+      "access-control-allow-headers":
+        "authorization,content-type,idempotency-key",
     },
     body: JSON.stringify(body),
   });
 }
 
-function geocodeFor(query: string): { lat: number; lng: number; address: string } {
+function geocodeFor(query: string): {
+  lat: number;
+  lng: number;
+  address: string;
+} {
   const q = query.toLowerCase();
   if (q.includes("airport")) {
     return {
       lat: 14.5086,
       lng: 121.0194,
-      address: "Ninoy Aquino International Airport, Pasay, Metro Manila, Philippines",
+      address:
+        "Ninoy Aquino International Airport, Pasay, Metro Manila, Philippines",
     };
   }
-  // Default to Manila for any other query so tests stay deterministic.
   return {
     lat: 14.5995,
     lng: 120.9842,
@@ -116,15 +144,13 @@ export async function installMockApi(page: Page, state: MockApiState) {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-          "access-control-allow-headers": "authorization,content-type,idempotency-key",
+          "access-control-allow-headers":
+            "authorization,content-type,idempotency-key",
         },
       });
     }
 
     // ---- Third-party geocoding: Google Maps + Nominatim ---------------
-    // Tests must be deterministic and CORS-clean. We intercept all
-    // outbound geocoding traffic so queries always resolve to Manila /
-    // NAIA airport instead of hitting the real internet.
     if (url.host === "maps.googleapis.com") {
       if (url.pathname.endsWith("/place/autocomplete/json")) {
         const input = url.searchParams.get("input") ?? "";
@@ -157,7 +183,6 @@ export async function installMockApi(page: Page, state: MockApiState) {
           ],
         });
       }
-      // Anything else from Google Maps (tile fetches, JS SDK, etc.) — fall through.
     }
 
     if (url.host === "nominatim.openstreetmap.org") {
@@ -198,6 +223,23 @@ export async function installMockApi(page: Page, state: MockApiState) {
       });
     }
 
+    if (method === "POST" && path === "/auth/register") {
+      if (state.registerShouldFail) {
+        return json(route, 409, {
+          code: "USER_ALREADY_EXISTS",
+          message: "Email already registered.",
+        });
+      }
+      const body = request.postDataJSON() as { email?: string };
+      const role = body.email?.includes("driver") ? "driver" : "passenger";
+      return json(route, 201, {
+        access_token: `${role}-access-token`,
+        refresh_token: `${role}-refresh-token`,
+        access_token_expires_at: "2026-12-31T00:00:00.000Z",
+        user: role === "driver" ? driver : passenger,
+      });
+    }
+
     if (method === "POST" && path === "/auth/refresh") {
       return json(route, 200, {
         access_token: "refreshed-access-token",
@@ -208,6 +250,13 @@ export async function installMockApi(page: Page, state: MockApiState) {
     }
 
     if (method === "GET" && path === "/users/me") {
+      if (state.forceUnauthorizedOnce) {
+        state.forceUnauthorizedOnce = false;
+        return json(route, 401, {
+          code: "TOKEN_INVALID",
+          message: "Invalid token.",
+        });
+      }
       const token = request.headers()["authorization"] ?? "";
       return json(route, 200, token.includes("driver") ? driver : passenger);
     }
@@ -267,15 +316,31 @@ export async function installMockApi(page: Page, state: MockApiState) {
     }
 
     if (method === "GET" && path === "/driver/rides/incoming") {
-      if (!state.rideRequested || state.rideStatus !== "requested") {
+      if (state.driverDeclined) {
+        return json(route, 404, { code: "NOT_FOUND", message: "No ride" });
+      }
+      if (
+        !state.rideRequested ||
+        state.rideStatus !== "requested" ||
+        state.rideCancelled
+      ) {
         return json(route, 404, { code: "NOT_FOUND", message: "No ride" });
       }
       return json(route, 200, ride("requested"));
     }
 
     if (method === "POST" && path === "/rides") {
+      if (state.failNextRideCreate) {
+        state.failNextRideCreate = false;
+        return json(route, 503, {
+          code: "NO_DRIVERS_AVAILABLE",
+          message: "No drivers available.",
+        });
+      }
       state.rideRequested = true;
       state.rideStatus = "requested";
+      state.rideCancelled = false;
+      state.cancelledBy = undefined;
       return json(route, 201, ride("requested"));
     }
 
@@ -283,10 +348,13 @@ export async function installMockApi(page: Page, state: MockApiState) {
       if (!state.rideRequested) {
         return json(route, 404, { code: "NOT_FOUND", message: "No ride" });
       }
+      if (state.rideCancelled) {
+        return json(route, 404, { code: "NOT_FOUND", message: "No ride" });
+      }
       return json(
         route,
         200,
-        ride(state.rideStatus, state.rideStatus !== "requested"),
+        ride(state.rideStatus, state.rideStatus !== "requested", state),
       );
     }
 
@@ -294,28 +362,40 @@ export async function installMockApi(page: Page, state: MockApiState) {
       return json(
         route,
         200,
-        ride(state.rideStatus, state.rideStatus !== "requested"),
+        ride(state.rideStatus, state.rideStatus !== "requested", state),
       );
     }
 
     if (method === "POST" && path === "/rides/ride-e2e-1/accept") {
       state.rideStatus = "accepted";
-      return json(route, 200, ride("accepted", true));
+      return json(route, 200, ride("accepted", true, state));
+    }
+
+    if (method === "POST" && path === "/rides/ride-e2e-1/decline") {
+      state.driverDeclined = true;
+      return json(route, 200, { status: "declined", decline_count: 1 });
     }
 
     if (method === "POST" && path === "/rides/ride-e2e-1/arrive") {
       state.rideStatus = "arrived";
-      return json(route, 200, ride("arrived", true));
+      return json(route, 200, ride("arrived", true, state));
     }
 
     if (method === "POST" && path === "/rides/ride-e2e-1/start") {
       state.rideStatus = "in_progress";
-      return json(route, 200, ride("in_progress", true));
+      return json(route, 200, ride("in_progress", true, state));
     }
 
     if (method === "POST" && path === "/rides/ride-e2e-1/complete") {
       state.rideStatus = "completed";
-      return json(route, 200, ride("completed", true));
+      return json(route, 200, ride("completed", true, state));
+    }
+
+    if (method === "POST" && path === "/rides/ride-e2e-1/cancel") {
+      state.rideCancelled = true;
+      state.rideStatus = "cancelled";
+      state.cancelledBy = "passenger";
+      return json(route, 200, ride("cancelled", false, state));
     }
 
     return route.continue();
