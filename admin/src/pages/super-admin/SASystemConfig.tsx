@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { AlertRulesTab } from '@/components/super-admin/system/AlertRulesTab';
 import { Badge } from '@/components/ui/Badge';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import {
@@ -271,13 +271,16 @@ function IntegrationCard({ integration, onSave, onTest }: IntegrationCardProps) 
         </Button>
       </div>
 
-      <ConfirmModal
+      <ConfirmationModal
         open={confirmOpen}
         title="Update Live Credentials"
-        message={`This will replace live ${labelForService(service)} credentials. Continue?`}
+        description={`This will replace live ${labelForService(service)} credentials. Continue?`}
         confirmLabel="Update"
-        onConfirm={handleConfirm}
-        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          handleConfirm();
+          setConfirmOpen(false);
+        }}
+        onCancel={() => setConfirmOpen(false)}
       />
     </div>
   );
@@ -367,17 +370,17 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
         />
       </button>
 
-      <ConfirmModal
+      <ConfirmationModal
         open={confirmOpen}
         title="Enable Maintenance Mode"
-        message="This will disable ride booking for all users and show a maintenance message. Are you sure you want to enable Maintenance Mode?"
+        description="This will disable ride booking for all users and show a maintenance message. Are you sure you want to enable Maintenance Mode?"
         confirmLabel="Enable"
         variant="danger"
         onConfirm={() => {
           onToggle(flag.key, true);
           setConfirmOpen(false);
         }}
-        onClose={() => setConfirmOpen(false)}
+        onCancel={() => setConfirmOpen(false)}
       />
     </div>
   );

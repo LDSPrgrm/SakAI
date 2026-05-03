@@ -43,7 +43,8 @@ npm run generate:types   # Regenerate src/types/openapi.d.ts from ../openapi/swa
 - `/src/components/ui/` - Reusable atomic UI primitives (Button, Card, Table, Tabs, Input, Badge, ...).
 - `/src/components/layout/`, `shared/`, `forms/` - Composed layout, shared widgets, and form components.
 - `/src/components/super-admin/{dashboard,tables,modals,forms,shared}/` - Superadmin feature components.
-- `/src/components/Header.tsx`, `Sidebar.tsx`, `ErrorBoundary.tsx` - Top-level chrome.
+- `/src/components/Header.tsx`, `ErrorBoundary.tsx` - Top-level chrome.
+- `/src/components/layout/AppSidebar.tsx` - Unified sidebar consumed by both `AdminShell` and `SuperAdminShell`. Nav config lives in `/src/nav/{admin,super-admin}.ts`. Brand color comes from `useRoleAccent()` — never hardcode `text-primary` / `bg-warning` for brand chrome.
 - `/src/components/RequirePermission.tsx` - Route/element guard backed by `usePermissions`.
 - `/src/pages/` - One file per admin section (Dashboard, UserManagement, RideManagement, Payments, FareSurge, SafetyCompliance, Reports, Settings, Login).
 - `/src/pages/super-admin/` - Superadmin-only views (audit logs, role management, system config, payments, safety compliance).
@@ -66,6 +67,9 @@ When contributing to this project, please adhere to the following rules:
 6. **Code Style:** Write clean, functional React components with TypeScript interfaces for props.
 7. **API types:** Do not hand-write request/response types that belong in OpenAPI. Update `../openapi/swagger.yaml` and run `npm run generate:types`.
 8. **Testing:** Vitest + Testing Library live alongside code. Run `npm test` before declaring work done. Don't add Jest.
+9. **Admin / SA page parity:** All admin/SA page pairs (Dashboard, Payments, SafetyCompliance, Reports) share the same skeleton: `<PageHeader> → KpiRow → MainGrid → role-extras → modals`. SA-deeper features (tabs, batch toolbars, gateway/commission editors, LTFRB section) render below the MainGrid as sub-components — never interleaved into the shared skeleton.
+10. **Brand accent:** Use `useRoleAccent()` from `@/hooks/useRoleAccent` for any brand-colored surface (KPI tone, ActionQueueCard tone, sidebar logo, active-link). Status colors (success/warning/danger) stay literal. Never hardcode `'primary'` or `'sa-accent'` tones in page files.
+11. **Confirmation modals:** Use `ConfirmationModal` from `@/components/shared/ConfirmationModal`. The legacy `ConfirmModal` adapter and the SA re-export have been removed.
 
 ## Gotchas
 - Dev server runs on **port 3000** (see `package.json`) — some older docs (e.g. `TEST_ACCOUNTS.md`) reference `5173`; 3000 is correct.

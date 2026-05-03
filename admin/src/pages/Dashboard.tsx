@@ -16,6 +16,7 @@ import { useKycQueue, useIncidents } from '@/hooks/useSafety';
 import { usePayouts, useGatewayConfigs } from '@/hooks/usePayments';
 import { useReportChart } from '@/hooks/useReports';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRoleAccent } from '@/hooks/useRoleAccent';
 import { formatPHP, cn } from '@/lib/utils';
 
 function useNow(intervalMs = 30_000) {
@@ -29,6 +30,7 @@ function useNow(intervalMs = 30_000) {
 
 export function Dashboard() {
   const { can } = usePermissions();
+  const accent = useRoleAccent();
   const canPayments = can('payments', 'read');
   const canPayouts = can('payouts', 'read');
   const canKyc = can('kyc_verification', 'read');
@@ -112,14 +114,14 @@ export function Dashboard() {
       title: 'Revenue Today',
       value: formatPHP(metrics.revenue_today ?? 0),
       icon: PhilippinePeso,
-      tone: 'primary' as const,
+      tone: accent.kpiTone,
       trend: metrics.revenue_trend,
     },
     {
       title: 'Rides Today',
       value: (metrics.rides_today ?? 0).toLocaleString(),
       icon: Activity,
-      tone: 'primary' as const,
+      tone: accent.kpiTone,
       trend: metrics.rides_trend,
     },
     {
@@ -261,7 +263,7 @@ export function Dashboard() {
                 count={pendingKyc}
                 to="/admin/safety"
                 icon={ShieldCheck}
-                tone="primary"
+                tone={accent.queueTone}
                 isLoading={kycQuery.isLoading}
                 emptyHint="Queue empty"
               />
@@ -283,7 +285,7 @@ export function Dashboard() {
                 count={pendingPayouts}
                 to="/admin/payments"
                 icon={Wallet}
-                tone="primary"
+                tone={accent.queueTone}
                 isLoading={payoutsQuery.isLoading}
                 emptyHint="All paid out"
               />

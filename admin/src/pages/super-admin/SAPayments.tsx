@@ -20,9 +20,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { PageHeader } from '@/components/shared/PageHeader';
 import type { PaymentSummary } from '@/api/super-admin/payments';
 import {
   useTransactions, usePayouts, usePaymentSummary,
@@ -159,8 +160,7 @@ export function SAPayments() {
   return (
     <div className="space-y-6 p-6">
 
-      {/* Page title */}
-      <h1 className="text-2xl font-bold text-text-main">Financial Controls</h1>
+      <PageHeader title="Financial Controls" />
 
       {/* Section 1 — Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -187,10 +187,10 @@ export function SAPayments() {
       </div>
 
       {/* Section 2 — Transaction History + Pending Driver Payouts */}
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Transaction History */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle>Transaction History</CardTitle>
@@ -327,7 +327,7 @@ export function SAPayments() {
         </Card>
 
         {/* Pending Driver Payouts */}
-        <Card>
+        <Card className="lg:col-span-1">
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <CardTitle>Pending Driver Payouts</CardTitle>
@@ -470,14 +470,17 @@ export function SAPayments() {
       />
 
       {/* Approve Payout Confirm Modal */}
-      <ConfirmModal
+      <ConfirmationModal
         open={confirmModal.open}
         title="Approve Payout"
-        message={`Are you sure you want to approve the payout batch "${confirmModal.batchName}"? This action cannot be undone.`}
+        description={`Are you sure you want to approve the payout batch "${confirmModal.batchName}"? This action cannot be undone.`}
         variant="success"
         confirmLabel="Approve"
-        onConfirm={handleApprovePayout}
-        onClose={() => setConfirmModal((s) => ({ ...s, open: false }))}
+        onConfirm={() => {
+          handleApprovePayout();
+          setConfirmModal((s) => ({ ...s, open: false }));
+        }}
+        onCancel={() => setConfirmModal((s) => ({ ...s, open: false }))}
       />
     </div>
   );

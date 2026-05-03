@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useReportList, useReportChart, useExportReport } from '@/hooks/useReports';
 import type { ReportRange } from '@/api/super-admin/reports';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
@@ -91,17 +92,18 @@ export function SAReports() {
   return (
     <div className="space-y-6 p-6">
 
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-text-main">Reports & Analytics</h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-          <Button variant="outline" size="sm" onClick={handleExportAll}>
-            <Download className="w-4 h-4 mr-1.5" />
-            Export CSV
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Reports & Analytics"
+        actions={
+          <>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+            <Button variant="outline" size="sm" onClick={handleExportAll}>
+              <Download className="w-4 h-4 mr-1.5" />
+              Export CSV
+            </Button>
+          </>
+        }
+      />
 
       {/* Section 1 — Charts */}
       {loading ? (

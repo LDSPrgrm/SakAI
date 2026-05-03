@@ -20,6 +20,7 @@ import { usePayouts, useGatewayConfigs } from '@/hooks/usePayments';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useReportChart } from '@/hooks/useReports';
 import type { AuditLog } from '@/types/super-admin/audit';
+import { useRoleAccent } from '@/hooks/useRoleAccent';
 import { formatPHP, cn } from '@/lib/utils';
 
 const LATENCY_GREEN = 250;
@@ -78,6 +79,7 @@ function auditLogToFeedEvent(entry: AuditLog, index: number): FeedEvent {
 }
 
 export function SADashboard() {
+  const accent = useRoleAccent();
   const metricsQuery = useDashboardMetrics();
   const heatmapQuery = useDriverHeatmap();
   const infraQuery = useInfraMetrics({ refetchInterval: 30_000 });
@@ -158,14 +160,14 @@ export function SADashboard() {
       title: 'Revenue Today',
       value: formatPHP(metrics.revenue_today ?? 0),
       icon: PhilippinePeso,
-      tone: 'sa-accent' as const,
+      tone: accent.kpiTone,
       trend: metrics.revenue_trend,
     },
     {
       title: 'Rides Today',
       value: (metrics.rides_today ?? 0).toLocaleString(),
       icon: Activity,
-      tone: 'sa-accent' as const,
+      tone: accent.kpiTone,
       trend: metrics.rides_trend,
     },
     {
@@ -336,7 +338,7 @@ export function SADashboard() {
             count={pendingKyc}
             to="/super-admin/safety"
             icon={ShieldCheck}
-            tone="amber"
+            tone={accent.queueTone}
             isLoading={kycQuery.isLoading}
             emptyHint="Queue empty"
           />
@@ -354,7 +356,7 @@ export function SADashboard() {
             count={pendingPayouts}
             to="/super-admin/payments"
             icon={Wallet}
-            tone="primary"
+            tone={accent.queueTone}
             isLoading={payoutsQuery.isLoading}
             emptyHint="All paid out"
           />

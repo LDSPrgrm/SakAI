@@ -1,96 +1,79 @@
 import React, { useMemo, useState } from 'react';
+import { Download } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Download, Calendar } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { useVehicleDistribution } from '@/hooks/useMetrics';
+import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useReportChart, useReportList, useExportReport } from '@/hooks/useReports';
 import type { ReportRange } from '@/api/super-admin/reports';
-import { CHART_COLORS } from '@/utils/chartColors';
+import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
 
 const COLORS = CHART_COLORS;
+const DARK_TOOLTIP = DARK_TOOLTIP_STYLE;
 
-interface ChartDataPoint {
-  label?: string;
-  name?: string;
-  value: number;
-}
-
-interface ReportDef {
+interface ReportItem {
   id: string;
   title: string;
   description: string;
 }
 
-function isoDaysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
+function toIsoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function Reports() {
-  const [from, setFrom] = useState<string>(isoDaysAgo(29));
-  const [to, setTo] = useState<string>(todayISO());
-  const range: ReportRange = useMemo(() => ({ from, to }), [from, to]);
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
+  const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
 
-  const vehicleQuery = useVehicleDistribution();
-  const paymentQuery = useReportChart('payment-methods', range);
-  const reportsQuery = useReportList();
+  const apiRange: ReportRange = useMemo(
+    () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
+    [dateRange.from, dateRange.to],
+  );
+
+  const reportListQuery = useReportList();
+  const vehicleQuery = useReportChart('vehicle-distribution', apiRange);
+  const paymentQuery = useReportChart('payment-methods', apiRange);
+  const waitTimeQuery = useReportChart('wait-time', apiRange);
+  const ratingsQuery = useReportChart('average-ratings', apiRange);
   const exportReport = useExportReport();
 
-  const vehicleData = ((vehicleQuery.data ?? []) as ChartDataPoint[]).map(p => ({
-    name: p.name ?? p.label ?? 'Unknown',
-    value: p.value,
-  }));
-  const paymentData = ((paymentQuery.data ?? []) as ChartDataPoint[]).map(p => ({
-    name: p.name ?? p.label ?? 'Unknown',
-    value: p.value,
-  }));
-  const reportList = (reportsQuery.data ?? []) as ReportDef[];
-  const loading = reportsQuery.isPending;
+  const reportList = (reportListQuery.data ?? []) as ReportItem[];
+
+  const vehicleData = ((vehicleQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const paymentData = ((paymentQuery.data ?? []) as { label?: string; name?: string; value: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
+  const waitTimeData = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
+    .map(d => ({ name: d.name ?? d.label ?? '', wait: d.wait ?? d.value ?? 0 }));
+  const ratingsData = (ratingsQuery.data ?? []) as {
+    name: string; driver: number; rider: number;
+  }[];
+  const loading = reportListQuery.isPending;
 
   const openExportedCsv = async (type: string) => {
-    const res = await exportReport.mutateAsync({ type, range }).catch(() => null);
+    const res = await exportReport.mutateAsync({ type, range: apiRange }).catch(() => null);
     if (res?.url) window.open(res.url, '_blank');
   };
 
-  const handleExportAll = () => openExportedCsv('all');
-  const handleDownload = (reportId: string) => openExportedCsv(reportId);
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-text-main">Reports & Analytics</h1>
-        <div className="flex gap-3">
-          <div className="flex items-center gap-2 bg-surface border border-border rounded-lg px-3 py-2">
-            <Calendar className="w-4 h-4 text-text-muted" />
-            <input
-              type="date"
-              value={from}
-              onChange={e => setFrom(e.target.value)}
-              className="bg-transparent text-sm text-text-main outline-none"
-              aria-label="From date"
-            />
-            <span className="text-sm text-text-muted">→</span>
-            <input
-              type="date"
-              value={to}
-              onChange={e => setTo(e.target.value)}
-              className="bg-transparent text-sm text-text-main outline-none"
-              aria-label="To date"
-            />
-          </div>
-          <Button className="gap-2" onClick={handleExportAll}>
-            <Download className="w-4 h-4" /> Export All
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Reports & Analytics"
+        actions={
+          <>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+            <Button className="gap-2" onClick={() => openExportedCsv(selectedReport)}>
+              <Download className="w-4 h-4" /> Export All
+            </Button>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Rides by Vehicle Type</CardTitle>
@@ -104,22 +87,18 @@ export function Reports() {
                   <PieChart>
                     <Pie
                       data={vehicleData}
-                      cx="50%"
-                      cy="50%"
+                      dataKey="value"
+                      nameKey="name"
                       innerRadius={50}
                       outerRadius={90}
                       paddingAngle={5}
-                      dataKey="value"
                       label
                     >
                       {vehicleData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`vehicle-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip
-                      contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#333', color: '#FFF' }}
-                      itemStyle={{ color: '#FFF' }}
-                    />
+                    <Tooltip {...DARK_TOOLTIP} />
                     <Legend verticalAlign="bottom" height={36} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -141,22 +120,18 @@ export function Reports() {
                   <PieChart>
                     <Pie
                       data={paymentData}
-                      cx="50%"
-                      cy="50%"
+                      dataKey="value"
+                      nameKey="name"
                       innerRadius={50}
                       outerRadius={90}
                       paddingAngle={5}
-                      dataKey="value"
                       label
                     >
                       {paymentData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`payment-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip
-                      contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#333', color: '#FFF' }}
-                      itemStyle={{ color: '#FFF' }}
-                    />
+                    <Tooltip {...DARK_TOOLTIP} />
                     <Legend verticalAlign="bottom" height={36} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -165,29 +140,112 @@ export function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Available Reports</CardTitle>
+            <CardTitle>Wait Time Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <p className="text-sm text-text-muted py-4 text-center">Loading reports...</p>
-            ) : reportList.length === 0 ? (
-              <p className="text-sm text-text-muted py-4 text-center">No reports defined yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {reportList.map(report => (
-                  <ReportCard
-                    key={report.id}
-                    title={report.title}
-                    description={report.description}
-                    onDownload={() => handleDownload(report.id)}
-                  />
-                ))}
-              </div>
-            )}
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={waitTimeData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  unit=" min"
+                />
+                <Tooltip {...DARK_TOOLTIP} formatter={(value: number) => [`${value} min`, 'Wait Time']} />
+                <ReferenceLine
+                  y={5}
+                  stroke="#FBBC05"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: 'Target 5min',
+                    fill: '#FBBC05',
+                    fontSize: 11,
+                    position: 'insideTopRight',
+                  }}
+                />
+                <Line type="monotone" dataKey="wait" stroke="#1A73E8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Average Ratings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={ratingsData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={[1, 5]}
+                />
+                <Tooltip {...DARK_TOOLTIP} />
+                <Legend />
+                <Line type="monotone" dataKey="driver" name="Driver Rating" stroke="#1A73E8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="rider" name="Rider Rating" stroke="#34A853" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-text-main mb-4">Available Reports</h2>
+        {loading ? (
+          <p className="text-sm text-text-muted py-4 text-center">Loading reports...</p>
+        ) : reportList.length === 0 ? (
+          <p className="text-sm text-text-muted py-4 text-center">No reports defined yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reportList.map((report) => (
+              <div
+                key={report.id}
+                className={`p-4 bg-surface-hover rounded-lg border flex flex-col gap-3 transition-colors cursor-pointer ${
+                  selectedReport === report.id
+                    ? 'border-primary ring-1 ring-primary'
+                    : 'border-border hover:border-border/80'
+                }`}
+                onClick={() => setSelectedReport(report.id)}
+              >
+                <div>
+                  <p className="font-medium text-text-main">{report.title}</p>
+                  <p className="text-sm text-text-muted mt-1">{report.description}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void openExportedCsv(report.id);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1.5" />
+                  Download CSV
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -197,18 +255,6 @@ function EmptyChart({ loading }: { loading: boolean }) {
   return (
     <div className="h-full flex items-center justify-center text-sm text-text-muted">
       {loading ? 'Loading…' : 'No data for the selected range.'}
-    </div>
-  );
-}
-
-function ReportCard({ title, description, onDownload }: { title: string; description: string; onDownload: () => void }) {
-  return (
-    <div className="p-4 bg-surface-hover border border-border rounded-lg flex flex-col h-full">
-      <h4 className="font-medium text-text-main mb-2">{title}</h4>
-      <p className="text-sm text-text-muted flex-1">{description}</p>
-      <Button variant="outline" size="sm" className="w-full mt-4 gap-2" onClick={onDownload}>
-        <Download className="w-4 h-4" /> Download CSV
-      </Button>
     </div>
   );
 }
