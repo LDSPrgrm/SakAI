@@ -21,7 +21,7 @@ test.describe("Driver registration", () => {
       .first()
       .click({ force: true });
 
-    // Register screen is reached. It has 9 fields:
+    // Register screen has 9 textboxes:
     //   name, email, password, confirm password,
     //   vehicle make, model, plate, color, year.
     const fields = page.getByRole("textbox");
@@ -41,12 +41,26 @@ test.describe("Driver registration", () => {
 
     for (let i = 0; i < values.length; i++) {
       const field = fields.nth(i);
-      if (await field.isVisible().catch(() => false)) {
+      // Scroll into view then verify Flutter actually accepted the value.
+      // The Make field flakes when the form is mid-scroll: fill() resolves
+      // without error but the TextField state stays empty. Retry once via
+      // pressSequentially if a fill silently dropped.
+      await field.scrollIntoViewIfNeeded().catch(() => {});
+      await field.click();
+      await field.fill(values[i]);
+      const got = await field.inputValue().catch(() => "");
+      if (got !== values[i]) {
         await field.click();
-        await field.fill(values[i]);
+        await field.fill("");
+        await field.pressSequentially(values[i], { delay: 20 });
       }
     }
 
+    await page
+      .getByRole("button", { name: /Create Account|Sign Up|Register/i })
+      .first()
+      .scrollIntoViewIfNeeded()
+      .catch(() => {});
     await page
       .getByRole("button", { name: /Create Account|Sign Up|Register/i })
       .first()
