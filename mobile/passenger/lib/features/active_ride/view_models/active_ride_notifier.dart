@@ -8,7 +8,7 @@ import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/e2e_mode_stub.dart'
     if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
-import '../models/active_ride_state.dart';
+import 'package:passenger/features/active_ride/models/active_ride_state.dart';
 
 /// Callback types for navigation actions from the notifier.
 typedef OnRideCompleted = void Function(String rideId);
@@ -26,7 +26,15 @@ class ActiveRideController {
 
   late final StreamController<AsyncValue<ActiveRideState>> _stateController =
       StreamController<AsyncValue<ActiveRideState>>.broadcast(
-        onListen: _startLoading,
+        onListen: () {
+          // Replay current state to new listener
+          scheduleMicrotask(() {
+            if (!_stateController.isClosed) {
+              _stateController.add(_state);
+            }
+          });
+          _startLoading();
+        },
       );
   Stream<AsyncValue<ActiveRideState>> get stateStream =>
       _stateController.stream;
