@@ -153,15 +153,15 @@ void main() {
 
       // Listening starts loading
       final states = <ActiveRideState>[];
+      final completer = Completer<void>();
       final sub = controller.stateStream.listen((asyncValue) {
         if (asyncValue is AsyncData<ActiveRideState>) {
           states.add(asyncValue.value);
+          if (!completer.isCompleted) completer.complete();
         }
       });
 
-      // Wait for loadRide to complete
-      await Future.delayed(const Duration(milliseconds: 100));
-
+      await completer.future.timeout(const Duration(seconds: 1));
       expect(states.length, 1);
       final state = states.first;
       expect(state.ride?.id, 'ride-123');
@@ -210,7 +210,7 @@ void main() {
         }
       });
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await _waitFor(() => states.isNotEmpty);
       expect(states.last.currentStep, ActiveRideStep.enRoute);
 
       // Push WS event
@@ -225,8 +225,7 @@ void main() {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 50));
-      expect(states.length, 2);
+      await _waitFor(() => states.length >= 2 && states.last.currentStep == ActiveRideStep.arrived);
       expect(states.last.currentStep, ActiveRideStep.arrived);
 
       await sub.cancel();
@@ -271,7 +270,7 @@ void main() {
         }
       });
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await _waitFor(() => states.isNotEmpty);
 
       // Push WS event
       wsClient.addEvent(
@@ -284,7 +283,7 @@ void main() {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await _waitFor(() => states.last.driverLocation != null);
       expect(states.last.driverLocation?.latitude, 40.7128);
       expect(states.last.driverLocation?.longitude, -74.0060);
 
@@ -327,7 +326,7 @@ void main() {
       });
 
       final sub = controller.stateStream.listen((_) {});
-      await Future.delayed(const Duration(milliseconds: 50));
+      await _waitFor(() => controller.state.hasValue);
 
       // Push WS event
       wsClient.addEvent(
@@ -337,10 +336,20 @@ void main() {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 50));
+      await _waitFor(() => cancelledRideId != null);
       expect(cancelledRideId, 'ride-123');
 
       await sub.cancel();
     });
   });
+}
+
+Future<void> _waitFor(bool Function() condition) async {
+  final start = DateTime.now();
+  while (!condition()) {
+    if (DateTime.now().difference(start) > const Duration(seconds: 2)) {
+      throw Exception('Timed out waiting for condition');
+    }
+    await Future.delayed(const Duration(milliseconds: 10));
+  }
 }
