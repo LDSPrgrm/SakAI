@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ActionMenu, type ActionMenuItem } from '@/components/super-admin/shared/ActionMenu';
 import { RoleBadge } from '@/components/super-admin/shared/RoleBadge';
@@ -433,14 +433,17 @@ export function SARoleManagement() {
       )}
 
       {/* ── Delete Confirm ── */}
-      <ConfirmModal
+      <ConfirmationModal
         open={deleteConfirm.open}
         title="Delete Role"
-        message={`Delete the "${deleteConfirm.role?.name}" role? This action cannot be undone.`}
+        description={`Delete the "${deleteConfirm.role?.name}" role? This action cannot be undone.`}
         variant="danger"
         confirmLabel="Delete"
-        onConfirm={handleDelete}
-        onClose={() => setDeleteConfirm({ open: false, role: null })}
+        onConfirm={() => {
+          handleDelete();
+          setDeleteConfirm({ open: false, role: null });
+        }}
+        onCancel={() => setDeleteConfirm({ open: false, role: null })}
       />
 
       <style>{`

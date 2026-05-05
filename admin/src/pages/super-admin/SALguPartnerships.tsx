@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -267,10 +267,10 @@ export function SALguPartnerships() {
         />
       )}
 
-      <ConfirmModal
+      <ConfirmationModal
         open={!!deleteLguId}
         title="Delete Partnership"
-        message="This removes the partnership record. Historical audit rows remain."
+        description="This removes the partnership record. Historical audit rows remain."
         variant="danger"
         confirmLabel="Delete"
         onConfirm={async () => {
@@ -278,13 +278,14 @@ export function SALguPartnerships() {
             await deleteLgu.mutateAsync(deleteLguId);
             flashBanner();
           }
+          setDeleteLguId(null);
         }}
-        onClose={() => setDeleteLguId(null)}
+        onCancel={() => setDeleteLguId(null)}
       />
-      <ConfirmModal
+      <ConfirmationModal
         open={!!deleteAreaId}
         title="Delete Service Area"
-        message="Partnerships linked to this area will have their reference cleared."
+        description="Partnerships linked to this area will have their reference cleared."
         variant="danger"
         confirmLabel="Delete"
         onConfirm={async () => {
@@ -292,8 +293,9 @@ export function SALguPartnerships() {
             await deleteArea.mutateAsync(deleteAreaId);
             flashBanner();
           }
+          setDeleteAreaId(null);
         }}
-        onClose={() => setDeleteAreaId(null)}
+        onCancel={() => setDeleteAreaId(null)}
       />
     </div>
   );

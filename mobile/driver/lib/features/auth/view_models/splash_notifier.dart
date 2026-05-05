@@ -29,9 +29,10 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
     // Minimal delay for UX in production, can be zero in tests.
     await Future.delayed(Duration.zero);
 
-    // E2E bypass: skip backend call when running under Playwright tests.
-    // The ?sakai-e2e=true URL param signals a test environment where no backend is available.
-    if (kIsWeb && _isE2EMode()) {
+    // Playwright bypass: skip backend call only when the ?sakai-e2e=true URL
+    // flag is present. integration_test specs use the real splash flow with
+    // fake repositories, so they should NOT take this path.
+    if (kIsWeb && _isPlaywrightMode()) {
       final onboardingForE2E = ref.read(onboardingServiceProvider);
       if (!onboardingForE2E.hasSeenWelcome()) {
         ref.read(authStateProvider.notifier).markUnauthenticated();
@@ -90,9 +91,9 @@ class SplashNotifier extends AsyncNotifier<SplashState> {
 
   /// Returns true when the app is opened with `?sakai-e2e=true` query param.
   /// Only relevant on Flutter Web; always returns false on other platforms.
-  static bool _isE2EMode() {
+  static bool _isPlaywrightMode() {
     try {
-      return isE2EMode();
+      return isPlaywrightMode();
     } catch (_) {
       return false;
     }

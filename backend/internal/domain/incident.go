@@ -16,6 +16,7 @@ type Incident struct {
 	Type            string     `json:"type"`   // 'sos_triggered', 'reported_incident', etc.
 	Status          string     `json:"status"` // 'open', 'investigating', 'resolved', 'escalated'
 	AssignedTo      *uuid.UUID `json:"assigned_to,omitempty"`
+	AssignedToName  string     `json:"assigned_to_name,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`

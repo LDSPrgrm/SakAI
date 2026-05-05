@@ -169,6 +169,8 @@ class HomeNotifier extends Notifier<HomeState> {
       );
     } catch (e) {
       debugPrint('[HomeNotifier] Nearby driver poll error: $e');
+      // Keep whatever placeholder rideTypeOptions setDestination already
+      // populated; do not clear them on transient API failures.
     }
   }
 
@@ -312,9 +314,16 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void setDestination(RideLocation destination) {
+    // Pre-populate ride type options so the UI never blocks on the
+    // "Checking nearby drivers…" loader while the first poll is in flight.
+    // Subsequent polls overwrite with live driver counts.
+    final initialOptions = state.rideTypeOptions.isEmpty
+        ? _buildRideTypeOptions(const {})
+        : state.rideTypeOptions;
     state = state.copyWith(
       status: HomeStatus.destinationSet,
       destination: destination,
+      rideTypeOptions: initialOptions,
       clearError: true,
     );
     // Start consolidated nearby driver polling (serves both ride options and map markers)

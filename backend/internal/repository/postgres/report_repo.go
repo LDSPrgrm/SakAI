@@ -68,6 +68,10 @@ func (r *reportRepo) getChartDataRange(ctx context.Context, reportType string, f
 		return r.queryDashboardRevenue(ctx, start, end)
 	case "vehicles":
 		return r.queryDashboardVehicles(ctx, start, end)
+	case "wait-time":
+		return r.queryWaitTime(ctx, start, end)
+	case "average-ratings":
+		return r.queryAverageRatings(ctx, start, end)
 	default:
 		return nil, fmt.Errorf("unknown report type %q", reportType)
 	}
@@ -312,6 +316,55 @@ func (r *reportRepo) queryDashboardRevenue(ctx context.Context, start, end time.
 		LEFT JOIN per_day p ON p.d = days.d
 		ORDER BY days.d`
 	return r.scanKV(ctx, q, []string{"name", "revenue"}, start, end)
+}
+
+// queryWaitTime returns avg pickup wait (minutes from request to driver accept)
+// per day. Days with no accepted rides emit 0 so the chart x-axis stays dense.
+func (r *reportRepo) queryWaitTime(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT created_at::date AS d,
+			       AVG(EXTRACT(EPOCH FROM (accepted_at - created_at)) / 60.0) AS wait_min
+			FROM rides
+			WHERE accepted_at IS NOT NULL
+			  AND created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name,
+		       ROUND(COALESCE(p.wait_min, 0)::numeric, 1)::float AS wait
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "wait"}, start, end)
+}
+
+// queryAverageRatings returns per-day average stars split by ratee role.
+// driver = ratings where ratee_id is the ride's driver, rider = ratings where
+// ratee_id is the ride's passenger.
+func (r *reportRepo) queryAverageRatings(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT rt.created_at::date AS d,
+			       AVG(rt.stars) FILTER (WHERE rt.ratee_id = rd.driver_id)    AS driver_avg,
+			       AVG(rt.stars) FILTER (WHERE rt.ratee_id = rd.passenger_id) AS rider_avg
+			FROM ratings rt
+			JOIN rides rd ON rd.id = rt.ride_id
+			WHERE rt.created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name,
+		       ROUND(COALESCE(p.driver_avg, 0)::numeric, 2)::float AS driver,
+		       ROUND(COALESCE(p.rider_avg, 0)::numeric, 2)::float  AS rider
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "driver", "rider"}, start, end)
 }
 
 func (r *reportRepo) queryDashboardVehicles(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {

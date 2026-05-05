@@ -67,6 +67,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/drivers/nearby/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all nearby drivers grouping by type
+         * @description Returns aggregated counts and sample locations for all available vehicle types in the vicinity.
+         *     Used for the initial ride request screen to show available options.
+         */
+        get: operations["getNearbyDriversAllTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -168,7 +189,27 @@ export interface paths {
         get: operations["usersGetMe"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete current user account */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Account deleted successfully */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -243,6 +284,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/saved-places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List saved places
+         * @description Returns a list of saved places (home, work, etc.) for the current passenger.
+         */
+        get: operations["savedPlacesList"];
+        put?: never;
+        /**
+         * Add a saved place
+         * @description Creates a new saved place for the passenger.
+         */
+        post: operations["savedPlacesCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/saved-places/{placeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a saved place
+         * @description Deletes a saved place by ID.
+         */
+        delete: operations["savedPlacesDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available promotions
+         * @description Returns a list of active promotions/vouchers available for the authenticated passenger.
+         */
+        get: operations["promotionsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate a promotion code
+         * @description Checks if a specific promo code is valid for the current user and returns discount details.
+         */
+        post: operations["promotionsValidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/driver/status": {
         parameters: {
             query?: never;
@@ -285,6 +410,26 @@ export interface paths {
          *     WebSocket event to the passenger.
          */
         put: operations["driverUpdateLocation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/driver/rides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List authenticated driver's ride history
+         * @description Returns a paginated list of rides completed or cancelled by the driver.
+         */
+        get: operations["adminListDriverRides"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2069,7 +2214,7 @@ export interface components {
          * @description Machine-readable error code. Flutter clients should branch on this, not on `message`.
          * @enum {string}
          */
-        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION";
+        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "PROMO_INVALID" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION";
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -2476,6 +2621,11 @@ export interface components {
              * @example Driver was too far away
              */
             cancellation_reason_text?: string | null;
+            /**
+             * @description Number of times this ride was declined by drivers
+             * @default 0
+             */
+            decline_count: number;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -2792,6 +2942,8 @@ export interface components {
             driver_id?: string;
             driver_name?: string;
             assigned_to?: string | null;
+            /** @description Display name of the assignee user, resolved via JOIN. Empty when unassigned. */
+            assigned_to_name?: string;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -3516,6 +3668,79 @@ export interface components {
             /** Format: date-time */
             lastUpdated?: string;
         };
+        SavedPlace: {
+            /** Format: uuid */
+            id: string;
+            /** @example Home */
+            name: string;
+            /** @example 123 Main St, City, Country */
+            address: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "home" | "work" | "other";
+            /** Format: date-time */
+            readonly createdAt?: string;
+        };
+        SavedPlaceCreateRequest: {
+            /** @example Office */
+            name: string;
+            /** @example 456 Business Rd, City, Country */
+            address: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "home" | "work" | "other";
+        };
+        Promotion: {
+            /** Format: uuid */
+            id: string;
+            /** @example WELCOME50 */
+            code: string;
+            /** @example 50% Off First Ride */
+            title?: string;
+            /** @example Get 50% discount on your first ride, up to $5. */
+            description: string;
+            /** Format: double */
+            discountValue: number;
+            /**
+             * @example percentage
+             * @enum {string}
+             */
+            discountType: "percentage" | "fixed";
+            /**
+             * Format: double
+             * @description Maximum discount amount for percentage types
+             */
+            maxDiscount?: number | null;
+            /**
+             * Format: double
+             * @description Minimum ride fare required to apply this promo
+             */
+            minRideAmount?: number | null;
+            /** Format: date-time */
+            expiresAt: string;
+            terms?: string | null;
+        };
+        PromotionValidateRequest: {
+            /** @example SAKAI2026 */
+            code: string;
+            /**
+             * Format: double
+             * @description Optional fare to check if minimum amount criteria is met
+             */
+            rideFare?: number | null;
+        };
     };
     responses: {
         /** @description Invalid request payload or missing required fields */
@@ -3592,6 +3817,21 @@ export interface components {
                  * @example {
                  *       "code": "RATE_LIMIT_EXCEEDED",
                  *       "message": "Too many requests. Please slow down."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Unexpected server error */
+        InternalError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "INTERNAL_SERVER_ERROR",
+                 *       "message": "An unexpected error occurred"
                  *     }
                  */
                 "application/json": components["schemas"]["ErrorResponse"];
@@ -3711,6 +3951,33 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    getNearbyDriversAllTypes: {
+        parameters: {
+            query: {
+                lat: number;
+                lng: number;
+                radius_m?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aggregated nearby drivers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["NearbyDriver"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
         };
     };
     authRegister: {
@@ -4033,6 +4300,142 @@ export interface operations {
             };
         };
     };
+    savedPlacesList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of saved places */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPlace"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    savedPlacesCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPlaceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPlace"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    savedPlacesDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Place not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    promotionsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of promotions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Promotion"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    promotionsValidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionValidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Promotion is valid */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Promotion"];
+                };
+            };
+            /** @description Invalid or expired code */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PROMO_INVALID",
+                     *       "message": "This code has expired or is not valid for your account"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     driverSetStatus: {
         parameters: {
             query?: never;
@@ -4099,6 +4502,36 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    adminListDriverRides: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: components["parameters"]["Page"];
+                /** @description Items per page */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Driver's ride list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        rides?: components["schemas"]["RideResponse"][];
+                        pagination?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     driverGetIncomingRide: {

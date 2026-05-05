@@ -16,8 +16,10 @@ import { useIsCashlessEnabled } from '@/hooks/useSystem';
 const CASHLESS_METHODS = new Set(['gcash', 'paymaya', 'card']);
 import type { Transaction, DriverPayout } from '@/types/super-admin';
 import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { SummaryCard } from '@/components/shared/SummaryCard';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -129,21 +131,23 @@ export function Payments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Payments & Earnings</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker value={range} onChange={(r) => { setRange(r); setPage(1); }} />
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={handleExport}
-            disabled={!canExportReports}
-            title={exportDisabledTitle}
-          >
-            <Download className="w-4 h-4" /> Export Weekly Report
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Payments & Earnings"
+        actions={
+          <>
+            <DateRangePicker value={range} onChange={(r) => { setRange(r); setPage(1); }} />
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleExport}
+              disabled={!canExportReports}
+              title={exportDisabledTitle}
+            >
+              <Download className="w-4 h-4" /> Export Weekly Report
+            </Button>
+          </>
+        }
+      />
 
       {!cashlessEnabled && (
         <div
@@ -159,25 +163,25 @@ export function Payments() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           title="Total Revenue (30d)"
-          amount={summary ? formatPHP(summary.total_revenue ?? 0) : '—'}
+          value={summary ? formatPHP(summary.total_revenue ?? 0) : '—'}
           icon={<Wallet className="w-5 h-5 text-primary" />}
         />
         <SummaryCard
           title="Driver Payouts (30d)"
-          amount={summary ? formatPHP(summary.payouts ?? 0) : '—'}
+          value={summary ? formatPHP(summary.payouts ?? 0) : '—'}
           icon={<ArrowUpRight className="w-5 h-5 text-danger" />}
         />
         <SummaryCard
           title="Platform Commission"
-          amount={summary ? formatPHP(summary.commission ?? 0) : '—'}
+          value={summary ? formatPHP(summary.commission ?? 0) : '—'}
           icon={<ArrowDownRight className="w-5 h-5 text-success" />}
         />
         <SummaryCard
           title="Pending Settlements"
-          amount={summary ? formatPHP(summary.pending_settlements ?? 0) : '—'}
+          value={summary ? formatPHP(summary.pending_settlements ?? 0) : '—'}
           icon={<CheckCircle className="w-5 h-5 text-warning" />}
         />
       </div>
@@ -296,39 +300,23 @@ export function Payments() {
         </Card>
       </div>
 
-      <ConfirmModal
+      <ConfirmationModal
         open={payoutConfirm.open}
         title="Approve payout?"
-        message={
+        description={
           payoutConfirm.payout
             ? `Approve batch ${payoutConfirm.payout.batch} — ${payoutConfirm.payout.driver_count} drivers · ${formatPHP(payoutConfirm.payout.total_amount ?? 0)}?`
             : ''
         }
         confirmLabel="Approve"
         variant="success"
-        onConfirm={confirmApprovePayout}
-        onClose={() => setPayoutConfirm({ open: false, payout: null })}
+        onConfirm={() => {
+          confirmApprovePayout();
+          setPayoutConfirm({ open: false, payout: null });
+        }}
+        onCancel={() => setPayoutConfirm({ open: false, payout: null })}
       />
     </div>
   );
 }
 
-function SummaryCard({ title, amount, icon }: { title: string; amount: string; icon: React.ReactNode }) {
-  return (
-    <Card>
-      <CardContent className="p-5 flex flex-col justify-between h-full">
-        <div className="flex justify-between items-start mb-4">
-          <p className="text-sm font-medium text-text-muted">{title}</p>
-          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center flex-shrink-0">
-            {icon}
-          </div>
-        </div>
-        <div>
-          <h4 className="text-2xl sm:text-3xl font-bold text-text-main tracking-tight leading-none break-words">
-            {amount}
-          </h4>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

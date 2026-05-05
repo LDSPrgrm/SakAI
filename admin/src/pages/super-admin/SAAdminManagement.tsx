@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/Input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { RoleBadge } from '@/components/super-admin/shared/RoleBadge';
 import { ActionMenu, type ActionMenuItem } from '@/components/super-admin/shared/ActionMenu';
@@ -488,7 +488,7 @@ export function SAAdminManagement() {
       )}
 
       {/* Confirm Modal */}
-      <ConfirmModal
+      <ConfirmationModal
         open={confirmModal.open}
         title={
           confirmModal.type === 'deactivate' ? 'Deactivate Admin' :
@@ -496,7 +496,7 @@ export function SAAdminManagement() {
               confirmModal.type === 'role_change' ? 'Confirm Role Change' :
                 confirmModal.type === 'activate' ? 'Activate Admin' : 'Suspend Admin'
         }
-        message={
+        description={
           confirmModal.type === 'deactivate'
             ? `Permanently deactivate ${confirmModal.admin?.name}? They will lose access immediately and this cannot be undone.` :
             confirmModal.type === 'reset_password'
@@ -514,8 +514,11 @@ export function SAAdminManagement() {
               confirmModal.type === 'role_change' ? 'Confirm Change' :
                 confirmModal.type === 'activate' ? 'Activate' : 'Suspend'
         }
-        onConfirm={confirmAction}
-        onClose={() => setConfirmModal({ open: false, type: 'suspend', admin: null })}
+        onConfirm={() => {
+          confirmAction();
+          setConfirmModal({ open: false, type: 'suspend', admin: null });
+        }}
+        onCancel={() => setConfirmModal({ open: false, type: 'suspend', admin: null })}
       />
 
       {/* Reset Result Modal */}

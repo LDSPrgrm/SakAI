@@ -296,13 +296,13 @@ func NewIncidentRepo(db *pgxpool.Pool) domain.IncidentRepository {
 }
 
 func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
-	q := `SELECT id, ride_id, triggered_by, rider_id, driver_id, type, status, assigned_to, resolution_notes, created_at, resolved_at FROM incidents`
+	q := `SELECT i.id, i.ride_id, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to`
 	var args []any
 	if status != nil {
-		q += " WHERE status = $1"
+		q += " WHERE i.status = $1"
 		args = append(args, *status)
 	}
-	q += " ORDER BY created_at DESC"
+	q += " ORDER BY i.created_at DESC"
 
 	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
@@ -313,7 +313,7 @@ func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*do
 	var incidents []*domain.Incident
 	for rows.Next() {
 		i := &domain.Incident{}
-		if err := rows.Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
+		if err := rows.Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
 			return nil, err
 		}
 		incidents = append(incidents, i)
@@ -322,9 +322,9 @@ func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*do
 }
 
 func (r *incidentRepo) GetIncidentByID(ctx context.Context, id uuid.UUID) (*domain.Incident, error) {
-	const q = `SELECT id, ride_id, triggered_by, rider_id, driver_id, type, status, assigned_to, resolution_notes, created_at, resolved_at FROM incidents WHERE id = $1`
+	const q = `SELECT i.id, i.ride_id, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to WHERE i.id = $1`
 	i := &domain.Incident{}
-	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
+	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
@@ -461,6 +461,16 @@ func NewSystemMetricsRepo(db *pgxpool.Pool) domain.SystemMetricsRepository {
 
 func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.DashboardMetrics, error) {
 	m := &domain.DashboardMetrics{}
+
+	const qTotalRiders = `SELECT COUNT(*) FROM users WHERE role = 'passenger'`
+	if err := r.db.QueryRow(ctx, qTotalRiders).Scan(&m.TotalRiders); err != nil {
+		return nil, err
+	}
+
+	const qTotalDrivers = `SELECT COUNT(*) FROM users WHERE role = 'driver'`
+	if err := r.db.QueryRow(ctx, qTotalDrivers).Scan(&m.TotalDrivers); err != nil {
+		return nil, err
+	}
 
 	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng;
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
 import '../view_models/driver_home_notifier.dart';
@@ -149,11 +152,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     // No custom markers needed — the native blue GPS dot shows driver location.
     final markers = <Marker>{};
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Full-screen map
-          GoogleMap(
+    final mapWidget = (kIsWeb && isE2EMode())
+        ? Container(
+            key: const ValueKey('e2e-map-placeholder'),
+            color: scheme.surfaceContainerHighest,
+            alignment: Alignment.center,
+            child: const Text('Map (E2E placeholder)'),
+          )
+        : GoogleMap(
             initialCameraPosition: const CameraPosition(
               target: LatLng(14.5995, 120.9842),
               zoom: 14,
@@ -163,7 +169,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             markers: markers,
-          ),
+          );
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          mapWidget,
 
           // Top bar
           SafeArea(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart'
     hide LatLng, NearbyDriver, ServiceArea;
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
 import 'destination_sheet.dart';
@@ -312,6 +315,20 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // --- UI Helpers (Map, TopBar, Cards) ---
 
   Widget _buildMap(ColorScheme scheme) {
+    // Web E2E bypass: Google Maps JS SDK is not loaded in web/index.html,
+    // so the plugin's `_gmapTypeIDForPluginType` null-checks crash on render.
+    // Render an inert placeholder so post-login flows can proceed.
+    if (kIsWeb && isE2EMode()) {
+      return Container(
+        key: const ValueKey('e2e-map-placeholder'),
+        color: scheme.surfaceContainerHighest,
+        alignment: Alignment.center,
+        child: Text(
+          'Map (E2E placeholder)',
+          style: TextStyle(color: scheme.onSurfaceVariant),
+        ),
+      );
+    }
     final center =
         ref.watch(homeNotifierProvider).currentLatLng ?? _defaultLatLng;
     final markers = <Marker>{

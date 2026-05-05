@@ -18,8 +18,9 @@ import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Select } from '@/components/ui/Select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
@@ -193,10 +194,10 @@ export function SASafetyCompliance() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
-        <SaveBanner visible={banner.visible} message={banner.message} />
-      </div>
+      <PageHeader
+        title="Safety & Compliance"
+        actions={<SaveBanner visible={banner.visible} message={banner.message} />}
+      />
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -355,7 +356,7 @@ export function SASafetyCompliance() {
                           </TableCell>
                           <TableCell className="text-sm">
                             {inc.assigned_to ? (
-                              <span className="text-text-main">{inc.assigned_to}</span>
+                              <span className="text-text-main">{inc.assigned_to_name || inc.assigned_to}</span>
                             ) : (
                               <span className="text-text-muted italic">Unassigned</span>
                             )}
@@ -508,18 +509,21 @@ export function SASafetyCompliance() {
       />
 
       {/* KYC Confirm Modal */}
-      <ConfirmModal
+      <ConfirmationModal
         open={kycConfirm.open}
         title={kycConfirm.action === 'approve' ? 'Approve KYC' : 'Reject KYC'}
-        message={
+        description={
           kycConfirm.action === 'approve'
             ? `Approve the KYC documents submitted by ${kycConfirm.driverName}?`
             : `Reject the KYC documents submitted by ${kycConfirm.driverName}? The driver will be notified.`
         }
         variant={kycConfirm.action === 'approve' ? 'success' : 'danger'}
         confirmLabel={kycConfirm.action === 'approve' ? 'Approve' : 'Reject'}
-        onConfirm={handleKycConfirm}
-        onClose={() => setKycConfirm((s) => ({ ...s, open: false }))}
+        onConfirm={() => {
+          handleKycConfirm();
+          setKycConfirm((s) => ({ ...s, open: false }));
+        }}
+        onCancel={() => setKycConfirm((s) => ({ ...s, open: false }))}
       />
     </div>
   );

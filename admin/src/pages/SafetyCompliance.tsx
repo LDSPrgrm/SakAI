@@ -3,8 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { ShieldAlert, FileCheck, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, FileCheck, AlertTriangle, AlertCircle, Siren, Users, Activity } from 'lucide-react';
 import { SaveBanner } from '@/components/shared/SaveBanner';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { SummaryCard } from '@/components/shared/SummaryCard';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
@@ -53,30 +56,9 @@ function accreditationVariant(status: string): 'success' | 'warning' | 'danger' 
 interface ConfirmDialog {
   open: boolean;
   title: string;
-  message: string;
+  description: string;
   variant: 'danger' | 'success';
   onConfirm: () => void;
-}
-
-function ConfirmModal({ dialog, onClose }: { dialog: ConfirmDialog; onClose: () => void }) {
-  if (!dialog.open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" role="dialog" aria-modal="true">
-      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
-          <h2 className="text-base font-semibold text-text-main">{dialog.title}</h2>
-        </div>
-        <p className="text-sm text-text-muted">{dialog.message}</p>
-        <div className="flex gap-3 justify-end">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button variant={dialog.variant} size="sm" onClick={() => { dialog.onConfirm(); onClose(); }}>
-            Confirm
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function SafetyCompliance() {
@@ -97,8 +79,17 @@ export function SafetyCompliance() {
     | undefined;
   const loading = incidentsQuery.isPending || kycQuery.isPending || complianceQuery.isPending;
 
+  const openIncidentCount = incidents.filter(
+    (i) => i.status === 'open' || i.status === 'investigating' || i.status === 'escalated',
+  ).length;
+  const sosActiveCount = incidents.filter(
+    (i) => i.type === 'sos_triggered' && i.status !== 'resolved',
+  ).length;
+  const pendingKycCount = kycQueue.filter((k) => k.status === 'pending').length;
+  const complianceRate = compliance?.driver_compliance_rate;
+
   const [confirm, setConfirm] = useState<ConfirmDialog>({
-    open: false, title: '', message: '', variant: 'danger', onConfirm: () => {},
+    open: false, title: '', description: '', variant: 'danger', onConfirm: () => {},
   });
   const closeConfirm = () => setConfirm(prev => ({ ...prev, open: false }));
 
@@ -124,7 +115,7 @@ export function SafetyCompliance() {
     setConfirm({
       open: true,
       title: 'Approve KYC',
-      message: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
+      description: `Approve KYC for ${name}? They will be verified and can start accepting rides.`,
       variant: 'success',
       onConfirm: () => runUpdateKyc(id, 'approved'),
     });
@@ -134,7 +125,7 @@ export function SafetyCompliance() {
     setConfirm({
       open: true,
       title: 'Reject KYC',
-      message: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
+      description: `Reject KYC for ${name}? They will be notified to resubmit their documents.`,
       variant: 'danger',
       onConfirm: () => runUpdateKyc(id, 'rejected'),
     });
@@ -151,11 +142,45 @@ export function SafetyCompliance() {
 
   return (
     <div className="space-y-6">
-      <ConfirmModal dialog={confirm} onClose={closeConfirm} />
+      <ConfirmationModal
+        open={confirm.open}
+        title={confirm.title}
+        description={confirm.description}
+        variant={confirm.variant}
+        onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+        onCancel={closeConfirm}
+      />
 
-      <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
-        <SaveBanner visible={banner.visible} message={banner.message} />
+      <PageHeader
+        title="Safety & Compliance"
+        actions={<SaveBanner visible={banner.visible} message={banner.message} />}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SummaryCard
+          title="Open Incidents"
+          value={incidentsQuery.isPending ? '—' : openIncidentCount.toLocaleString('en-PH')}
+          icon={<AlertCircle className="w-5 h-5 text-warning" />}
+        />
+        <SummaryCard
+          title="SOS Active"
+          value={incidentsQuery.isPending ? '—' : sosActiveCount.toLocaleString('en-PH')}
+          icon={<Siren className="w-5 h-5 text-danger" />}
+        />
+        <SummaryCard
+          title="Pending KYC"
+          value={kycQuery.isPending ? '—' : pendingKycCount.toLocaleString('en-PH')}
+          icon={<Users className="w-5 h-5 text-primary" />}
+        />
+        <SummaryCard
+          title="Driver Compliance"
+          value={
+            complianceQuery.isLoading || complianceRate == null
+              ? '—'
+              : `${complianceRate.toFixed(1)}%`
+          }
+          icon={<Activity className="w-5 h-5 text-success" />}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

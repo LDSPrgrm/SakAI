@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -230,16 +231,20 @@ func (r *rideRepo) ListAll(ctx context.Context, f domain.AdminRideFilter) ([]*do
 func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {
 	ride := &domain.Ride{}
 	var cancelledBy *domain.CancelledBy
+	var originAddr, destAddr, notes sql.NullString
 	err := row.Scan(
 		&ride.ID, &ride.PassengerID, &ride.DriverID, &ride.Status,
 		&ride.Origin.Lat, &ride.Origin.Lng,
 		&ride.Destination.Lat, &ride.Destination.Lng,
-		&ride.OriginAddress, &ride.DestinationAddress, &ride.Notes,
+		&originAddr, &destAddr, &notes,
 		&cancelledBy, &ride.CreatedAt, &ride.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
+	ride.OriginAddress = originAddr.String
+	ride.DestinationAddress = destAddr.String
+	ride.Notes = notes.String
 	ride.CancelledBy = cancelledBy
 	return ride, err
 }
