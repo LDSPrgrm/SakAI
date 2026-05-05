@@ -14,10 +14,19 @@ export async function setPickup(
   const suggestion = page
     .getByRole("button", { name: new RegExp(query, "i") })
     .first();
-  await Promise.race([
-    suggestion.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
-    confirm.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
+  const winner = await Promise.race([
+    suggestion
+      .waitFor({ state: "attached", timeout: 10000 })
+      .then(() => "suggestion" as const)
+      .catch(() => null),
+    confirm
+      .waitFor({ state: "attached", timeout: 10000 })
+      .then(() => "confirm" as const)
+      .catch(() => null),
   ]);
+  if (!winner) {
+    throw new Error(`No autocomplete option appeared for pickup "${query}"`);
+  }
   if (await confirm.isVisible().catch(() => false)) {
     await confirm.click({ force: true });
   } else {
@@ -35,7 +44,6 @@ export async function setDestination(
   const whereToBtn = page.getByRole("button", { name: "Where to?" });
   await whereToBtn.waitFor({ state: "visible", timeout: 10000 });
   await whereToBtn.click({ force: true });
-  await page.waitForTimeout(800);
   const input = page.getByRole("textbox").last();
   await expect(input).toBeAttached({ timeout: 15000 });
   await input.fill(query);
@@ -43,10 +51,19 @@ export async function setDestination(
   const suggestion = page
     .getByRole("button", { name: new RegExp(query, "i") })
     .first();
-  await Promise.race([
-    suggestion.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
-    confirm.waitFor({ state: "attached", timeout: 10000 }).catch(() => {}),
+  const winner = await Promise.race([
+    suggestion
+      .waitFor({ state: "attached", timeout: 10000 })
+      .then(() => "suggestion" as const)
+      .catch(() => null),
+    confirm
+      .waitFor({ state: "attached", timeout: 10000 })
+      .then(() => "confirm" as const)
+      .catch(() => null),
   ]);
+  if (!winner) {
+    throw new Error(`No autocomplete option appeared for destination "${query}"`);
+  }
   if (await confirm.isVisible().catch(() => false)) {
     await confirm.click({ force: true });
   } else {
