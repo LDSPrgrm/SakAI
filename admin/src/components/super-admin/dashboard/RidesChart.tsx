@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList,
 } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -74,7 +74,7 @@ export function RidesChart({
           />
         ) : (
           <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 14, right: 8, left: 0, bottom: 8 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={stroke} stopOpacity={0.45} />
@@ -89,8 +89,30 @@ export function RidesChart({
                 axisLine={false}
                 interval="preserveStartEnd"
                 minTickGap={32}
+                label={{
+                  value: 'Date',
+                  position: 'insideBottom',
+                  offset: -2,
+                  fill: 'var(--color-text-muted)',
+                  fontSize: 11,
+                }}
+                height={36}
               />
-              <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+              <YAxis
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                width={52}
+                allowDecimals={false}
+                label={{
+                  value: 'Rides',
+                  angle: -90,
+                  position: 'insideLeft',
+                  fill: 'var(--color-text-muted)',
+                  fontSize: 11,
+                  style: { textAnchor: 'middle' },
+                }}
+              />
               <Tooltip {...DARK_TOOLTIP_STYLE} cursor={{ stroke: stroke, strokeOpacity: 0.3, strokeWidth: 1 }} />
               <Area
                 type="monotone"
@@ -100,7 +122,15 @@ export function RidesChart({
                 fill={`url(#${gradientId})`}
                 isAnimationActive
                 animationDuration={900}
-              />
+              >
+                <LabelList
+                  dataKey="rides"
+                  position="top"
+                  fill="var(--color-text-main)"
+                  fontSize={10}
+                  formatter={(v: number) => (v > 0 ? v : '')}
+                />
+              </Area>
             </AreaChart>
           </ResponsiveContainer>
         )}
