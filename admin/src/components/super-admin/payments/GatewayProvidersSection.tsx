@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { UpdatedByFooter } from '@/components/super-admin/shared/UpdatedByFooter';
 import type { PaymentGatewayConfig } from '@/api/super-admin/payments';
 import { useIsCashlessEnabled } from '@/hooks/useSystem';
@@ -136,102 +137,132 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
           </div>
         )}
 
-        {allProviders.length === 0 && (
+        {allProviders.length === 0 ? (
           <p className="text-sm text-text-muted text-center py-6">
             No payment gateways configured. Run the gateway seed migration or add a provider via SQL.
           </p>
-        )}
-
-        {allProviders.map((provider) => {
-          const schema = PROVIDER_SCHEMAS[provider] ?? [];
-          const label = PROVIDER_LABELS[provider] ?? provider;
-          const fields = draft[provider] ?? {};
-          const isCashless = CASHLESS_PROVIDERS.has(provider);
-          const locked = isCashless && !cashlessEnabled;
-          const shownActive = locked ? false : (active[provider] ?? false);
-          return (
-            <div
-              key={provider}
-              aria-disabled={locked || undefined}
-              className={cn(
-                'p-4 bg-surface-hover rounded-lg border border-border space-y-3',
-                locked && 'opacity-60',
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-text-main flex items-center gap-1.5">
-                    {locked && <Lock className="w-3.5 h-3.5 text-text-muted" />}
+        ) : (
+          <Tabs defaultValue={allProviders[0]}>
+            <TabsList className="w-full justify-start flex-wrap h-auto">
+              {allProviders.map((provider) => {
+                const label = PROVIDER_LABELS[provider] ?? provider;
+                const isCashless = CASHLESS_PROVIDERS.has(provider);
+                const locked = isCashless && !cashlessEnabled;
+                const shownActive = locked ? false : (active[provider] ?? false);
+                const dotClass = locked
+                  ? 'bg-danger'
+                  : shownActive
+                    ? 'bg-success'
+                    : 'bg-text-muted';
+                return (
+                  <TabsTrigger key={provider} value={provider} className="gap-2">
+                    {locked ? (
+                      <Lock className="w-3.5 h-3.5" />
+                    ) : (
+                      <span className={cn('w-2 h-2 rounded-full', dotClass)} aria-hidden />
+                    )}
                     {label}
-                  </h4>
-                  <Badge variant={shownActive ? 'success' : 'default'}>
-                    {shownActive ? 'Active' : locked ? 'Locked' : 'Inactive'}
-                  </Badge>
-                </div>
-                <label className={cn(
-                  'text-xs text-text-muted flex items-center gap-2',
-                  locked ? 'cursor-not-allowed' : 'cursor-pointer',
-                )}>
-                  <Checkbox
-                    checked={shownActive}
-                    disabled={locked}
-                    onCheckedChange={(checked) => setActive((a) => ({ ...a, [provider]: checked }))}
-                    aria-label={`${label} enabled`}
-                  />
-                  Enabled
-                </label>
-              </div>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-              {schema.length === 0 ? (
-                <p className="text-xs text-text-muted">No credentials required.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {schema.map((f) => {
-                    const tag = `${provider}:${f.key}`;
-                    const isRevealed = revealed[tag] ?? false;
-                    return (
-                      <div key={f.key}>
-                        <label className="block text-xs text-text-muted mb-1">{f.label}</label>
-                        <div className="flex gap-1">
-                          <Input
-                            type={f.secret && !isRevealed ? 'password' : 'text'}
-                            value={fields[f.key] ?? ''}
-                            onChange={(e) => setField(provider, f.key, e.target.value)}
-                          />
-                          {f.secret && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleReveal(provider, f.key)}
-                              aria-label={isRevealed ? 'Hide' : 'Reveal'}
-                            >
-                              {isRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <UpdatedByFooter
-                name={configByProvider[provider]?.updated_by ?? null}
-                actions={
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleSave(provider)}
-                    disabled={savingProvider === provider || locked}
+            {allProviders.map((provider) => {
+              const schema = PROVIDER_SCHEMAS[provider] ?? [];
+              const label = PROVIDER_LABELS[provider] ?? provider;
+              const fields = draft[provider] ?? {};
+              const isCashless = CASHLESS_PROVIDERS.has(provider);
+              const locked = isCashless && !cashlessEnabled;
+              const shownActive = locked ? false : (active[provider] ?? false);
+              return (
+                <TabsContent
+                  key={provider}
+                  value={provider}
+                  className="pt-4 space-y-4"
+                >
+                  <div
+                    aria-disabled={locked || undefined}
+                    className={cn('space-y-4', locked && 'opacity-60')}
                   >
-                    {savingProvider === provider ? 'Saving…' : 'Save'}
-                  </Button>
-                }
-              />
-            </div>
-          );
-        })}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-text-main flex items-center gap-1.5">
+                          {locked && <Lock className="w-3.5 h-3.5 text-text-muted" />}
+                          {label}
+                        </h4>
+                        <Badge variant={shownActive ? 'success' : 'default'}>
+                          {shownActive ? 'Active' : locked ? 'Locked' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <label className={cn(
+                        'text-xs text-text-muted flex items-center gap-2',
+                        locked ? 'cursor-not-allowed' : 'cursor-pointer',
+                      )}>
+                        <Checkbox
+                          checked={shownActive}
+                          disabled={locked}
+                          onCheckedChange={(checked) => setActive((a) => ({ ...a, [provider]: checked }))}
+                          aria-label={`${label} enabled`}
+                        />
+                        Enabled
+                      </label>
+                    </div>
+
+                    {schema.length === 0 ? (
+                      <p className="text-xs text-text-muted">No credentials required.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {schema.map((f) => {
+                          const tag = `${provider}:${f.key}`;
+                          const isRevealed = revealed[tag] ?? false;
+                          return (
+                            <div key={f.key}>
+                              <label className="block text-xs text-text-muted mb-1">{f.label}</label>
+                              <div className="flex gap-2">
+                                <div className="flex-1">
+                                  <Input
+                                    type={f.secret && !isRevealed ? 'password' : 'text'}
+                                    value={fields[f.key] ?? ''}
+                                    onChange={(e) => setField(provider, f.key, e.target.value)}
+                                  />
+                                </div>
+                                {f.secret && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => toggleReveal(provider, f.key)}
+                                    aria-label={isRevealed ? 'Hide' : 'Reveal'}
+                                  >
+                                    {isRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <UpdatedByFooter
+                      name={configByProvider[provider]?.updated_by ?? null}
+                      actions={
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleSave(provider)}
+                          disabled={savingProvider === provider || locked}
+                        >
+                          {savingProvider === provider ? 'Saving…' : 'Save'}
+                        </Button>
+                      }
+                    />
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        )}
       </CardContent>
     </Card>
   );

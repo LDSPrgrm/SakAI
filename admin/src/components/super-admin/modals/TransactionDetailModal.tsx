@@ -58,7 +58,7 @@ export function TransactionDetailModal({ open, transaction, onClose }: Transacti
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto focus:outline-none"
+        className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto focus:outline-none"
       >
         <button
           onClick={onClose}
