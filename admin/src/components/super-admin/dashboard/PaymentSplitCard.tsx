@@ -4,6 +4,7 @@ import { PieChart as PieIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { EmptyState } from './EmptyState';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+import { renderInsidePieLabel } from '@/utils/pieLabels';
 import { cn } from '@/lib/utils';
 import type { UseQueryResult } from '@tanstack/react-query';
 
@@ -63,6 +64,8 @@ export function PaymentSplitCard({ query, className }: PaymentSplitCardProps) {
                 innerRadius={55}
                 outerRadius={80}
                 dataKey="value"
+                label={renderInsidePieLabel}
+                labelLine={false}
               >
                 {normalized.map((_entry, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />

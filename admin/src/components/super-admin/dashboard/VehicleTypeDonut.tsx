@@ -5,6 +5,7 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { renderInsidePieLabel } from '@/utils/pieLabels';
 
 interface DataPoint {
   name: string;
@@ -32,6 +33,8 @@ export function VehicleTypeDonut({ data, className }: VehicleTypeDonutProps) {
             innerRadius={55}
             outerRadius={80}
             dataKey="value"
+            label={renderInsidePieLabel}
+            labelLine={false}
           >
             {data.map((_entry, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />
