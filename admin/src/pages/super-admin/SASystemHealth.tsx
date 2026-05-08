@@ -6,15 +6,9 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useInfraMetrics, useSystemServices } from '@/hooks/useSystem';
 import type { SystemService } from '@/types/super-admin';
 import { cn } from '@/lib/utils';
+import { secondsAgo } from '@/utils/timeAgo';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function secondsAgo(date: Date): string {
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  const mins = Math.floor(diff / 60);
-  return `${mins}m ago`;
-}
 
 function latencyColor(ms: number): string {
   if (ms < 200) return 'text-success';

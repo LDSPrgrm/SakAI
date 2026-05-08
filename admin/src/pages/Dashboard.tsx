@@ -18,6 +18,10 @@ import { useReportChart } from '@/hooks/useReports';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useRoleAccent } from '@/hooks/useRoleAccent';
 import { formatPHP, cn } from '@/lib/utils';
+import { UpdatedAgo } from '@/utils/timeAgo';
+
+const ACTION_QUEUE_REFRESH_MS = 30_000;
+const PAYMENTS_REFRESH_MS = 60_000;
 
 function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => new Date());
@@ -39,12 +43,27 @@ export function Dashboard() {
   const metricsQuery = useDashboardMetrics();
   const heatmapQuery = useDriverHeatmap();
   const activityQuery = useActivityFeed();
-  const kycQuery = useKycQueue();
-  const incidentsQuery = useIncidents();
-  const payoutsQuery = usePayouts();
-  const gatewaysQuery = useGatewayConfigs();
-  const paymentSplitQuery = useReportChart('payment-methods');
+  const kycQuery = useKycQueue(canKyc ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const incidentsQuery = useIncidents(canSafety ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const payoutsQuery = usePayouts(canPayouts ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const gatewaysQuery = useGatewayConfigs(canPayments ? { refetchInterval: PAYMENTS_REFRESH_MS } : undefined);
+  const paymentSplitQuery = useReportChart(
+    'payment-methods',
+    undefined,
+    canPayments ? { refetchInterval: PAYMENTS_REFRESH_MS } : undefined,
+  );
   const now = useNow();
+
+  const lastUpdated = Math.max(
+    metricsQuery.dataUpdatedAt ?? 0,
+    heatmapQuery.dataUpdatedAt ?? 0,
+    activityQuery.dataUpdatedAt ?? 0,
+    kycQuery.dataUpdatedAt ?? 0,
+    incidentsQuery.dataUpdatedAt ?? 0,
+    payoutsQuery.dataUpdatedAt ?? 0,
+    gatewaysQuery.dataUpdatedAt ?? 0,
+    paymentSplitQuery.dataUpdatedAt ?? 0,
+  );
 
   const metrics = metricsQuery.data;
   const isLoading = !metrics;
@@ -152,17 +171,20 @@ export function Dashboard() {
             <span className="hidden sm:inline">{dateLabel} · Manila</span>
             <span className="font-mono text-text-main">{timestamp}</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refetchAll}
-            disabled={isFetching}
-            title="Refresh"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <UpdatedAgo timestamp={lastUpdated || undefined} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetchAll}
+              disabled={isFetching}
+              title="Refresh"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1 min-w-0">
