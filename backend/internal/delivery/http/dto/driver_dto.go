@@ -66,8 +66,9 @@ func (r *UpdateLocationRequest) ToDomainDriverLocation() domain.DriverLocation {
 
 // SetStatusResponse is returned after PUT /driver/status.
 type SetStatusResponse struct {
-	DriverID string              `json:"driver_id"`
-	Status   domain.DriverStatus `json:"status"`
+	DriverID  string              `json:"driver_id"`
+	Status    domain.DriverStatus `json:"status"`
+	UpdatedAt time.Time           `json:"updated_at"`
 }
 
 type NearbyDriverResponse struct {

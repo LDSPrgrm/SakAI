@@ -253,7 +253,7 @@ func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID,
 
 	// Return driver to online pool automatically on completion.
 	// Non-fatal: if this fails the driver can manually set their status.
-	if err := uc.driverRepo.UpdateStatus(ctx, driverID, domain.DriverStatusOnline); err != nil {
+	if _, err := uc.driverRepo.UpdateStatus(ctx, driverID, domain.DriverStatusOnline); err != nil {
 		log.Printf("warn: could not reset driver %s to online after ride completion: %v", driverID, err)
 	}
 	return ride, nil

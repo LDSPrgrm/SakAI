@@ -569,11 +569,12 @@ func (mr *MockDriverRepositoryMockRecorder) UpdateLocation(ctx, userID, loc any)
 }
 
 // UpdateStatus mocks base method.
-func (m *MockDriverRepository) UpdateStatus(ctx context.Context, userID uuid.UUID, status domain.DriverStatus) error {
+func (m *MockDriverRepository) UpdateStatus(ctx context.Context, userID uuid.UUID, status domain.DriverStatus) (*domain.Driver, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStatus", ctx, userID, status)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*domain.Driver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateStatus indicates an expected call of UpdateStatus.
@@ -2552,11 +2553,12 @@ func (mr *MockDriverUseCaseMockRecorder) GetStatus(ctx, driverID any) *gomock.Ca
 }
 
 // SetStatus mocks base method.
-func (m *MockDriverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) error {
+func (m *MockDriverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) (*domain.Driver, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetStatus", ctx, driverID, status)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*domain.Driver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SetStatus indicates an expected call of SetStatus.

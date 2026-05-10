@@ -389,7 +389,7 @@ func TestRideUseCase_Complete_SuccessWithFareCalculation(t *testing.T) {
 	breakdown := domain.JSONMap{"base_fare": 50.0, "distance_charge": 50.0, "time_charge": 30.0, "booking_fee": 5.0}
 	completedRide.FareBreakdown = &breakdown
 	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(&completedRide, nil)
-	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(nil)
+	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(&domain.Driver{UserID: driverID, Status: domain.DriverStatusOnline}, nil)
 
 	// Driver location at destination (within 100m).
 	driverLocation := domain.LatLng{Lat: 14.6, Lng: 121.0}

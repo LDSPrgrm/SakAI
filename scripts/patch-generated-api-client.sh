@@ -53,4 +53,44 @@ for p in root.rglob("*.dart"):
         fixed += 1
 if fixed:
     print(f"stripped bare '// ' from {fixed} .dart files")
+
+# Fix missing FullType element type for BuiltList<NearbyDriver> in getNearbyDriversAllTypes.
+# The openapi generator emits FullType(BuiltList) without the NearbyDriver parameter,
+# causing built_value to throw "Unknown type on deserialization" at runtime.
+driver_api = root / "lib" / "src" / "api" / "driver_api.dart"
+if driver_api.is_file():
+    old = "FullType(BuiltMap, [FullType(String), FullType(BuiltList)])"
+    new = "FullType(BuiltMap, [FullType(String), FullType(BuiltList, [FullType(NearbyDriver)])])"
+    text = driver_api.read_text()
+    if old in text:
+        driver_api.write_text(text.replace(old, new))
+        print("patched driver_api.dart: BuiltList FullType(NearbyDriver)")
+
+# Fix the serializers.dart builder factory for BuiltMap<String, BuiltList>.
+# The codegen registers a raw MapBuilder<String, BuiltList> factory which matches
+# ANY BuiltMap<String, BuiltList<X>> lookup and produces BuiltList<dynamic>,
+# causing a runtime type cast failure. Replace it with the fully-typed factory
+# and add the companion BuiltList<NearbyDriver> factory.
+serializers = root / "lib" / "src" / "serializers.dart"
+if serializers.is_file():
+    text = serializers.read_text()
+    old_factory = (
+        "      ..addBuilderFactory(\n"
+        "        const FullType(BuiltMap, [FullType(String), FullType(BuiltList)]),\n"
+        "        () => MapBuilder<String, BuiltList>(),\n"
+        "      )"
+    )
+    new_factory = (
+        "      ..addBuilderFactory(\n"
+        "        const FullType(BuiltMap, [FullType(String), FullType(BuiltList, [FullType(NearbyDriver)])]),\n"
+        "        () => MapBuilder<String, BuiltList<NearbyDriver>>(),\n"
+        "      )\n"
+        "      ..addBuilderFactory(\n"
+        "        const FullType(BuiltList, [FullType(NearbyDriver)]),\n"
+        "        () => ListBuilder<NearbyDriver>(),\n"
+        "      )"
+    )
+    if old_factory in text:
+        serializers.write_text(text.replace(old_factory, new_factory))
+        print("patched serializers.dart: BuiltMap<String, BuiltList<NearbyDriver>> factory")
 PY

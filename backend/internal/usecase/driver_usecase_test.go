@@ -28,9 +28,9 @@ func TestDriverUseCase_SetStatus_Online(t *testing.T) {
 	uc, driverRepo, _, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 
-	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(nil)
+	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(&domain.Driver{UserID: driverID, Status: domain.DriverStatusOnline}, nil)
 
-	if err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOnline); err != nil {
+	if _, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOnline); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
@@ -43,9 +43,9 @@ func TestDriverUseCase_SetStatus_Offline_NoActiveRide(t *testing.T) {
 	driverID := uuid.New()
 
 	rideRepo.EXPECT().GetActiveByDriverID(gomock.Any(), driverID).Return(nil, domain.ErrNotFound)
-	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOffline).Return(nil)
+	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOffline).Return(&domain.Driver{UserID: driverID, Status: domain.DriverStatusOffline}, nil)
 
-	if err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline); err != nil {
+	if _, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
@@ -63,7 +63,7 @@ func TestDriverUseCase_SetStatus_Offline_ActiveRide(t *testing.T) {
 
 	rideRepo.EXPECT().GetActiveByDriverID(gomock.Any(), driverID).Return(activeRide, nil)
 
-	err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline)
+	_, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline)
 	if err != domain.ErrCannotGoOffline {
 		t.Errorf("expected ErrCannotGoOffline, got %v", err)
 	}

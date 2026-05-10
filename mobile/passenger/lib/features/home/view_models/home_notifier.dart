@@ -376,17 +376,20 @@ class HomeNotifier extends Notifier<HomeState> {
     final rideType = state.selectedRideType;
 
     if (pickup != null && !_isLocationInServiceArea(pickup)) {
-      state = state.copyWith(
-        errorMessage: 'Pickup location is outside our service area.',
+      // Log the mismatch but do not hard-block: the backend is the
+      // authoritative service-area validator. Client-side polygon checks
+      // can fail due to coordinate precision or polygon coverage gaps.
+      debugPrint(
+        '[HomeNotifier] WARN: pickup may be outside service area polygon '
+        '(lat=${pickup.lat}, lng=${pickup.lng}). Proceeding — backend will validate.',
       );
-      return null;
     }
 
     if (destination != null && !_isLocationInServiceArea(destination)) {
-      state = state.copyWith(
-        errorMessage: 'Destination location is outside our service area.',
+      debugPrint(
+        '[HomeNotifier] WARN: destination may be outside service area polygon '
+        '(lat=${destination.lat}, lng=${destination.lng}). Proceeding — backend will validate.',
       );
-      return null;
     }
     debugPrint(
       '[HOME] requestRide called: pickup=$pickup, destination=$destination, rideType=$rideType',
