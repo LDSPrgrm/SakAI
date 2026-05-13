@@ -16,15 +16,22 @@ class DriverRepositoryImpl implements DriverRepository {
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.online,
       );
-      await _apiClient.getDriverApi().driverSetStatus(
+      debugPrint('[DRIVER_REPO] Request: $request');
+      final response = await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
-      debugPrint('[DRIVER_REPO] goOnline success');
+      debugPrint('[DRIVER_REPO] goOnline success: ${response.data}');
     } on DioException catch (e) {
-      debugPrint(
-        '[DRIVER_REPO] goOnline failed: ${e.response?.statusCode} ${e.message}',
-      );
+      debugPrint('[DRIVER_REPO] goOnline DioException: ${e.response?.statusCode}');
+      debugPrint('[DRIVER_REPO] Message: ${e.message}');
+      debugPrint('[DRIVER_REPO] Error type: ${e.type}');
+      debugPrint('[DRIVER_REPO] Error details: ${e.error}');
+      debugPrint('[DRIVER_REPO] Response data: ${e.response?.data}');
       throw _fromDio(e);
+    } catch (e, stack) {
+      debugPrint('[DRIVER_REPO] goOnline unexpected error: $e');
+      debugPrint('[DRIVER_REPO] Stacktrace: $stack');
+      rethrow;
     }
   }
 
@@ -35,15 +42,21 @@ class DriverRepositoryImpl implements DriverRepository {
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.offline,
       );
-      await _apiClient.getDriverApi().driverSetStatus(
+      debugPrint('[DRIVER_REPO] Request: $request');
+      final response = await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
-      debugPrint('[DRIVER_REPO] goOffline success');
+      debugPrint('[DRIVER_REPO] goOffline success: ${response.data}');
     } on DioException catch (e) {
-      debugPrint(
-        '[DRIVER_REPO] goOffline failed: ${e.response?.statusCode} ${e.message}',
-      );
+      debugPrint('[DRIVER_REPO] goOffline DioException: ${e.response?.statusCode}');
+      debugPrint('[DRIVER_REPO] Message: ${e.message}');
+      debugPrint('[DRIVER_REPO] Error details: ${e.error}');
+      debugPrint('[DRIVER_REPO] Response data: ${e.response?.data}');
       throw _fromDio(e);
+    } catch (e, stack) {
+      debugPrint('[DRIVER_REPO] goOffline unexpected error: $e');
+      debugPrint('[DRIVER_REPO] Stacktrace: $stack');
+      rethrow;
     }
   }
 

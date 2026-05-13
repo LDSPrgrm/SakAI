@@ -326,8 +326,12 @@ Serializers serializers = (_$serializers.toBuilder()
         () => ListBuilder<PaymentGatewayConfig>(),
       )
       ..addBuilderFactory(
-        const FullType(BuiltMap, [FullType(String), FullType(BuiltList)]),
-        () => MapBuilder<String, BuiltList>(),
+        const FullType(BuiltMap, [FullType(String), FullType(BuiltList, [FullType(NearbyDriver)])]),
+        () => MapBuilder<String, BuiltList<NearbyDriver>>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(NearbyDriver)]),
+        () => ListBuilder<NearbyDriver>(),
       )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(Role)]),

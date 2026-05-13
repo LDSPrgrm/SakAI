@@ -172,8 +172,8 @@ type DriverRepository interface {
 	// GetByUserID retrieves a driver's operational state by their user ID.
 	GetByUserID(ctx context.Context, userID uuid.UUID) (*Driver, error)
 
-	// UpdateStatus sets the driver online or offline.
-	UpdateStatus(ctx context.Context, userID uuid.UUID, status DriverStatus) error
+	// UpdateStatus sets the driver online or offline and returns the updated entity.
+	UpdateStatus(ctx context.Context, userID uuid.UUID, status DriverStatus) (*Driver, error)
 
 	// UpdateLocation persists the driver's latest geographic position.
 	// Called frequently — implementation must be efficient (upsert pattern).
@@ -384,7 +384,7 @@ type RideUseCase interface {
 
 // DriverUseCase defines driver operational actions.
 type DriverUseCase interface {
-	SetStatus(ctx context.Context, driverID uuid.UUID, status DriverStatus) error
+	SetStatus(ctx context.Context, driverID uuid.UUID, status DriverStatus) (*Driver, error)
 	UpdateLocation(ctx context.Context, driverID uuid.UUID, loc DriverLocation) error
 	GetIncomingRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 	// GetActiveRide returns the driver's current active ride regardless of state.

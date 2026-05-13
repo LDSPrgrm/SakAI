@@ -52,13 +52,26 @@ func (r *driverRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*domain
 	return d, nil
 }
 
-func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status domain.DriverStatus) error {
+func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status domain.DriverStatus) (*domain.Driver, error) {
 	const q = `
 		INSERT INTO drivers (user_id, status, updated_at)
 		VALUES ($1, $2, NOW())
-		ON CONFLICT (user_id) DO UPDATE SET status = $2, updated_at = NOW()`
-	_, err := r.db.Exec(ctx, q, userID, status)
-	return err
+		ON CONFLICT (user_id) DO UPDATE SET status = $2, updated_at = NOW()
+		RETURNING user_id, status,
+		          ST_Y(location::geometry) AS lat,
+		          ST_X(location::geometry) AS lng,
+		          updated_at`
+
+	d := &domain.Driver{}
+	var lat, lng *float64
+	err := r.db.QueryRow(ctx, q, userID, status).Scan(&d.UserID, &d.Status, &lat, &lng, &d.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	if lat != nil && lng != nil {
+		d.Location = &domain.DriverLocation{LatLng: domain.LatLng{Lat: *lat, Lng: *lng}}
+	}
+	return d, nil
 }
 
 func (r *driverRepo) UpdateLocation(ctx context.Context, userID uuid.UUID, loc domain.DriverLocation) error {

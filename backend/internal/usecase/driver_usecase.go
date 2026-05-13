@@ -23,15 +23,15 @@ func NewDriverUseCase(driverRepo domain.DriverRepository, rideRepo domain.RideRe
 	return &driverUseCase{driverRepo: driverRepo, rideRepo: rideRepo, earningsRepo: earningsRepo, incidentRepo: incidentRepo}
 }
 
-func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) error {
+func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, status domain.DriverStatus) (*domain.Driver, error) {
 	// Guard: cannot go offline with an active ride.
 	if status == domain.DriverStatusOffline {
 		active, err := uc.rideRepo.GetActiveByDriverID(ctx, driverID)
 		if err != nil && !errors.Is(err, domain.ErrNotFound) {
-			return err
+			return nil, err
 		}
 		if active != nil && !active.Status.IsTerminal() {
-			return domain.ErrCannotGoOffline
+			return nil, domain.ErrCannotGoOffline
 		}
 	}
 	return uc.driverRepo.UpdateStatus(ctx, driverID, status)

@@ -979,7 +979,7 @@ class DriverApi {
       final rawResponse = _response.data;
       _responseData = rawResponse == null ? null : _serializers.deserialize(
         rawResponse,
-        specifiedType: const FullType(BuiltMap, [FullType(String), FullType(BuiltList)]),
+        specifiedType: const FullType(BuiltMap, [FullType(String), FullType(BuiltList, [FullType(NearbyDriver)])]),
       ) as BuiltMap<String, BuiltList<NearbyDriver>>;
 
     } catch (error, stackTrace) {

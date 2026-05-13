@@ -338,7 +338,7 @@ func (h *RideHandler) Arrive(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status})
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status, "updated_at": ride.UpdatedAt.UTC().Format(time.RFC3339)})
 	respondOK(c, h.rideResponse(ride))
 }
 
@@ -367,7 +367,7 @@ func (h *RideHandler) Complete(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status})
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status, "updated_at": ride.UpdatedAt.UTC().Format(time.RFC3339)})
 	respondOK(c, h.rideResponse(ride))
 }
 
@@ -444,6 +444,6 @@ func (h *RideHandler) driverTransition(c *gin.Context, fn func(driverID, rideID 
 		respondError(c, err)
 		return
 	}
-	_ = h.upsert.PublishToRide(c.Request.Context(), ride, event, gin.H{"ride_id": ride.ID, "status": ride.Status})
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, event, gin.H{"ride_id": ride.ID, "status": ride.Status, "updated_at": ride.UpdatedAt.UTC().Format(time.RFC3339)})
 	respondOK(c, h.rideResponse(ride))
 }
