@@ -17,6 +17,13 @@ import {
 import { useExportReport } from '@/hooks/useReports';
 import type { Incident, KycEntry } from '@/types/super-admin';
 
+function formatExpiry(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime()) || d.getFullYear() < 2000) return '—';
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function incidentTypeLabel(type: string): string {
   switch (type) {
     case 'sos_triggered': return 'SOS Triggered';
@@ -335,10 +342,10 @@ export function SafetyCompliance() {
                 </Badge>
               </div>
               {compliance?.accreditation_expiry && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-3">
                   <span className="text-sm text-text-muted">Expiry Date</span>
-                  <span className="text-sm text-text-main">
-                    {new Date(compliance.accreditation_expiry).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  <span className="text-sm text-text-main whitespace-nowrap">
+                    {formatExpiry(compliance.accreditation_expiry)}
                   </span>
                 </div>
               )}

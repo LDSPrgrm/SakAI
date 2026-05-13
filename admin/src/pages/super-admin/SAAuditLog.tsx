@@ -264,7 +264,7 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <div>
             <span className="text-text-muted">Admin: </span>
-            <span className="text-text-main">{log.actor_name}</span>
+            <span className="text-text-main">{log.actor_name || <span className="italic text-text-muted">System</span>}</span>
           </div>
           <div>
             <span className="text-text-muted">Timestamp: </span>
@@ -481,7 +481,7 @@ export function SAAuditLog() {
                     {/* Admin */}
                     <TableCell>
                       <p className="text-sm text-text-main font-medium">
-                        {log.actor_name}
+                        {log.actor_name || <span className="italic text-text-muted">System</span>}
                       </p>
                       <p className="text-xs text-text-muted font-mono">
                         {log.ip_address}

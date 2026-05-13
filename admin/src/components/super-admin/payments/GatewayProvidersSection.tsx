@@ -139,7 +139,7 @@ export function GatewayProvidersSection({ configs, onSave }: GatewayProvidersSec
 
         {allProviders.length === 0 ? (
           <p className="text-sm text-text-muted text-center py-6">
-            No payment gateways configured. Run the gateway seed migration or add a provider via SQL.
+            No payment gateways configured yet.
           </p>
         ) : (
           <Tabs defaultValue={allProviders[0]}>

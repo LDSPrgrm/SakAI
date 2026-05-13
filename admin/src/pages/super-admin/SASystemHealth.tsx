@@ -22,6 +22,13 @@ function uptimeColor(pct: number): string {
   return 'text-danger';
 }
 
+// Treat 0% as "no sample yet" when the service is reporting ok — avoids the
+// confusing combo of a green "Ok" badge next to a red 0.00% uptime.
+function uptimeUnknown(service: SystemService): boolean {
+  if (service.uptime_pct == null) return true;
+  return service.uptime_pct === 0 && service.status === 'ok';
+}
+
 function statusDotClass(status: SystemService['status']): string {
   if (status === 'ok') return 'bg-success';
   if (status === 'degraded') return 'bg-warning';
@@ -55,8 +62,8 @@ function ServiceCard({ service }: { service: SystemService }) {
         </div>
         <div>
           <p className="text-xs text-text-muted">Uptime</p>
-          <p className={cn('font-semibold', uptimeColor(service.uptime_pct ?? 0))}>
-            {service.uptime_pct != null ? `${service.uptime_pct.toFixed(2)}%` : '—'}
+          <p className={cn('font-semibold', uptimeUnknown(service) ? 'text-text-main' : uptimeColor(service.uptime_pct ?? 0))}>
+            {uptimeUnknown(service) ? '—' : `${service.uptime_pct!.toFixed(2)}%`}
           </p>
         </div>
       </div>

@@ -38,7 +38,7 @@ function toIsoDate(d: Date): string {
 
 export function Reports() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
-  const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
+  const [selectedReport, setSelectedReport] = useState<string>('');
 
   const apiRange: ReportRange = useMemo(
     () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
