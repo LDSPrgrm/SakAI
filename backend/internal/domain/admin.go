@@ -143,12 +143,13 @@ type DriverHeatmap struct {
 
 // KycEntry represents a driver KYC submission in the review queue.
 type KycEntry struct {
-	ID          uuid.UUID `json:"id"`
-	DriverID    uuid.UUID `json:"driver_id"`
-	DriverName  string    `json:"driver_name"`
-	SubmittedAt time.Time `json:"submitted_at"`
-	Docs        []string  `json:"docs"`
-	Status      string    `json:"status"`
+	ID              uuid.UUID `json:"id"`
+	DriverID        uuid.UUID `json:"driver_id"`
+	DriverDisplayID string    `json:"driver_display_id"`
+	DriverName      string    `json:"driver_name"`
+	SubmittedAt     time.Time `json:"submitted_at"`
+	Docs            []string  `json:"docs"`
+	Status          string    `json:"status"`
 }
 
 // FeatureFlag is a system-level toggle.

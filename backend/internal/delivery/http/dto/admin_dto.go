@@ -324,12 +324,13 @@ func NewDriverPayoutDTO(p *domain.DriverPayout) DriverPayoutDTO {
 // ─── Safety DTOs ──────────────────────────────────────────────────────────────
 
 type KycEntryDTO struct {
-	ID          string    `json:"id"`
-	DriverID    string    `json:"driver_id"`
-	DriverName  string    `json:"driver_name"`
-	SubmittedAt time.Time `json:"submitted_at"`
-	Docs        []string  `json:"docs"`
-	Status      string    `json:"status"`
+	ID              string    `json:"id"`
+	DriverID        string    `json:"driver_id"`
+	DriverDisplayID string    `json:"driver_display_id"`
+	DriverName      string    `json:"driver_name"`
+	SubmittedAt     time.Time `json:"submitted_at"`
+	Docs            []string  `json:"docs"`
+	Status          string    `json:"status"`
 }
 
 type UpdateKycRequest struct {
@@ -344,7 +345,7 @@ type KycBatchRequest struct {
 
 func NewKycEntryDTO(e *domain.KycEntry) KycEntryDTO {
 	return KycEntryDTO{
-		ID: e.ID.String(), DriverID: e.DriverID.String(), DriverName: e.DriverName,
+		ID: e.ID.String(), DriverID: e.DriverID.String(), DriverDisplayID: e.DriverDisplayID, DriverName: e.DriverName,
 		SubmittedAt: e.SubmittedAt, Docs: e.Docs, Status: e.Status,
 	}
 }

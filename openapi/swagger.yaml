@@ -5228,6 +5228,9 @@ components:
           type: string
         driver_id:
           type: string
+        driver_display_id:
+          type: string
+          description: Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
         driver_name:
           type: string
         submitted_at:

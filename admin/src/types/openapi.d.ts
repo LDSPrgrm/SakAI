@@ -3105,6 +3105,8 @@ export interface components {
         KycEntry: {
             id?: string;
             driver_id?: string;
+            /** @description Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing. */
+            driver_display_id?: string;
             driver_name?: string;
             /** Format: date-time */
             submitted_at?: string;
