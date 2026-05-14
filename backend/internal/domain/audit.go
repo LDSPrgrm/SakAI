@@ -14,6 +14,7 @@ type AuditLogEntry struct {
 	Timestamp       time.Time `json:"timestamp"`
 	ActorID         uuid.UUID `json:"actor_id"`
 	ActorDisplayID  string    `json:"actor_display_id,omitempty"`
+	ActorName       string    `json:"actor_name,omitempty"`
 	IPAddress    string    `json:"ip_address"`
 	Action       string    `json:"action"` // CREATE, UPDATE, DELETE, etc.
 	ResourceType string    `json:"resource_type"`

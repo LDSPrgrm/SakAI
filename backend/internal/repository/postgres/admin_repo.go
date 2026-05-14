@@ -267,6 +267,7 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 
 	selectQ := fmt.Sprintf(`
 		SELECT a.id, a.seq, a.timestamp, a.actor_id, COALESCE(u.seq, 0) AS actor_seq,
+		       COALESCE(u.name, '') AS actor_name,
 		       a.ip_address, a.action, a.resource_type, a.resource_id,
 		       a.before_state, a.after_state, a.reason
 		FROM audit_log_entries a
@@ -286,7 +287,7 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 	for rows.Next() {
 		e := &domain.AuditLogEntry{}
 		var actorSeq int64
-		if err := rows.Scan(&e.ID, &e.Seq, &e.Timestamp, &e.ActorID, &actorSeq, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
+		if err := rows.Scan(&e.ID, &e.Seq, &e.Timestamp, &e.ActorID, &actorSeq, &e.ActorName, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
 			return nil, 0, err
 		}
 		e.DisplayID = displayid.AuditLog(e.Seq)

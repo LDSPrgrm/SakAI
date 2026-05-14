@@ -5041,6 +5041,9 @@ components:
         actor_display_id:
           type: string
           description: Human-readable reference for the actor user (e.g. USR-0042).
+        actor_name:
+          type: string
+          description: Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous.
         ip_address:
           type: string
         action:

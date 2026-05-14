@@ -2994,6 +2994,8 @@ export interface components {
             actor_id?: string;
             /** @description Human-readable reference for the actor user (e.g. USR-0042). */
             actor_display_id?: string;
+            /** @description Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous. */
+            actor_name?: string;
             ip_address?: string;
             action?: string;
             resource_type?: string;
