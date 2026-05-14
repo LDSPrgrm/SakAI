@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { EntityId } from '@/components/ui/EntityId';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -50,11 +51,6 @@ function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'gcash') return 'info';
   if (method === 'paymaya') return 'warning';
   return 'default';
-}
-
-function shortId(id: string | undefined | null, len = 8): string {
-  if (!id) return '—';
-  return id.length > len ? `${id.slice(0, len)}…` : id;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -250,18 +246,10 @@ export function SAPayments() {
                       >
                         {/* Transaction ID + Ride ID */}
                         <TableCell className="whitespace-nowrap">
-                          <span
-                            className="block text-sm font-mono font-medium text-text-main"
-                            title={t.id ?? ''}
-                          >
-                            {shortId(t.id)}
-                          </span>
-                          <span
-                            className="block text-xs font-mono text-text-muted"
-                            title={t.ride_id ?? ''}
-                          >
-                            Ride {shortId(t.ride_id)}
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <EntityId displayId={(t as any).display_id} uuid={t.id} fallbackPrefix="TXN" />
+                            <EntityId displayId={(t as any).ride_display_id} uuid={t.ride_id} fallbackPrefix="RIDE" />
+                          </div>
                         </TableCell>
 
                         {/* Rider + Driver names */}

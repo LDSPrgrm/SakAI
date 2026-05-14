@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Select } from '@/components/ui/Select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
+import { EntityId } from '@/components/ui/EntityId';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -328,13 +329,13 @@ export function SASafetyCompliance() {
                           onClick={() => inc.id && setSelectedIncidentId(inc.id)}
                         >
                           <TableCell className="text-sm font-medium text-text-main">
-                            {inc.id}
+                            <EntityId displayId={(inc as any).display_id} uuid={inc.id} fallbackPrefix="INC" />
                           </TableCell>
                           <TableCell className="text-sm text-text-muted whitespace-nowrap">
                             {inc.created_at ? formatDate(inc.created_at) : '—'}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
-                            {inc.ride_id}
+                            <EntityId displayId={(inc as any).ride_display_id} uuid={inc.ride_id} fallbackPrefix="RIDE" />
                           </TableCell>
                           <TableCell>
                             <Badge variant="default">

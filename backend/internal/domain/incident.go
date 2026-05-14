@@ -9,7 +9,10 @@ import (
 // Incident represents a safety or compliance trigger (SOS, report).
 type Incident struct {
 	ID              uuid.UUID  `json:"id"`
+	Seq             int64      `json:"seq"`
+	DisplayID       string     `json:"display_id"`
 	RideID          uuid.UUID  `json:"ride_id"`
+	RideDisplayID   string     `json:"ride_display_id,omitempty"`
 	TriggeredBy     string     `json:"triggered_by"` // 'rider', 'driver'
 	RiderID         uuid.UUID  `json:"rider_id"`
 	DriverID        uuid.UUID  `json:"driver_id"`

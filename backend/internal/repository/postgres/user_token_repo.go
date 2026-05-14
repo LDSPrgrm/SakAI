@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 	"github.com/sakai/backend/internal/infrastructure/database"
 )
 
@@ -191,7 +192,7 @@ func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(
-		"SELECT id, name, email, password_hash, role, created_at "+
+		"SELECT id, seq, name, email, password_hash, role, created_at "+
 			"FROM users %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
 		where, limitIdx, offsetIdx,
 	)
@@ -205,9 +206,10 @@ func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*
 	var users []*domain.User
 	for rows.Next() {
 		u := &domain.User{}
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Seq, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt); err != nil {
 			return nil, 0, err
 		}
+		u.DisplayID = displayid.User(u.Seq)
 		users = append(users, u)
 	}
 	return users, total, rows.Err()

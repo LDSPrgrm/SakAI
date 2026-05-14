@@ -17,6 +17,7 @@ const CASHLESS_METHODS = new Set(['gcash', 'paymaya', 'card']);
 import type { Transaction, DriverPayout } from '@/types/super-admin';
 import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { EntityId } from '@/components/ui/EntityId';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -225,8 +226,10 @@ export function Payments() {
                 ) : paginated.map((txn) => (
                   <TableRow key={txn.id}>
                     <TableCell>
-                      <p className="font-medium text-text-main">{txn.id}</p>
-                      {txn.ride_id && <p className="text-xs text-text-muted">Ride: {txn.ride_id}</p>}
+                      <div className="flex flex-col items-start gap-1">
+                        <EntityId displayId={(txn as any).display_id} uuid={txn.id} fallbackPrefix="TXN" />
+                        {txn.ride_id && <EntityId displayId={(txn as any).ride_display_id} uuid={txn.ride_id} fallbackPrefix="RIDE" />}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-0.5">

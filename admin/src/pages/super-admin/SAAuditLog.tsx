@@ -16,6 +16,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { EntityId } from '@/components/ui/EntityId';
+import { prefixFor } from '@/utils/resourceTypeToPrefix';
 import {
   Table,
   TableBody,
@@ -265,6 +267,11 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
           <div>
             <span className="text-text-muted">Admin: </span>
             <span className="text-text-main">{log.actor_name || <span className="italic text-text-muted">System</span>}</span>
+            {log.actor_id && (
+              <span className="ml-2 inline-flex">
+                <EntityId displayId={(log as any).actor_display_id} uuid={log.actor_id} fallbackPrefix="USR" />
+              </span>
+            )}
           </div>
           <div>
             <span className="text-text-muted">Timestamp: </span>
@@ -276,9 +283,7 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
           </div>
           <div>
             <span className="text-text-muted">Resource ID: </span>
-            <span className="text-text-main font-mono text-xs break-all">
-              {log.resource_id}
-            </span>
+            <EntityId uuid={log.resource_id} fallbackPrefix={prefixFor(log.resource_type)} />
           </div>
           {log.reason && (
             <div className="sm:col-span-2">

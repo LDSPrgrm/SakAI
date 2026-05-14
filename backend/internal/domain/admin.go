@@ -82,7 +82,10 @@ type RolePermission struct {
 // Transaction represents a payment record for a completed ride.
 type Transaction struct {
 	ID            uuid.UUID `json:"id"`
+	Seq           int64     `json:"seq"`
+	DisplayID     string    `json:"display_id"`
 	RideID        uuid.UUID `json:"ride_id"`
+	RideDisplayID string    `json:"ride_display_id,omitempty"`
 	RiderName     string    `json:"rider_name"`
 	DriverName    string    `json:"driver_name"`
 	Amount        float64   `json:"amount"`
