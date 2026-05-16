@@ -41,10 +41,6 @@ test.describe("Driver registration", () => {
 
     for (let i = 0; i < values.length; i++) {
       const field = fields.nth(i);
-      // Scroll into view then verify Flutter actually accepted the value.
-      // The Make field flakes when the form is mid-scroll: fill() resolves
-      // without error but the TextField state stays empty. Retry once via
-      // pressSequentially if a fill silently dropped.
       await field.scrollIntoViewIfNeeded().catch(() => {});
       await field.click();
       await field.fill(values[i]);
@@ -54,6 +50,26 @@ test.describe("Driver registration", () => {
         await field.fill("");
         await field.pressSequentially(values[i], { delay: 20 });
       }
+    }
+
+    // Verify-refill pass: focusing later fields can scroll earlier ones
+    // out of view, and Flutter's TextField state can silently drop if the
+    // widget is recycled while off-screen. Make field is the usual victim.
+    // Walk every field once more and refill any that lost their value.
+    for (let pass = 0; pass < 3; pass++) {
+      let allGood = true;
+      for (let i = 0; i < values.length; i++) {
+        const field = fields.nth(i);
+        const got = await field.inputValue().catch(() => "");
+        if (got !== values[i]) {
+          allGood = false;
+          await field.scrollIntoViewIfNeeded().catch(() => {});
+          await field.click();
+          await field.fill("");
+          await field.pressSequentially(values[i], { delay: 20 });
+        }
+      }
+      if (allGood) break;
     }
 
     await page

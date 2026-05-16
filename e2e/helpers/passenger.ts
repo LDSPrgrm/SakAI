@@ -8,22 +8,26 @@ export async function setPickup(
   if (!(await pickupButton.isVisible().catch(() => false))) return;
   await pickupButton.click({ force: true });
   const input = page.getByRole("textbox").last();
-  await expect(input).toBeAttached({ timeout: 10000 });
-  await input.fill(query);
+  await input.waitFor({ state: "visible", timeout: 10000 });
   const confirm = page.locator(`text=Confirm "${query}"`).first();
   const suggestion = page
     .getByRole("button", { name: new RegExp(query, "i") })
     .first();
-  const winner = await Promise.race([
-    suggestion
-      .waitFor({ state: "attached", timeout: 10000 })
-      .then(() => "suggestion" as const)
-      .catch(() => null),
-    confirm
-      .waitFor({ state: "attached", timeout: 10000 })
-      .then(() => "confirm" as const)
-      .catch(() => null),
-  ]);
+  let winner: "suggestion" | "confirm" | null = null;
+  for (let attempt = 0; attempt < 2 && !winner; attempt++) {
+    await input.fill("");
+    await input.fill(query);
+    winner = await Promise.race([
+      suggestion
+        .waitFor({ state: "attached", timeout: 10000 })
+        .then(() => "suggestion" as const)
+        .catch(() => null),
+      confirm
+        .waitFor({ state: "attached", timeout: 10000 })
+        .then(() => "confirm" as const)
+        .catch(() => null),
+    ]);
+  }
   if (!winner) {
     throw new Error(`No autocomplete option appeared for pickup "${query}"`);
   }
@@ -45,22 +49,26 @@ export async function setDestination(
   await whereToBtn.waitFor({ state: "visible", timeout: 10000 });
   await whereToBtn.click({ force: true });
   const input = page.getByRole("textbox").last();
-  await expect(input).toBeAttached({ timeout: 15000 });
-  await input.fill(query);
+  await input.waitFor({ state: "visible", timeout: 15000 });
   const confirm = page.locator(`text=Confirm "${query}"`).first();
   const suggestion = page
     .getByRole("button", { name: new RegExp(query, "i") })
     .first();
-  const winner = await Promise.race([
-    suggestion
-      .waitFor({ state: "attached", timeout: 10000 })
-      .then(() => "suggestion" as const)
-      .catch(() => null),
-    confirm
-      .waitFor({ state: "attached", timeout: 10000 })
-      .then(() => "confirm" as const)
-      .catch(() => null),
-  ]);
+  let winner: "suggestion" | "confirm" | null = null;
+  for (let attempt = 0; attempt < 2 && !winner; attempt++) {
+    await input.fill("");
+    await input.fill(query);
+    winner = await Promise.race([
+      suggestion
+        .waitFor({ state: "attached", timeout: 10000 })
+        .then(() => "suggestion" as const)
+        .catch(() => null),
+      confirm
+        .waitFor({ state: "attached", timeout: 10000 })
+        .then(() => "confirm" as const)
+        .catch(() => null),
+    ]);
+  }
   if (!winner) {
     throw new Error(`No autocomplete option appeared for destination "${query}"`);
   }

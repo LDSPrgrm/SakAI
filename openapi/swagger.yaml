@@ -4071,6 +4071,12 @@ components:
           type: string
           format: uuid
           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. USR-0042).
         name:
           type: string
           example: "Maria Santos"
@@ -4369,6 +4375,12 @@ components:
           type: string
           format: uuid
           example: "d4e5f6a7-b8c9-0123-def4-567890abcdef"
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. RIDE-000123).
         status:
           $ref: "#/components/schemas/RideStatus"
         passenger:
@@ -4464,6 +4476,9 @@ components:
         id:
           type: string
           format: uuid
+        display_id:
+          type: string
+          description: Human-readable reference for the driver's user record (e.g. USR-0042).
         name:
           type: string
           example: "Juan dela Cruz"
@@ -4937,9 +4952,19 @@ components:
         id:
           type: string
           format: uuid
+        seq:
+          type: integer
+          format: int64
+          description: Postgres-assigned monotonic counter; the source for display_id.
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. INC-0042) derived from seq.
         ride_id:
           type: string
           format: uuid
+        ride_display_id:
+          type: string
+          description: Human-readable reference for the linked ride (e.g. RIDE-000123).
         type:
           type: string
           enum: [sos_triggered, reported_incident, safety_complaint]
@@ -5002,11 +5027,23 @@ components:
       properties:
         id:
           type: string
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. AUD-0042).
         timestamp:
           type: string
           format: date-time
         actor_id:
           type: string
+        actor_display_id:
+          type: string
+          description: Human-readable reference for the actor user (e.g. USR-0042).
+        actor_name:
+          type: string
+          description: Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous.
         ip_address:
           type: string
         action:
@@ -5032,8 +5069,17 @@ components:
       properties:
         id:
           type: string
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. TXN-000042).
         ride_id:
           type: string
+        ride_display_id:
+          type: string
+          description: Human-readable reference for the linked ride (e.g. RIDE-000123).
         rider_name:
           type: string
         driver_name:
@@ -5182,6 +5228,9 @@ components:
           type: string
         driver_id:
           type: string
+        driver_display_id:
+          type: string
+          description: Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
         driver_name:
           type: string
         submitted_at:

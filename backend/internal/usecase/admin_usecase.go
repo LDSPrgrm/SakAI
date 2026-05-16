@@ -533,12 +533,12 @@ func (uc *auditUseCase) ExportLogs(ctx context.Context, query domain.AuditQuery)
 		return nil, err
 	}
 	var buf []byte
-	header := "id,timestamp,actor_id,action,resource_type,resource_id,reason\n"
+	header := "id,timestamp,actor_id,actor_name,action,resource_type,resource_id,reason\n"
 	buf = append(buf, []byte(header)...)
 	for _, e := range logs {
-		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s\n",
+		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s\n",
 			e.ID, e.Timestamp.Format(time.RFC3339),
-			e.ActorID, e.Action, e.ResourceType, e.ResourceID, e.Reason)
+			e.ActorID, e.ActorName, e.Action, e.ResourceType, e.ResourceID, e.Reason)
 		buf = append(buf, []byte(row)...)
 	}
 	return buf, nil

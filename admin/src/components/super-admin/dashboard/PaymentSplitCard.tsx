@@ -4,6 +4,7 @@ import { PieChart as PieIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { EmptyState } from './EmptyState';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+import { renderInsidePieLabel } from '@/utils/pieLabels';
 import { cn } from '@/lib/utils';
 import type { UseQueryResult } from '@tanstack/react-query';
 
@@ -24,19 +25,22 @@ export function PaymentSplitCard({ query, className }: PaymentSplitCardProps) {
 
   return (
     <Card className={cn('flex flex-col', className)}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-[var(--color-sa-accent)]"
-            aria-hidden
-          />
-          <CardTitle className="text-sm font-semibold uppercase tracking-wider">
-            Payment Split
-          </CardTitle>
+      <CardHeader className="flex flex-col gap-1">
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-[var(--color-sa-accent)]"
+              aria-hidden
+            />
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider">
+              Payment Split
+            </CardTitle>
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-text-muted/80">
+            today
+          </span>
         </div>
-        <span className="text-[10px] uppercase tracking-widest text-text-muted/80">
-          today
-        </span>
+        <p className="text-xs text-text-muted">Share of payments today</p>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 pt-0">
         {query.isLoading ? (
@@ -60,6 +64,8 @@ export function PaymentSplitCard({ query, className }: PaymentSplitCardProps) {
                 innerRadius={55}
                 outerRadius={80}
                 dataKey="value"
+                label={renderInsidePieLabel}
+                labelLine={false}
               >
                 {normalized.map((_entry, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />

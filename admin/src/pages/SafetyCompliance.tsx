@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { EntityId } from '@/components/ui/EntityId';
 import { ShieldAlert, FileCheck, AlertTriangle, AlertCircle, Siren, Users, Activity } from 'lucide-react';
 import { SaveBanner } from '@/components/shared/SaveBanner';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
@@ -16,6 +17,13 @@ import {
 } from '@/hooks/useSafety';
 import { useExportReport } from '@/hooks/useReports';
 import type { Incident, KycEntry } from '@/types/super-admin';
+
+function formatExpiry(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime()) || d.getFullYear() < 2000) return '—';
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 function incidentTypeLabel(type: string): string {
   switch (type) {
@@ -214,8 +222,8 @@ export function SafetyCompliance() {
                 ) : incidents.map((inc) => (
                   <TableRow key={inc.id}>
                     <TableCell>
-                      <p className="font-medium text-text-main">{inc.id}</p>
-                      <p className="text-xs text-text-muted">
+                      <EntityId displayId={inc.display_id} uuid={inc.id} fallbackPrefix="INC" />
+                      <p className="text-xs text-text-muted mt-1">
                         {inc.created_at ? new Date(inc.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                       </p>
                     </TableCell>
@@ -228,8 +236,8 @@ export function SafetyCompliance() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <p className="text-sm font-medium text-primary">{inc.ride_id}</p>
-                      <p className="text-xs text-text-muted">By: {inc.triggered_by}</p>
+                      <EntityId displayId={inc.ride_display_id} uuid={inc.ride_id} fallbackPrefix="RIDE" />
+                      <p className="text-xs text-text-muted mt-1">By: {inc.triggered_by}</p>
                       {(inc.rider_name || inc.driver_name) && (
                         <p className="text-xs text-text-muted">
                           {inc.rider_name ?? inc.driver_name}
@@ -283,9 +291,11 @@ export function SafetyCompliance() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-medium text-text-main">{driver.driver_name}</p>
-                          <p className="text-xs text-text-muted">
-                            ID: {driver.driver_id} • Submitted: {driver.submitted_at ? new Date(driver.submitted_at).toLocaleDateString('en-PH') : '—'}
-                          </p>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
+                            <EntityId displayId={driver.driver_display_id} uuid={driver.driver_id} fallbackPrefix="USR" />
+                            <span>•</span>
+                            <span>Submitted: {driver.submitted_at ? new Date(driver.submitted_at).toLocaleDateString('en-PH') : '—'}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="mb-3">
@@ -335,10 +345,10 @@ export function SafetyCompliance() {
                 </Badge>
               </div>
               {compliance?.accreditation_expiry && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-3">
                   <span className="text-sm text-text-muted">Expiry Date</span>
-                  <span className="text-sm text-text-main">
-                    {new Date(compliance.accreditation_expiry).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  <span className="text-sm text-text-main whitespace-nowrap">
+                    {formatExpiry(compliance.accreditation_expiry)}
                   </span>
                 </div>
               )}

@@ -22,6 +22,8 @@ const (
 // User is the core identity entity for both passengers and drivers.
 type User struct {
 	ID        uuid.UUID  `json:"id"`
+	Seq       int64      `json:"seq"`
+	DisplayID string     `json:"display_id"`
 	Name      string     `json:"name"`
 	Email     string     `json:"email"`
 	Password  string     `json:"-"` // bcrypt hash — never serialized

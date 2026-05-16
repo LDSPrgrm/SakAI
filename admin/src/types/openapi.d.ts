@@ -190,26 +190,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete current user account */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Account deleted successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["Unauthorized"];
-                500: components["responses"]["InternalError"];
-            };
-        };
+        delete: operations["usersDeleteMe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -375,7 +356,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get current driver online/offline status
+         * @description Returns the driver's current availability status.
+         */
+        get: operations["driverGetStatus"];
         /**
          * Set driver online/offline status
          * @description Toggles the driver's availability. Only users with `role=driver` may call this.
@@ -684,6 +669,28 @@ export interface paths {
          *     Triggers: `ride.cancelled` WebSocket event → both parties.
          */
         post: operations["rideCancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rides/{rideId}/sos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger SOS/Emergency for an active ride
+         * @description Signals an emergency for the given ride.
+         *     This notifies admin support and records the current GPS trail for security purposes.
+         *     Both the passenger and the assigned driver may trigger this.
+         */
+        post: operations["rideTriggerSOS"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2214,7 +2221,7 @@ export interface components {
          * @description Machine-readable error code. Flutter clients should branch on this, not on `message`.
          * @enum {string}
          */
-        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "PROMO_INVALID" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION";
+        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION" | "PROMO_INVALID" | "PROMO_EXPIRED" | "PROMO_NOT_FOUND" | "PROMO_MIN_AMOUNT_NOT_MET";
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -2358,6 +2365,10 @@ export interface components {
              * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
              */
             id: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. USR-0042). */
+            display_id?: string;
             /** @example Maria Santos */
             name: string;
             /**
@@ -2555,6 +2566,10 @@ export interface components {
              * @example d4e5f6a7-b8c9-0123-def4-567890abcdef
              */
             id: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. RIDE-000123). */
+            display_id?: string;
             status: components["schemas"]["RideStatus"];
             passenger: components["schemas"]["UserProfile"];
             /** @description Null until a driver is matched and accepts. */
@@ -2635,6 +2650,8 @@ export interface components {
         DriverSummary: {
             /** Format: uuid */
             id: string;
+            /** @description Human-readable reference for the driver's user record (e.g. USR-0042). */
+            display_id?: string;
             /** @example Juan dela Cruz */
             name: string;
             /** @description Null if driver has no vehicle record yet. */
@@ -2922,8 +2939,17 @@ export interface components {
         Incident: {
             /** Format: uuid */
             id?: string;
+            /**
+             * Format: int64
+             * @description Postgres-assigned monotonic counter; the source for display_id.
+             */
+            seq?: number;
+            /** @description Human-readable reference (e.g. INC-0042) derived from seq. */
+            display_id?: string;
             /** Format: uuid */
             ride_id?: string;
+            /** @description Human-readable reference for the linked ride (e.g. RIDE-000123). */
+            ride_display_id?: string;
             /** @enum {string} */
             type?: "sos_triggered" | "reported_incident" | "safety_complaint";
             /**
@@ -2959,9 +2985,17 @@ export interface components {
         };
         AuditLog: {
             id?: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. AUD-0042). */
+            display_id?: string;
             /** Format: date-time */
             timestamp?: string;
             actor_id?: string;
+            /** @description Human-readable reference for the actor user (e.g. USR-0042). */
+            actor_display_id?: string;
+            /** @description Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous. */
+            actor_name?: string;
             ip_address?: string;
             action?: string;
             resource_type?: string;
@@ -2976,7 +3010,13 @@ export interface components {
         };
         Transaction: {
             id?: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. TXN-000042). */
+            display_id?: string;
             ride_id?: string;
+            /** @description Human-readable reference for the linked ride (e.g. RIDE-000123). */
+            ride_display_id?: string;
             rider_name?: string;
             driver_name?: string;
             amount?: number;
@@ -3002,6 +3042,23 @@ export interface components {
             payouts?: number;
             commission?: number;
             pending_settlements?: number;
+        };
+        TriggerSOSRequest: {
+            /**
+             * @description Brief description of the emergency or reason for SOS
+             * @example Unsafe driving behavior
+             */
+            reason: string;
+            /**
+             * Format: double
+             * @description Current latitude of the reporter
+             */
+            lat?: number;
+            /**
+             * Format: double
+             * @description Current longitude of the reporter
+             */
+            lng?: number;
         };
         CommissionConfig: {
             rates?: {
@@ -3048,6 +3105,8 @@ export interface components {
         KycEntry: {
             id?: string;
             driver_id?: string;
+            /** @description Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing. */
+            driver_display_id?: string;
             driver_name?: string;
             /** Format: date-time */
             submitted_at?: string;
@@ -4143,6 +4202,26 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    usersDeleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     paymentMethodsList: {
         parameters: {
             query?: never;
@@ -4434,6 +4513,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    driverGetStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     driverSetStatus: {
@@ -5011,6 +5112,52 @@ export interface operations {
                      * @example {
                      *       "code": "RIDE_INVALID_STATE_TRANSITION",
                      *       "message": "Rides cannot be cancelled once they are in progress"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    rideTriggerSOS: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the ride */
+                rideId: components["parameters"]["RideId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TriggerSOSRequest"];
+            };
+        };
+        responses: {
+            /** @description SOS triggered successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Ride is not in a state that allows SOS triggering */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RIDE_INVALID_STATE_TRANSITION",
+                     *       "message": "Cannot trigger SOS for an inactive ride"
                      *     }
                      */
                     "application/json": components["schemas"]["ErrorResponse"];

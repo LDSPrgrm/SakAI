@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, LabelList,
 } from 'recharts';
 import { Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -69,7 +69,7 @@ export function RevenueChart({ data, className, height = 240, period = '30d' }: 
           />
         ) : (
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }} barCategoryGap="35%">
+            <BarChart data={data} margin={{ top: 14, right: 4, left: 0, bottom: 8 }} barCategoryGap="35%">
               <CartesianGrid stroke="var(--color-border)" strokeDasharray="2 4" vertical={false} opacity={0.4} />
               <XAxis
                 dataKey="name"
@@ -78,12 +78,20 @@ export function RevenueChart({ data, className, height = 240, period = '30d' }: 
                 axisLine={false}
                 interval="preserveStartEnd"
                 minTickGap={24}
+                label={{
+                  value: 'Date',
+                  position: 'insideBottom',
+                  offset: -2,
+                  fill: 'var(--color-text-muted)',
+                  fontSize: 11,
+                }}
+                height={36}
               />
               <YAxis
                 tick={AXIS_TICK}
                 tickLine={false}
                 axisLine={false}
-                width={36}
+                width={48}
                 allowDecimals={false}
                 tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
               />
@@ -97,7 +105,15 @@ export function RevenueChart({ data, className, height = 240, period = '30d' }: 
                   <Bar dataKey="card"    stackId="a" fill={CHART_COLORS[3]} barSize={14} name="Card" radius={[3, 3, 0, 0]} />
                 </>
               ) : (
-                <Bar dataKey="revenue" fill="var(--color-sa-accent)" barSize={14} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="revenue" fill="var(--color-sa-accent)" barSize={14} radius={[3, 3, 0, 0]}>
+                  <LabelList
+                    dataKey="revenue"
+                    position="top"
+                    fill="var(--color-text-main)"
+                    fontSize={10}
+                    formatter={(v: number) => (v > 0 ? formatPHP(v) : '')}
+                  />
+                </Bar>
               )}
             </BarChart>
           </ResponsiveContainer>

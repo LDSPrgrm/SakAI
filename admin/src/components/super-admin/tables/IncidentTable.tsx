@@ -4,6 +4,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { DateDisplay } from '../shared/DateDisplay';
+import { EntityId } from '@/components/ui/EntityId';
 import type { Incident } from '@/types/super-admin';
 
 interface IncidentTableProps {
@@ -14,9 +15,9 @@ interface IncidentTableProps {
 
 export function IncidentTable({ data, onResolve, className }: IncidentTableProps) {
   const columns: ColumnDef<Incident>[] = [
-    { accessorKey: 'id',           header: 'ID',            cell: ({ getValue }) => <span className="font-mono text-xs text-text-muted">{String(getValue()).slice(0, 8)}…</span> },
+    { accessorKey: 'id',           header: 'ID',            cell: ({ row }) => <EntityId displayId={(row.original as any).display_id} uuid={row.original.id} fallbackPrefix="INC" /> },
     { accessorKey: 'created_at',   header: 'Date/Time',     cell: ({ getValue }) => <DateDisplay iso={getValue() as string} format="datetime" /> },
-    { accessorKey: 'ride_id',      header: 'Ride ID',       cell: ({ getValue }) => <span className="font-mono text-xs">{String(getValue()).slice(0, 8)}…</span> },
+    { accessorKey: 'ride_id',      header: 'Ride ID',       cell: ({ row }) => <EntityId displayId={(row.original as any).ride_display_id} uuid={row.original.ride_id} fallbackPrefix="RIDE" /> },
     { accessorKey: 'triggered_by', header: 'Triggered By',  cell: ({ getValue }) => <span className="capitalize">{String(getValue())}</span> },
     { accessorKey: 'rider_name',   header: 'Rider' },
     { accessorKey: 'driver_name',  header: 'Driver' },

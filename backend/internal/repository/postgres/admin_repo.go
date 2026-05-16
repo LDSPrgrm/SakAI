@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 // adminRepo handles admin user management and system settings.
@@ -21,7 +22,7 @@ func NewAdminRepo(db *pgxpool.Pool) domain.AdminRepository {
 
 func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	const q = `
-		SELECT id, name, email, role, role_id, created_at
+		SELECT id, seq, name, email, role, role_id, created_at
 		FROM users
 		WHERE role IN ('admin', 'superadmin', 'operations', 'finance', 'support')
 		ORDER BY created_at DESC`
@@ -35,9 +36,10 @@ func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	var admins []*domain.User
 	for rows.Next() {
 		u := &domain.User{}
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.RoleID, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Seq, &u.Name, &u.Email, &u.Role, &u.RoleID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
+		u.DisplayID = displayid.User(u.Seq)
 		admins = append(admins, u)
 	}
 	return admins, nil
@@ -264,11 +266,16 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 	offset := q.Page * limit
 
 	selectQ := fmt.Sprintf(`
-		SELECT id, timestamp, actor_id, ip_address, action, resource_type, resource_id, before_state, after_state, reason
-		FROM audit_log_entries %s
-		ORDER BY timestamp DESC
+		SELECT a.id, a.seq, a.timestamp, a.actor_id, COALESCE(u.seq, 0) AS actor_seq,
+		       COALESCE(u.name, '') AS actor_name,
+		       a.ip_address, a.action, a.resource_type, a.resource_id,
+		       a.before_state, a.after_state, a.reason
+		FROM audit_log_entries a
+		LEFT JOIN users u ON u.id = a.actor_id
+		%s
+		ORDER BY a.timestamp DESC
 		LIMIT $%d OFFSET $%d`, whereSQL, argID, argID+1)
-	
+
 	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx, selectQ, args...)
 	if err != nil {
@@ -279,9 +286,12 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 	var logs []*domain.AuditLogEntry
 	for rows.Next() {
 		e := &domain.AuditLogEntry{}
-		if err := rows.Scan(&e.ID, &e.Timestamp, &e.ActorID, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
+		var actorSeq int64
+		if err := rows.Scan(&e.ID, &e.Seq, &e.Timestamp, &e.ActorID, &actorSeq, &e.ActorName, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
 			return nil, 0, err
 		}
+		e.DisplayID = displayid.AuditLog(e.Seq)
+		e.ActorDisplayID = displayid.User(actorSeq)
 		logs = append(logs, e)
 	}
 	return logs, total, nil
@@ -296,7 +306,7 @@ func NewIncidentRepo(db *pgxpool.Pool) domain.IncidentRepository {
 }
 
 func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
-	q := `SELECT i.id, i.ride_id, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to`
+	q := `SELECT i.id, i.seq, i.ride_id, COALESCE(rd.seq, 0) AS ride_seq, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to LEFT JOIN rides rd ON rd.id = i.ride_id`
 	var args []any
 	if status != nil {
 		q += " WHERE i.status = $1"
@@ -313,21 +323,27 @@ func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*do
 	var incidents []*domain.Incident
 	for rows.Next() {
 		i := &domain.Incident{}
-		if err := rows.Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
+		var rideSeq int64
+		if err := rows.Scan(&i.ID, &i.Seq, &i.RideID, &rideSeq, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
 			return nil, err
 		}
+		i.DisplayID = displayid.Incident(i.Seq)
+		i.RideDisplayID = displayid.Ride(rideSeq)
 		incidents = append(incidents, i)
 	}
 	return incidents, nil
 }
 
 func (r *incidentRepo) GetIncidentByID(ctx context.Context, id uuid.UUID) (*domain.Incident, error) {
-	const q = `SELECT i.id, i.ride_id, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to WHERE i.id = $1`
+	const q = `SELECT i.id, i.seq, i.ride_id, COALESCE(rd.seq, 0) AS ride_seq, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to LEFT JOIN rides rd ON rd.id = i.ride_id WHERE i.id = $1`
 	i := &domain.Incident{}
-	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
+	var rideSeq int64
+	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.Seq, &i.RideID, &rideSeq, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
+	i.DisplayID = displayid.Incident(i.Seq)
+	i.RideDisplayID = displayid.Ride(rideSeq)
 	return i, err
 }
 

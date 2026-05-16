@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 type safetyRepo struct{ db *pgxpool.Pool }
@@ -21,7 +22,7 @@ func NewSafetyRepo(db *pgxpool.Pool) domain.SafetyRepository {
 // so the review UI can render everything in one pass.
 func (r *safetyRepo) ListKyc(ctx context.Context) ([]*domain.KycEntry, error) {
 	const q = `
-		SELECT s.id, s.driver_id, COALESCE(u.name, ''), s.submitted_at, s.status,
+		SELECT s.id, s.driver_id, COALESCE(u.seq, 0) AS driver_seq, COALESCE(u.name, ''), s.submitted_at, s.status,
 		       COALESCE(
 		         (SELECT array_agg(d.document_type::text ORDER BY d.uploaded_at)
 		          FROM driver_documents d
@@ -42,9 +43,11 @@ func (r *safetyRepo) ListKyc(ctx context.Context) ([]*domain.KycEntry, error) {
 	var entries []*domain.KycEntry
 	for rows.Next() {
 		e := &domain.KycEntry{}
-		if err := rows.Scan(&e.ID, &e.DriverID, &e.DriverName, &e.SubmittedAt, &e.Status, &e.Docs); err != nil {
+		var driverSeq int64
+		if err := rows.Scan(&e.ID, &e.DriverID, &driverSeq, &e.DriverName, &e.SubmittedAt, &e.Status, &e.Docs); err != nil {
 			return nil, err
 		}
+		e.DriverDisplayID = displayid.User(driverSeq)
 		entries = append(entries, e)
 	}
 	return entries, nil

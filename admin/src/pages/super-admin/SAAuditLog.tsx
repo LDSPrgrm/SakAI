@@ -16,6 +16,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { EntityId } from '@/components/ui/EntityId';
+import { prefixFor } from '@/utils/resourceTypeToPrefix';
 import {
   Table,
   TableBody,
@@ -29,6 +31,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { useAuditLog, useExportAuditLog } from '@/hooks/useAuditLog';
+import { useAdmins } from '@/hooks/useAdmins';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { computeChangedKeys } from '@/utils/objectDiff';
 import { cn } from '@/lib/utils';
@@ -264,7 +267,12 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <div>
             <span className="text-text-muted">Admin: </span>
-            <span className="text-text-main">{log.actor_name}</span>
+            <span className="text-text-main">{log.actor_name || <span className="italic text-text-muted">System</span>}</span>
+            {log.actor_id && (
+              <span className="ml-2 inline-flex">
+                <EntityId displayId={log.actor_display_id} uuid={log.actor_id} fallbackPrefix="USR" />
+              </span>
+            )}
           </div>
           <div>
             <span className="text-text-muted">Timestamp: </span>
@@ -276,9 +284,7 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
           </div>
           <div>
             <span className="text-text-muted">Resource ID: </span>
-            <span className="text-text-main font-mono text-xs break-all">
-              {log.resource_id}
-            </span>
+            <EntityId uuid={log.resource_id} fallbackPrefix={prefixFor(log.resource_type)} />
           </div>
           {log.reason && (
             <div className="sm:col-span-2">
@@ -316,6 +322,7 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
 
 export function SAAuditLog() {
   const logsQuery = useAuditLog();
+  const adminsQuery = useAdmins();
   const exportMutation = useExportAuditLog();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
@@ -323,6 +330,11 @@ export function SAAuditLog() {
 
   const logs = (logsQuery.data ?? []) as unknown as AuditLogEntry[];
   const isLoading = logsQuery.isLoading;
+  const roleByActorId = new Map(
+    (adminsQuery.data ?? [])
+      .filter((a) => a.id && a.role_name)
+      .map((a) => [a.id!, a.role_name!] as const),
+  );
   const handleExportCsv = () => exportMutation.mutate();
 
   const filteredLogs = logs.filter((log) => {
@@ -480,12 +492,25 @@ export function SAAuditLog() {
 
                     {/* Admin */}
                     <TableCell>
-                      <p className="text-sm text-text-main font-medium">
-                        {log.actor_name}
-                      </p>
-                      <p className="text-xs text-text-muted font-mono">
-                        {log.ip_address}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-text-main font-medium">
+                          {log.actor_name || <span className="italic text-text-muted">System</span>}
+                        </p>
+                        {log.actor_id && roleByActorId.get(log.actor_id) && (
+                          <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                            {roleByActorId.get(log.actor_id)}
+                          </Badge>
+                        )}
+                      </div>
+                      {log.actor_id && (
+                        <div className="mt-0.5">
+                          <EntityId
+                            displayId={log.actor_display_id}
+                            uuid={log.actor_id}
+                            fallbackPrefix="USR"
+                          />
+                        </div>
+                      )}
                     </TableCell>
 
                     {/* Action */}

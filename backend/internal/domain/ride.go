@@ -82,6 +82,8 @@ func IsValidCancellationReason(s string) bool {
 // Ride is the central aggregate for a single trip lifecycle.
 type Ride struct {
 	ID                   uuid.UUID    `json:"id"`
+	Seq                  int64        `json:"seq"`
+	DisplayID            string       `json:"display_id"`
 	PassengerID          uuid.UUID    `json:"passenger_id"`
 	DriverID             *uuid.UUID   `json:"driver_id,omitempty"`
 	Status               RideStatus   `json:"status"`

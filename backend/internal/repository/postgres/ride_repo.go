@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 // rideRepo implements repository.RideRepository using PostgreSQL.
@@ -42,7 +43,7 @@ func (r *rideRepo) Create(ctx context.Context, ride *domain.Ride) error {
 
 func (r *rideRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -52,7 +53,7 @@ func (r *rideRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ride, err
 
 func (r *rideRepo) GetByIdempotencyKey(ctx context.Context, key string) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -62,7 +63,7 @@ func (r *rideRepo) GetByIdempotencyKey(ctx context.Context, key string) (*domain
 
 func (r *rideRepo) GetActiveByPassengerID(ctx context.Context, pID uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -75,7 +76,7 @@ func (r *rideRepo) GetActiveByPassengerID(ctx context.Context, pID uuid.UUID) (*
 
 func (r *rideRepo) GetActiveByDriverID(ctx context.Context, dID uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -201,7 +202,7 @@ func (r *rideRepo) ListAll(ctx context.Context, f domain.AdminRideFilter) ([]*do
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -233,7 +234,7 @@ func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {
 	var cancelledBy *domain.CancelledBy
 	var originAddr, destAddr, notes sql.NullString
 	err := row.Scan(
-		&ride.ID, &ride.PassengerID, &ride.DriverID, &ride.Status,
+		&ride.ID, &ride.Seq, &ride.PassengerID, &ride.DriverID, &ride.Status,
 		&ride.Origin.Lat, &ride.Origin.Lng,
 		&ride.Destination.Lat, &ride.Destination.Lng,
 		&originAddr, &destAddr, &notes,
@@ -242,6 +243,7 @@ func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
+	ride.DisplayID = displayid.Ride(ride.Seq)
 	ride.OriginAddress = originAddr.String
 	ride.DestinationAddress = destAddr.String
 	ride.Notes = notes.String
@@ -288,7 +290,7 @@ func (r *rideRepo) ListByPassengerID(ctx context.Context, passengerID uuid.UUID,
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -353,7 +355,7 @@ func (r *rideRepo) ListByDriverID(ctx context.Context, driverID uuid.UUID, f dom
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at

@@ -9,6 +9,7 @@ import { Search, Eye, Ban, CheckCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePassengers, useDrivers, useUpdateUserStatus } from '@/hooks/useUsers';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { EntityId } from '@/components/ui/EntityId';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { RiderDetailModal } from '@/components/admin/modals/RiderDetailModal';
 import { DriverDetailModal } from '@/components/admin/modals/DriverDetailModal';
@@ -169,9 +170,9 @@ export function UserManagement() {
                   ) : filteredRiders.map((rider) => (
                     <TableRow key={rider.id}>
                       <TableCell>
-                        <div>
+                        <div className="flex flex-col items-start gap-1">
                           <p className="font-medium text-text-main">{rider.name}</p>
-                          <p className="text-xs text-text-muted">{rider.id}</p>
+                          <EntityId displayId={(rider as any).display_id} uuid={rider.id} fallbackPrefix="USR" />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -251,9 +252,9 @@ export function UserManagement() {
                   ) : filteredDrivers.map((driver) => (
                     <TableRow key={driver.id}>
                       <TableCell>
-                        <div>
+                        <div className="flex flex-col items-start gap-1">
                           <p className="font-medium text-text-main">{driver.name}</p>
-                          <p className="text-xs text-text-muted">{driver.id}</p>
+                          <EntityId displayId={(driver as any).display_id} uuid={driver.id} fallbackPrefix="USR" />
                         </div>
                       </TableCell>
                       <TableCell>

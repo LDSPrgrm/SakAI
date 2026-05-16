@@ -140,7 +140,7 @@ export function SALguPartnerships() {
                         {p.agreement_end && <> → {formatDate(p.agreement_end)}</>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_VARIANT[p.status]}>{p.status}</Badge>
+                        <Badge variant={STATUS_VARIANT[p.status]} className="capitalize">{p.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

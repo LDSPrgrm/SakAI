@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine, LabelList,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -11,9 +11,20 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { useReportChart, useReportList, useExportReport } from '@/hooks/useReports';
 import type { ReportRange } from '@/api/super-admin/reports';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+import { renderOutsidePieLabel } from '@/utils/pieLabels';
+import { aggregateByWeekday } from '@/utils/chartAggregate';
 
 const COLORS = CHART_COLORS;
 const DARK_TOOLTIP = DARK_TOOLTIP_STYLE;
+
+const yAxisLabel = (value: string) => ({
+  value,
+  angle: -90 as const,
+  position: 'insideLeft' as const,
+  fill: '#9CA3AF',
+  fontSize: 11,
+  style: { textAnchor: 'middle' as const },
+});
 
 interface ReportItem {
   id: string;
@@ -27,7 +38,7 @@ function toIsoDate(d: Date): string {
 
 export function Reports() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
-  const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
+  const [selectedReport, setSelectedReport] = useState<string>('');
 
   const apiRange: ReportRange = useMemo(
     () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
@@ -47,11 +58,20 @@ export function Reports() {
     .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
   const paymentData = ((paymentQuery.data ?? []) as { label?: string; name?: string; value: number }[])
     .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
-  const waitTimeData = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
-    .map(d => ({ name: d.name ?? d.label ?? '', wait: d.wait ?? d.value ?? 0 }));
-  const ratingsData = (ratingsQuery.data ?? []) as {
+  const waitTimeRaw = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
+    .map(d => {
+      const v = d.wait ?? d.value ?? 0;
+      return { name: d.name ?? d.label ?? '', wait: v > 0 ? v : null };
+    });
+  const waitTimeData = aggregateByWeekday(waitTimeRaw, ['wait'] as const);
+  const ratingsRaw = ((ratingsQuery.data ?? []) as {
     name: string; driver: number; rider: number;
-  }[];
+  }[]).map(d => ({
+    name: d.name,
+    driver: d.driver > 0 ? d.driver : null,
+    rider: d.rider > 0 ? d.rider : null,
+  }));
+  const ratingsData = aggregateByWeekday(ratingsRaw, ['driver', 'rider'] as const);
   const loading = reportListQuery.isPending;
 
   const openExportedCsv = async (type: string) => {
@@ -77,6 +97,7 @@ export function Reports() {
         <Card>
           <CardHeader>
             <CardTitle>Rides by Vehicle Type</CardTitle>
+            <p className="text-xs text-text-muted mt-1">Share of total rides</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -89,10 +110,12 @@ export function Reports() {
                       data={vehicleData}
                       dataKey="value"
                       nameKey="name"
+                      cy="55%"
                       innerRadius={50}
                       outerRadius={90}
                       paddingAngle={5}
-                      label
+                      label={renderOutsidePieLabel}
+                      labelLine={false}
                     >
                       {vehicleData.map((_entry, index) => (
                         <Cell key={`vehicle-cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -110,6 +133,7 @@ export function Reports() {
         <Card>
           <CardHeader>
             <CardTitle>Payment Method Distribution</CardTitle>
+            <p className="text-xs text-text-muted mt-1">Share of total transactions</p>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -122,10 +146,12 @@ export function Reports() {
                       data={paymentData}
                       dataKey="value"
                       nameKey="name"
+                      cy="55%"
                       innerRadius={50}
                       outerRadius={90}
                       paddingAngle={5}
-                      label
+                      label={renderOutsidePieLabel}
+                      labelLine={false}
                     >
                       {paymentData.map((_entry, index) => (
                         <Cell key={`payment-cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -143,22 +169,25 @@ export function Reports() {
         <Card>
           <CardHeader>
             <CardTitle>Wait Time Trends</CardTitle>
+            <p className="text-xs text-text-muted mt-1">Daily average · target ≤ 5 min</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={waitTimeData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <LineChart data={waitTimeData} margin={{ top: 28, right: 16, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis
                   dataKey="name"
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={32}
                 />
                 <YAxis
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
-                  unit=" min"
+                  label={yAxisLabel('Wait time (min)')}
                 />
                 <Tooltip {...DARK_TOOLTIP} formatter={(value: number) => [`${value} min`, 'Wait Time']} />
                 <ReferenceLine
@@ -172,7 +201,23 @@ export function Reports() {
                     position: 'insideTopRight',
                   }}
                 />
-                <Line type="monotone" dataKey="wait" stroke="#1A73E8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line
+                  type="linear"
+                  dataKey="wait"
+                  stroke="#1A73E8"
+                  strokeWidth={2}
+                  connectNulls
+                  dot={{ r: 3, fill: '#1A73E8' }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList
+                    dataKey="wait"
+                    position="top"
+                    fill="#E5E7EB"
+                    fontSize={11}
+                    formatter={(v: number | null) => (v == null ? '' : `${v}m`)}
+                  />
+                </Line>
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -181,27 +226,65 @@ export function Reports() {
         <Card>
           <CardHeader>
             <CardTitle>Average Ratings</CardTitle>
+            <p className="text-xs text-text-muted mt-1">1–5 scale · driver vs rider</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={ratingsData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <LineChart data={ratingsData} margin={{ top: 28, right: 16, left: 24, bottom: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis
                   dataKey="name"
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={32}
                 />
                 <YAxis
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   domain={[1, 5]}
+                  label={yAxisLabel('Rating (1–5)')}
                 />
                 <Tooltip {...DARK_TOOLTIP} />
                 <Legend />
-                <Line type="monotone" dataKey="driver" name="Driver Rating" stroke="#1A73E8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                <Line type="monotone" dataKey="rider" name="Rider Rating" stroke="#34A853" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line
+                  type="linear"
+                  dataKey="driver"
+                  name="Driver Rating"
+                  stroke="#1A73E8"
+                  strokeWidth={2}
+                  connectNulls
+                  dot={{ r: 3, fill: '#1A73E8' }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList
+                    dataKey="driver"
+                    position="top"
+                    fill="#E5E7EB"
+                    fontSize={11}
+                    formatter={(v: number | null) => (v == null ? '' : v.toFixed(1))}
+                  />
+                </Line>
+                <Line
+                  type="linear"
+                  dataKey="rider"
+                  name="Rider Rating"
+                  stroke="#34A853"
+                  strokeWidth={2}
+                  connectNulls
+                  dot={{ r: 3, fill: '#34A853' }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList
+                    dataKey="rider"
+                    position="bottom"
+                    fill="#E5E7EB"
+                    fontSize={11}
+                    formatter={(v: number | null) => (v == null ? '' : v.toFixed(1))}
+                  />
+                </Line>
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
