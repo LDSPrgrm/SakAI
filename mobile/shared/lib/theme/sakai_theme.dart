@@ -45,6 +45,23 @@ abstract final class SakaiTheme {
           )
         : scheme.copyWith(error: danger);
 
+    final neutral = brightness == Brightness.dark
+        ? const Color(0xFF8B949E)
+        : const Color(0xFF6B7280);
+    final neutralVariant = brightness == Brightness.dark
+        ? const Color(0xFF6B7280)
+        : const Color(0xFF9CA3AF);
+    final disabledSurface = brightness == Brightness.dark
+        ? const Color(0xFF21262D)
+        : const Color(0xFFF3F4F6);
+    final disabledOnSurface = brightness == Brightness.dark
+        ? const Color(0xFF6B7280)
+        : const Color(0xFF9CA3AF);
+
+    Color tint(Color base) => brightness == Brightness.dark
+        ? Color.alphaBlend(base.withValues(alpha: 0.24), darkSurface)
+        : Color.alphaBlend(base.withValues(alpha: 0.12), Colors.white);
+
     final semantic = SakaiSemanticColors(
       success: success,
       danger: danger,
@@ -53,6 +70,13 @@ abstract final class SakaiTheme {
       darkBackground: darkBackground,
       darkSurface: darkSurface,
       darkBorder: darkBorder,
+      neutral: neutral,
+      neutralVariant: neutralVariant,
+      disabledSurface: disabledSurface,
+      disabledOnSurface: disabledOnSurface,
+      dangerSubtle: tint(danger),
+      warningSubtle: tint(warning),
+      successSubtle: tint(success),
     );
 
     final scaffoldBackgroundColor = brightness == Brightness.dark

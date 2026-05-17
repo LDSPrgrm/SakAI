@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/e2e_mode_stub.dart'
     if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
@@ -51,20 +52,9 @@ class ActiveRideScreen extends ConsumerWidget {
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (error, stackTrace) => Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(error.toString()),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(activeRideProvider(rideId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            body: SakaiErrorState(
+              message: error.toString(),
+              onRetry: () => ref.invalidate(activeRideProvider(rideId)),
             ),
           ),
           data: (rideState) =>

@@ -88,7 +88,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final scheme = Theme.of(context).colorScheme;
     final ride = state.ride;
     final statusLabel = _statusLabel(state.currentStep);
-    final statusColor = _statusColor(state.currentStep, context);
 
     return Scaffold(
       appBar: AppBar(
@@ -104,19 +103,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 ? null
                 : () => context.push(Routes.sos, extra: ride.id),
           ),
-          Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.spaceSm,
+              vertical: tokens.spaceXs,
             ),
-            child: Text(
-              statusLabel,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
-              ),
+            child: SakaiStatusBadge(
+              status: _badgeStatus(state.currentStep),
+              label: statusLabel,
+              dense: true,
             ),
           ),
         ],
@@ -364,14 +359,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     }
   }
 
-  Color _statusColor(ActiveRideStep step, BuildContext context) {
+  SakaiStatus _badgeStatus(ActiveRideStep step) {
     switch (step) {
       case ActiveRideStep.enRoute:
-        return Theme.of(context).colorScheme.primary;
+        return SakaiStatus.info;
       case ActiveRideStep.arrived:
-        return SakaiSemanticColors.of(context).warning;
+        return SakaiStatus.warning;
       case ActiveRideStep.inProgress:
-        return SakaiSemanticColors.of(context).success;
+        return SakaiStatus.success;
     }
   }
 }

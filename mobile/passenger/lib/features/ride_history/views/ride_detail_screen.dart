@@ -94,31 +94,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
         return const Center(child: CircularProgressIndicator());
 
       case RideDetailStatus.error:
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
-              ),
-              SizedBox(height: tokens.spaceMd),
-              Text(
-                state.error ?? 'Failed to load ride details',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
-              ),
-              SizedBox(height: tokens.spaceMd),
-              ElevatedButton.icon(
-                onPressed: () => ref
-                    .read(rideDetailNotifierProvider(widget.rideId))
-                    .loadDetail(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        return SakaiErrorState(
+          message: state.error ?? 'Failed to load ride details',
+          onRetry: () => ref
+              .read(rideDetailNotifierProvider(widget.rideId))
+              .loadDetail(),
         );
 
       case RideDetailStatus.success:

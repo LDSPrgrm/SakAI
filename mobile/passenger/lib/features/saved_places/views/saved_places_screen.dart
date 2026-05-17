@@ -49,7 +49,7 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
             RefreshIndicator(
               onRefresh: () => ref.read(savedPlacesNotifierProvider.notifier).loadSavedPlaces(),
               child: state.savedPlaces.isEmpty && state.status == SavedPlacesStatus.loaded
-                  ? _buildEmptyState(theme)
+                  ? _buildEmptyState()
                   : ListView.builder(
                       padding: EdgeInsets.all(tokens.spaceLg),
                       itemCount: state.savedPlaces.length,
@@ -72,32 +72,16 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      children: [
+      children: const [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 80.0, horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.place_outlined,
-                size: 64,
-                color: theme.colorScheme.secondary.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No Saved Places',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Add places like home or work for faster booking.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(vertical: 64),
+          child: SakaiEmptyState(
+            icon: Icons.place_outlined,
+            title: 'No Saved Places',
+            message: 'Add places like home or work for faster booking.',
           ),
         ),
       ],

@@ -19,6 +19,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     required this.elevationSm,
     required this.elevationMd,
     required this.elevationLg,
+    this.durationFast = const Duration(milliseconds: 150),
+    this.durationStandard = const Duration(milliseconds: 250),
+    this.durationSlow = const Duration(milliseconds: 400),
+    this.borderHairline = 0.5,
+    this.borderThin = 1,
+    this.borderMedium = 2,
   });
 
   static const SakaiDesignTokens defaults = SakaiDesignTokens(
@@ -54,6 +60,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
   final List<BoxShadow> elevationSm;
   final List<BoxShadow> elevationMd;
   final List<BoxShadow> elevationLg;
+  final Duration durationFast;
+  final Duration durationStandard;
+  final Duration durationSlow;
+  final double borderHairline;
+  final double borderThin;
+  final double borderMedium;
 
   static SakaiDesignTokens of(BuildContext context) {
     final ext = Theme.of(context).extension<SakaiDesignTokens>();
@@ -78,6 +90,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     List<BoxShadow>? elevationSm,
     List<BoxShadow>? elevationMd,
     List<BoxShadow>? elevationLg,
+    Duration? durationFast,
+    Duration? durationStandard,
+    Duration? durationSlow,
+    double? borderHairline,
+    double? borderThin,
+    double? borderMedium,
   }) {
     return SakaiDesignTokens(
       spaceXs: spaceXs ?? this.spaceXs,
@@ -92,6 +110,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
       elevationSm: elevationSm ?? this.elevationSm,
       elevationMd: elevationMd ?? this.elevationMd,
       elevationLg: elevationLg ?? this.elevationLg,
+      durationFast: durationFast ?? this.durationFast,
+      durationStandard: durationStandard ?? this.durationStandard,
+      durationSlow: durationSlow ?? this.durationSlow,
+      borderHairline: borderHairline ?? this.borderHairline,
+      borderThin: borderThin ?? this.borderThin,
+      borderMedium: borderMedium ?? this.borderMedium,
     );
   }
 
@@ -117,6 +141,12 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
           BoxShadow.lerpList(elevationMd, other.elevationMd, t) ?? elevationMd,
       elevationLg:
           BoxShadow.lerpList(elevationLg, other.elevationLg, t) ?? elevationLg,
+      durationFast: t < 0.5 ? durationFast : other.durationFast,
+      durationStandard: t < 0.5 ? durationStandard : other.durationStandard,
+      durationSlow: t < 0.5 ? durationSlow : other.durationSlow,
+      borderHairline: lerpDouble(borderHairline, other.borderHairline, t)!,
+      borderThin: lerpDouble(borderThin, other.borderThin, t)!,
+      borderMedium: lerpDouble(borderMedium, other.borderMedium, t)!,
     );
   }
 }
