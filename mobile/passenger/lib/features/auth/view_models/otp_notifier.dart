@@ -96,14 +96,23 @@ class OtpNotifier extends Notifier<OtpState> {
 
   void _startCooldown() {
     _cooldownTimer?.cancel();
-    state = state.copyWith(resendCooldownSeconds: 30);
+    state = state.copyWith(
+      resendCooldownSeconds: 30,
+      errorMessage: state.errorMessage,
+    );
     _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       final next = state.resendCooldownSeconds - 1;
       if (next <= 0) {
         timer.cancel();
-        state = state.copyWith(resendCooldownSeconds: 0);
+        state = state.copyWith(
+          resendCooldownSeconds: 0,
+          errorMessage: state.errorMessage,
+        );
       } else {
-        state = state.copyWith(resendCooldownSeconds: next);
+        state = state.copyWith(
+          resendCooldownSeconds: next,
+          errorMessage: state.errorMessage,
+        );
       }
     });
   }

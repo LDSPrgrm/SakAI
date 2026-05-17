@@ -44,8 +44,10 @@ class WalletNotifier extends Notifier<WalletViewState> {
   Future<void> load() async {
     state = state.copyWith(loading: true, errorMessage: null);
     try {
-      final balance = await _repo.getBalance();
-      final txns = await _repo.listTransactions();
+      final (balance, txns) = await (
+        _repo.getBalance(),
+        _repo.listTransactions(),
+      ).wait;
       state = WalletViewState(balance: balance, transactions: txns);
     } on UnimplementedError catch (e) {
       state = WalletViewState(errorMessage: e.message);

@@ -124,7 +124,7 @@ class WalletScreen extends ConsumerWidget {
           ),
         );
       },
-    );
+    ).whenComplete(controller.dispose);
   }
 }
 
