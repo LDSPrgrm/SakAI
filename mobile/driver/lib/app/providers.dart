@@ -12,8 +12,6 @@ import '../features/earnings/repositories/earnings_repository.dart';
 
 import '../features/documents/repositories/driver_document_repository.dart';
 import '../features/documents/repositories/driver_document_repository_impl.dart';
-import '../features/auth/repositories/otp_repository.dart';
-import '../features/auth/repositories/otp_repository_impl.dart';
 import '../features/profile/repositories/driver_profile_repository.dart';
 import '../features/profile/repositories/driver_profile_repository_impl.dart';
 import '../features/settings/repositories/availability_repository.dart';
@@ -64,11 +62,6 @@ final earningsRepositoryProvider = Provider<EarningsRepository>((ref) {
 /// Driver documents repository — domain boundary for document uploads and status.
 final driverDocumentRepositoryProvider = Provider<DriverDocumentRepository>((ref) {
   return DriverDocumentRepositoryImpl(ref.watch(apiClientProvider));
-});
-
-/// OTP repository — backend endpoints pending; throws UnimplementedError.
-final otpRepositoryProvider = Provider<OtpRepository>((ref) {
-  return OtpRepositoryImpl(ref.watch(apiClientProvider));
 });
 
 /// Driver profile repository — GET wired, PATCH pending.

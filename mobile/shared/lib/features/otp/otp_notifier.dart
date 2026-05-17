@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../repositories/otp_repository.dart';
-import '../../../app/providers.dart';
+import 'otp_repository.dart';
 
 class OtpState {
   const OtpState({
@@ -37,6 +36,15 @@ class OtpState {
     );
   }
 }
+
+/// Canonical OTP repository provider. Default throws — each app's root
+/// `ProviderScope` must override it with a concrete impl that talks to its
+/// `SakaiApiClient`.
+final otpRepositoryProvider = Provider<OtpRepository>((ref) {
+  throw UnimplementedError(
+    'otpRepositoryProvider not overridden. Each app must override it in main.dart',
+  );
+});
 
 class OtpNotifier extends Notifier<OtpState> {
   Timer? _cooldownTimer;

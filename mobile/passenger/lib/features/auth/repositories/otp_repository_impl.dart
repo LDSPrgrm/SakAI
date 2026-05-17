@@ -1,6 +1,4 @@
-import 'package:sakai_api_client/sakai_api_client.dart';
-
-import 'otp_repository.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 class OtpRepositoryImpl implements OtpRepository {
   OtpRepositoryImpl(this._client);

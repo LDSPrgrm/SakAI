@@ -7,6 +7,10 @@ export 'api/token_storage.dart';
 export 'api/auth_interceptor.dart';
 export 'api/sakai_api_support.dart';
 
+// Cross-app features
+export 'features/otp/otp_notifier.dart';
+export 'features/otp/otp_repository.dart';
+
 // Domain models (new — stable wrappers around generated types)
 export 'models/models.dart';
 export 'repositories/sos_repository.dart';

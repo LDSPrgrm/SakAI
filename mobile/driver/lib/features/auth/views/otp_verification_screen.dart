@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/router.dart';
-import '../view_models/otp_notifier.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   const OtpVerificationScreen({super.key, required this.destination});

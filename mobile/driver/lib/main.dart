@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import 'app/driver_app.dart';
+import 'app/providers.dart';
+import 'features/auth/repositories/otp_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,12 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        otpRepositoryProvider.overrideWith(
+          (ref) => OtpRepositoryImpl(ref.watch(apiClientProvider)),
+        ),
+      ],
       child: const DriverApp(),
     ),
   );
