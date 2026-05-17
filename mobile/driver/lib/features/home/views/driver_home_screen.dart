@@ -525,6 +525,47 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 context.push(Routes.documents);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Trip history'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.tripHistory);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.profile);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.settings);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_none),
+              title: const Text('Notifications'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.notifications);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Support'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.support);
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),

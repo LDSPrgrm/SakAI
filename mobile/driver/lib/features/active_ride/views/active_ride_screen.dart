@@ -94,6 +94,16 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       appBar: AppBar(
         title: const Text('Active Ride'),
         actions: [
+          IconButton(
+            tooltip: 'Emergency SOS',
+            icon: Icon(
+              Icons.warning_amber_rounded,
+              color: scheme.error,
+            ),
+            onPressed: ride == null
+                ? null
+                : () => context.push(Routes.sos, extra: ride.id),
+          ),
           Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

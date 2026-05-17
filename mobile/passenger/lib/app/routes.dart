@@ -3,6 +3,7 @@ abstract class Routes {
   static const welcome = '/welcome';
   static const login = '/login';
   static const register = '/register';
+  static const otp = '/auth/otp';
   static const home = '/home';
   static const editProfile = '/edit-profile';
   static const paymentMethods = '/payment-methods';
@@ -25,4 +26,10 @@ abstract class Routes {
   static const settingsTerms = '/settings/terms';
   static const settingsPrivacy = '/settings/privacy';
   static const settingsLanguage = '/settings/language';
+
+  // Gap-fill additions
+  static const wallet = '/wallet';
+  static const notifications = '/notifications';
+  static const noDrivers = '/ride/no-drivers';
+  static const noInternet = '/no-internet';
 }

@@ -12,6 +12,17 @@ import '../features/earnings/repositories/earnings_repository.dart';
 
 import '../features/documents/repositories/driver_document_repository.dart';
 import '../features/documents/repositories/driver_document_repository_impl.dart';
+import '../features/auth/repositories/otp_repository.dart';
+import '../features/auth/repositories/otp_repository_impl.dart';
+import '../features/profile/repositories/driver_profile_repository.dart';
+import '../features/profile/repositories/driver_profile_repository_impl.dart';
+import '../features/settings/repositories/availability_repository.dart';
+import '../features/settings/repositories/availability_repository_impl.dart';
+import '../features/notifications/repositories/notifications_repository.dart';
+import '../features/notifications/repositories/notifications_repository_impl.dart';
+import '../features/sos/repositories/sos_repository_impl.dart';
+import '../features/ride_history/repositories/ride_history_repository.dart';
+import '../features/ride_history/repositories/ride_history_repository_impl.dart';
 
 // Note: tokenStorageProvider, onboardingServiceProvider, authStateProvider are
 // provided by sakai_shared or defined below to avoid conflicts.
@@ -53,6 +64,37 @@ final earningsRepositoryProvider = Provider<EarningsRepository>((ref) {
 /// Driver documents repository — domain boundary for document uploads and status.
 final driverDocumentRepositoryProvider = Provider<DriverDocumentRepository>((ref) {
   return DriverDocumentRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// OTP repository — backend endpoints pending; throws UnimplementedError.
+final otpRepositoryProvider = Provider<OtpRepository>((ref) {
+  return OtpRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Driver profile repository — GET wired, PATCH pending.
+final driverProfileRepositoryProvider = Provider<DriverProfileRepository>((ref) {
+  return DriverProfileRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Availability prefs repository — backend pending.
+final availabilityRepositoryProvider = Provider<AvailabilityRepository>((ref) {
+  return AvailabilityRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Notifications inbox repository — backend pending.
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+  return NotificationsRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// SOS repository — wired against existing POST /rides/{rideId}/sos.
+final sosRepositoryProvider = Provider<SOSRepository>((ref) {
+  return SOSRepositoryImpl(ref.watch(apiClientProvider).getRidesApi());
+});
+
+/// Ride history (trip history) repository — wired against existing
+/// driverGetEarnings / adminListDriverRides endpoints.
+final rideHistoryRepositoryProvider = Provider<RideHistoryRepository>((ref) {
+  return RideHistoryRepositoryImpl(ref.watch(apiClientProvider).getDriverApi());
 });
 
 /// WebSocket client singleton for real-time events.
