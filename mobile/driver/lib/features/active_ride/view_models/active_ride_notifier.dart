@@ -6,6 +6,7 @@ import 'package:sakai_shared/sakai_shared.dart';
 
 import '../repositories/active_ride_repository.dart';
 import '../models/active_ride_step.dart';
+import '../services/location_stream_service.dart';
 
 typedef OnRideCompleted = void Function(RideResponse ride);
 typedef OnRideCancelled = void Function();
@@ -53,6 +54,7 @@ class ActiveRideState {
 
 class ActiveRideManager extends ChangeNotifier {
   final ActiveRideRepository _repo;
+  final LocationStreamService? _locationStream;
   ActiveRideState _state;
 
   OnRideCompleted? onCompleted;
@@ -61,13 +63,26 @@ class ActiveRideManager extends ChangeNotifier {
   ActiveRideManager({
     required ActiveRideRepository repo,
     required RideResponse initialRide,
+    LocationStreamService? locationStream,
   }) : _repo = repo,
+       _locationStream = locationStream,
        _state = ActiveRideState(
          ride: initialRide,
          currentStep: ActiveRideState.mapStatusToStep(initialRide.status),
-       );
+       ) {
+    if (_isLiveStatus(initialRide.status)) {
+      _locationStream?.start(initialRide.id);
+    }
+  }
 
   ActiveRideState get state => _state;
+
+  LocationStreamService? get locationStream => _locationStream;
+
+  static bool _isLiveStatus(RideStatus status) =>
+      status == RideStatus.accepted ||
+      status == RideStatus.arrived ||
+      status == RideStatus.inProgress;
 
   Future<void> arriveAtPickup({bool force = false}) async {
     if (_state.isTransitioning) return;
@@ -223,6 +238,7 @@ class ActiveRideManager extends ChangeNotifier {
           ..lng = lng,
       );
       await _repo.completeRide(ride.id, latLng);
+      _locationStream?.stop();
       _state = _state.copyWith(isTransitioning: false);
       notifyListeners();
       final completedRide = _state.ride;
@@ -252,6 +268,7 @@ class ActiveRideManager extends ChangeNotifier {
     notifyListeners();
     try {
       await _repo.cancelRide(_state.ride!.id);
+      _locationStream?.stop();
       _state = _state.copyWith(isTransitioning: false);
       notifyListeners();
       onCancelled?.call();
@@ -271,12 +288,27 @@ class ActiveRideManager extends ChangeNotifier {
       isTransitioning: false,
       errorMessage: null,
     );
+    if (newStatus == RideStatus.completed ||
+        newStatus == RideStatus.cancelled) {
+      _locationStream?.stop();
+    } else if (_isLiveStatus(newStatus)) {
+      final ride = _state.ride;
+      if (ride != null) {
+        _locationStream?.start(ride.id);
+      }
+    }
     notifyListeners();
     final ride = _state.ride;
     if (newStatus == RideStatus.completed && ride != null) {
       onCompleted?.call(ride);
     }
     if (newStatus == RideStatus.cancelled) onCancelled?.call();
+  }
+
+  @override
+  void dispose() {
+    _locationStream?.stop();
+    super.dispose();
   }
 
   void clearError() {

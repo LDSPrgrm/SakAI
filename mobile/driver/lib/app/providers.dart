@@ -8,6 +8,7 @@ import '../features/home/repositories/driver_repository_impl.dart';
 import '../features/home/services/gps_location_service.dart';
 import '../features/active_ride/repositories/active_ride_repository.dart';
 import '../features/active_ride/repositories/active_ride_repository_impl.dart';
+import '../features/active_ride/services/location_stream_service.dart';
 import '../features/earnings/repositories/earnings_repository.dart';
 
 import '../features/documents/repositories/driver_document_repository.dart';
@@ -143,6 +144,16 @@ class WsConnectionManager {
 /// GPS location service singleton.
 final gpsLocationServiceProvider = Provider<GpsLocationService>((ref) {
   return GpsLocationService();
+});
+
+/// Background GPS push pipeline for the active ride.
+/// Singleton so reconnects to the active-ride screen reuse the running stream.
+final locationStreamServiceProvider = Provider<LocationStreamService>((ref) {
+  final service = LocationStreamService(
+    driverRepo: ref.watch(driverRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 /// Auth state provider - tracks authentication status.
