@@ -1,4 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../../app/providers.dart';
 import '../../../app/router.dart';
 import '../../earnings/view_models/earnings_notifier.dart';
 import '../models/active_ride_step.dart';
+import '../services/location_stream_service.dart';
 import '../view_models/active_ride_notifier.dart';
 
 /// Active ride screen with state-driven action buttons.
@@ -20,14 +23,30 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
   ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
+    with WidgetsBindingObserver {
   late final ActiveRideManager _manager;
+  late final LocationStreamService _locationStream;
+  StreamSubscription<LocationPushState>? _locationStateSub;
+  LocationPushState _locationState =
+      const LocationPushState(status: LocationPushStatus.idle);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final repo = ref.read(activeRideRepositoryProvider);
-    _manager = ActiveRideManager(repo: repo, initialRide: widget.initialRide);
+    _locationStream = ref.read(locationStreamServiceProvider);
+    _locationState = _locationStream.currentState;
+    _locationStateSub = _locationStream.stream.listen((state) {
+      if (!mounted) return;
+      setState(() => _locationState = state);
+    });
+    _manager = ActiveRideManager(
+      repo: repo,
+      initialRide: widget.initialRide,
+      locationStream: _locationStream,
+    );
     _manager.onCompleted = (ride) {
       // Wire earnings: extract actual fare and record the ride.
       // Use Future to defer provider modification until after widget build completes.
@@ -70,8 +89,20 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _locationStateSub?.cancel();
     _manager.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _locationStream.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      _locationStream.resume();
+    }
   }
 
   @override
@@ -88,25 +119,30 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final scheme = Theme.of(context).colorScheme;
     final ride = state.ride;
     final statusLabel = _statusLabel(state.currentStep);
-    final statusColor = _statusColor(state.currentStep, context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Active Ride'),
         actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
+          IconButton(
+            tooltip: 'Emergency SOS',
+            icon: Icon(
+              Icons.warning_amber_rounded,
+              color: scheme.error,
             ),
-            child: Text(
-              statusLabel,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
-              ),
+            onPressed: ride == null
+                ? null
+                : () => context.push(Routes.sos, extra: ride.id),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.spaceSm,
+              vertical: tokens.spaceXs,
+            ),
+            child: SakaiStatusBadge(
+              status: _badgeStatus(state.currentStep),
+              label: statusLabel,
+              dense: true,
             ),
           ),
         ],
@@ -118,6 +154,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_locationState.isDegraded)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: tokens.spaceSm),
+                      child: _LocationDegradedBanner(state: _locationState),
+                    ),
                   SakaiGlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,14 +395,51 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     }
   }
 
-  Color _statusColor(ActiveRideStep step, BuildContext context) {
+  SakaiStatus _badgeStatus(ActiveRideStep step) {
     switch (step) {
       case ActiveRideStep.enRoute:
-        return Theme.of(context).colorScheme.primary;
+        return SakaiStatus.info;
       case ActiveRideStep.arrived:
-        return SakaiSemanticColors.of(context).warning;
+        return SakaiStatus.warning;
       case ActiveRideStep.inProgress:
-        return SakaiSemanticColors.of(context).success;
+        return SakaiStatus.success;
     }
+  }
+}
+
+class _LocationDegradedBanner extends StatelessWidget {
+  const _LocationDegradedBanner({required this.state});
+
+  final LocationPushState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const Key('location-degraded-banner'),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceMd,
+        vertical: tokens.spaceSm,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.location_off, color: scheme.onTertiaryContainer, size: 20),
+          SizedBox(width: tokens.spaceSm),
+          Expanded(
+            child: Text(
+              'GPS updates are degraded. Reconnecting…',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

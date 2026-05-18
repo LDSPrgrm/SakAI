@@ -93,58 +93,21 @@ class _RideHistoryListScreenState extends ConsumerState<RideHistoryListScreen> {
     switch (state.status) {
       case RideHistoryStatus.initial:
       case RideHistoryStatus.loading:
-        return const Center(child: CircularProgressIndicator());
+        return SakaiSkeleton.list(itemCount: 5);
 
       case RideHistoryStatus.empty:
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.directions_car, size: 64, color: Colors.grey[400]),
-              SizedBox(height: tokens.spaceMd),
-              Text(
-                'No rides yet',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              SizedBox(height: tokens.spaceSm),
-              Text(
-                'Your ride history will appear here',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
-              ),
-            ],
-          ),
+        return const SakaiEmptyState(
+          icon: Icons.directions_car,
+          title: 'No rides yet',
+          message: 'Your ride history will appear here',
         );
 
       case RideHistoryStatus.error:
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
-              ),
-              SizedBox(height: tokens.spaceMd),
-              Text(
-                state.error ?? 'An error occurred',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
-              ),
-              SizedBox(height: tokens.spaceMd),
-              ElevatedButton.icon(
-                onPressed: () => ref
-                    .read(rideHistoryListNotifierProvider.notifier)
-                    .loadHistory(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        return SakaiErrorState(
+          message: state.error,
+          onRetry: () => ref
+              .read(rideHistoryListNotifierProvider.notifier)
+              .loadHistory(),
         );
 
       case RideHistoryStatus.success:
@@ -210,7 +173,11 @@ class _RideHistoryTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _StatusBadge(status: item.status, label: item.statusLabel),
+                  SakaiStatusBadge(
+                    status: _statusFor(item.status),
+                    label: item.statusLabel,
+                    dense: true,
+                  ),
                 ],
               ),
               SizedBox(height: tokens.spaceSm),
@@ -272,47 +239,8 @@ class _RideHistoryTile extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status, required this.label});
-
-  final RideStatus status;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = _badgeColors(status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: colors.color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  _BadgeColors _badgeColors(RideStatus status) {
-    if (status == RideStatus.completed) {
-      return _BadgeColors(Colors.green[700]!, Colors.green[50]);
-    }
-    if (status == RideStatus.cancelled) {
-      return _BadgeColors(Colors.red[700]!, Colors.red[50]);
-    }
-    // requested, accepted, arrived, inProgress
-    return _BadgeColors(Colors.blue[700]!, Colors.blue[50]);
-  }
-}
-
-class _BadgeColors {
-  _BadgeColors(this.color, this.bg);
-  final Color color;
-  final Color? bg;
+SakaiStatus _statusFor(RideStatus status) {
+  if (status == RideStatus.completed) return SakaiStatus.success;
+  if (status == RideStatus.cancelled) return SakaiStatus.danger;
+  return SakaiStatus.info;
 }

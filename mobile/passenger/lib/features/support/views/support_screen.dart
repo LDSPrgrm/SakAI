@@ -83,7 +83,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
               Tab(text: 'Contact Us', icon: Icon(Icons.email_outlined)),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: tokens.spaceMd),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -101,7 +101,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
   Widget _buildFaqTab(SakaiDesignTokens tokens, ThemeData theme) {
     return ListView.separated(
       itemCount: _faqs.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => SizedBox(height: tokens.spaceSm),
       itemBuilder: (context, index) {
         final faq = _faqs[index];
         final isExpanded = _expandedIndex == index;
@@ -119,7 +119,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
               Row(
                 children: [
                   Icon(Icons.help_outline, color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 12),
+                  SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
                       faq['question']!,
@@ -135,7 +135,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
                 ],
               ),
               if (isExpanded) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: tokens.spaceSm),
                 Text(
                   faq['answer']!,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -154,47 +154,59 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
     final state = vm.state;
     final isSubmitting = state.status == SupportStatus.submitting;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Send a Message',
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Have an issue? Fill out the form below and our team will get back to you as soon as possible.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(0, 0, 0, tokens.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Send a Message',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: tokens.spaceSm),
+                Text(
+                  'Have an issue? Fill out the form below and our team will get back to you as soon as possible.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: tokens.spaceLg),
+                SakaiTextField(
+                  label: 'Subject',
+                  hint: 'e.g., Payment issue, App crash',
+                  onChanged: vm.updateSubject,
+                  enabled: !isSubmitting,
+                ),
+                SizedBox(height: tokens.spaceMd),
+                SakaiTextField(
+                  label: 'Message',
+                  hint: 'Describe your issue in detail...',
+                  maxLines: 5,
+                  onChanged: vm.updateMessage,
+                  enabled: !isSubmitting,
+                ),
+                SizedBox(height: tokens.spaceXl),
+                Divider(color: theme.colorScheme.outlineVariant),
+                SizedBox(height: tokens.spaceLg),
+                _buildEmergencySos(tokens, theme, vm),
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-          SakaiTextField(
-            label: 'Subject',
-            hint: 'e.g., Payment issue, App crash',
-            onChanged: vm.updateSubject,
-            enabled: !isSubmitting,
-          ),
-          const SizedBox(height: 16),
-          SakaiTextField(
-            label: 'Message',
-            hint: 'Describe your issue in detail...',
-            maxLines: 5,
-            onChanged: vm.updateMessage,
-            enabled: !isSubmitting,
-          ),
-          const SizedBox(height: 24),
-          SakaiPrimaryButton(
-            label: isSubmitting ? 'Submitting...' : 'Submit Ticket',
-            onPressed: vm.isValid && !isSubmitting ? vm.submitTicket : null,
-          ),
-          const SizedBox(height: 40),
-          Divider(color: theme.colorScheme.outlineVariant),
-          const SizedBox(height: 24),
-          _buildEmergencySos(tokens, theme, vm),
-        ],
-      ),
+        ),
+        SakaiBottomActionBar(
+          actions: [
+            SakaiPrimaryButton(
+              label: isSubmitting ? 'Submitting…' : 'Submit Ticket',
+              onPressed: vm.isValid && !isSubmitting ? vm.submitTicket : null,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -212,7 +224,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
           Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error, size: 24),
-              const SizedBox(width: 12),
+              SizedBox(width: tokens.spaceSm),
               Text(
                 'Emergency SOS',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -222,14 +234,14 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.spaceSm),
           Text(
             'If you feel unsafe during an active ride, use the SOS feature to alert emergency contacts and SakAI response teams.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onErrorContainer,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: tokens.spaceMd),
           SakaiSecondaryButton(
             label: 'Trigger SOS',
             onPressed: () => _showSosDialog(context, vm),

@@ -23,51 +23,38 @@ class DocumentsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(state.errorMessage!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () =>
-                            ref.read(documentViewModelProvider.notifier).fetchDocuments(),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              : state.documents.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.description_outlined, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No documents uploaded yet.',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => context.push(Routes.uploadDocument),
-                            icon: const Icon(Icons.upload_file),
-                            label: const Text('Upload First Document'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.documents.length,
-                      itemBuilder: (context, index) {
-                        final doc = state.documents[index];
-                        return _DocumentCard(document: doc);
-                      },
-                    ),
+      body: Builder(
+        builder: (context) {
+          final tokens = SakaiDesignTokens.of(context);
+          if (state.isLoading) {
+            return SakaiSkeleton.list(itemCount: 4);
+          }
+          if (state.errorMessage != null) {
+            return SakaiErrorState(
+              message: state.errorMessage,
+              onRetry: () =>
+                  ref.read(documentViewModelProvider.notifier).fetchDocuments(),
+            );
+          }
+          if (state.documents.isEmpty) {
+            return SakaiEmptyState(
+              icon: Icons.description_outlined,
+              title: 'No documents uploaded yet',
+              message: 'Upload your license, vehicle papers, and ID to start driving.',
+              primaryLabel: 'Upload First Document',
+              onPrimary: () => context.push(Routes.uploadDocument),
+            );
+          }
+          return ListView.builder(
+            padding: EdgeInsets.all(tokens.spaceMd),
+            itemCount: state.documents.length,
+            itemBuilder: (context, index) {
+              final doc = state.documents[index];
+              return _DocumentCard(document: doc);
+            },
+          );
+        },
+      ),
       floatingActionButton: state.documents.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: () => context.push(Routes.uploadDocument),
@@ -87,40 +74,28 @@ class _DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = document.uploadStatus;
-    Color statusColor;
-    IconData statusIcon;
-
-    final semanticColors = SakaiSemanticColors.of(context);
-    switch (status) {
-      case 'approved':
-        statusColor = semanticColors.success;
-        statusIcon = Icons.check_circle;
-        break;
-      case 'rejected':
-        statusColor = semanticColors.danger;
-        statusIcon = Icons.cancel;
-        break;
-      case 'under_review':
-        statusColor = semanticColors.warning;
-        statusIcon = Icons.hourglass_empty;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusIcon = Icons.help_outline;
-    }
+    final tokens = SakaiDesignTokens.of(context);
+    final (badgeStatus, statusIcon) = _statusVisuals(status);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: tokens.spaceMd),
       child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: statusColor.withValues(alpha: 0.1),
-          child: Icon(statusIcon, color: statusColor),
-        ),
+        leading: Icon(statusIcon, color: _statusColor(badgeStatus, context)),
         title: Text(
           _formatDocType(document.documentType),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Status: ${_formatStatus(status)}'),
+        subtitle: Padding(
+          padding: EdgeInsets.only(top: tokens.spaceXs),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SakaiStatusBadge(
+              status: badgeStatus,
+              label: _formatStatus(status),
+              dense: true,
+            ),
+          ),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -171,6 +146,36 @@ class _DocumentCard extends StatelessWidget {
 
   String _formatStatus(String status) {
     return status.split('_').map((s) => s[0].toUpperCase() + s.substring(1)).join(' ');
+  }
+
+  (SakaiStatus, IconData) _statusVisuals(String status) {
+    switch (status) {
+      case 'approved':
+        return (SakaiStatus.success, Icons.check_circle);
+      case 'rejected':
+        return (SakaiStatus.danger, Icons.cancel);
+      case 'under_review':
+        return (SakaiStatus.warning, Icons.hourglass_empty);
+      default:
+        return (SakaiStatus.neutral, Icons.help_outline);
+    }
+  }
+
+  Color _statusColor(SakaiStatus status, BuildContext ctx) {
+    final s = SakaiSemanticColors.of(ctx);
+    switch (status) {
+      case SakaiStatus.success:
+        return s.success;
+      case SakaiStatus.danger:
+        return s.danger;
+      case SakaiStatus.warning:
+      case SakaiStatus.pending:
+        return s.warning;
+      case SakaiStatus.info:
+        return s.accentBlue;
+      case SakaiStatus.neutral:
+        return s.neutral;
+    }
   }
 }
 

@@ -4,8 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../features/auth/views/auth_screen.dart';
+import '../features/auth/views/otp_verification_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
+import '../features/wallet/views/wallet_screen.dart';
+import '../features/notifications/views/notifications_screen.dart';
+import '../features/ride/views/no_drivers_screen.dart';
+import '../features/connectivity/views/no_internet_screen.dart';
 import '../features/home/views/rider_home_screen.dart';
 import '../features/profile/views/edit_profile_screen.dart';
 import '../features/ride/views/waiting_screen.dart';
@@ -48,7 +53,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isWelcome = state.matchedLocation == Routes.welcome;
       final isLogin = state.matchedLocation == Routes.login;
       final isRegister = state.matchedLocation == Routes.register;
-      final isAuthRoute = isWelcome || isLogin || isRegister;
+      final isOtp = state.matchedLocation == Routes.otp;
+      final isAuthRoute = isWelcome || isLogin || isRegister || isOtp;
 
       // Guard: if we're already on splash, let the splash screen handle its own
       // navigation via its listener. This prevents GoRouter from remounting the
@@ -95,6 +101,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.register,
         builder: (context, state) =>
             const AuthScreen(initialMode: AuthMode.register),
+      ),
+      GoRoute(
+        path: Routes.otp,
+        builder: (context, state) {
+          final destination = state.extra as String? ?? '';
+          return OtpVerificationScreen(destination: destination);
+        },
+      ),
+      GoRoute(
+        path: Routes.wallet,
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.noDrivers,
+        builder: (context, state) => const NoDriversScreen(),
+      ),
+      GoRoute(
+        path: Routes.noInternet,
+        builder: (context, state) => const NoInternetScreen(),
       ),
       GoRoute(
         path: Routes.home,

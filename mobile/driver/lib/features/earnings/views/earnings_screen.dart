@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/router.dart';
 import '../view_models/earnings_notifier.dart';
 
 /// Session-level earnings overview screen.
@@ -16,7 +18,16 @@ class EarningsScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Earnings — Current Shift')),
+      appBar: AppBar(
+        title: const Text('Earnings — Current Shift'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push(Routes.earningsBreakdown),
+            icon: const Icon(Icons.bar_chart),
+            label: const Text('Breakdown'),
+          ),
+        ],
+      ),
       body: earningsState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : earningsState.error != null

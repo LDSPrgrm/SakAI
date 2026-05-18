@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -152,24 +153,26 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     // No custom markers needed — the native blue GPS dot shows driver location.
     final markers = <Marker>{};
 
-    final mapWidget = (kIsWeb && isE2EMode())
-        ? Container(
-            key: const ValueKey('e2e-map-placeholder'),
-            color: scheme.surfaceContainerHighest,
-            alignment: Alignment.center,
-            child: const Text('Map (E2E placeholder)'),
-          )
-        : GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(14.5995, 120.9842),
-              zoom: 14,
+    final mapWidget = RepaintBoundary(
+      child: (kIsWeb && isE2EMode())
+          ? Container(
+              key: const ValueKey('e2e-map-placeholder'),
+              color: scheme.surfaceContainerHighest,
+              alignment: Alignment.center,
+              child: const Text('Map (E2E placeholder)'),
+            )
+          : GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(14.5995, 120.9842),
+                zoom: 14,
+              ),
+              onMapCreated: (controller) => _mapController = controller,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              markers: markers,
             ),
-            onMapCreated: (controller) => _mapController = controller,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            markers: markers,
-          );
+    );
 
     return Scaffold(
       body: Stack(
@@ -179,7 +182,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
           // Top bar
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.spaceMd,
+                vertical: tokens.spaceSm,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -193,40 +199,15 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                     ),
                   ),
                   // Online indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: scheme.surface.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: state.online
-                                ? SakaiSemanticColors.of(context).success
-                                : scheme.onSurface.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          state.online ? 'Available' : 'Unavailable',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: state.online
-                                    ? SakaiSemanticColors.of(context).success
-                                    : scheme.onSurface.withValues(alpha: 0.5),
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
+                  AnimatedSwitcher(
+                    duration: tokens.durationStandard,
+                    child: SakaiStatusBadge(
+                      key: ValueKey(state.online),
+                      status: state.online
+                          ? SakaiStatus.success
+                          : SakaiStatus.neutral,
+                      label: state.online ? 'Available' : 'Unavailable',
+                      icon: Icons.circle,
                     ),
                   ),
                 ],
@@ -350,26 +331,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.onPrimaryContainer.withValues(
-                            alpha: 0.2,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _formatRideStatus(state.activeRide!.status),
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: scheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
+                      SizedBox(height: tokens.spaceXs),
+                      SakaiStatusBadge(
+                        status: _statusBadgeFor(state.activeRide!.status),
+                        label: _formatRideStatus(state.activeRide!.status),
+                        dense: true,
                       ),
                     ],
                   ),
@@ -433,6 +399,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                       onPressed: state.loading
                           ? null
                           : () async {
+                              await HapticFeedback.mediumImpact();
                               await notifier.toggleStatus();
                             },
                     ),
@@ -525,6 +492,47 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
                 context.push(Routes.documents);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Trip history'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.tripHistory);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.profile);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.settings);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_none),
+              title: const Text('Notifications'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.notifications);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Support'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push(Routes.support);
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -552,6 +560,23 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         ),
       ),
     );
+  }
+
+  SakaiStatus _statusBadgeFor(RideStatus status) {
+    switch (status) {
+      case RideStatus.requested:
+        return SakaiStatus.pending;
+      case RideStatus.accepted:
+      case RideStatus.arrived:
+        return SakaiStatus.info;
+      case RideStatus.inProgress:
+        return SakaiStatus.success;
+      case RideStatus.completed:
+        return SakaiStatus.neutral;
+      case RideStatus.cancelled:
+        return SakaiStatus.danger;
+    }
+    return SakaiStatus.neutral;
   }
 
   String _formatRideStatus(RideStatus status) {

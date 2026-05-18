@@ -7,7 +7,13 @@ export 'api/token_storage.dart';
 export 'api/auth_interceptor.dart';
 export 'api/sakai_api_support.dart';
 
+// Cross-app features
+export 'features/otp/otp_enabled.dart';
+export 'features/otp/otp_notifier.dart';
+export 'features/otp/otp_repository.dart';
+
 // Domain models (new — stable wrappers around generated types)
+export 'models/backend_unavailable_exception.dart';
 export 'models/models.dart';
 export 'repositories/sos_repository.dart';
 
@@ -26,10 +32,21 @@ export 'theme/sakai_semantic_colors.dart';
 export 'theme/sakai_theme_config.dart';
 
 // Widgets
+export 'widgets/async_value_view.dart';
+export 'widgets/coming_soon_state.dart';
+export 'widgets/sakai_bottom_action_bar.dart';
+export 'widgets/sakai_countdown_chip.dart';
+export 'widgets/sakai_empty_state.dart';
+export 'widgets/sakai_error_state.dart';
+export 'widgets/sakai_fare_chip.dart';
 export 'widgets/sakai_glass_card.dart';
+export 'widgets/sakai_loading_skeleton.dart';
+export 'widgets/sakai_otp_input.dart';
 export 'widgets/sakai_primary_button.dart';
 export 'widgets/sakai_screen_scaffold.dart';
 export 'widgets/sakai_secondary_button.dart';
+export 'widgets/sakai_section_header.dart';
+export 'widgets/sakai_status_badge.dart';
 export 'widgets/sakai_surface_card.dart';
 export 'widgets/sakai_text_field.dart';
 export 'widgets/sakai_welcome_carousel.dart';

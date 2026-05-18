@@ -61,7 +61,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: tokens.spaceSm),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -72,35 +72,33 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                           enabled: !state.isLoading,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        height: 56,
-                        child: SakaiPrimaryButton(
-                          label: 'Apply',
-                          onPressed: state.isLoading
-                              ? null
-                              : () async {
-                                  final code = _promoCodeController.text.trim();
-                                  if (code.isNotEmpty) {
-                                    final success = await ref
-                                        .read(promotionsNotifierProvider.notifier)
-                                        .validatePromo(code);
-                                    if (success && context.mounted) {
-                                      _promoCodeController.clear();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Promo code applied successfully!'),
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    }
+                      SizedBox(width: tokens.spaceSm),
+                      SakaiPrimaryButton(
+                        label: 'Apply',
+                        expand: false,
+                        onPressed: state.isLoading
+                            ? null
+                            : () async {
+                                final code = _promoCodeController.text.trim();
+                                if (code.isNotEmpty) {
+                                  final success = await ref
+                                      .read(promotionsNotifierProvider.notifier)
+                                      .validatePromo(code);
+                                  if (success && context.mounted) {
+                                    _promoCodeController.clear();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Promo code applied successfully!'),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
                                   }
-                                },
-                        ),
+                                }
+                              },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: tokens.spaceLg),
 
                   if (state.errorMessage != null) ...[
                     Container(
@@ -114,33 +112,24 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                         style: TextStyle(color: theme.colorScheme.onErrorContainer),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: tokens.spaceLg),
                   ],
 
-                  Text(
-                    'Available Offers',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  const SakaiSectionHeader(title: 'Available Offers'),
 
                   if (state.promotions.isEmpty && !state.isLoading)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40.0),
-                        child: Text(
-                          'No promotions available right now.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: SakaiEmptyState(
+                        icon: Icons.local_offer_outlined,
+                        title: 'No promotions yet',
+                        message: 'New offers will appear here when available.',
                       ),
                     ),
 
                   ...state.promotions.map((promo) {
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: EdgeInsets.only(bottom: tokens.spaceMd),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(tokens.radiusMd),
@@ -161,7 +150,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                 color: theme.colorScheme.primary,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: tokens.spaceMd),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +161,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: tokens.spaceXs),
                                   Text(
                                     promo.description.isNotEmpty ? promo.description : 'Discount offer',
                                     style: theme.textTheme.bodySmall?.copyWith(

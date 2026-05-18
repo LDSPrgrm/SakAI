@@ -77,214 +77,137 @@ class _RideOfferScreenState extends ConsumerState<RideOfferScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(tokens.spaceMd),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'New Ride Offer',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tokens.spaceSm,
-                        vertical: tokens.spaceXs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _manager.countdownSeconds <= 10
-                            ? SakaiSemanticColors.of(context).danger
-                            : scheme.primary,
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
-                      ),
-                      child: Text(
-                        '${_manager.countdownSeconds}s',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: tokens.spaceLg),
-                SakaiGlassCard(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(tokens.spaceMd),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          CircleAvatar(
-                            backgroundColor: scheme.primaryContainer,
-                            child: Icon(
-                              Icons.person,
-                              color: scheme.onPrimaryContainer,
-                            ),
-                          ),
-                          SizedBox(width: tokens.spaceSm),
                           Text(
-                            offer.passenger.name,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            'New Ride Offer',
+                            style:
+                                Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          SakaiCountdownChip(
+                            deadline: _manager.offer.expiresAt,
+                            dangerThreshold: const Duration(seconds: 10),
                           ),
                         ],
                       ),
-                      Divider(height: tokens.spaceLg),
-                      // Fare and ride type badge row.
-                      Row(
-                        children: [
-                          if (offer.estimatedFare != null)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: tokens.spaceSm,
-                                vertical: tokens.spaceXs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: scheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(
-                                  tokens.radiusSm,
-                                ),
-                              ),
-                              child: Text(
-                                'P${offer.estimatedFare!.toStringAsFixed(2)}',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                      color: scheme.onSecondaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                          SizedBox(width: tokens.spaceSm),
-                          if (offer.rideType != null)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: tokens.spaceSm,
-                                vertical: tokens.spaceXs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: scheme.primary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(
-                                  tokens.radiusSm,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _rideTypeIcon(offer.rideType!),
-                                    size: 16,
-                                    color: scheme.primary,
-                                  ),
-                                  SizedBox(width: tokens.spaceXs),
-                                  Text(
-                                    _rideTypeLabel(offer.rideType!),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(
-                                          color: scheme.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: tokens.spaceMd),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.circle, size: 12, color: scheme.primary),
-                          SizedBox(width: tokens.spaceSm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      SizedBox(height: tokens.spaceLg),
+                      SakaiGlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  'Pickup',
-                                  style: Theme.of(context).textTheme.labelSmall,
+                                CircleAvatar(
+                                  backgroundColor: scheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: scheme.onPrimaryContainer,
+                                  ),
                                 ),
+                                SizedBox(width: tokens.spaceSm),
                                 Text(
-                                  offer.originAddress ??
-                                      '(${offer.origin.lat.toStringAsFixed(4)}, ${offer.origin.lng.toStringAsFixed(4)})',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  offer.passenger.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: tokens.spaceMd),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 12,
-                            color: scheme.error,
-                          ),
-                          SizedBox(width: tokens.spaceSm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Divider(height: tokens.spaceLg),
+                            Wrap(
+                              spacing: tokens.spaceSm,
+                              runSpacing: tokens.spaceSm,
                               children: [
-                                Text(
-                                  'Destination',
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                                Text(
-                                  offer.destinationAddress ??
-                                      '(${offer.destination.lat.toStringAsFixed(4)}, ${offer.destination.lng.toStringAsFixed(4)})',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
+                                if (offer.estimatedFare != null)
+                                  SakaiFareChip(
+                                    amount:
+                                        'P${offer.estimatedFare!.toStringAsFixed(2)}',
+                                    subtitle: 'estimate',
+                                  ),
+                                if (offer.rideType != null)
+                                  SakaiRideTypeChip(
+                                    label: _rideTypeLabel(offer.rideType!),
+                                    icon: _rideTypeIcon(offer.rideType!),
+                                  ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                      Divider(height: tokens.spaceLg),
-                      if (offer.notes != null)
-                        Text(
-                          'Note: ${offer.notes}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontStyle: FontStyle.italic),
+                            SizedBox(height: tokens.spaceMd),
+                            _LocationRow(
+                              icon: Icons.circle,
+                              iconColor: scheme.primary,
+                              label: 'Pickup',
+                              value: offer.originAddress ??
+                                  '(${offer.origin.lat.toStringAsFixed(4)}, ${offer.origin.lng.toStringAsFixed(4)})',
+                            ),
+                            SizedBox(height: tokens.spaceMd),
+                            _LocationRow(
+                              icon: Icons.location_on,
+                              iconColor: scheme.error,
+                              label: 'Destination',
+                              value: offer.destinationAddress ??
+                                  '(${offer.destination.lat.toStringAsFixed(4)}, ${offer.destination.lng.toStringAsFixed(4)})',
+                            ),
+                            if (offer.notes != null) ...[
+                              Divider(height: tokens.spaceLg),
+                              Text(
+                                'Note: ${offer.notes}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ],
                         ),
+                      ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                if (_manager.error != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: tokens.spaceSm),
-                    child: Text(
-                      _manager.error!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: SakaiSemanticColors.of(context).danger,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+              ),
+              if (_manager.error != null)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: tokens.spaceMd,
+                    vertical: tokens.spaceSm,
                   ),
-                SakaiPrimaryButton(
-                  label: _manager.accepting ? 'Accepting…' : 'Accept Ride',
-                  icon: Icons.check_circle,
-                  onPressed: _manager.accepting || _manager.declining
-                      ? null
-                      : () => _manager.acceptRide(),
+                  child: Text(
+                    _manager.error!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: SakaiSemanticColors.of(context).danger,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                SizedBox(height: tokens.spaceSm),
-                SakaiSecondaryButton(
-                  label: _manager.declining ? 'Declining…' : 'Decline',
-                  icon: Icons.cancel_outlined,
-                  onPressed: _manager.accepting || _manager.declining
-                      ? null
-                      : () => _manager.declineRide(),
-                ),
-              ],
-            ),
+              SakaiBottomActionBar(
+                actions: [
+                  SakaiSecondaryButton(
+                    label: _manager.declining ? 'Declining…' : 'Decline',
+                    icon: Icons.cancel_outlined,
+                    onPressed: _manager.accepting || _manager.declining
+                        ? null
+                        : () => _manager.declineRide(),
+                  ),
+                  SakaiPrimaryButton(
+                    label: _manager.accepting ? 'Accepting…' : 'Accept Ride',
+                    icon: Icons.check_circle,
+                    onPressed: _manager.accepting || _manager.declining
+                        ? null
+                        : () => _manager.acceptRide(),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -311,5 +234,41 @@ class _RideOfferScreenState extends ConsumerState<RideOfferScreen> {
       default:
         return 'Car';
     }
+  }
+}
+
+class _LocationRow extends StatelessWidget {
+  const _LocationRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 12, color: iconColor),
+        SizedBox(width: tokens.spaceSm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelSmall),
+              Text(value, style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

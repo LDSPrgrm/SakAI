@@ -90,6 +90,12 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   void setupWsListener(WsClient wsClient) {
     _unsubscribeWs();
     _wsSubscription = wsClient.events.listen(_handleWsEvent);
+    // Resync hook: every reconnect re-polls incoming-ride and active-ride
+    // so the UI doesn't go stale across a WS gap.
+    wsClient.onResync = () {
+      unawaited(pollIncomingRide(wsClient));
+      unawaited(checkForActiveRide());
+    };
   }
 
   /// Connects the WebSocket client. Should be called after authentication.

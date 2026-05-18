@@ -3,6 +3,10 @@ import 'package:sakai_shared/sakai_shared.dart';
 
 import '../features/auth/repositories/auth_repository.dart';
 import '../features/auth/repositories/auth_repository_impl.dart';
+import '../features/wallet/repositories/wallet_repository.dart';
+import '../features/wallet/repositories/wallet_repository_impl.dart';
+import '../features/notifications/repositories/notifications_repository.dart';
+import '../features/notifications/repositories/notifications_repository_impl.dart';
 import '../features/ride/repositories/ride_repository.dart';
 import '../features/ride/repositories/ride_repository_impl.dart';
 import '../features/ride_complete/repositories/ride_complete_repository.dart';
@@ -42,6 +46,16 @@ final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
 /// Auth repository - domain boundary over the generated API client.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Wallet repository — backend endpoints pending; throws BackendUnavailableException.
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  return WalletRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Notifications repository — backend endpoints pending; throws BackendUnavailableException.
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+  return NotificationsRepositoryImpl(ref.watch(apiClientProvider));
 });
 
 /// Ride repository - domain boundary over the generated API client.

@@ -21,6 +21,23 @@ class SettingsMenuScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSectionHeader(context, 'Account'),
+          _buildTile(
+            context,
+            Icons.account_balance_wallet_outlined,
+            'Wallet',
+            'Balance and transactions',
+            onTap: () => context.push(Routes.wallet),
+          ),
+          _buildTile(
+            context,
+            Icons.inbox_outlined,
+            'Notification inbox',
+            'Recent alerts and ride updates',
+            onTap: () => context.push(Routes.notifications),
+          ),
+
+          const SizedBox(height: 16),
           _buildSectionHeader(context, 'Preferences'),
           _buildTile(
             context,

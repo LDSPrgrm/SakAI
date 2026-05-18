@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -36,6 +35,7 @@ class HomeState {
   final List<RideTypeOption> rideTypeOptions;
   final List<NearbyDriver> nearbyDrivers;
   final List<ServiceArea> serviceAreas;
+  final bool permissionPermanentlyDenied;
 
   const HomeState({
     required this.status,
@@ -48,6 +48,7 @@ class HomeState {
     this.rideTypeOptions = const [],
     this.nearbyDrivers = const [],
     this.serviceAreas = const [],
+    this.permissionPermanentlyDenied = false,
   });
 
   HomeState copyWith({
@@ -66,6 +67,7 @@ class HomeState {
     List<RideTypeOption>? rideTypeOptions,
     List<NearbyDriver>? nearbyDrivers,
     List<ServiceArea>? serviceAreas,
+    bool? permissionPermanentlyDenied,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -80,6 +82,8 @@ class HomeState {
       rideTypeOptions: rideTypeOptions ?? this.rideTypeOptions,
       nearbyDrivers: nearbyDrivers ?? this.nearbyDrivers,
       serviceAreas: serviceAreas ?? this.serviceAreas,
+      permissionPermanentlyDenied:
+          permissionPermanentlyDenied ?? this.permissionPermanentlyDenied,
     );
   }
 
@@ -160,12 +164,17 @@ class HomeNotifier extends Notifier<HomeState> {
           .expand<NearbyDriver>((d) => d)
           .toList();
 
-      // Build ride type options with fare estimates
-      final options = _buildRideTypeOptions(allDrivers);
+      // Skip the whole state update when nothing meaningful changed —
+      // same driver set within 5m of where we last saw them. Otherwise
+      // every poll repaints map markers + rebuilds the ride-type picker
+      // even when the world hasn't moved.
+      if (_driversSubstantiallyEqual(state.nearbyDrivers, flatDrivers)) {
+        return;
+      }
 
       state = state.copyWith(
         nearbyDrivers: flatDrivers,
-        rideTypeOptions: options,
+        rideTypeOptions: _buildRideTypeOptions(allDrivers),
       );
     } catch (e) {
       debugPrint('[HomeNotifier] Nearby driver poll error: $e');
@@ -309,8 +318,29 @@ class HomeNotifier extends Notifier<HomeState> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    return permission == LocationPermission.whileInUse ||
+    if (permission == LocationPermission.deniedForever) {
+      // Permanent denial requires the user to open OS settings — surface a
+      // banner the UI can pair with openLocationSettings() instead of
+      // silently retrying forever.
+      state = state.copyWith(
+        permissionPermanentlyDenied: true,
+        errorMessage:
+            'Location permission permanently denied. Open Settings to grant access.',
+      );
+      return false;
+    }
+    final granted = permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always;
+    if (granted && state.permissionPermanentlyDenied) {
+      state = state.copyWith(permissionPermanentlyDenied: false);
+    }
+    return granted;
+  }
+
+  /// Open the OS settings page so the user can flip a `deniedForever`
+  /// permission back to allowed.
+  Future<void> openLocationSettings() async {
+    await Geolocator.openAppSettings();
   }
 
   void setDestination(RideLocation destination) {
@@ -439,4 +469,32 @@ class HomeNotifier extends Notifier<HomeState> {
       state = state.copyWith(clearError: true);
     }
   }
+
+  // Lets the notifier skip a `copyWith` that would otherwise trigger a
+  // map-marker repaint for noise-level GPS jitter (<5m).
+  static bool _driversSubstantiallyEqual(
+    List<NearbyDriver> prev,
+    List<NearbyDriver> next,
+  ) {
+    if (prev.length != next.length) return false;
+    final byId = {for (final d in prev) d.id: d};
+    for (final n in next) {
+      final p = byId[n.id];
+      if (p == null) return false;
+      if (p.location.latitude == n.location.latitude &&
+          p.location.longitude == n.location.longitude) {
+        continue;
+      }
+      final distance = Geolocator.distanceBetween(
+        p.location.latitude,
+        p.location.longitude,
+        n.location.latitude,
+        n.location.longitude,
+      );
+      if (distance > _kDriverMoveThresholdMeters) return false;
+    }
+    return true;
+  }
+
+  static const double _kDriverMoveThresholdMeters = 5.0;
 }
