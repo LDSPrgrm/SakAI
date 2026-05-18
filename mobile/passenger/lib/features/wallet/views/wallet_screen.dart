@@ -33,7 +33,10 @@ class WalletScreen extends ConsumerWidget {
     if (state.loading && state.balance == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (state.backendUnavailable != null) {
+    // Only swap to ComingSoonState when we never got data. If balance is
+    // already loaded and a later top-up trips the typed exception, keep the
+    // UI and surface the error inline via the existing snackbar path.
+    if (state.backendUnavailable != null && state.balance == null) {
       return const ComingSoonState(feature: 'Wallet');
     }
     if (state.errorMessage != null && state.balance == null) {
