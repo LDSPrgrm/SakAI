@@ -32,6 +32,7 @@ export 'theme/sakai_semantic_colors.dart';
 export 'theme/sakai_theme_config.dart';
 
 // Widgets
+export 'widgets/async_value_view.dart';
 export 'widgets/coming_soon_state.dart';
 export 'widgets/sakai_bottom_action_bar.dart';
 export 'widgets/sakai_countdown_chip.dart';

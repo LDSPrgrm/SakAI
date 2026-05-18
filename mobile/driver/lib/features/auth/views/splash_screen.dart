@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +17,7 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _navigated = false;
+  Timer? _failsafeTimer;
 
   @override
   void initState() {
@@ -27,6 +30,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         error: (err, stack) => _handleNavigation(SplashState.transientError),
       );
     });
+    // Fail-safe: 8s stall → drop to login with snackbar.
+    _failsafeTimer = Timer(const Duration(seconds: 8), () {
+      if (!mounted || _navigated) return;
+      _navigated = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Taking longer than expected. Please sign in again.')),
+      );
+      context.go(Routes.login);
+    });
+  }
+
+  @override
+  void dispose() {
+    _failsafeTimer?.cancel();
+    super.dispose();
   }
 
   void _handleNavigation(SplashState state) {

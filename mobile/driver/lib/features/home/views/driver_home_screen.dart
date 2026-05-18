@@ -153,24 +153,26 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
     // No custom markers needed — the native blue GPS dot shows driver location.
     final markers = <Marker>{};
 
-    final mapWidget = (kIsWeb && isE2EMode())
-        ? Container(
-            key: const ValueKey('e2e-map-placeholder'),
-            color: scheme.surfaceContainerHighest,
-            alignment: Alignment.center,
-            child: const Text('Map (E2E placeholder)'),
-          )
-        : GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(14.5995, 120.9842),
-              zoom: 14,
+    final mapWidget = RepaintBoundary(
+      child: (kIsWeb && isE2EMode())
+          ? Container(
+              key: const ValueKey('e2e-map-placeholder'),
+              color: scheme.surfaceContainerHighest,
+              alignment: Alignment.center,
+              child: const Text('Map (E2E placeholder)'),
+            )
+          : GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(14.5995, 120.9842),
+                zoom: 14,
+              ),
+              onMapCreated: (controller) => _mapController = controller,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              markers: markers,
             ),
-            onMapCreated: (controller) => _mapController = controller,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            markers: markers,
-          );
+    );
 
     return Scaffold(
       body: Stack(

@@ -13,6 +13,7 @@ class WsClient {
   WebSocketChannel? _channel;
   final _eventController = StreamController<WsEvent>.broadcast();
   bool _isConnected = false;
+  bool _explicitlyDisconnected = false;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   VoidCallback? _onResync;
@@ -25,6 +26,7 @@ class WsClient {
 
   Future<void> connect({String? baseUrl, String? accessToken}) async {
     if (_isConnected) await disconnect();
+    _explicitlyDisconnected = false;
 
     final uri = SakaiApiEndpoints.webSocketUri(
       baseUrl ?? SakaiApiEndpoints.defaultRestBaseUrl,
@@ -66,6 +68,7 @@ class WsClient {
   }
 
   Future<void> disconnect() async {
+    _explicitlyDisconnected = true;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _reconnectAttempts = 0;
@@ -76,6 +79,7 @@ class WsClient {
 
   void _scheduleReconnect({String? baseUrl, String? accessToken}) {
     _isConnected = false;
+    if (_explicitlyDisconnected) return; // Caller asked us to stop.
     if (_reconnectAttempts >= 10) return; // Give up after 10 attempts.
 
     final delaySeconds = _backoffDuration();

@@ -368,13 +368,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       ),
     };
 
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: center, zoom: 14),
-      onMapCreated: (c) => _mapController = c,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      markers: markers,
+    return RepaintBoundary(
+      child: GoogleMap(
+        initialCameraPosition: CameraPosition(target: center, zoom: 14),
+        onMapCreated: (c) => _mapController = c,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        zoomControlsEnabled: false,
+        markers: markers,
+      ),
     );
   }
 

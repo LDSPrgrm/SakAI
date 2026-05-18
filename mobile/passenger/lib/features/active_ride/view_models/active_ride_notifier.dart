@@ -89,6 +89,7 @@ class ActiveRideController {
 
       _setupWebSocketListener();
       _setupE2EPolling();
+      _wsClient.onResync = _onWsResync;
 
       _state = AsyncValue.data(ActiveRideState.fromRideResponse(response));
       _stateController.add(_state);
@@ -101,6 +102,37 @@ class ActiveRideController {
     } catch (e, st) {
       _state = AsyncValue.error(Exception('Failed to load ride: $e'), st);
       _stateController.add(_state);
+    }
+  }
+
+  /// Fires before each WS reconnect attempt. Refetches the ride so any state
+  /// transitions that happened during the disconnect window are reconciled.
+  void _onWsResync() {
+    if (_terminated) return;
+    unawaited(_refetchRide());
+  }
+
+  Future<void> _refetchRide() async {
+    try {
+      final apiResponse = await _client.getRidesApi().rideGet(rideId: rideId);
+      final response = apiResponse.data;
+      if (response == null) return;
+      final rideStatus = RideState.fromString(response.status.name);
+      final next = ActiveRideState.fromRideResponse(response);
+      _state = AsyncValue.data(next);
+      _stateController.add(_state);
+      if (!_terminated &&
+          (rideStatus == RideState.completed ||
+              rideStatus == RideState.cancelled)) {
+        _terminated = true;
+        if (rideStatus == RideState.completed) {
+          onCompleted?.call(rideId);
+        } else {
+          onCancelled?.call(rideId);
+        }
+      }
+    } catch (e) {
+      debugPrint('[PASSENGER] WS resync refetch failed: $e');
     }
   }
 
