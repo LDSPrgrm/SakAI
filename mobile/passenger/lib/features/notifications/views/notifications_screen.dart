@@ -42,6 +42,9 @@ class NotificationsScreen extends ConsumerWidget {
     if (state.loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (state.backendUnavailable != null) {
+      return const ComingSoonState(feature: 'Notifications');
+    }
     if (state.errorMessage != null) {
       return SakaiEmptyState(
         icon: Icons.error_outline,

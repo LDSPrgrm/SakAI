@@ -110,7 +110,15 @@ class DriverProfileScreen extends ConsumerWidget {
               ? null
               : () => _showEditNameSheet(context, notifier, p.name),
         ),
-        if (state.errorMessage != null) ...[
+        if (state.backendUnavailable != null) ...[
+          SizedBox(height: t.spaceSm),
+          Text(
+            'Editing profile is awaiting backend support.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.tertiary,
+            ),
+          ),
+        ] else if (state.errorMessage != null) ...[
           SizedBox(height: t.spaceSm),
           Text(
             state.errorMessage!,

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_api_client/sakai_api_client.dart' as api;
+import 'package:sakai_shared/sakai_shared.dart' show BackendUnavailableException;
 
 import '../repositories/driver_profile_repository.dart';
 import '../../../app/providers.dart';
@@ -10,24 +11,28 @@ class DriverProfileState {
     this.profile,
     this.errorMessage,
     this.saving = false,
+    this.backendUnavailable,
   });
 
   final bool loading;
   final api.UserProfile? profile;
   final String? errorMessage;
   final bool saving;
+  final BackendUnavailableException? backendUnavailable;
 
   DriverProfileState copyWith({
     bool? loading,
     api.UserProfile? profile,
     String? errorMessage,
     bool? saving,
+    BackendUnavailableException? backendUnavailable,
   }) {
     return DriverProfileState(
       loading: loading ?? this.loading,
       profile: profile ?? this.profile,
       errorMessage: errorMessage,
       saving: saving ?? this.saving,
+      backendUnavailable: backendUnavailable,
     );
   }
 }
@@ -56,8 +61,8 @@ class DriverProfileNotifier extends Notifier<DriverProfileState> {
     try {
       await _repo.updateProfile(name: name);
       await load();
-    } on UnimplementedError catch (e) {
-      state = state.copyWith(saving: false, errorMessage: e.message);
+    } on BackendUnavailableException catch (e) {
+      state = state.copyWith(saving: false, backendUnavailable: e);
     } catch (e) {
       state = state.copyWith(saving: false, errorMessage: e.toString());
     }
@@ -78,8 +83,8 @@ class DriverProfileNotifier extends Notifier<DriverProfileState> {
         plate: plate,
       );
       await load();
-    } on UnimplementedError catch (e) {
-      state = state.copyWith(saving: false, errorMessage: e.message);
+    } on BackendUnavailableException catch (e) {
+      state = state.copyWith(saving: false, backendUnavailable: e);
     } catch (e) {
       state = state.copyWith(saving: false, errorMessage: e.toString());
     }

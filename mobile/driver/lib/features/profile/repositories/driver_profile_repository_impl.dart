@@ -1,4 +1,5 @@
 import 'package:sakai_api_client/sakai_api_client.dart' as api;
+import 'package:sakai_shared/sakai_shared.dart' show BackendUnavailableException;
 
 import 'driver_profile_repository.dart';
 
@@ -18,7 +19,7 @@ class DriverProfileRepositoryImpl implements DriverProfileRepository {
 
   @override
   Future<void> updateProfile({String? name}) {
-    throw UnimplementedError('Profile PATCH endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'profile');
   }
 
   @override
@@ -28,6 +29,6 @@ class DriverProfileRepositoryImpl implements DriverProfileRepository {
     required String color,
     required String plate,
   }) {
-    throw UnimplementedError('Vehicle PATCH endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'vehicle');
   }
 }

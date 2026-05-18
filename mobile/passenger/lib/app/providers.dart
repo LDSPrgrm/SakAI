@@ -48,12 +48,12 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(ref.watch(apiClientProvider));
 });
 
-/// Wallet repository — backend endpoints pending; throws UnimplementedError.
+/// Wallet repository — backend endpoints pending; throws BackendUnavailableException.
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepositoryImpl(ref.watch(apiClientProvider));
 });
 
-/// Notifications repository — backend endpoints pending; throws UnimplementedError.
+/// Notifications repository — backend endpoints pending; throws BackendUnavailableException.
 final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
   return NotificationsRepositoryImpl(ref.watch(apiClientProvider));
 });

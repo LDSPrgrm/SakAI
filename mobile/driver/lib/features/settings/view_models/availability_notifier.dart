@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../repositories/availability_repository.dart';
 import '../../../app/providers.dart';
@@ -9,24 +10,28 @@ class AvailabilityState {
     this.saving = false,
     this.prefs = const AvailabilityPrefs(),
     this.errorMessage,
+    this.backendUnavailable,
   });
 
   final bool loading;
   final bool saving;
   final AvailabilityPrefs prefs;
   final String? errorMessage;
+  final BackendUnavailableException? backendUnavailable;
 
   AvailabilityState copyWith({
     bool? loading,
     bool? saving,
     AvailabilityPrefs? prefs,
     String? errorMessage,
+    BackendUnavailableException? backendUnavailable,
   }) {
     return AvailabilityState(
       loading: loading ?? this.loading,
       saving: saving ?? this.saving,
       prefs: prefs ?? this.prefs,
       errorMessage: errorMessage,
+      backendUnavailable: backendUnavailable,
     );
   }
 }
@@ -45,9 +50,9 @@ class AvailabilityNotifier extends Notifier<AvailabilityState> {
     try {
       final prefs = await _repo.get();
       state = AvailabilityState(prefs: prefs);
-    } on UnimplementedError catch (e) {
+    } on BackendUnavailableException catch (e) {
       // Show the form with defaults so the UI is still usable for design review.
-      state = AvailabilityState(errorMessage: e.message);
+      state = AvailabilityState(backendUnavailable: e);
     } catch (e) {
       state = AvailabilityState(errorMessage: e.toString());
     }
@@ -62,8 +67,8 @@ class AvailabilityNotifier extends Notifier<AvailabilityState> {
     try {
       await _repo.save(state.prefs);
       state = state.copyWith(saving: false);
-    } on UnimplementedError catch (e) {
-      state = state.copyWith(saving: false, errorMessage: e.message);
+    } on BackendUnavailableException catch (e) {
+      state = state.copyWith(saving: false, backendUnavailable: e);
     } catch (e) {
       state = state.copyWith(saving: false, errorMessage: e.toString());
     }

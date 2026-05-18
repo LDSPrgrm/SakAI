@@ -33,6 +33,9 @@ class WalletScreen extends ConsumerWidget {
     if (state.loading && state.balance == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (state.backendUnavailable != null) {
+      return const ComingSoonState(feature: 'Wallet');
+    }
     if (state.errorMessage != null && state.balance == null) {
       return SakaiEmptyState(
         icon: Icons.account_balance_wallet_outlined,

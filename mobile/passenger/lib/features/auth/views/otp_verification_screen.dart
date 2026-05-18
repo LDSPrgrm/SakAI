@@ -22,13 +22,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(otpNotifierProvider.notifier).sendCode(widget.destination);
-    });
+    if (kOtpEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(otpNotifierProvider.notifier).sendCode(widget.destination);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!kOtpEnabled) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const ComingSoonState(feature: 'Phone verification'),
+      );
+    }
     final state = ref.watch(otpNotifierProvider);
     final notifier = ref.read(otpNotifierProvider.notifier);
     final t = SakaiDesignTokens.of(context);

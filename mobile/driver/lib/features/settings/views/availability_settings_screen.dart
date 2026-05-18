@@ -19,7 +19,9 @@ class AvailabilitySettingsScreen extends ConsumerWidget {
       body: SafeArea(
         child: state.loading
             ? const Center(child: CircularProgressIndicator())
-            : ListView(
+            : state.backendUnavailable != null
+                ? const ComingSoonState(feature: 'Availability windows')
+                : ListView(
                 padding: EdgeInsets.all(t.spaceMd),
                 children: [
                   if (state.errorMessage != null)

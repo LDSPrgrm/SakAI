@@ -1,4 +1,4 @@
-import 'package:sakai_api_client/sakai_api_client.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import 'availability_repository.dart';
 
@@ -9,11 +9,11 @@ class AvailabilityRepositoryImpl implements AvailabilityRepository {
 
   @override
   Future<AvailabilityPrefs> get() {
-    throw UnimplementedError('Availability prefs endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'availability');
   }
 
   @override
   Future<void> save(AvailabilityPrefs prefs) {
-    throw UnimplementedError('Availability prefs endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'availability');
   }
 }

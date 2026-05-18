@@ -1,4 +1,4 @@
-import 'package:sakai_api_client/sakai_api_client.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/app_notification.dart';
 import 'notifications_repository.dart';
@@ -10,16 +10,16 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
   @override
   Future<List<AppNotification>> list() {
-    throw UnimplementedError('Notifications inbox endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'notifications');
   }
 
   @override
   Future<void> markRead(String id) {
-    throw UnimplementedError('Mark-read endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'notifications');
   }
 
   @override
   Future<void> markAllRead() {
-    throw UnimplementedError('Mark-all-read endpoint not implemented.');
+    throw const BackendUnavailableException(feature: 'notifications');
   }
 }

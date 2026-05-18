@@ -9,16 +9,12 @@ class OtpRepositoryImpl implements OtpRepository {
   @override
   Future<String> sendCode({required String destination}) {
     // TODO(backend): wire to POST /auth/otp/send once endpoint exists.
-    throw UnimplementedError(
-      'OTP send endpoint not implemented on backend yet.',
-    );
+    throw const BackendUnavailableException(feature: 'otp');
   }
 
   @override
   Future<void> verify({required String challengeId, required String code}) {
     // TODO(backend): wire to POST /auth/otp/verify once endpoint exists.
-    throw UnimplementedError(
-      'OTP verify endpoint not implemented on backend yet.',
-    );
+    throw const BackendUnavailableException(feature: 'otp');
   }
 }

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/backend_unavailable_exception.dart';
+import 'otp_enabled.dart';
 import 'otp_repository.dart';
 
 class OtpState {
@@ -37,11 +39,10 @@ class OtpState {
   }
 }
 
-/// Canonical OTP repository provider. Default throws — each app's root
-/// `ProviderScope` must override it with a concrete impl that talks to its
-/// `SakaiApiClient`.
+/// Canonical OTP repository provider. Each app's root `ProviderScope` MUST
+/// override it with a concrete impl that talks to its `SakaiApiClient`.
 final otpRepositoryProvider = Provider<OtpRepository>((ref) {
-  throw UnimplementedError(
+  throw StateError(
     'otpRepositoryProvider not overridden. Each app must override it in main.dart',
   );
 });
@@ -58,15 +59,22 @@ class OtpNotifier extends Notifier<OtpState> {
   OtpRepository get _repo => ref.read(otpRepositoryProvider);
 
   Future<void> sendCode(String destination) async {
+    if (!kOtpEnabled) {
+      state = state.copyWith(
+        busy: false,
+        errorMessage: 'Verification not yet available.',
+      );
+      return;
+    }
     state = state.copyWith(busy: true, errorMessage: null);
     try {
       final id = await _repo.sendCode(destination: destination);
       state = state.copyWith(busy: false, challengeId: id);
       _startCooldown();
-    } on UnimplementedError catch (e) {
+    } on BackendUnavailableException catch (e) {
       state = state.copyWith(
         busy: false,
-        errorMessage: 'Verification not yet available. (${e.message})',
+        errorMessage: 'Verification not yet available. (${e.feature})',
       );
     } catch (e) {
       state = state.copyWith(busy: false, errorMessage: e.toString());
@@ -74,6 +82,13 @@ class OtpNotifier extends Notifier<OtpState> {
   }
 
   Future<void> verifyCode(String code) async {
+    if (!kOtpEnabled) {
+      state = state.copyWith(
+        busy: false,
+        errorMessage: 'Verification not yet available.',
+      );
+      return;
+    }
     final id = state.challengeId;
     if (id == null) {
       state = state.copyWith(errorMessage: 'No verification in progress.');
@@ -83,10 +98,10 @@ class OtpNotifier extends Notifier<OtpState> {
     try {
       await _repo.verify(challengeId: id, code: code);
       state = state.copyWith(busy: false, verified: true);
-    } on UnimplementedError catch (e) {
+    } on BackendUnavailableException catch (e) {
       state = state.copyWith(
         busy: false,
-        errorMessage: 'Verification not yet available. (${e.message})',
+        errorMessage: 'Verification not yet available. (${e.feature})',
       );
     } catch (e) {
       state = state.copyWith(

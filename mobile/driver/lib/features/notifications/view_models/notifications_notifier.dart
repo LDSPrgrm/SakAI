@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/app_notification.dart';
 import '../repositories/notifications_repository.dart';
@@ -9,11 +10,13 @@ class NotificationsState {
     this.loading = false,
     this.items = const [],
     this.errorMessage,
+    this.backendUnavailable,
   });
 
   final bool loading;
   final List<AppNotification> items;
   final String? errorMessage;
+  final BackendUnavailableException? backendUnavailable;
 
   bool get isEmpty => items.isEmpty;
   int get unreadCount => items.where((n) => !n.read).length;
@@ -22,11 +25,13 @@ class NotificationsState {
     bool? loading,
     List<AppNotification>? items,
     String? errorMessage,
+    BackendUnavailableException? backendUnavailable,
   }) {
     return NotificationsState(
       loading: loading ?? this.loading,
       items: items ?? this.items,
       errorMessage: errorMessage,
+      backendUnavailable: backendUnavailable,
     );
   }
 }
@@ -45,8 +50,8 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
     try {
       final items = await _repo.list();
       state = NotificationsState(items: items);
-    } on UnimplementedError catch (e) {
-      state = NotificationsState(errorMessage: e.message);
+    } on BackendUnavailableException catch (e) {
+      state = NotificationsState(backendUnavailable: e);
     } catch (e) {
       state = NotificationsState(errorMessage: e.toString());
     }

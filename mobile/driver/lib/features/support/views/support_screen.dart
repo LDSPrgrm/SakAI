@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const String _kSupportPhone = '+639171234567';
+const String _kSupportEmail = 'driver-support@sakai.app';
 
 class DriverSupportScreen extends StatelessWidget {
   const DriverSupportScreen({super.key});
+
+  Future<void> _launch(BuildContext context, Uri uri) async {
+    final ok = await canLaunchUrl(uri).catchError((_) => false);
+    if (ok) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not open ${uri.scheme} app on this device.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +71,19 @@ class DriverSupportScreen extends StatelessWidget {
                   leading: const Icon(Icons.phone),
                   title: const Text('Call driver hotline'),
                   subtitle: const Text('Available 24/7'),
-                  onTap: () {
-                    // TODO(integration): use url_launcher → tel: scheme.
-                  },
+                  onTap: () => _launch(
+                    context,
+                    Uri(scheme: 'tel', path: _kSupportPhone),
+                  ),
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.email_outlined),
-                  title: const Text('Email driver-support@sakai.app'),
-                  onTap: () {
-                    // TODO(integration): use url_launcher → mailto: scheme.
-                  },
+                  title: const Text('Email $_kSupportEmail'),
+                  onTap: () => _launch(
+                    context,
+                    Uri(scheme: 'mailto', path: _kSupportEmail),
+                  ),
                 ),
               ],
             ),

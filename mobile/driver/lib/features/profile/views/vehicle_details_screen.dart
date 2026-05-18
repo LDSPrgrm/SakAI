@@ -52,7 +52,9 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Vehicle details')),
       body: SafeArea(
-        child: ListView(
+        child: state.backendUnavailable != null
+            ? const ComingSoonState(feature: 'Vehicle edits')
+            : ListView(
           padding: EdgeInsets.all(t.spaceLg),
           children: [
             SakaiTextField(controller: _make, label: 'Make'),
