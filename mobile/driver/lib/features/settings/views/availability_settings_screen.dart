@@ -15,7 +15,7 @@ class AvailabilitySettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Availability')),
+      appBar: const SakaiAppBar(title: Text('Availability')),
       body: SafeArea(
         child: state.loading
             ? const Center(child: CircularProgressIndicator())

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/routes.dart';
 import '../view_models/splash_notifier.dart';
@@ -38,9 +39,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _failsafeTimer = Timer(const Duration(seconds: 8), () {
       if (!mounted || _navigated) return;
       _navigated = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Taking longer than expected. Please sign in again.')),
-      );
+      SakaiSnackBar.info(context, 'Taking longer than expected. Please sign in again.');
       context.go(Routes.login);
     });
   }

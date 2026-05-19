@@ -445,7 +445,18 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 ),
               ],
             ),
-              SizedBox(height: tokens.spaceLg),
+            if (_termsError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 32),
+                child: Text(
+                  _termsError!,
+                  style: TextStyle(
+                    color: scheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            SizedBox(height: tokens.spaceLg),
               Row(
                 children: [
                   TextButton.icon(

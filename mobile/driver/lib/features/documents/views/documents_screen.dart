@@ -119,8 +119,11 @@ class _DocumentCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         height: 200,
-                        color: Colors.grey[200],
-                        child: const Center(child: Icon(Icons.broken_image, size: 48)),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        child: const Center(
+                            child: Icon(Icons.broken_image, size: 48)),
                       ),
                     ),
                   ),
@@ -129,7 +132,10 @@ class _DocumentCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
                       'Rejection Reason: ${document.rejectionReason}',
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: SakaiSemanticColors.of(context).danger,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
               ],
@@ -192,7 +198,12 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),

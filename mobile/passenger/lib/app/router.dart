@@ -31,6 +31,7 @@ import '../features/settings/views/privacy_policy_screen.dart';
 import '../features/settings/views/language_selection_screen.dart';
 import '../features/saved_places/views/saved_places_screen.dart';
 import '../features/promotions/views/promotions_screen.dart';
+import '../features/coming_soon/views/coming_soon_screen.dart';
 import 'providers.dart';
 import 'routes.dart';
 
@@ -224,6 +225,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.promotions,
         builder: (context, state) => const PromotionsScreen(),
+      ),
+      GoRoute(
+        path: Routes.comingSoon,
+        builder: (context, state) {
+          final feature = state.extra as String? ?? 'This feature';
+          return ComingSoonScreen(feature: feature);
+        },
       ),
     ],
   );

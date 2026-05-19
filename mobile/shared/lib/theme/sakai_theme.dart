@@ -30,11 +30,16 @@ abstract final class SakaiTheme {
     );
 
     final tokens = config.tokens;
-    final radii = BorderRadius.circular(tokens.radiusMd);
 
     final success = config.successColor ?? scheme.secondary;
     final danger = config.dangerColor ?? scheme.error;
     final warning = config.warningColor ?? const Color(0xFFFBBC04);
+    // Brighter dark-mode warning (+8% lightness) so amber retains contrast
+    // on dark surfaces. Light mode keeps the base warning.
+    final warningHsl = HSLColor.fromColor(warning);
+    final warningDark = warningHsl
+        .withLightness((warningHsl.lightness + 0.08).clamp(0.0, 1.0))
+        .toColor();
     final accentBlue = config.secondarySeed ?? scheme.secondary;
 
     // Only apply these overrides for the dark variant; for light we keep the
@@ -85,6 +90,7 @@ abstract final class SakaiTheme {
       dangerSubtle: tint(danger),
       warningSubtle: tint(warning),
       successSubtle: tint(success),
+      warningDark: brightness == Brightness.dark ? warningDark : null,
     );
 
     final scaffoldBackgroundColor = brightness == Brightness.dark
@@ -100,10 +106,13 @@ abstract final class SakaiTheme {
       scaffoldBackgroundColor: scaffoldBackgroundColor,
       appBarTheme: AppBarTheme(
         centerTitle: false,
-        elevation: 0,
+        elevation: tokens.elevationAppBar,
         scrolledUnderElevation: 1,
         backgroundColor: schemeWithOverrides.surface,
         foregroundColor: schemeWithOverrides.onSurface,
+        // Suppress M3 scroll-under purple shift on the red seed by tinting
+        // with the actual surface colour (light + dark).
+        surfaceTintColor: schemeWithOverrides.surface,
       ),
       cardTheme: CardThemeData(
         elevation: 0,

@@ -72,7 +72,7 @@ class _ApprovalPendingScreenState extends ConsumerState<ApprovalPendingScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Approval pending')),
+      appBar: const SakaiAppBar(title: Text('Approval pending')),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(t.spaceLg),
@@ -136,7 +136,9 @@ class _DocTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (icon, color, label) = _statusVisuals(doc.uploadStatus, theme);
+    final semantic = SakaiSemanticColors.of(context);
+    final (icon, color, label) =
+        _statusVisuals(doc.uploadStatus, theme, semantic);
     return SakaiSurfaceCard(
       child: Row(
         children: [
@@ -160,9 +162,10 @@ class _DocTile extends StatelessWidget {
   (IconData, Color, String) _statusVisuals(
     api.UploadStatus status,
     ThemeData theme,
+    SakaiSemanticColors semantic,
   ) {
     if (status == api.UploadStatus.approved) {
-      return (Icons.check_circle, Colors.green, 'Approved');
+      return (Icons.check_circle, semantic.success, 'Approved');
     }
     if (status == api.UploadStatus.rejected) {
       return (Icons.cancel, theme.colorScheme.error, 'Rejected');

@@ -22,6 +22,7 @@ class SakaiTextField extends StatefulWidget {
     this.suffixIcon,
     this.enabled = true,
     this.maxLines = 1,
+    this.maxLength,
     this.errorText,
     this.focusNode,
     this.autofocus = false,
@@ -40,6 +41,7 @@ class SakaiTextField extends StatefulWidget {
   final Widget? suffixIcon;
   final bool enabled;
   final int maxLines;
+  final int? maxLength;
   final String? errorText;
   final bool autofocus;
 
@@ -118,7 +120,6 @@ class _SakaiTextFieldState extends State<SakaiTextField>
       child: AnimatedBuilder(
         animation: _shakeAnimation,
         builder: (context, child) {
-          // Sine wave shake: moves left and right
           final offset = sin(_shakeAnimation.value * pi * 3) * 8.0;
           return Transform.translate(
             offset: Offset(offset, 0),
@@ -150,35 +151,36 @@ class _SakaiTextFieldState extends State<SakaiTextField>
             textInputAction: widget.textInputAction,
             onChanged: widget.onChanged,
             onSubmitted: widget.onSubmitted,
-          enabled: widget.enabled,
-          maxLines: widget.obscureText ? 1 : widget.maxLines,
-          decoration: InputDecoration(
-            hintText: widget.label ?? widget.hint,
-            floatingLabelBehavior: FloatingLabelBehavior.never,
-            prefixIcon: widget.prefixIcon != null
-                ? IconTheme(
-                    data: IconThemeData(
-                      color: _isFocused
-                          ? scheme.primary
-                          : scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                    child: widget.prefixIcon!,
-                  )
-                : null,
-            suffixIcon: widget.suffixIcon != null
-                ? IconTheme(
-                    data: IconThemeData(
-                      color: _isFocused
-                          ? scheme.primary
-                          : scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                    child: widget.suffixIcon!,
-                  )
-                : null,
-            errorText: widget.errorText,
+            enabled: widget.enabled,
+            maxLines: widget.obscureText ? 1 : widget.maxLines,
+            maxLength: widget.maxLength,
+            decoration: InputDecoration(
+              hintText: widget.label ?? widget.hint,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+              prefixIcon: widget.prefixIcon != null
+                  ? IconTheme(
+                      data: IconThemeData(
+                        color: _isFocused
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                      child: widget.prefixIcon!,
+                    )
+                  : null,
+              suffixIcon: widget.suffixIcon != null
+                  ? IconTheme(
+                      data: IconThemeData(
+                        color: _isFocused
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                      child: widget.suffixIcon!,
+                    )
+                  : null,
+              errorText: widget.errorText,
+            ),
           ),
         ),
-      ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 import '../view_models/document_view_model.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
@@ -49,9 +50,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        SakaiSnackBar.error(context, 'Error picking image: $e');
       }
     }
   }
@@ -73,8 +72,9 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or take a photo of the document')),
+      SakaiSnackBar.warning(
+        context,
+        'Please select or take a photo of the document',
       );
       return;
     }
@@ -94,19 +94,16 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(documentViewModelProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     // Show success/error messages from state
     ref.listen(documentViewModelProvider, (previous, next) {
       if (next.successMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.successMessage!), backgroundColor: Colors.green),
-        );
+        SakaiSnackBar.success(context, next.successMessage!);
         ref.read(documentViewModelProvider.notifier).clearMessages();
       }
       if (next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
-        );
+        SakaiSnackBar.error(context, next.errorMessage!);
         ref.read(documentViewModelProvider.notifier).clearMessages();
       }
     });
@@ -181,17 +178,19 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[400]!),
+                    border: Border.all(color: scheme.outlineVariant),
                   ),
                   child: _image == null
-                      ? const Column(
+                      ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo, size: 48, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Tap to add a photo', style: TextStyle(color: Colors.grey)),
+                            Icon(Icons.add_a_photo,
+                                size: 48, color: scheme.onSurfaceVariant),
+                            const SizedBox(height: 8),
+                            Text('Tap to add a photo',
+                                style: TextStyle(color: scheme.onSurfaceVariant)),
                           ],
                         )
                       : Stack(
@@ -239,30 +238,28 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   }
 
   void _showImageSourceActionSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
+    SakaiModalSheet.show<void>(
+      context,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SakaiListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Take a Photo'),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _pickImage(ImageSource.camera);
+            },
+          ),
+          SakaiListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from Gallery'),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              _pickImage(ImageSource.gallery);
+            },
+          ),
+        ],
       ),
     );
   }

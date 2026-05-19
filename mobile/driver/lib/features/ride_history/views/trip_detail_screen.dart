@@ -14,7 +14,7 @@ class TripDetailScreen extends StatelessWidget {
     final fare = ride.actualFare ?? ride.fare ?? ride.estimatedFare;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trip details')),
+      appBar: const SakaiAppBar(title: Text('Trip details')),
       body: ListView(
         padding: EdgeInsets.all(t.spaceMd),
         children: [

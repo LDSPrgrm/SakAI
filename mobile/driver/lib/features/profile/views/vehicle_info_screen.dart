@@ -18,7 +18,7 @@ class VehicleInfoScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Vehicle')),
+      appBar: const SakaiAppBar(title: Text('Vehicle')),
       body: Padding(
         padding: EdgeInsets.all(t.spaceMd),
         child: state.profile?.vehicle == null

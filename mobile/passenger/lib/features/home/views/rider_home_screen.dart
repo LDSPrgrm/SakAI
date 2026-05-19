@@ -20,6 +20,12 @@ import '../models/nearby_driver.dart';
 import '../models/ride_type_option.dart';
 import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
+import 'widgets/home_greeting_header.dart';
+import 'widgets/home_location_chip.dart';
+import 'widgets/home_promo_carousel.dart';
+import 'widgets/home_quick_actions_grid.dart';
+import 'widgets/home_recent_trips.dart';
+import 'widgets/home_search_hero.dart';
 import '../../../app/providers.dart';
 
 /// Full-screen Google Map home screen for ride requesting (REQ-3.2.4).
@@ -396,6 +402,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 ),
               ),
             ),
+            const Flexible(child: HomeLocationChip()),
           ],
         ),
       ),
@@ -470,11 +477,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return DraggableScrollableSheet(
       key: _sheetKey,
       controller: _sheetController,
-      initialChildSize: isIdle ? (_currentIndex == 0 ? 0.35 : 0.22) : 0.45,
-      minChildSize: 0.22,
-      maxChildSize: 0.9,
+      initialChildSize: 0.55,
+      minChildSize: 0.28,
+      maxChildSize: 0.92,
       snap: true,
-      snapSizes: const [0.22, 0.35, 0.45, 0.9],
+      snapSizes: const [0.28, 0.55, 0.92],
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -498,22 +505,19 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
-              if (isIdle)
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildIdleContent(context, scheme, tokens),
-                  ),
-                )
+              if (isIdle && !_isSearching)
+                ..._buildIdleSlivers(context, scheme, tokens)
               else
                 SliverPadding(
                   padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
                   sliver: SliverToBoxAdapter(
-                    child: _buildActiveContent(context, scheme, tokens),
+                    child: isIdle
+                        ? _buildIdleContent(context, scheme, tokens)
+                        : _buildActiveContent(context, scheme, tokens),
                   ),
                 ),
             ],
@@ -521,6 +525,43 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         );
       },
     );
+  }
+
+  List<Widget> _buildIdleSlivers(
+    BuildContext context,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return [
+      const SliverToBoxAdapter(child: HomeGreetingHeader()),
+      SliverToBoxAdapter(child: SizedBox(height: tokens.spaceMd)),
+      SliverToBoxAdapter(
+        child: HomeSearchHero(
+          onTap: () => _openLocationSearch(LocationSearchMode.destination),
+        ),
+      ),
+      SliverToBoxAdapter(child: SizedBox(height: tokens.spaceLg)),
+      const SliverToBoxAdapter(child: HomeQuickActionsGrid()),
+      SliverToBoxAdapter(child: SizedBox(height: tokens.spaceLg)),
+      SliverToBoxAdapter(
+        child: SakaiSectionHeader(
+          title: 'Promotions',
+          trailingLabel: 'See all',
+          onTrailingTap: () => context.push(Routes.promotions),
+        ),
+      ),
+      const SliverToBoxAdapter(child: HomePromoCarousel()),
+      SliverToBoxAdapter(child: SizedBox(height: tokens.spaceMd)),
+      SliverToBoxAdapter(
+        child: SakaiSectionHeader(
+          title: 'Recent trips',
+          trailingLabel: 'See all',
+          onTrailingTap: () => context.push(Routes.rideHistory),
+        ),
+      ),
+      const SliverToBoxAdapter(child: HomeRecentTrips()),
+      SliverToBoxAdapter(child: SizedBox(height: tokens.spaceXl)),
+    ];
   }
 
   Widget _buildIdleContent(

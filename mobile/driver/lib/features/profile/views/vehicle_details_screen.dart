@@ -50,7 +50,7 @@ class _VehicleDetailsScreenState extends ConsumerState<VehicleDetailsScreen> {
     _seedFromProfile();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Vehicle details')),
+      appBar: const SakaiAppBar(title: Text('Vehicle details')),
       body: SafeArea(
         child: state.backendUnavailable != null
             ? const ComingSoonState(feature: 'Vehicle edits')

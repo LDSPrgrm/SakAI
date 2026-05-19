@@ -115,10 +115,8 @@ class _RideHistoryListScreenState extends ConsumerState<RideHistoryListScreen> {
           onRefresh: () =>
               ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
           child: ListView.builder(
-            // PERFORMANCE: ListView.builder lazily creates items,
-            // ensuring constant memory usage regardless of total ride count.
-            // cacheExtent pre-builds items one viewport beyond the visible area
-            // for smooth scrolling at 60fps even with 100+ rides.
+            // Pre-build one viewport beyond visible for smooth 60fps scroll.
+            // ignore: deprecated_member_use
             cacheExtent: 500.0,
             controller: _scrollController,
             padding: EdgeInsets.all(tokens.spaceSm),
@@ -169,7 +167,7 @@ class _RideHistoryTile extends StatelessWidget {
                     child: Text(
                       dateFormat.format(item.createdAt.toLocal()),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -184,7 +182,11 @@ class _RideHistoryTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.circle, size: 10, color: Colors.green),
+                  Icon(
+                    Icons.circle,
+                    size: 10,
+                    color: SakaiSemanticColors.of(context).success,
+                  ),
                   SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
@@ -200,7 +202,11 @@ class _RideHistoryTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, size: 10, color: Colors.red),
+                  Icon(
+                    Icons.location_on,
+                    size: 10,
+                    color: SakaiSemanticColors.of(context).danger,
+                  ),
                   SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
@@ -226,7 +232,7 @@ class _RideHistoryTile extends StatelessWidget {
                     Text(
                       item.driverName!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                 ],

@@ -358,6 +358,8 @@ void main() {
         find.byKey(const Key('register_password')),
         'password123',
       );
+      await tester.tap(find.byKey(const Key('register_terms')));
+      await tester.pump();
       await tester.tap(find.byKey(const Key('register_submit')));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
