@@ -30,7 +30,6 @@ abstract final class SakaiTheme {
     );
 
     final tokens = config.tokens;
-    final radii = BorderRadius.circular(tokens.radiusMd);
 
     final success = config.successColor ?? scheme.secondary;
     final danger = config.dangerColor ?? scheme.error;

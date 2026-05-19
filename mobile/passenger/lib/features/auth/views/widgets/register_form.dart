@@ -191,10 +191,12 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     key: const Key('register_terms'),
                     value: _agreeToTerms,
                     onChanged: (val) {
-                      if (val != null) setState(() {
-                        _agreeToTerms = val;
-                        if (val) _termsError = null;
-                      });
+                      if (val != null) {
+                        setState(() {
+                          _agreeToTerms = val;
+                          if (val) _termsError = null;
+                        });
+                      }
                     },
                     activeColor: scheme.primary,
                     shape: RoundedRectangleBorder(

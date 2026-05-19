@@ -90,7 +90,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     });
 
     final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final tokens = SakaiDesignTokens.of(context);
 
     return Scaffold(
