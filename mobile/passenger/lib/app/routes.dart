@@ -32,4 +32,5 @@ abstract class Routes {
   static const notifications = '/notifications';
   static const noDrivers = '/ride/no-drivers';
   static const noInternet = '/no-internet';
+  static const comingSoon = '/coming-soon';
 }
