@@ -116,7 +116,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Create Account',
+              'Create account',
               style: textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: scheme.onSurface,
@@ -188,6 +188,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                   width: 24,
                   height: 24,
                   child: Checkbox(
+                    key: const Key('register_terms'),
                     value: _agreeToTerms,
                     onChanged: (val) {
                       if (val != null) setState(() {
