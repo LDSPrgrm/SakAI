@@ -1,6 +1,16 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sakai_shared/sakai_shared.dart';
+
+/// Goldens were recorded on the Windows host. Font hinting / Skia rasterization
+/// differs per OS, so byte-equal comparisons fail on Linux + macOS CI runners.
+/// Skip everywhere except the recording platform until a CI-platform recording
+/// workflow exists.
+final Object _goldensSkip = Platform.isWindows
+    ? false
+    : 'Goldens recorded on Windows; skipping on ${Platform.operatingSystem}.';
 
 /// Stable canvas sizes per widget so goldens read like the figma exports.
 const _appBarCanvas = Size(360, kToolbarHeight);
@@ -206,7 +216,7 @@ Widget _wrap(
 }
 
 void main() {
-  group('SakaiAppBar golden', () {
+  group('SakaiAppBar golden', skip: _goldensSkip, () {
     testWidgets('light', (tester) async {
       await tester.pumpWidget(_wrapAppBar(
         const SakaiAppBar(title: Text('Profile')),
@@ -230,7 +240,7 @@ void main() {
     });
   });
 
-  group('SakaiPrimaryButton golden', () {
+  group('SakaiPrimaryButton golden', skip: _goldensSkip, () {
     testWidgets('light', (tester) async {
       await tester.pumpWidget(_wrap(
         const SakaiPrimaryButton(label: 'Confirm'),
@@ -256,7 +266,7 @@ void main() {
     });
   });
 
-  group('SakaiErrorAlert golden', () {
+  group('SakaiErrorAlert golden', skip: _goldensSkip, () {
     testWidgets('light', (tester) async {
       await tester.pumpWidget(_wrap(
         const SakaiErrorAlert(message: 'Could not load'),
@@ -282,7 +292,7 @@ void main() {
     });
   });
 
-  group('SakaiListTile golden', () {
+  group('SakaiListTile golden', skip: _goldensSkip, () {
     testWidgets('light', (tester) async {
       await tester.pumpWidget(_wrap(
         const SakaiListTile(

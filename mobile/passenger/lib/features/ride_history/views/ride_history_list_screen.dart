@@ -115,10 +115,8 @@ class _RideHistoryListScreenState extends ConsumerState<RideHistoryListScreen> {
           onRefresh: () =>
               ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
           child: ListView.builder(
-            // PERFORMANCE: ListView.builder lazily creates items,
-            // ensuring constant memory usage regardless of total ride count.
-            // cacheExtent pre-builds items one viewport beyond the visible area
-            // for smooth scrolling at 60fps even with 100+ rides.
+            // Pre-build one viewport beyond visible for smooth 60fps scroll.
+            // ignore: deprecated_member_use
             cacheExtent: 500.0,
             controller: _scrollController,
             padding: EdgeInsets.all(tokens.spaceSm),

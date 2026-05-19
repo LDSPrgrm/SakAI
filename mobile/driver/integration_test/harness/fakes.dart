@@ -4,7 +4,6 @@ import 'package:driver/features/auth/models/auth_session.dart';
 import 'package:driver/features/auth/models/session_check_result.dart';
 import 'package:driver/features/auth/repositories/driver_auth_repository.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 class FakeTokenStorage extends TokenStorage {
