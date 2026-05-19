@@ -50,3 +50,5 @@ export 'widgets/sakai_status_badge.dart';
 export 'widgets/sakai_surface_card.dart';
 export 'widgets/sakai_text_field.dart';
 export 'widgets/sakai_welcome_carousel.dart';
+export 'widgets/sakai_animated_backdrop.dart';
+export 'widgets/sakai_tactile.dart';

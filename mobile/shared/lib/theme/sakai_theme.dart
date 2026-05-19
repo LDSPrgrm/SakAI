@@ -17,9 +17,17 @@ abstract final class SakaiTheme {
       seedColor: config.primarySeed,
       brightness: brightness,
     );
-    final scheme = config.secondarySeed != null
-        ? base.copyWith(secondary: config.secondarySeed)
-        : base;
+    // Tone down the primary brand color slightly (22% in light, 28% in dark) to prevent neon harshness,
+    // keeping the exact red brand hue but making it more premium and comfortable to the eyes.
+    final tonedPrimary = brightness == Brightness.dark
+        ? Color.lerp(config.primarySeed, Colors.black, 0.28) ?? config.primarySeed
+        : Color.lerp(config.primarySeed, Colors.black, 0.22) ?? config.primarySeed;
+
+    final scheme = base.copyWith(
+      primary: tonedPrimary,
+      onPrimary: Colors.white,
+      secondary: config.secondarySeed ?? base.secondary,
+    );
 
     final tokens = config.tokens;
     final radii = BorderRadius.circular(tokens.radiusMd);
@@ -111,7 +119,7 @@ abstract final class SakaiTheme {
             vertical: tokens.spaceMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusLg), // Or radiusXl if we want pills, but radiusLg (20px) is good. Mockups use 1.5rem (24px) for most buttons.
+            borderRadius: BorderRadius.circular(tokens.radiusFull),
           ),
         ),
       ),
@@ -122,29 +130,27 @@ abstract final class SakaiTheme {
             vertical: tokens.spaceMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            borderRadius: BorderRadius.circular(tokens.radiusFull),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: schemeWithOverrides.surfaceContainerHighest.withValues(
-          alpha: brightness == Brightness.dark ? 0.2 : 0.4,
-        ),
+        fillColor: Colors.transparent, // transparent for a clean outline look
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(tokens.radiusFull),
+          borderSide: BorderSide(color: schemeWithOverrides.outlineVariant.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: radii,
-          borderSide: BorderSide(color: schemeWithOverrides.outlineVariant),
+          borderRadius: BorderRadius.circular(tokens.radiusFull),
+          borderSide: BorderSide(color: schemeWithOverrides.outlineVariant.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: radii,
+          borderRadius: BorderRadius.circular(tokens.radiusFull),
           borderSide: BorderSide(color: schemeWithOverrides.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: radii,
+          borderRadius: BorderRadius.circular(tokens.radiusFull),
           borderSide: BorderSide(color: schemeWithOverrides.error),
         ),
         contentPadding: EdgeInsets.symmetric(

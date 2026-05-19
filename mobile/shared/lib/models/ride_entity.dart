@@ -11,7 +11,8 @@ enum RideState {
   cancelled;
 
   static RideState fromString(String value) {
-    switch (value) {
+    final normalized = value.toLowerCase();
+    switch (normalized) {
       case 'requested':
         return RideState.requested;
       case 'accepted':
@@ -19,6 +20,7 @@ enum RideState {
       case 'arrived':
         return RideState.arrived;
       case 'in_progress':
+      case 'inprogress':
         return RideState.inProgress;
       case 'completed':
         return RideState.completed;

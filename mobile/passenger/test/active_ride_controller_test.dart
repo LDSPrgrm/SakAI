@@ -219,7 +219,7 @@ void main() {
           type: WsEventNames.rideStatusChanged,
           payload: {
             'ride_id': 'ride-123',
-            'status': 'arrived',
+            'status': 'ARRIVED',
             'updated_at': now.toIso8601String(),
           },
         ),

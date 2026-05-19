@@ -15,12 +15,14 @@ class LocationPushState {
     this.lastSuccessAt,
     this.consecutiveFailures = 0,
     this.lastError,
+    this.lastPosition,
   });
 
   final LocationPushStatus status;
   final DateTime? lastSuccessAt;
   final int consecutiveFailures;
   final String? lastError;
+  final Position? lastPosition;
 
   bool get isDegraded => status == LocationPushStatus.degraded;
 
@@ -29,6 +31,7 @@ class LocationPushState {
     DateTime? lastSuccessAt,
     int? consecutiveFailures,
     Object? lastError = _sentinel,
+    Position? lastPosition,
   }) {
     return LocationPushState(
       status: status ?? this.status,
@@ -37,6 +40,7 @@ class LocationPushState {
       lastError: identical(lastError, _sentinel)
           ? this.lastError
           : lastError as String?,
+      lastPosition: lastPosition ?? this.lastPosition,
     );
   }
 
@@ -169,6 +173,8 @@ class LocationStreamService {
   }
 
   Future<void> _onPosition(Position position) async {
+    _emit(_state.copyWith(lastPosition: position));
+
     if (_inFlight || _paused || _activeRideId == null) return;
     final now = _clock();
     final cadence = _state.isDegraded ? _degradedCadence : _normalCadence;

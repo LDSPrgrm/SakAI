@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../features/auth/views/login_screen.dart';
+import '../features/auth/views/auth_screen.dart';
 import '../features/auth/views/otp_verification_screen.dart';
-import '../features/auth/views/register_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
 import '../features/home/views/driver_home_screen.dart';
@@ -115,11 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.login,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => const AuthScreen(initialMode: AuthMode.login),
       ),
       GoRoute(
         path: Routes.register,
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => const AuthScreen(initialMode: AuthMode.register),
       ),
       GoRoute(
         path: Routes.home,

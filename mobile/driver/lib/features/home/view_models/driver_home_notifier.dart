@@ -236,6 +236,13 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
 
   RideStatus? _parseRideStatus(String s) {
     try {
+      final normalized = s.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+      for (final val in RideStatus.values) {
+        final valNormalized = val.name.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+        if (valNormalized == normalized) {
+          return val;
+        }
+      }
       return RideStatus.valueOf(s);
     } catch (_) {
       return null;
