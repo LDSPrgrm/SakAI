@@ -17,7 +17,7 @@ class DriverProfileScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: const SakaiAppBar(title: Text('Profile')),
       body: RefreshIndicator(
         onRefresh: notifier.load,
         child: _body(context, state, notifier, t, theme),
@@ -53,13 +53,9 @@ class DriverProfileScreen extends ConsumerWidget {
             padding: EdgeInsets.all(t.spaceLg),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    _initials(p.name),
-                    style: theme.textTheme.titleLarge,
-                  ),
+                SakaiAvatar(
+                  initials: _initials(p.name),
+                  size: SakaiAvatarSize.lg,
                 ),
                 SizedBox(width: t.spaceMd),
                 Expanded(
@@ -144,17 +140,16 @@ class DriverProfileScreen extends ConsumerWidget {
     String current,
   ) {
     final controller = TextEditingController(text: current);
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
+    SakaiModalSheet.show<void>(
+      context,
       builder: (ctx) {
         final t = SakaiDesignTokens.of(ctx);
         return Padding(
-          padding: EdgeInsets.only(
-            left: t.spaceLg,
-            right: t.spaceLg,
-            top: t.spaceLg,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + t.spaceLg,
+          padding: EdgeInsets.fromLTRB(
+            t.spaceLg,
+            t.spaceSm,
+            t.spaceLg,
+            t.spaceLg,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -16,7 +16,7 @@ class WalletScreen extends ConsumerWidget {
     final t = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Wallet')),
+      appBar: SakaiAppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: notifier.load,
         child: _body(context, state, notifier, t),

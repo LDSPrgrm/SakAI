@@ -194,7 +194,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
               receipt.paymentStatusLabel,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: receipt.paymentStatus == 'completed'
-                    ? Colors.green
+                    ? SakaiSemanticColors.of(context).success
                     : theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
               ),
@@ -204,7 +204,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
               Text(
                 receipt.formattedDate!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -250,7 +250,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                 label: 'From',
                 value: receipt.pickupAddress!,
                 icon: Icons.circle,
-                iconColor: Colors.green,
+                iconColor: SakaiSemanticColors.of(context).success,
               ),
             ],
             if (receipt.destinationAddress != null) ...[
@@ -259,7 +259,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                 label: 'To',
                 value: receipt.destinationAddress!,
                 icon: Icons.location_on,
-                iconColor: Colors.red,
+                iconColor: SakaiSemanticColors.of(context).danger,
               ),
             ],
           ],
@@ -409,7 +409,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: receipt.paymentStatus == 'completed'
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? SakaiSemanticColors.of(context).success.withValues(alpha: 0.1)
                         : theme.colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(tokens.radiusSm),
                   ),
@@ -417,7 +417,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                     receipt.paymentStatusLabel,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: receipt.paymentStatus == 'completed'
-                          ? Colors.green
+                          ? SakaiSemanticColors.of(context).success
                           : theme.colorScheme.error,
                       fontWeight: FontWeight.w600,
                     ),
@@ -447,11 +447,12 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 18, color: iconColor ?? Colors.grey[600]),
+          Icon(icon, size: 18, color: iconColor ?? scheme.onSurfaceVariant),
           const SizedBox(width: 8),
         ],
         Expanded(
@@ -462,7 +463,7 @@ class _InfoRow extends StatelessWidget {
                 label,
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
               Text(value, style: Theme.of(context).textTheme.bodyMedium),
             ],

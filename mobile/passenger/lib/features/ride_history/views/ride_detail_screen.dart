@@ -78,7 +78,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ride Details')),
+      appBar: SakaiAppBar(title: const Text('Ride Details')),
       body: _buildBody(_state, tokens, theme),
     );
   }
@@ -153,14 +153,14 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     label: 'From',
                     value: detail.originAddress,
                     icon: Icons.circle,
-                    iconColor: Colors.green,
+                    iconColor: SakaiSemanticColors.of(context).success,
                   ),
                   SizedBox(height: tokens.spaceSm),
                   _InfoRow(
                     label: 'To',
                     value: detail.destinationAddress,
                     icon: Icons.location_on,
-                    iconColor: Colors.red,
+                    iconColor: SakaiSemanticColors.of(context).danger,
                   ),
                   const Divider(),
                   _InfoRow(
@@ -215,7 +215,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                                 Text(
                                   detail.driverVehicle!,
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                             ],
@@ -251,7 +251,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                               Text(
                                 e.value!,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],

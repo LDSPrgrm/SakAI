@@ -15,8 +15,9 @@ class DriverSupportScreen extends StatelessWidget {
       return;
     }
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not open ${uri.scheme} app on this device.')),
+    SakaiSnackBar.error(
+      context,
+      'Could not open ${uri.scheme} app on this device.',
     );
   }
 
@@ -37,7 +38,7 @@ class DriverSupportScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver support')),
+      appBar: const SakaiAppBar(title: Text('Driver support')),
       body: ListView(
         padding: EdgeInsets.all(t.spaceMd),
         children: [

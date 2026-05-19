@@ -18,7 +18,7 @@ class TripHistoryListScreen extends ConsumerWidget {
     final t = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trip history')),
+      appBar: const SakaiAppBar(title: Text('Trip history')),
       body: RefreshIndicator(
         onRefresh: notifier.load,
         child: _body(context, state, notifier, t),

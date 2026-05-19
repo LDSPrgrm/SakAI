@@ -138,13 +138,8 @@ Future<void> showLocationSearchSheet(
   required ValueChanged<RideLocation> onLocationConfirmed,
 }) {
   final vm = DestinationSheetViewModel(GeocodingService());
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+  return SakaiModalSheet.show<void>(
+    context,
     builder: (_) => DestinationSheet(
       mode: mode,
       onLocationConfirmed: onLocationConfirmed,

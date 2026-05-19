@@ -124,11 +124,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
       } else if (event.type == WsEventNames.rideOfferExpired) {
         // No drivers available — go back to home.
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No drivers available. Please try again.'),
-            ),
-          );
+          SakaiSnackBar.info(context, 'No drivers available. Please try again.');
           context.go(Routes.home);
         }
       } else if (event.type == WsEventNames.rideCancelled) {

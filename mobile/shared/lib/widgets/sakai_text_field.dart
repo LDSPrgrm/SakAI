@@ -17,6 +17,7 @@ class SakaiTextField extends StatelessWidget {
     this.suffixIcon,
     this.enabled = true,
     this.maxLines = 1,
+    this.maxLength,
     this.errorText,
     this.focusNode,
   });
@@ -33,6 +34,7 @@ class SakaiTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool enabled;
   final int maxLines;
+  final int? maxLength;
   final String? errorText;
 
   @override
@@ -49,6 +51,7 @@ class SakaiTextField extends StatelessWidget {
         onChanged: onChanged,
         enabled: enabled,
         maxLines: obscureText ? 1 : maxLines,
+        maxLength: maxLength,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,

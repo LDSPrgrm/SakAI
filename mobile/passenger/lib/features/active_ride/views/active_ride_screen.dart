@@ -40,9 +40,7 @@ class ActiveRideScreen extends ConsumerWidget {
             currentStep == ActiveRideStep.arrived) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Your driver has arrived!')),
-              );
+              SakaiSnackBar.success(context, 'Your driver has arrived!');
             }
           });
         }
@@ -273,7 +271,7 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
             child: FloatingActionButton(
               heroTag: 'sos_button',
               onPressed: () => _showSOSConfirmation(context),
-              backgroundColor: Colors.red,
+              backgroundColor: SakaiSemanticColors.of(context).danger,
               child: const Icon(Icons.sos, color: Colors.white, size: 32),
             ),
           ),
@@ -343,7 +341,9 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: SakaiSemanticColors.of(context).danger,
+            ),
             child: const Text(
               'TRIGGER SOS',
               style: TextStyle(color: Colors.white),
@@ -356,31 +356,27 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
     if (confirmed == true && context.mounted) {
       await widget.controller.triggerSOS(reason: 'User triggered SOS from app');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('SOS Alert Sent! Help is on the way.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SakaiSnackBar.error(context, 'SOS Alert Sent! Help is on the way.');
       }
     }
   }
 
   Widget _buildStatusIndicator(ActiveRideStep step) {
+    final semantic = SakaiSemanticColors.of(context);
     Color color;
     String text;
 
     switch (step) {
       case ActiveRideStep.enRoute:
-        color = Colors.blue;
+        color = semantic.accentBlue;
         text = 'En Route';
         break;
       case ActiveRideStep.arrived:
-        color = Colors.green;
+        color = semantic.success;
         text = 'Arrived';
         break;
       case ActiveRideStep.inProgress:
-        color = Colors.orange;
+        color = semantic.warning;
         text = 'In Progress';
         break;
     }

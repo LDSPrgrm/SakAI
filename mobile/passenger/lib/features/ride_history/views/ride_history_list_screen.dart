@@ -169,7 +169,7 @@ class _RideHistoryTile extends StatelessWidget {
                     child: Text(
                       dateFormat.format(item.createdAt.toLocal()),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -184,7 +184,11 @@ class _RideHistoryTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.circle, size: 10, color: Colors.green),
+                  Icon(
+                    Icons.circle,
+                    size: 10,
+                    color: SakaiSemanticColors.of(context).success,
+                  ),
                   SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
@@ -200,7 +204,11 @@ class _RideHistoryTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, size: 10, color: Colors.red),
+                  Icon(
+                    Icons.location_on,
+                    size: 10,
+                    color: SakaiSemanticColors.of(context).danger,
+                  ),
                   SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
@@ -226,7 +234,7 @@ class _RideHistoryTile extends StatelessWidget {
                     Text(
                       item.driverName!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                 ],

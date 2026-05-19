@@ -46,12 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.go(Routes.home);
       }
       if (next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: scheme.error,
-          ),
-        );
+        SakaiSnackBar.error(context, next.errorMessage!);
         ref.read(loginNotifierProvider.notifier).clearError();
       }
     });

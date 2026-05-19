@@ -22,6 +22,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     required this.dangerSubtle,
     required this.warningSubtle,
     required this.successSubtle,
+    this.warningDark,
+    this.glassTintLight = const Color(0x0A000000),
+    this.glassTintDark = const Color(0x0FFFFFFF),
   });
 
   static SakaiSemanticColors of(BuildContext context) {
@@ -48,6 +51,15 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
   final Color warningSubtle;
   final Color successSubtle;
 
+  /// Brighter dark-mode warning (~+8% lightness vs [warning]) so amber holds
+  /// contrast on dark surfaces. Null in light mode — fall back to [warning].
+  final Color? warningDark;
+
+  /// Tint overlays used by `SakaiGlassCard` to keep frosted surfaces legible
+  /// against arbitrary backgrounds.
+  final Color glassTintLight;
+  final Color glassTintDark;
+
   @override
   SakaiSemanticColors copyWith({
     Color? success,
@@ -64,6 +76,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     Color? dangerSubtle,
     Color? warningSubtle,
     Color? successSubtle,
+    Color? warningDark,
+    Color? glassTintLight,
+    Color? glassTintDark,
   }) {
     return SakaiSemanticColors(
       success: success ?? this.success,
@@ -80,6 +95,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       warningSubtle: warningSubtle ?? this.warningSubtle,
       successSubtle: successSubtle ?? this.successSubtle,
+      warningDark: warningDark ?? this.warningDark,
+      glassTintLight: glassTintLight ?? this.glassTintLight,
+      glassTintDark: glassTintDark ?? this.glassTintDark,
     );
   }
 
@@ -112,6 +130,11 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
           Color.lerp(warningSubtle, other.warningSubtle, t) ?? warningSubtle,
       successSubtle:
           Color.lerp(successSubtle, other.successSubtle, t) ?? successSubtle,
+      warningDark: Color.lerp(warningDark, other.warningDark, t),
+      glassTintLight:
+          Color.lerp(glassTintLight, other.glassTintLight, t) ?? glassTintLight,
+      glassTintDark:
+          Color.lerp(glassTintDark, other.glassTintDark, t) ?? glassTintDark,
     );
   }
 }

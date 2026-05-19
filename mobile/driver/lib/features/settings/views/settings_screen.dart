@@ -11,7 +11,7 @@ class DriverSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SakaiDesignTokens.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: const SakaiAppBar(title: Text('Settings')),
       body: ListView(
         padding: EdgeInsets.all(t.spaceMd),
         children: [

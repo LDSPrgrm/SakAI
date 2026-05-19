@@ -74,12 +74,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: scheme.error,
-          ),
-        );
+        SakaiSnackBar.error(context, next.errorMessage!);
         ref.read(registerNotifierProvider.notifier).clearError();
       }
     });

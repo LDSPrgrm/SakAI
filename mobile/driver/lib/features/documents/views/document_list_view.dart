@@ -36,6 +36,7 @@ class DocumentListView extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, DocumentState state) {
     final theme = Theme.of(context);
+    final semantic = SakaiSemanticColors.of(context);
 
     if (state.errorMessage != null && state.documents.isEmpty) {
       return Center(
@@ -87,7 +88,7 @@ class DocumentListView extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 16),
             child: SakaiSurfaceCard(
               child: ListTile(
-                leading: _buildIconForType(context, doc.documentType),
+                leading: _buildIconForType(theme, doc.documentType),
                 title: Text(
                   _formatDocumentType(doc.documentType),
                   style: theme.textTheme.titleMedium,
@@ -101,7 +102,7 @@ class DocumentListView extends ConsumerWidget {
                     Text('Uploaded: ${DateFormat.yMMMd().format(doc.uploadedAt)}'),
                   ],
                 ),
-                trailing: _buildStatusBadge(context, doc.uploadStatus),
+                trailing: _buildStatusBadge(theme, semantic, doc.uploadStatus),
                 isThreeLine: true,
               ),
             ),
@@ -111,7 +112,7 @@ class DocumentListView extends ConsumerWidget {
     );
   }
 
-  Widget _buildIconForType(BuildContext context, DocumentType? type) {
+  Widget _buildIconForType(ThemeData theme, DocumentType? type) {
     IconData iconData;
     switch (type) {
       case DocumentType.license:
@@ -128,8 +129,8 @@ class DocumentListView extends ConsumerWidget {
         break;
     }
     return CircleAvatar(
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      child: Icon(iconData, color: Theme.of(context).colorScheme.primary),
+      backgroundColor: theme.colorScheme.primaryContainer,
+      child: Icon(iconData, color: theme.colorScheme.primary),
     );
   }
 
@@ -138,25 +139,29 @@ class DocumentListView extends ConsumerWidget {
     return type.name[0].toUpperCase() + type.name.substring(1).replaceAll('_', ' ');
   }
 
-  Widget _buildStatusBadge(BuildContext context, UploadStatus? status) {
+  Widget _buildStatusBadge(
+    ThemeData theme,
+    SakaiSemanticColors semantic,
+    UploadStatus? status,
+  ) {
     Color color;
     String text;
-    
+
     switch (status) {
       case UploadStatus.approved:
-        color = Colors.green;
+        color = semantic.success;
         text = 'Approved';
         break;
       case UploadStatus.rejected:
-        color = Colors.red;
+        color = semantic.danger;
         text = 'Rejected';
         break;
       case UploadStatus.underReview:
-        color = Colors.orange;
+        color = semantic.warning;
         text = 'Pending';
         break;
       default:
-        color = Theme.of(context).colorScheme.onSurfaceVariant;
+        color = theme.colorScheme.onSurfaceVariant;
         text = 'Unknown';
         break;
     }
@@ -170,7 +175,7 @@ class DocumentListView extends ConsumerWidget {
       ),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.bold),
+        style: theme.textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

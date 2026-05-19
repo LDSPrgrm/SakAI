@@ -60,9 +60,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                 fare: actualFare,
                 completedAt: DateTime.now(),
               );
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Ride completed')));
+          SakaiSnackBar.info(context, 'Ride completed');
           // Navigate to rating screen instead of going directly home.
           context.push(
             Routes.rideRating,
@@ -78,9 +76,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       // Use Future to defer navigation until after widget build completes.
       Future(() {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
+          SakaiSnackBar.info(context, 'Ride cancelled');
           context.go(Routes.home);
         }
       });
@@ -116,7 +112,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
   Widget _buildUI(BuildContext context) {
     final state = _manager.state;
     final tokens = SakaiDesignTokens.of(context);
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final ride = state.ride;
     final statusLabel = _statusLabel(state.currentStep);
 
@@ -165,12 +163,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                       children: [
                         Text(
                           'Passenger',
-                          style: Theme.of(context).textTheme.labelSmall,
+                          style: textTheme.labelSmall,
                         ),
                         SizedBox(height: tokens.spaceXs),
                         Text(
                           ride.passenger.name,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: textTheme.titleMedium,
                         ),
                       ],
                     ),
@@ -186,7 +184,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                             SizedBox(width: tokens.spaceSm),
                             Text(
                               'Pickup',
-                              style: Theme.of(context).textTheme.labelSmall,
+                              style: textTheme.labelSmall,
                             ),
                           ],
                         ),
@@ -194,7 +192,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                         Text(
                           ride.originAddress ??
                               '(${ride.origin.lat.toStringAsFixed(4)}, ${ride.origin.lng.toStringAsFixed(4)})',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -214,7 +212,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                             SizedBox(width: tokens.spaceSm),
                             Text(
                               'Destination',
-                              style: Theme.of(context).textTheme.labelSmall,
+                              style: textTheme.labelSmall,
                             ),
                           ],
                         ),
@@ -222,7 +220,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                         Text(
                           ride.destinationAddress ??
                               '(${ride.destination.lat.toStringAsFixed(4)}, ${ride.destination.lng.toStringAsFixed(4)})',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -361,25 +359,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
   }
 
   Future<void> _showCancelConfirmation(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Ride'),
-        content: const Text('Are you sure you want to cancel this ride?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, Cancel'),
-          ),
-        ],
-      ),
+    final confirmed = await SakaiDialog.confirm(
+      context,
+      title: 'Cancel Ride',
+      message: 'Are you sure you want to cancel this ride?',
+      confirmLabel: 'Yes, Cancel',
+      cancelLabel: 'No',
+      destructive: true,
     );
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       _manager.cancelRide();
     }
   }

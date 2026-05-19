@@ -57,14 +57,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
       supportViewModelProvider.select((v) => v.state),
       (previous, next) {
         if (next.status == SupportStatus.success && next.submitted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Support ticket submitted successfully!')),
-          );
+          SakaiSnackBar.success(context, 'Support ticket submitted successfully!');
           vm.resetState();
         } else if (next.status == SupportStatus.error && next.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(next.error!)),
-          );
+          SakaiSnackBar.error(context, next.error!);
         }
       },
     );

@@ -55,9 +55,7 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
   Future<void> _upload() async {
     if (!_formKey.currentState!.validate()) return;
     if (_imageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an image')),
-      );
+      SakaiSnackBar.warning(context, 'Please select an image');
       return;
     }
 
@@ -69,9 +67,7 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document uploaded successfully')),
-      );
+      SakaiSnackBar.success(context, 'Document uploaded successfully');
       Navigator.of(context).pop();
     }
   }
@@ -179,7 +175,9 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     state.errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: SakaiSemanticColors.of(context).danger,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),

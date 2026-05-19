@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/routes.dart';
 
@@ -9,7 +10,7 @@ class ActivityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Activity')),
+      appBar: SakaiAppBar(title: const Text('Activity')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

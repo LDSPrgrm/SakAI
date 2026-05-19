@@ -155,7 +155,7 @@ class _ProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final warningColor = Colors.amber;
+    final warningColor = SakaiSemanticColors.of(context).warning;
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -169,16 +169,9 @@ class _ProfileContent extends StatelessWidget {
               Stack(
                 alignment: Alignment.bottomRight,
                 children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    child: Text(
-                      profile.initials,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                  SakaiAvatar(
+                    initials: profile.initials,
+                    size: SakaiAvatarSize.lg,
                   ),
                   Container(
                     padding: const EdgeInsets.all(6),
