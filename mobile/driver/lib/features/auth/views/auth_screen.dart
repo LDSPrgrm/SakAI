@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../../../app/routes.dart';
+import '../../../app/router.dart';
 import '../view_models/login_notifier.dart';
 import '../view_models/register_notifier.dart';
 import 'widgets/login_form.dart';
@@ -26,6 +26,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     with SingleTickerProviderStateMixin {
   late AuthMode _mode;
   late final AnimationController _staggerController;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _titleFade;
   late final Animation<double> _formFade;
   late final Animation<Offset> _formSlide;
 
@@ -37,6 +39,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     _staggerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
+    );
+
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _staggerController,
+        curve: const Interval(0.0, 0.45, curve: Curves.elasticOut),
+      ),
+    );
+
+    _titleFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _staggerController,
+        curve: const Interval(0.2, 0.65, curve: Curves.easeOut),
+      ),
     );
 
     _formFade = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -188,3 +204,4 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 }
+

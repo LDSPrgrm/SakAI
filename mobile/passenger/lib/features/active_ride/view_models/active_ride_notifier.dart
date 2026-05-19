@@ -189,13 +189,15 @@ class ActiveRideController {
 
   void _handleStatusChanged(Map<String, dynamic> payload) {
     try {
-      final event = standardSerializers.deserializeWith(
-        WsEventRideStatusChanged.serializer,
-        payload,
-      );
-      if (event == null) return;
+      final rawStatus = payload['status'] as String?;
+      if (rawStatus == null) {
+        debugPrint('[PASSENGER] WsEventRideStatusChanged missing status field');
+        return;
+      }
 
-      final rideStatus = RideState.fromString(event.status.name);
+      // Parse directly via RideState.fromString which handles case-insensitivity,
+      // underscores, and different wire forms safely.
+      final rideStatus = RideState.fromString(rawStatus);
       final current = _state.value;
       if (current == null) return;
 
@@ -217,13 +219,66 @@ class ActiveRideController {
       }
     } catch (e, st) {
       debugPrint(
-        '[PASSENGER] Failed to deserialize WsEventRideStatusChanged: $e\n$st',
+        '[PASSENGER] Failed to handle WsEventRideStatusChanged: $e\n$st',
       );
     }
   }
 
   void _handleDriverLocation(Map<String, dynamic> payload) {
     try {
+      // Primary parsing path: manual extraction of lat/lng with type resilience.
+      double? lat;
+      double? lng;
+
+      final loc = payload['location'];
+      if (loc is Map) {
+        final rawLat = loc['lat'];
+        final rawLng = loc['lng'];
+
+        if (rawLat is num) {
+          lat = rawLat.toDouble();
+        } else if (rawLat is String) {
+          lat = double.tryParse(rawLat);
+        }
+
+        if (rawLng is num) {
+          lng = rawLng.toDouble();
+        } else if (rawLng is String) {
+          lng = double.tryParse(rawLng);
+        }
+      }
+
+      if (lat == null || lng == null) {
+        final rawLat = payload['lat'];
+        final rawLng = payload['lng'];
+
+        if (rawLat is num) {
+          lat = rawLat.toDouble();
+        } else if (rawLat is String) {
+          lat = double.tryParse(rawLat);
+        }
+
+        if (rawLng is num) {
+          lng = rawLng.toDouble();
+        } else if (rawLng is String) {
+          lng = double.tryParse(rawLng);
+        }
+      }
+
+      if (lat != null && lng != null) {
+        final current = _state.value;
+        if (current == null) return;
+
+        _state = AsyncValue.data(
+          current.copyWith(
+            driverLocation: gmaps.LatLng(lat, lng),
+          ),
+        );
+        _stateController.add(_state);
+        return;
+      }
+
+      // Fallback path: built_value deserialization.
       final event = standardSerializers.deserializeWith(
         WsEventDriverLocationUpdated.serializer,
         payload,

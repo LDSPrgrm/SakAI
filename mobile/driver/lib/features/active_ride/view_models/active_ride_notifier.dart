@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' show sin, cos, sqrt, asin, pi;
 
 import 'package:flutter/foundation.dart';
@@ -17,24 +18,32 @@ class ActiveRideState {
     required this.currentStep,
     this.isTransitioning = false,
     this.errorMessage,
+    this.isNearPickup = false,
+    this.isNearDestination = false,
   });
 
   final RideResponse? ride;
   final ActiveRideStep currentStep;
   final bool isTransitioning;
   final String? errorMessage;
+  final bool isNearPickup;
+  final bool isNearDestination;
 
   ActiveRideState copyWith({
     RideResponse? ride,
     ActiveRideStep? currentStep,
     bool? isTransitioning,
     String? errorMessage,
+    bool? isNearPickup,
+    bool? isNearDestination,
   }) {
     return ActiveRideState(
       ride: ride ?? this.ride,
       currentStep: currentStep ?? this.currentStep,
       isTransitioning: isTransitioning ?? this.isTransitioning,
       errorMessage: errorMessage,
+      isNearPickup: isNearPickup ?? this.isNearPickup,
+      isNearDestination: isNearDestination ?? this.isNearDestination,
     );
   }
 
@@ -56,6 +65,7 @@ class ActiveRideManager extends ChangeNotifier {
   final ActiveRideRepository _repo;
   final LocationStreamService? _locationStream;
   ActiveRideState _state;
+  StreamSubscription<LocationPushState>? _locationStreamSub;
 
   OnRideCompleted? onCompleted;
   OnRideCancelled? onCancelled;
@@ -73,6 +83,10 @@ class ActiveRideManager extends ChangeNotifier {
     if (_isLiveStatus(initialRide.status)) {
       _locationStream?.start(initialRide.id);
     }
+    _updateProximity(_locationStream?.currentState.lastPosition);
+    _locationStreamSub = _locationStream?.stream.listen((state) {
+      _updateProximity(state.lastPosition);
+    });
   }
 
   ActiveRideState get state => _state;
@@ -307,8 +321,42 @@ class ActiveRideManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _locationStreamSub?.cancel();
     _locationStream?.stop();
     super.dispose();
+  }
+
+  void _updateProximity(Position? position) {
+    final ride = _state.ride;
+    if (ride == null || position == null) {
+      if (_state.isNearPickup || _state.isNearDestination) {
+        _state = _state.copyWith(
+          isNearPickup: false,
+          isNearDestination: false,
+        );
+        notifyListeners();
+      }
+      return;
+    }
+
+    final driverLatLng = _Position(position.latitude, position.longitude);
+    final pickupLatLng = _Position(ride.origin.lat, ride.origin.lng);
+    final destLatLng = _Position(ride.destination.lat, ride.destination.lng);
+
+    final distanceToPickup = _haversineDistance(driverLatLng, pickupLatLng);
+    final distanceToDest = _haversineDistance(driverLatLng, destLatLng);
+
+    final isNearPickup = distanceToPickup <= 50.0;
+    final isNearDestination = distanceToDest <= 100.0;
+
+    if (isNearPickup != _state.isNearPickup ||
+        isNearDestination != _state.isNearDestination) {
+      _state = _state.copyWith(
+        isNearPickup: isNearPickup,
+        isNearDestination: isNearDestination,
+      );
+      notifyListeners();
+    }
   }
 
   void clearError() {

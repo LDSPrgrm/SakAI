@@ -95,6 +95,15 @@ class _FakeOnboardingService implements OnboardingService {
 // ---------------------------------------------------------------------------
 
 void main() {
+  setUp(() {
+    // Prevent the infinite repeat() loop from blocking pumpAndSettle.
+    SakaiAnimatedBackdrop.debugDisableAnimations = true;
+  });
+
+  tearDown(() {
+    SakaiAnimatedBackdrop.debugDisableAnimations = false;
+  });
+
   testWidgets('after splash resolves unauthenticated → shows login screen', (
     WidgetTester tester,
   ) async {

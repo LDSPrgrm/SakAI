@@ -47,6 +47,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
       initialRide: widget.initialRide,
       locationStream: _locationStream,
     );
+    _manager.addListener(_onManagerChanged);
     _manager.onCompleted = (ride) {
       // Wire earnings: extract actual fare and record the ride.
       // Use Future to defer provider modification until after widget build completes.
@@ -87,6 +88,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _locationStateSub?.cancel();
+    _manager.removeListener(_onManagerChanged);
     _manager.dispose();
     super.dispose();
   }
@@ -241,7 +243,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                       SakaiPrimaryButton(
                         label: "I've Arrived",
                         icon: Icons.flag,
-                        onPressed: () => _handleArrive(context),
+                        onPressed: state.isNearPickup ? () => _handleArrive(context) : null,
                       ),
                     if (state.currentStep == ActiveRideStep.arrived)
                       SakaiPrimaryButton(
@@ -253,7 +255,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
                       SakaiPrimaryButton(
                         label: 'Complete Ride',
                         icon: Icons.check_circle,
-                        onPressed: () => _handleComplete(context),
+                        onPressed: state.isNearDestination ? () => _handleComplete(context) : null,
                       ),
                     if (state.currentStep != ActiveRideStep.inProgress) ...[
                       SizedBox(height: tokens.spaceSm),
@@ -282,80 +284,24 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
 
   Future<void> _handleArrive(BuildContext context) async {
     await _manager.arriveAtPickup();
-    if (!mounted) return;
-    final errorMessage = _manager.state.errorMessage;
-    if (errorMessage != null) {
-      _showProximityDialog(
-        context,
-        title: 'Too Far from Pickup',
-        message: errorMessage,
-        onForce: () {
-          Navigator.of(context).pop();
-          _manager.arriveAtPickup(force: true);
-        },
-      );
-    }
   }
 
   Future<void> _handleComplete(BuildContext context) async {
     await _manager.completeRide();
+  }
+
+  void _onManagerChanged() {
     if (!mounted) return;
     final errorMessage = _manager.state.errorMessage;
     if (errorMessage != null) {
-      _showProximityDialog(
-        context,
-        title: 'Too Far from Destination',
-        message: errorMessage,
-        onForce: () {
-          Navigator.of(context).pop();
-          _manager.completeRide(force: true);
-        },
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
+      _manager.clearError();
     }
-  }
-
-  void _showProximityDialog(
-    BuildContext context, {
-    required String title,
-    required String message,
-    required VoidCallback onForce,
-  }) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.location_off,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            SizedBox(width: 8),
-            Expanded(child: Text(title)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message),
-            SizedBox(height: 12),
-            Text(
-              'GPS can be inaccurate in tunnels or near tall buildings. Try again after moving closer.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Move Closer'),
-          ),
-          FilledButton(onPressed: onForce, child: const Text('Force Anyway')),
-        ],
-      ),
-    );
   }
 
   Future<void> _showCancelConfirmation(BuildContext context) async {

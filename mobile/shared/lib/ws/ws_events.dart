@@ -9,9 +9,20 @@ class WsEvent {
   WsEvent({required this.type, required this.payload});
 
   factory WsEvent.fromMessage(Map<String, dynamic> message) {
+    final eventVal = message['event'];
+    final payloadVal = message['payload'];
+    final type = eventVal is String ? eventVal : (eventVal?.toString() ?? '');
+
+    Map<String, dynamic> payload = {};
+    if (payloadVal is Map) {
+      payloadVal.forEach((key, value) {
+        payload[key.toString()] = value;
+      });
+    }
+
     return WsEvent(
-      type: message['event'] as String,
-      payload: (message['payload'] as Map?)?.cast<String, dynamic>() ?? {},
+      type: type,
+      payload: payload,
     );
   }
 }

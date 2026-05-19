@@ -63,6 +63,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         .signIn(email: _emailCtrl.text.trim(), password: _passwordCtrl.text);
   }
 
+
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginNotifierProvider);
@@ -112,7 +113,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             ),
             SizedBox(height: tokens.spaceSm),
             Text(
-              'Your next ride is one tap away.',
+              'Ready to hit the road? Sign in and start earning.',
               style: textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -133,9 +134,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               errorText: _errors['email'],
               onChanged: (_) {
                 ref.read(loginNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('email')) {
-                  setState(() => _errors = Map.from(_errors)..remove('email'));
-                }
+                if (_errors.containsKey('email')) setState(() => _errors = Map.from(_errors)..remove('email'));
               },
             ),
             SakaiTextField(
@@ -150,9 +149,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               errorText: _errors['password'],
               onChanged: (_) {
                 ref.read(loginNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('password')) {
-                  setState(() => _errors = Map.from(_errors)..remove('password'));
-                }
+                if (_errors.containsKey('password')) setState(() => _errors = Map.from(_errors)..remove('password'));
               },
               suffixIcon: IconButton(
                 tooltip: _obscurePassword ? 'Show password' : 'Hide password',
@@ -279,7 +276,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'New rider?',
+              'New driver?',
               style: textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),

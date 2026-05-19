@@ -202,6 +202,12 @@ void main() {
     tokenStorage = FakeTokenStorage();
     authRepo = _FakeAuthRepository(tokenStorage);
     onboardingService = _FakeOnboardingService();
+    // Prevent the infinite repeat() loop from blocking pumpAndSettle.
+    SakaiAnimatedBackdrop.debugDisableAnimations = true;
+  });
+
+  tearDown(() {
+    SakaiAnimatedBackdrop.debugDisableAnimations = false;
   });
 
   Widget createTestWidget({bool seenWelcome = true}) {
