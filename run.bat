@@ -63,8 +63,66 @@ if "%DO_CLEAN%"=="1" call flutter clean
 call flutter pub get
 
 echo --- Launching Emulator ---
-if "%APP%"=="passenger" set "TARGET_AVD=Pixel_9_Pro"
-if "%APP%"=="driver" set "TARGET_AVD=Pixel_9_Pro_2"
+if "%APP%"=="passenger" set "DEFAULT_AVD=Pixel_9_Pro"
+if "%APP%"=="driver" set "DEFAULT_AVD=Pixel_9_Pro_2"
+
+set "TARGET_AVD="
+set /a EMU_COUNT=0
+set "HAS_DEFAULT_AVD=0"
+
+:: Discover available emulators and check if the default exists
+for /f "tokens=1 delims= " %%i in ('flutter emulators ^| findstr "android" ^| findstr /v "https:"') do (
+    set /a EMU_COUNT+=1
+    set "EMU[!EMU_COUNT!]=%%i"
+    if "%%i"=="!DEFAULT_AVD!" set "HAS_DEFAULT_AVD=1"
+)
+
+:: Select or create target AVD
+if "!HAS_DEFAULT_AVD!"=="1" (
+    set "TARGET_AVD=!DEFAULT_AVD!"
+    goto emulator_selected
+)
+
+echo Default emulator !DEFAULT_AVD! not found. Creating it automatically...
+call flutter emulators --create --name !DEFAULT_AVD!
+
+:: Verify if creation succeeded
+set "HAS_CREATED=0"
+for /f "tokens=1 delims= " %%i in ('flutter emulators ^| findstr "android" ^| findstr /v "https:"') do (
+    if "%%i"=="!DEFAULT_AVD!" set "HAS_CREATED=1"
+)
+
+if "!HAS_CREATED!"=="1" (
+    set "TARGET_AVD=!DEFAULT_AVD!"
+    echo Emulator !DEFAULT_AVD! created successfully.
+    goto emulator_selected
+)
+
+echo [WARNING] Failed to automatically create default emulator !DEFAULT_AVD!.
+if "!EMU_COUNT!"=="0" (
+    echo [ERROR] No Android emulators found on your system!
+    echo Please open Android Studio and create an Android Virtual Device (AVD),
+    echo or connect a physical device before running this script.
+    pause
+    exit /b 1
+)
+
+:: Fall back dynamically to whatever emulators the developer has
+if "%APP%"=="passenger" (
+    set "TARGET_AVD=!EMU[1]!"
+    echo Falling back to first available emulator: !TARGET_AVD!
+)
+if "%APP%"=="driver" (
+    if !EMU_COUNT! gtr 1 (
+        set "TARGET_AVD=!EMU[2]!"
+        echo Falling back to second available emulator: !TARGET_AVD!
+    ) else (
+        set "TARGET_AVD=!EMU[1]!"
+        echo Falling back to first available emulator: !TARGET_AVD!
+    )
+)
+
+:emulator_selected
 
 set "DEVICE_ID="
 echo Querying if %TARGET_AVD% is already running...
