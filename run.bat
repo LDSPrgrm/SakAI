@@ -63,14 +63,58 @@ if "%DO_CLEAN%"=="1" call flutter clean
 call flutter pub get
 
 echo --- Launching Emulator ---
-if "%APP%"=="passenger" call flutter emulators --launch Pixel_9_Pro
-if "%APP%"=="driver" call flutter emulators --launch Pixel_9_Pro_2
+if "%APP%"=="passenger" set "TARGET_AVD=Pixel_9_Pro"
+if "%APP%"=="driver" set "TARGET_AVD=Pixel_9_Pro_2"
+
+set "DEVICE_ID="
+echo Querying if %TARGET_AVD% is already running...
+
+for /f "usebackq tokens=*" %%k in (`powershell -NoProfile -Command "$target = '%TARGET_AVD%'; $id = ''; $devices = adb devices | Select-String 'emulator-' | ForEach-Object { ($_ -split '\s+')[0] }; foreach ($d in $devices) { $avd = (adb -s $d emu avd name | Select-Object -First 1).Trim(); if ($avd -eq $target) { $id = $d; break } }; Write-Output $id"`) do (
+    set "DEVICE_ID=%%k"
+)
+
+if not "%DEVICE_ID%"=="" goto emulator_ready
+
+echo Launching emulator %TARGET_AVD%...
+call flutter emulators --launch %TARGET_AVD%
+
+echo Waiting for emulator to boot and connect...
+set /a ATTEMPTS=0
+
+:wait_loop
+set /a ATTEMPTS+=1
+if !ATTEMPTS! gtr 20 (
+    echo [WARNING] Emulator did not connect within 40 seconds. Running without specific target...
+    goto emulator_ready
+)
+
+for /f "usebackq tokens=*" %%k in (`powershell -NoProfile -Command "$target = '%TARGET_AVD%'; $id = ''; $devices = adb devices | Select-String 'emulator-' | ForEach-Object { ($_ -split '\s+')[0] }; foreach ($d in $devices) { $avd = (adb -s $d emu avd name | Select-Object -First 1).Trim(); if ($avd -eq $target) { $id = $d; break } }; Write-Output $id"`) do (
+    set "DEVICE_ID=%%k"
+)
+
+if "!DEVICE_ID!"=="" (
+    echo Waiting for emulator connection (attempt !ATTEMPTS!/20)...
+    timeout /t 2 /nobreak >nul
+    goto wait_loop
+)
+
+:emulator_ready
+if not "!DEVICE_ID!"=="" (
+    echo Target emulator detected: !DEVICE_ID!
+) else (
+    echo No emulator targeted.
+)
 
 echo --- Running %APP% app ---
+set "RUN_FLAGS="
+if not "!DEVICE_ID!"=="" (
+    set "RUN_FLAGS=-d !DEVICE_ID!"
+)
+
 if exist "..\.env" (
-    call flutter run --dart-define-from-file=..\.env
+    call flutter run !RUN_FLAGS! --dart-define-from-file=..\.env
 ) else (
-    call flutter run
+    call flutter run !RUN_FLAGS!
 )
 cd ..\..
 goto :eof
