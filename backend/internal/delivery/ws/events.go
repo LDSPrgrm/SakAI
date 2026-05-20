@@ -55,6 +55,34 @@ type RideStatusChangedPayload struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// RideCompletedPayload carries the data for `ride.completed`
+// (server → both: ride finished, fare finalised).
+//
+// Authoritative once the canonical receipt PDF (BE-P7.2, deferred) lands;
+// until then the breakdown comes from the same fare calculator used at
+// completion time and the payment method reflects the ride's selected
+// method (cash by default). Tip is non-nil only when the driver has
+// already received one — passenger tip flow lands separately.
+type RideCompletedPayload struct {
+	RideID         uuid.UUID            `json:"ride_id"`
+	Fare           float64              `json:"fare"`
+	FareBreakdown  *FareBreakdown       `json:"fare_breakdown,omitempty"`
+	PaymentMethod  string               `json:"payment_method"`
+	TipAmount      *float64             `json:"tip_amount,omitempty"`
+	CompletedAt    time.Time            `json:"completed_at"`
+}
+
+// FareBreakdown mirrors the components of a final fare for the
+// passenger receipt + driver earnings reveal.
+type FareBreakdown struct {
+	BaseFare       float64 `json:"base_fare"`
+	DistanceCharge float64 `json:"distance_charge"`
+	TimeCharge     float64 `json:"time_charge"`
+	BookingFee     float64 `json:"booking_fee"`
+	SurgeMultiplier float64 `json:"surge_multiplier,omitempty"`
+	Discount       float64 `json:"discount,omitempty"`
+}
+
 // RideCancelledPayload carries the data for `ride.cancelled`
 // (server → both: either party cancelled).
 type RideCancelledPayload struct {

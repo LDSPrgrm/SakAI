@@ -38,6 +38,7 @@ const (
 	EventRideAccepted          EventType = "ride.accepted"
 	EventRideDeclined          EventType = "ride.declined"
 	EventRideStatusChanged     EventType = "ride.status_changed"
+	EventRideCompleted         EventType = "ride.completed"
 	EventRideCancelled         EventType = "ride.cancelled"
 	EventRideOfferExpired      EventType = "ride.offer_expired"
 	EventRideSOS               EventType = "ride.sos_triggered"
