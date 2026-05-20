@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	handler "github.com/sakai/backend/internal/delivery/http"
 	"github.com/sakai/backend/internal/delivery/http/middleware"
@@ -67,6 +68,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	requirePerm := middleware.NewPermissionGuard(d.AuthUC, d.RoleUC)
 
 	api := r.Group("/api")
+
+	// Prometheus scrape endpoint — exposes Sakai WS counters + the default
+	// process/go collectors. Outside /api on purpose so scrapers don't need
+	// the API prefix in their target config.
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// ── Health check ──────────────────────────────────────────────────────────
 	api.GET("/health", func(c *gin.Context) {

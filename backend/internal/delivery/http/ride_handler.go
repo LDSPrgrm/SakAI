@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -368,7 +369,70 @@ func (h *RideHandler) Complete(c *gin.Context) {
 		return
 	}
 	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideStatusChanged, gin.H{"ride_id": ride.ID, "status": ride.Status, "updated_at": ride.UpdatedAt.UTC().Format(time.RFC3339)})
+	// ride.completed carries the authoritative final fare/payment/tip data
+	// that closes out the passenger receipt + driver earnings UX (RFC v2 P7).
+	// Until the canonical PDF service (BE-P7.2) lands, payment lookup may
+	// return nil — the payload falls back to "cash" so the mobile clients
+	// stop hardcoding it locally (MOB-P7.2).
+	_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideCompleted, h.buildCompletedPayload(c.Request.Context(), ride))
 	respondOK(c, h.rideResponse(ride))
+}
+
+// buildCompletedPayload constructs the ride.completed payload from the
+// finalised ride plus its associated payment record. Payment lookup is
+// non-fatal: a missing record yields a cash-defaulted payload, which
+// matches the current implicit behaviour.
+func (h *RideHandler) buildCompletedPayload(ctx context.Context, ride *domain.Ride) ws.RideCompletedPayload {
+	fare := 0.0
+	if ride.ActualFare != nil {
+		fare = *ride.ActualFare
+	} else if ride.EstimatedFare != nil {
+		fare = *ride.EstimatedFare
+	}
+
+	var breakdown *ws.FareBreakdown
+	if ride.FareBreakdown != nil {
+		bd := *ride.FareBreakdown
+		breakdown = &ws.FareBreakdown{
+			BaseFare:       jsonFloat(bd["base_fare"]),
+			DistanceCharge: jsonFloat(bd["distance_charge"]),
+			TimeCharge:     jsonFloat(bd["time_charge"]),
+			BookingFee:     jsonFloat(bd["booking_fee"]),
+		}
+	}
+
+	method := "cash"
+	var tip *float64
+	if h.paymentRepo != nil {
+		if p, err := h.paymentRepo.GetByRideID(ctx, ride.ID); err == nil && p != nil {
+			method = string(p.Method)
+		}
+	}
+
+	return ws.RideCompletedPayload{
+		RideID:        ride.ID,
+		Fare:          fare,
+		FareBreakdown: breakdown,
+		PaymentMethod: method,
+		TipAmount:     tip,
+		CompletedAt:   ride.UpdatedAt.UTC(),
+	}
+}
+
+// jsonFloat extracts a float from a JSONMap value, tolerating json.Number
+// and the int/float ambiguity introduced by Postgres jsonb decoding.
+func jsonFloat(v any) float64 {
+	switch x := v.(type) {
+	case float64:
+		return x
+	case float32:
+		return float64(x)
+	case int:
+		return float64(x)
+	case int64:
+		return float64(x)
+	}
+	return 0
 }
 
 func (h *RideHandler) Cancel(c *gin.Context) {
@@ -393,6 +457,20 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 	role := contextUserRole(c)
 	ride, err := h.uc.Cancel(c.Request.Context(), userID, role, rideID, req.ReasonCode, req.ReasonText)
 	if err != nil {
+		// Race lost: another actor cancelled first. Surface the current
+		// ride snapshot so the client can reconcile UI without a second
+		// REST round-trip (RFC v2 §8 C9). The client should still receive
+		// the canonical ride.cancelled WS event published by the winner.
+		if errors.Is(err, domain.ErrCancelRaceLost) && ride != nil {
+			c.JSON(http.StatusConflict, gin.H{
+				"code":            "CANCEL_RACE_LOST",
+				"message":         err.Error(),
+				"current_status":  ride.Status,
+				"cancelled_by":    ride.CancelledBy,
+				"cancellation_reason": ride.CancellationReason,
+			})
+			return
+		}
 		respondError(c, err)
 		return
 	}

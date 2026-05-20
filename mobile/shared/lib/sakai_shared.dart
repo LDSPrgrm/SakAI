@@ -17,9 +17,14 @@ export 'models/backend_unavailable_exception.dart';
 export 'models/models.dart';
 export 'repositories/sos_repository.dart';
 
+// Cancellation taxonomy (mirrors Go domain — RFC v2 §8.6)
+export 'cancellation/driver_cancel_reason.dart';
+
 // WebSocket client (new)
 export 'ws/ws_events.dart';
 export 'ws/ws_client.dart';
+export 'ws/ws_dispatcher.dart';
+export 'ws/ws_telemetry.dart';
 
 // API client (generated — do not hand-edit)
 // Hide PaymentMethod to avoid conflict with domain-level PaymentMethod in ride_entity.dart

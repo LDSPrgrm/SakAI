@@ -2710,15 +2710,34 @@ export interface components {
             /** @description Free-text explanation when reason_code is "other" */
             reason_text?: string | null;
         };
-        /** @description Wrapper for all WebSocket messages */
+        /**
+         * @description Canonical WebSocket event identifier. Used as the discriminator
+         *     for `WsEnvelope.payload`. Add new values here in lockstep with
+         *     the matching `WsEvent*` payload schema below.
+         * @enum {string}
+         */
+        WsEventType: "ride.requested" | "ride.accepted" | "ride.declined" | "ride.offer_expired" | "ride.status_changed" | "ride.cancelled" | "ride.sos_triggered" | "ride.no_drivers" | "driver.location_updated";
+        /**
+         * @description Wrapper for all WebSocket messages. The `event` field selects which
+         *     payload schema in the oneOf below applies — clients should validate
+         *     against the matching schema after dispatching on `event`.
+         */
         WsEnvelope: {
+            event: components["schemas"]["WsEventType"];
+            /** @description Event-specific payload — shape depends on `event`. */
+            payload: components["schemas"]["WsEventRideRequested"] | components["schemas"]["WsEventRideAccepted"] | components["schemas"]["WsEventRideDeclined"] | components["schemas"]["WsEventRideOfferExpired"] | components["schemas"]["WsEventRideStatusChanged"] | components["schemas"]["WsEventRideCancelled"] | components["schemas"]["WsEventRideSOSTriggered"] | components["schemas"]["WsEventNoDriversAvailable"] | components["schemas"]["WsEventDriverLocationUpdated"];
             /**
-             * @description Event name
-             * @example ride.status_changed
+             * Format: date-time
+             * @description RFC3339 UTC timestamp stamped by the server. Optional for
+             *     backward compatibility — older servers omit it.
              */
-            event: string;
-            /** @description Event-specific payload — see schemas below */
-            payload: Record<string, never>;
+            timestamp?: string;
+            /**
+             * Format: uuid
+             * @description UUIDv7 stamped by the server. Enables client-side idempotency.
+             *     Optional for backward compatibility.
+             */
+            event_id?: string;
         };
         /**
          * @description **Event:** `ride.requested`
@@ -2782,6 +2801,10 @@ export interface components {
          *     **Direction:** server → passenger
          *     Pushed on every `PUT /driver/location` call during an active ride.
          *     Use to animate the driver pin on the passenger's map in real time.
+         *
+         *     Marked `x-high-frequency: true` — clients may use a hand-tuned
+         *     fast-path deserializer (lat/lng/heading/ride_id only) instead of
+         *     the full schema validator on the hot path.
          */
         WsEventDriverLocationUpdated: {
             /** Format: uuid */
@@ -2832,6 +2855,26 @@ export interface components {
             ride_id: string;
             /** @example No drivers are available in your area right now. Please try again shortly. */
             message?: string;
+        };
+        /**
+         * @description **Event:** `ride.sos_triggered`
+         *     **Direction:** server → both passenger and driver on the active ride
+         *     Fired when either party invokes `POST /rides/{rideId}/sos`.
+         *     Clients should display an emergency banner and surface the
+         *     safety contact action.
+         */
+        WsEventRideSOSTriggered: {
+            /** Format: uuid */
+            ride_id: string;
+            /**
+             * Format: uuid
+             * @description ID of the incident row created by the trigger.
+             */
+            incident_id: string;
+            /** @enum {string} */
+            triggered_by: "rider" | "driver";
+            /** @description Free-text reason the trigger user supplied. */
+            reason?: string | null;
         };
         DashboardResponse: {
             active_riders?: number;

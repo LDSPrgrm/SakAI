@@ -14,8 +14,13 @@ import 'sos_repository_impl_test.mocks.dart';
 
 class MockWsClient implements WsClient {
   final _controller = StreamController<WsEvent>.broadcast();
+  final _malformed = StreamController<WsMalformedEvent>.broadcast();
+
   @override
   Stream<WsEvent> get events => _controller.stream;
+
+  @override
+  Stream<WsMalformedEvent> get malformed => _malformed.stream;
 
   void addEvent(WsEvent event) => _controller.add(event);
 
@@ -30,6 +35,12 @@ class MockWsClient implements WsClient {
 
   @override
   set onResync(VoidCallback cb) {}
+
+  @override
+  String? get negotiatedProtocol => null;
+
+  @override
+  bool get isV2 => false;
 }
 
 class _TestAdapter implements HttpClientAdapter {
@@ -213,13 +224,14 @@ void main() {
       await _waitFor(() => states.isNotEmpty);
       expect(states.last.currentStep, ActiveRideStep.enRoute);
 
-      // Push WS event
+      // Push WS event — payload must satisfy openapi WsEventRideStatusChanged
+      // (status is the lowercase RideStatus enum wire value).
       wsClient.addEvent(
         WsEvent(
           type: WsEventNames.rideStatusChanged,
           payload: {
             'ride_id': 'ride-123',
-            'status': 'ARRIVED',
+            'status': 'arrived',
             'updated_at': now.toIso8601String(),
           },
         ),
@@ -328,11 +340,15 @@ void main() {
       final sub = controller.stateStream.listen((_) {});
       await _waitFor(() => controller.state.hasValue);
 
-      // Push WS event
+      // Push WS event — cancelled_by is a required field on the WsEventRideCancelled schema.
       wsClient.addEvent(
         WsEvent(
           type: WsEventNames.rideCancelled,
-          payload: {'ride_id': 'ride-123', 'reason': 'CANCELLED_BY_DRIVER'},
+          payload: {
+            'ride_id': 'ride-123',
+            'cancelled_by': 'driver',
+            'reason': 'driver cancelled',
+          },
         ),
       );
 

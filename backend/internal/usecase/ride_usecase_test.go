@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -238,6 +239,52 @@ func TestRideUseCase_Cancel_FeeApplication(t *testing.T) {
 	_, err := uc.Cancel(context.Background(), passengerID, domain.RolePassenger, ride.ID, &reasonCode, nil)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestRideUseCase_Cancel_RaceLost(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, rideRepo, _, _ := newRideUC(ctrl)
+	passengerID := uuid.New()
+	driverID := uuid.New()
+	estimatedFare := 100.0
+	ride := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
+		r.DriverID = &driverID
+		r.RideType = domain.RideTypeCar
+		r.EstimatedFare = &estimatedFare
+	})
+	reasonCode := "changed_plans"
+	cancelledBy := domain.CancelledByDriver
+	cancelledReason := "passenger_no_show"
+
+	// Race: driver cancelled first. Passenger's cancel arrives, sees the
+	// ride in cancellable state from the initial GetByID, but SetCancelled's
+	// optimistic-lock UPDATE finds zero rows because the row is already
+	// status='cancelled'. Repo returns ErrInvalidStateTransition.
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(ride, nil)
+	rideRepo.EXPECT().SetCancelled(gomock.Any(), ride.ID, domain.CancelledByPassenger, &reasonCode, gomock.Any(), gomock.Any(), domain.RideStatusRequested).Return(domain.ErrInvalidStateTransition)
+
+	// Refetch shows the ride is now cancelled by the other actor.
+	cancelledRide := testutil.NewTestRide(passengerID, func(r *domain.Ride) {
+		r.ID = ride.ID
+		r.DriverID = &driverID
+		r.Status = domain.RideStatusCancelled
+		r.CancelledBy = &cancelledBy
+		r.CancellationReason = &cancelledReason
+	})
+	rideRepo.EXPECT().GetByID(gomock.Any(), ride.ID).Return(cancelledRide, nil)
+
+	got, err := uc.Cancel(context.Background(), passengerID, domain.RolePassenger, ride.ID, &reasonCode, nil)
+	if !errors.Is(err, domain.ErrCancelRaceLost) {
+		t.Fatalf("expected ErrCancelRaceLost, got %v", err)
+	}
+	if got == nil || got.Status != domain.RideStatusCancelled {
+		t.Fatalf("expected current cancelled ride snapshot, got %+v", got)
+	}
+	if got.CancelledBy == nil || *got.CancelledBy != domain.CancelledByDriver {
+		t.Fatalf("expected cancelled_by=driver in snapshot, got %v", got.CancelledBy)
 	}
 }
 

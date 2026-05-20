@@ -66,9 +66,20 @@ class ActiveRideRepositoryImpl implements ActiveRideRepository {
   }
 
   @override
-  Future<void> cancelRide(String rideId) async {
+  Future<void> cancelRide(String rideId, {String? reasonText}) async {
     try {
-      await _apiClient.getRidesApi().rideCancel(rideId: rideId);
+      CancelRequest? body;
+      if (reasonText != null && reasonText.isNotEmpty) {
+        body = CancelRequest(
+          (b) => b
+            ..reasonCode = CancelRequestReasonCodeEnum.other
+            ..reasonText = reasonText,
+        );
+      }
+      await _apiClient.getRidesApi().rideCancel(
+        rideId: rideId,
+        cancelRequest: body,
+      );
     } on DioException catch (e) {
       throw _fromDio(e);
     }

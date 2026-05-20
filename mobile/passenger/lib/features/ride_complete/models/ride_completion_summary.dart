@@ -51,8 +51,12 @@ class RideCompletionSummary {
   }
 
   static double _extractFare(RideResponse ride) {
-    // Fare may be computed or returned from backend; use a default for now.
-    return 0.0;
+    // RFC v2 P7: ride.fare is the backend's finalised total set on
+    // completion. The legacy 0.0 placeholder predated the backend wiring
+    // and broke the receipt screen. ride.completed WS payload now carries
+    // a richer breakdown (fare_breakdown, payment_method, tip_amount);
+    // wiring the dispatcher to enrich this model lands with MOB-P7.3.
+    return ride.fare ?? 0.0;
   }
 
   RideCompletionSummary copyWith({

@@ -7,11 +7,20 @@ import (
 	"context"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/sakai/backend/internal/domain"
+)
+
+// Subprotocol identifiers used in the Sec-WebSocket-Protocol negotiation.
+// SubprotocolV2 enables envelope v2 fields (seq, corr_id, ack_required) on
+// the wire; anything else is treated as v1.
+const (
+	SubprotocolV1 = "sakai-ws-v1"
+	SubprotocolV2 = "sakai-ws-v2"
 )
 
 // Dispatcher is the interface for isolating HTTP handlers from the concrete
@@ -29,31 +38,36 @@ const (
 	EventRideAccepted          EventType = "ride.accepted"
 	EventRideDeclined          EventType = "ride.declined"
 	EventRideStatusChanged     EventType = "ride.status_changed"
+	EventRideCompleted         EventType = "ride.completed"
 	EventRideCancelled         EventType = "ride.cancelled"
 	EventRideOfferExpired      EventType = "ride.offer_expired"
 	EventRideSOS               EventType = "ride.sos_triggered"
 	EventDriverLocationUpdated EventType = "driver.location_updated"
+	EventConnWelcome           EventType = "conn.welcome"
+	EventRideStateSync         EventType = "ride.state_sync"
 )
 
-// envelope is the JSON shape sent over every WebSocket connection.
-type envelope struct {
-	Event   EventType `json:"event"`
-	Payload any       `json:"payload"`
-}
-
 // Client wraps a single WebSocket connection for one authenticated user.
+//
+// The wire envelope is defined in envelope.go; the channel here carries
+// already-stamped Envelopes so the writePump never has to allocate. seq is
+// stamped per-connection at write time so envelopes re-broadcast across pods
+// get the correct sequence on each peer.
 type Client struct {
-	userID uuid.UUID
-	conn   *websocket.Conn
-	send   chan envelope
-	once   sync.Once
+	userID   uuid.UUID
+	conn     *websocket.Conn
+	send     chan Envelope
+	once     sync.Once
+	protocol string
+	seq      atomic.Uint64
 }
 
-func newClient(userID uuid.UUID, conn *websocket.Conn) *Client {
+func newClient(userID uuid.UUID, conn *websocket.Conn, protocol string) *Client {
 	return &Client{
-		userID: userID,
-		conn:   conn,
-		send:   make(chan envelope, 64),
+		userID:   userID,
+		conn:     conn,
+		send:     make(chan Envelope, 64),
+		protocol: protocol,
 	}
 }
 
@@ -71,6 +85,15 @@ func (cl *Client) writePump(pingInterval time.Duration) {
 			if !ok {
 				cl.conn.WriteMessage(websocket.CloseMessage, nil) //nolint:errcheck
 				return
+			}
+			if cl.protocol == SubprotocolV2 {
+				msg.Seq = cl.seq.Add(1)
+			} else {
+				// v1 connections see a v1.3-shape envelope.
+				msg.V = 0
+				msg.Seq = 0
+				msg.CorrID = ""
+				msg.AckRequired = nil
 			}
 			if err := cl.conn.WriteJSON(msg); err != nil {
 				return
@@ -93,6 +116,7 @@ type Hub struct {
 	mu           sync.RWMutex
 	clients      map[uuid.UUID]*Client // userID → client
 	pingInterval time.Duration
+	ackTracker   *AckTracker
 }
 
 // NewHub creates a ready-to-use Hub.
@@ -103,13 +127,29 @@ func NewHub(pingInterval time.Duration) *Hub {
 	}
 }
 
+// WithAckTracker wires the [AckTracker] so envelopes published with
+// `AckRequired:true` are retried until the client confirms or the budget
+// is exhausted. nil disables retry (best-effort delivery only).
+func (h *Hub) WithAckTracker(t *AckTracker) *Hub {
+	h.ackTracker = t
+	return h
+}
+
+// AckTracker returns the attached tracker (nil if none).
+func (h *Hub) AckTracker() *AckTracker { return h.ackTracker }
+
 // Register adds a client to the hub and starts its write pump.
 // If the same user already has a connection, the old one is evicted.
-func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn) {
-	cl := newClient(userID, conn)
+// The protocol argument is the Sec-WebSocket-Protocol value selected during
+// upgrade — empty means a v1 client (no v2 envelope fields on the wire).
+func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) {
+	cl := newClient(userID, conn, protocol)
 	h.mu.Lock()
 	if old, ok := h.clients[userID]; ok {
 		old.close()
+		// Old eviction does not change conn_active because we replace 1:1.
+	} else {
+		ConnOpened()
 	}
 	h.clients[userID] = cl
 	h.mu.Unlock()
@@ -131,12 +171,28 @@ func (h *Hub) Unregister(userID uuid.UUID) {
 	if cl, ok := h.clients[userID]; ok {
 		cl.close()
 		delete(h.clients, userID)
+		ConnClosed()
 	}
 	h.mu.Unlock()
 }
 
 // SendToUser sends an event to a specific user if they are connected.
+//
+// The payload is wrapped in a fresh Envelope (timestamp + UUIDv7 event_id
+// stamped at send time). Callers may still pass `gin.H` maps or typed
+// payload structs; the wire format is normalized here.
 func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
+	h.sendEnvelope(userID, NewEnvelope(event, payload))
+}
+
+// sendEnvelope dispatches an already-built Envelope. Used by RedisDispatcher
+// so timestamp + event_id stay stable across the cluster — the publishing
+// node stamps once, all subscribing nodes forward the same envelope.
+//
+// If [AckTracker] is wired and env.AckRequired is true, the envelope is
+// registered for retry on the same call. Track is idempotent on event_id,
+// so a retransmission from the tracker re-uses the original entry.
+func (h *Hub) sendEnvelope(userID uuid.UUID, env Envelope) {
 	h.mu.RLock()
 	cl, ok := h.clients[userID]
 	h.mu.RUnlock()
@@ -145,7 +201,10 @@ func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
 		return
 	}
 	select {
-	case cl.send <- envelope{Event: event, Payload: payload}:
+	case cl.send <- env:
+		if h.ackTracker != nil && env.AckRequired != nil && *env.AckRequired {
+			h.ackTracker.Track(userID, env)
+		}
 	default:
 		// Slow consumer — evict to avoid head-of-line blocking.
 		h.Unregister(userID)
@@ -158,19 +217,24 @@ func (h *Hub) SendToDriver(driverID uuid.UUID, event EventType, payload any) {
 }
 
 // BroadcastToRide targets both the passenger and the assigned driver of a ride.
+// Both recipients receive the *same* Envelope (same event_id) so clients can
+// dedupe across reconnects without coordination.
 func (h *Hub) BroadcastToRide(ride *domain.Ride, event EventType, payload any) {
-	h.SendToUser(ride.PassengerID, event, payload)
+	env := NewEnvelope(event, payload)
+	h.sendEnvelope(ride.PassengerID, env)
 	if ride.DriverID != nil {
-		h.SendToUser(*ride.DriverID, event, payload)
+		h.sendEnvelope(*ride.DriverID, env)
 	}
 }
 
 // BroadcastToRideByIDs targets both the passenger and driver given explicit IDs,
 // avoiding the need to construct a full domain.Ride for Redis-sourced events.
+// Like BroadcastToRide, both recipients share the same Envelope/event_id.
 func (h *Hub) BroadcastToRideByIDs(rideID uuid.UUID, passengerID uuid.UUID, driverID *uuid.UUID, event EventType, payload any) {
-	h.SendToUser(passengerID, event, payload)
+	env := NewEnvelope(event, payload)
+	h.sendEnvelope(passengerID, env)
 	if driverID != nil {
-		h.SendToUser(*driverID, event, payload)
+		h.sendEnvelope(*driverID, env)
 	}
 	_ = rideID // rideID is logged/available for future tracing
 }

@@ -14,6 +14,13 @@ import 'package:passenger/features/active_ride/models/active_ride_state.dart';
 typedef OnRideCompleted = void Function(String rideId);
 typedef OnRideCancelled = void Function(String rideId);
 
+/// When true, WS events flow through the shared [WsDispatcher] using
+/// generated `built_value` serializers. When false, falls back to the
+/// hand-rolled payload-extraction path that shipped pre-v1.3.0 spec.
+/// Keep on for one release; remove the legacy path once parity is
+/// confirmed in staging.
+const bool kUseGeneratedSerializers = true;
+
 /// Manages active ride state with WebSocket support.
 ///
 /// This class is NOT a Riverpod notifier itself — it's a plain ChangeNotifier-like
@@ -44,6 +51,8 @@ class ActiveRideController {
   AsyncValue<ActiveRideState> get state => _state;
 
   StreamSubscription<WsEvent>? _wsSubscription;
+  WsDispatcher? _dispatcher;
+  final List<void Function()> _wsDisposers = [];
   Timer? _e2ePollTimer;
   OnRideCompleted? onCompleted;
   OnRideCancelled? onCancelled;
@@ -167,6 +176,32 @@ class ActiveRideController {
   }
 
   void _setupWebSocketListener() {
+    if (kUseGeneratedSerializers) {
+      _setupDispatcherListener();
+    } else {
+      _setupLegacyListener();
+    }
+  }
+
+  void _setupDispatcherListener() {
+    final dispatcher = WsDispatcher(_wsClient);
+    _dispatcher = dispatcher;
+
+    _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
+      WsEventType.rideStatusChanged,
+      (e) => _applyStatusChange(e.status.toString()),
+    ));
+    _wsDisposers.add(dispatcher.on<DriverLocationFast>(
+      WsEventType.driverLocationUpdated,
+      (e) => _applyDriverLocation(e.lat, e.lng),
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideCancelled>(
+      WsEventType.rideCancelled,
+      (_) => _handleRideCancelled(),
+    ));
+  }
+
+  void _setupLegacyListener() {
     _wsSubscription = _wsClient.events.listen((event) {
       final current = _state.value;
       if (current == null) return;
@@ -183,6 +218,38 @@ class ActiveRideController {
           break;
       }
     });
+  }
+
+  void _applyStatusChange(String rawStatus) {
+    final rideStatus = RideState.fromString(rawStatus);
+    final current = _state.value;
+    if (current == null) return;
+
+    final newStep = _stepFromRideState(rideStatus);
+    _state = AsyncValue.data(
+      current.copyWith(currentStep: newStep, errorMessage: null),
+    );
+    _stateController.add(_state);
+
+    if (!_terminated &&
+        (rideStatus == RideState.completed ||
+            rideStatus == RideState.cancelled)) {
+      _terminated = true;
+      if (rideStatus == RideState.completed) {
+        onCompleted?.call(rideId);
+      } else {
+        onCancelled?.call(rideId);
+      }
+    }
+  }
+
+  void _applyDriverLocation(double lat, double lng) {
+    final current = _state.value;
+    if (current == null) return;
+    _state = AsyncValue.data(
+      current.copyWith(driverLocation: gmaps.LatLng(lat, lng)),
+    );
+    _stateController.add(_state);
   }
 
   bool _terminated = false;
@@ -342,6 +409,15 @@ class ActiveRideController {
 
   void dispose() {
     _wsSubscription?.cancel();
+    for (final d in _wsDisposers) {
+      d();
+    }
+    _wsDisposers.clear();
+    final dispatcher = _dispatcher;
+    if (dispatcher != null) {
+      unawaited(dispatcher.dispose());
+      _dispatcher = null;
+    }
     _e2ePollTimer?.cancel();
     _stateController.close();
   }
