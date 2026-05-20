@@ -62,6 +62,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(middleware.CORS())
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
+	// CorrID must run before any handler that publishes WS events so the
+	// dispatcher can read the value off the request context (RFC v2 §4.3).
+	r.Use(middleware.CorrID())
 	r.Use(middleware.Perf(d.PerfSampler))
 
 	// Permission guard factory — superadmin bypass, 30s LRU cache.

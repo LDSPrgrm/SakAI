@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+
+	"github.com/sakai/backend/internal/observability/corrid"
 )
 
 // TestGlobalEvent_PreservesEnvelopeAcrossBus simulates the round-trip a
@@ -104,6 +107,28 @@ func TestMergePayloadFields_MapPassthrough(t *testing.T) {
 	if out["foo"] != "bar" || out["n"] != 7 {
 		t.Errorf("map fields not preserved: %#v", out)
 	}
+}
+
+// TestStampCorrID guards the corr_id threading wired in P8.2: when the call
+// site's context carries a correlation ID, the envelope must surface it on
+// the wire so audit + replay + client traces can all stitch back to the
+// originating HTTP request.
+func TestStampCorrID(t *testing.T) {
+	t.Run("absent ctx leaves envelope unchanged", func(t *testing.T) {
+		env := NewEnvelope(EventRideAccepted, map[string]any{"ride_id": "r1"})
+		stampCorrID(context.Background(), &env)
+		if env.CorrID != "" {
+			t.Fatalf("CorrID = %q, want empty (no value on ctx)", env.CorrID)
+		}
+	})
+	t.Run("present ctx populates CorrID", func(t *testing.T) {
+		env := NewEnvelope(EventRideAccepted, map[string]any{"ride_id": "r1"})
+		ctx := corrid.WithCorrID(context.Background(), "req-42")
+		stampCorrID(ctx, &env)
+		if env.CorrID != "req-42" {
+			t.Fatalf("CorrID = %q, want req-42", env.CorrID)
+		}
+	})
 }
 
 func TestRedisDispatcher_RouteLocally_DeliversSameEnvelope(t *testing.T) {

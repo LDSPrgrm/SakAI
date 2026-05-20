@@ -7,8 +7,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/observability/corrid"
 )
+
+// stampCorrID copies the correlation ID from ctx onto env when one is
+// present. Pulled out of the publish call sites so the v1 audit / replay
+// snapshot uses the same stamped envelope as the wire payload — diverging
+// shapes between bus + audit produced the dispatcher bug we hit at
+// 19a60de..8d88b5d.
+func stampCorrID(ctx context.Context, env *Envelope) {
+	if cid := corrid.FromContext(ctx); cid != "" {
+		env.CorrID = cid
+	}
+}
 
 // The global channel name for broadcasting events across all API instances.
 const pubsubChannel = "sakai:ws:events"
@@ -227,6 +240,7 @@ func extractRideRecipients(payload any) (passengerID uuid.UUID, driverID *uuid.U
 // PublishToUser sends an event to a specific user across the cluster.
 func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, event EventType, payload any) error {
 	env := NewEnvelope(event, payload)
+	stampCorrID(ctx, &env)
 	d.appendReplay(ctx, userID, env)
 	d.writeAudit(ctx, EnvelopeAuditEvent(env, &userID, nil))
 	ge := globalEvent{
@@ -272,6 +286,7 @@ func (d *RedisDispatcher) PublishToRide(ctx context.Context, ride *domain.Ride, 
 		canonical = base
 	}
 	env := NewEnvelope(event, canonical)
+	stampCorrID(ctx, &env)
 	d.appendReplay(ctx, ride.PassengerID, env)
 	if ride.DriverID != nil {
 		d.appendReplay(ctx, *ride.DriverID, env)
