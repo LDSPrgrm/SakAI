@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/domain"
 	"github.com/sakai/backend/pkg/jwt"
 )
@@ -44,6 +46,7 @@ type E2EHandler struct {
 	userRepo     domain.UserRepository
 	driverRepo   domain.DriverRepository
 	rideRepo     domain.RideRepository
+	dispatcher   ws.Dispatcher
 	jwtSecret    string
 	accessExpiry time.Duration
 	seedToken    string
@@ -52,10 +55,14 @@ type E2EHandler struct {
 // NewE2EHandler wires the dependencies. The seedToken value comes from
 // configs.E2ESeedToken; an empty string disables the endpoint outright
 // (the handler returns 503 so a misconfigured deploy is loud).
+//
+// The dispatcher is optional — only PublishEvent uses it. Pass nil if
+// the deploy wants the seed/delete endpoints but not the publish path.
 func NewE2EHandler(
 	userRepo domain.UserRepository,
 	driverRepo domain.DriverRepository,
 	rideRepo domain.RideRepository,
+	dispatcher ws.Dispatcher,
 	jwtSecret string,
 	accessExpiry time.Duration,
 	seedToken string,
@@ -64,6 +71,7 @@ func NewE2EHandler(
 		userRepo:     userRepo,
 		driverRepo:   driverRepo,
 		rideRepo:     rideRepo,
+		dispatcher:   dispatcher,
 		jwtSecret:    jwtSecret,
 		accessExpiry: accessExpiry,
 		seedToken:    seedToken,
@@ -105,12 +113,13 @@ func (h *E2EHandler) Seed(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	passenger, err := h.upsertUser(ctx, "e2e-passenger@sakai.test", "E2E Passenger", domain.RolePassenger)
+	suite := normalizeSuite(c.Query("suite"))
+	passenger, err := h.upsertUser(ctx, seedEmail(suite, "passenger"), "E2E Passenger", domain.RolePassenger)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SEED_FAILED", "message": err.Error()})
 		return
 	}
-	driver, err := h.upsertUser(ctx, "e2e-driver@sakai.test", "E2E Driver", domain.RoleDriver)
+	driver, err := h.upsertUser(ctx, seedEmail(suite, "driver"), "E2E Driver", domain.RoleDriver)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SEED_FAILED", "message": err.Error()})
 		return
@@ -221,4 +230,143 @@ func (h *E2EHandler) createSeedRide(ctx context.Context, passengerID, driverID u
 		return nil, err
 	}
 	return ride, nil
+}
+
+// E2EPublishEventRequest is the body of POST /api/e2e/publish-event.
+//
+// Only `ride.*` events are routable through the ride dispatcher path; for
+// user-targeted events use TargetUserID instead of RideID. Exactly one of
+// the two MUST be set — the handler returns 400 otherwise.
+type E2EPublishEventRequest struct {
+	RideID       *uuid.UUID     `json:"ride_id,omitempty"`
+	TargetUserID *uuid.UUID     `json:"target_user_id,omitempty"`
+	Event        string         `json:"event" binding:"required"`
+	Payload      map[string]any `json:"payload"`
+}
+
+// PublishEvent fans out an arbitrary WS envelope for the integration test
+// suite. The handler does NOT validate payload shape against the event
+// type — callers are expected to send valid v2-shape payloads. Server-
+// side typed payload structs (e.g. RideCompletedPayload) are not used here
+// because the test wants to send malformed/edge-case envelopes too.
+func (h *E2EHandler) PublishEvent(c *gin.Context) {
+	if h.seedToken == "" {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "E2E_DISABLED"})
+		return
+	}
+	if !h.bearerMatches(c.GetHeader("Authorization")) {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "INVALID_SEED_TOKEN"})
+		return
+	}
+	if h.dispatcher == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"code":    "DISPATCHER_UNAVAILABLE",
+			"message": "publish-event requires a wired ws.Dispatcher",
+		})
+		return
+	}
+	var req E2EPublishEventRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	if (req.RideID == nil) == (req.TargetUserID == nil) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    "VALIDATION_ERROR",
+			"message": "exactly one of ride_id, target_user_id required",
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	payload := req.Payload
+	if payload == nil {
+		payload = map[string]any{}
+	}
+	if req.RideID != nil {
+		ride, err := h.rideRepo.GetByID(ctx, *req.RideID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"code": "RIDE_NOT_FOUND"})
+			return
+		}
+		if err := h.dispatcher.PublishToRide(ctx, ride, ws.EventType(req.Event), payload); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "PUBLISH_FAILED", "message": err.Error()})
+			return
+		}
+	} else {
+		if err := h.dispatcher.PublishToUser(ctx, *req.TargetUserID, ws.EventType(req.Event), payload); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "PUBLISH_FAILED", "message": err.Error()})
+			return
+		}
+	}
+	c.JSON(http.StatusAccepted, gin.H{"event": req.Event})
+}
+
+// CleanupSeed hard-deletes the seeded passenger + driver for a given
+// suite namespace (or the default unsuffixed one). Used by long-running
+// staging environments so test data doesn't accumulate across CI weeks.
+// Idempotent — missing rows do not error.
+func (h *E2EHandler) CleanupSeed(c *gin.Context) {
+	if h.seedToken == "" {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "E2E_DISABLED"})
+		return
+	}
+	if !h.bearerMatches(c.GetHeader("Authorization")) {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": "INVALID_SEED_TOKEN"})
+		return
+	}
+	ctx := c.Request.Context()
+	suite := normalizeSuite(c.Query("suite"))
+	deleted := []string{}
+	for _, who := range []string{"passenger", "driver"} {
+		email := seedEmail(suite, who)
+		user, err := h.userRepo.GetByEmail(ctx, email)
+		if err != nil {
+			if errors.Is(err, domain.ErrNotFound) {
+				continue
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "CLEANUP_FAILED", "message": err.Error()})
+			return
+		}
+		if err := h.userRepo.Delete(ctx, user.ID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "CLEANUP_FAILED", "message": err.Error()})
+			return
+		}
+		deleted = append(deleted, email)
+	}
+	c.JSON(http.StatusOK, gin.H{"deleted": deleted, "suite": suite})
+}
+
+// normalizeSuite folds an empty suite name to the literal "default" so
+// the seed emails are stable + URL-safe. Disallowed characters are
+// stripped so a hostile caller can't smuggle SQL fragments via the param.
+func normalizeSuite(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "default"
+	}
+	var out strings.Builder
+	for _, r := range raw {
+		switch {
+		case r >= 'a' && r <= 'z':
+			out.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			out.WriteRune(r + 32)
+		case r >= '0' && r <= '9':
+			out.WriteRune(r)
+		case r == '-' || r == '_':
+			out.WriteRune(r)
+		}
+	}
+	if out.Len() == 0 {
+		return "default"
+	}
+	return out.String()
+}
+
+// seedEmail builds the canonical seed email for a suite + role combo.
+// Format: e2e-<role>-<suite>@sakai.test. The default suite still gets
+// the suffix so cleanup-by-suite is unambiguous.
+func seedEmail(suite, role string) string {
+	return "e2e-" + role + "-" + suite + "@sakai.test"
 }

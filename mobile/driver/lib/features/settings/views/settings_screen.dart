@@ -38,6 +38,11 @@ class DriverSettingsScreen extends StatelessWidget {
                 label: 'Documents',
                 onTap: () => context.push(Routes.documents),
               ),
+              _Tile(
+                icon: Icons.shield_outlined,
+                label: 'SOS & Safety',
+                onTap: () => context.push(Routes.sosSafety),
+              ),
             ],
           ),
           SizedBox(height: t.spaceMd),

@@ -28,6 +28,11 @@ class SosUiState {
   /// operator assignment or already assigned, but NOT yet resolved).
   final bool active;
 
+  /// Server-side incident UUID. Carried from `ride.sos_triggered` so
+  /// downstream consumers (e.g. the passenger location pusher) can target
+  /// POST /incidents/:id/location without re-fetching via REST.
+  final String? incidentId;
+
   /// Who pulled the SOS — "rider" or "driver" verbatim from the wire.
   /// Null until the trigger event arrives.
   final String? triggeredBy;
@@ -43,6 +48,7 @@ class SosUiState {
 
   const SosUiState({
     this.active = false,
+    this.incidentId,
     this.triggeredBy,
     this.reason,
     this.assigneeDisplay,
@@ -52,9 +58,10 @@ class SosUiState {
 
   /// Apply `ride.sos_triggered` to the state. Idempotent — re-applying the
   /// same trigger does not overwrite the assignee.
-  SosUiState withTrigger({String? triggeredBy, String? reason}) {
+  SosUiState withTrigger({String? incidentId, String? triggeredBy, String? reason}) {
     return SosUiState(
       active: true,
+      incidentId: incidentId ?? this.incidentId,
       triggeredBy: triggeredBy ?? this.triggeredBy,
       reason: reason ?? this.reason,
       assigneeDisplay: assigneeDisplay,
@@ -67,6 +74,7 @@ class SosUiState {
     final firstName = _firstNameOnly(fullAssigneeName);
     return SosUiState(
       active: true,
+      incidentId: incidentId,
       triggeredBy: triggeredBy,
       reason: reason,
       assigneeDisplay: firstName,
@@ -91,15 +99,17 @@ class SosUiState {
       identical(this, other) ||
       (other is SosUiState &&
           other.active == active &&
+          other.incidentId == incidentId &&
           other.triggeredBy == triggeredBy &&
           other.reason == reason &&
           other.assigneeDisplay == assigneeDisplay);
 
   @override
-  int get hashCode => Object.hash(active, triggeredBy, reason, assigneeDisplay);
+  int get hashCode => Object.hash(active, incidentId, triggeredBy, reason, assigneeDisplay);
 
   @override
   String toString() =>
-      'SosUiState(active: $active, triggeredBy: $triggeredBy, '
-      'reason: $reason, assigneeDisplay: $assigneeDisplay)';
+      'SosUiState(active: $active, incidentId: $incidentId, '
+      'triggeredBy: $triggeredBy, reason: $reason, '
+      'assigneeDisplay: $assigneeDisplay)';
 }

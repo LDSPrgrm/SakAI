@@ -184,7 +184,7 @@ func main() {
 		Promotion:      handler.NewPromotionHandler(promotionUC),
 		SavedPlace:     handler.NewSavedPlaceHandler(savedPlaceUC),
 		WS:             ws.NewHandler(hub),
-		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo),
+		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo, dispatcher),
 		PerfSampler:    systemRepo,
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
@@ -247,11 +247,12 @@ func e2eHandlerIfEnabled(
 	userRepo domain.UserRepository,
 	driverRepo domain.DriverRepository,
 	rideRepo domain.RideRepository,
+	dispatcher ws.Dispatcher,
 ) *handler.E2EHandler {
 	if !cfg.E2EEnabled || cfg.E2ESeedToken == "" {
 		return nil
 	}
-	return handler.NewE2EHandler(userRepo, driverRepo, rideRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.E2ESeedToken)
+	return handler.NewE2EHandler(userRepo, driverRepo, rideRepo, dispatcher, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.E2ESeedToken)
 }
 
 // mustUploader builds the storage backend used for driver documents. Empty

@@ -1,4 +1,14 @@
 // Package router assembles the Gin engine with all routes and middleware.
+//
+// BLOCKED follow-ups (RFC v2 P9 — require operator action, not code):
+//   - Staging deploy must set E2E_ENABLED=true + a rotating
+//     E2E_SEED_TOKEN secret so the /api/e2e/* routes are reachable
+//     from the mobile integration test runner. The handlers fail
+//     closed in production; nothing else gates the deploy.
+//   - Manual QA checklist per RFC §16.5 must run on real devices
+//     before P9 closes: SOS countdown cancel, WiFi↔LTE switch
+//     mid-ride, background→foreground state restore, 2-passenger
+//     cancel race, receipt across cash/GCash/PayMaya/Card.
 package router
 
 import (
@@ -101,6 +111,8 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	// privacy/idempotency contract.
 	if d.E2E != nil {
 		api.POST("/e2e/seed", d.E2E.Seed)
+		api.DELETE("/e2e/seed", d.E2E.CleanupSeed)
+		api.POST("/e2e/publish-event", d.E2E.PublishEvent)
 	}
 
 	// ── Public auth routes ────────────────────────────────────────────────────

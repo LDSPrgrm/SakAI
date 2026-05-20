@@ -69,7 +69,7 @@ func (h *Handler) ServeWS(c *gin.Context) {
 	}
 	protocol := conn.Subprotocol()
 	log.Printf("[WS] Registered connection for user %s (%s, proto=%q)", userID, c.GetString("role"), protocol)
-	h.hub.Register(userID, conn, protocol)
+	client := h.hub.Register(userID, conn, protocol)
 
 	// First server-pushed event: announces the negotiated protocol so clients
 	// can verify the upgrade succeeded before sending replay/ack frames.
@@ -90,7 +90,9 @@ func (h *Handler) ServeWS(c *gin.Context) {
 	// and detect disconnection. Application events still flow server→client
 	// only; inbound frames carry protocol metadata, not commands.
 	go func() {
-		defer h.hub.Unregister(userID)
+		// Per-device cleanup so a phone disconnect doesn't evict the
+		// user's tablet (multi-device fanout, RFC §7.4 + §20 decision 2).
+		defer h.hub.UnregisterClient(userID, client)
 		for {
 			msgType, raw, err := conn.ReadMessage()
 			if err != nil {

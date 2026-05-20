@@ -220,11 +220,16 @@ class ActiveRideController {
   void _applySosTrigger(BuiltMap<String, Object?> payload) {
     final current = _state.value;
     if (current == null) return;
+    final incidentId = payload['incident_id'] as String?;
     final triggeredBy = payload['triggered_by'] as String?;
     final reason = payload['reason'] as String?;
     _state = AsyncValue.data(
       current.copyWith(
-        sos: current.sos.withTrigger(triggeredBy: triggeredBy, reason: reason),
+        sos: current.sos.withTrigger(
+          incidentId: incidentId,
+          triggeredBy: triggeredBy,
+          reason: reason,
+        ),
       ),
     );
     _stateController.add(_state);

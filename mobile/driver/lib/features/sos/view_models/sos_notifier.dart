@@ -1,11 +1,27 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_api_client/sakai_api_client.dart' as api;
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/providers.dart';
+
+/// Side-effect runner used when a passenger SOS lands on this driver's
+/// device. Defaults to platform haptic + alert click; swappable in tests
+/// so the assertion can verify the trigger fired without depending on
+/// real platform plugins.
+typedef SosCounterpartAlert = Future<void> Function();
+
+Future<void> _defaultCounterpartAlert() async {
+  // Heavy haptic to break the driver out of map/navigation focus, then a
+  // short system click. iOS + Android both surface SystemSoundType.alert
+  // without requiring an explicit audio asset, which keeps this gated by
+  // the OS volume profile (i.e. silent mode wins).
+  await HapticFeedback.heavyImpact();
+  await SystemSound.play(SystemSoundType.alert);
+}
 
 class SosState {
   const SosState({
@@ -56,6 +72,10 @@ class SosState {
 //     pending (MOB-P6.2).
 
 class SosNotifier extends Notifier<SosState> {
+  SosNotifier({SosCounterpartAlert? counterpartAlert})
+      : _counterpartAlert = counterpartAlert ?? _defaultCounterpartAlert;
+
+  final SosCounterpartAlert _counterpartAlert;
   Timer? _countdown;
   WsDispatcher? _dispatcher;
   final List<void Function()> _wsDisposers = [];
@@ -80,12 +100,22 @@ class SosNotifier extends Notifier<SosState> {
     _dispatcher = dispatcher;
     _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
       WsEventType.rideSosTriggered,
-      (p) => state = state.copyWith(
-        ui: state.ui.withTrigger(
-          triggeredBy: p['triggered_by'] as String?,
-          reason: p['reason'] as String?,
-        ),
-      ),
+      (p) {
+        final wasActive = state.ui.active;
+        state = state.copyWith(
+          ui: state.ui.withTrigger(
+            incidentId: p['incident_id'] as String?,
+            triggeredBy: p['triggered_by'] as String?,
+            reason: p['reason'] as String?,
+          ),
+        );
+        // Fire haptic + alert sound exactly once per SOS — only on the
+        // OFF→ON edge. Re-applied triggers (e.g. reconnect replay) must
+        // NOT re-buzz the device.
+        if (!wasActive && state.ui.active) {
+          unawaited(_counterpartAlert());
+        }
+      },
     ));
     _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
       WsEventType.incidentAssigned,

@@ -21,6 +21,7 @@ import '../features/profile/views/vehicle_details_screen.dart';
 import '../features/profile/views/vehicle_info_screen.dart';
 import '../features/settings/views/settings_screen.dart';
 import '../features/settings/views/availability_settings_screen.dart';
+import '../features/settings/views/sos_safety_settings_screen.dart';
 import '../features/notifications/views/notifications_screen.dart';
 import '../features/support/views/support_screen.dart';
 import '../features/sos/views/sos_screen.dart';
@@ -49,6 +50,7 @@ abstract class Routes {
   static const vehicleInfo = '/profile/vehicle';
   static const settings = '/settings';
   static const availability = '/settings/availability';
+  static const sosSafety = '/settings/sos-safety';
   static const notifications = '/notifications';
   static const support = '/support';
   static const sos = '/sos';
@@ -199,6 +201,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.availability,
         builder: (context, state) => const AvailabilitySettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.sosSafety,
+        builder: (context, state) => const SosSafetySettingsScreen(),
       ),
       GoRoute(
         path: Routes.notifications,
