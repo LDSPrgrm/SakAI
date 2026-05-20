@@ -139,10 +139,13 @@ enum WsEventType {
   rideOfferExpired('ride.offer_expired'),
   rideArrived('ride.arrived'),
   rideStatusChanged('ride.status_changed'),
+  rideCompleted('ride.completed'),
   rideCancelled('ride.cancelled'),
   rideSosTriggered('ride.sos_triggered'),
   rideNoDrivers('ride.no_drivers'),
   driverLocationUpdated('driver.location_updated'),
+  incidentAssigned('incident.assigned'),
+  incidentResolved('incident.resolved'),
   connWelcome('conn.welcome'),
   rideStateSync('ride.state_sync'),
   unknown('');
@@ -167,10 +170,13 @@ class WsEventNames {
   static const rideOfferExpired = 'ride.offer_expired';
   static const rideArrived = 'ride.arrived';
   static const rideStatusChanged = 'ride.status_changed';
+  static const rideCompleted = 'ride.completed';
   static const rideCancelled = 'ride.cancelled';
   static const rideSosTriggered = 'ride.sos_triggered';
   static const rideNoDrivers = 'ride.no_drivers';
   static const driverLocationUpdated = 'driver.location_updated';
+  static const incidentAssigned = 'incident.assigned';
+  static const incidentResolved = 'incident.resolved';
   static const connWelcome = 'conn.welcome';
   static const rideStateSync = 'ride.state_sync';
 }

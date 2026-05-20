@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
 import '../../earnings/view_models/earnings_notifier.dart';
+import '../../sos/view_models/sos_notifier.dart';
 import '../models/active_ride_step.dart';
 import '../services/location_stream_service.dart';
 import '../view_models/active_ride_notifier.dart';
@@ -155,6 +156,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // P6 SOS banner — driven by sosNotifierProvider, which
+                  // subscribes to ride.sos_triggered / incident.assigned /
+                  // incident.resolved on the shared WS dispatcher.
+                  SosBanner(state: ref.watch(sosNotifierProvider).ui),
                   if (_locationState.isDegraded)
                     Padding(
                       padding: EdgeInsets.only(bottom: tokens.spaceSm),

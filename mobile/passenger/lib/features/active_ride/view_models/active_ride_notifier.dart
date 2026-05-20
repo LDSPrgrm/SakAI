@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:built_collection/built_collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -199,6 +200,53 @@ class ActiveRideController {
       WsEventType.rideCancelled,
       (_) => _handleRideCancelled(),
     ));
+    // P6 SOS lifecycle. Payloads arrive as BuiltMap<String, Object?>
+    // because the built_value codegen has not yet regenerated for the
+    // incident.* schemas (see WsDispatcher._deserialize).
+    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
+      WsEventType.rideSosTriggered,
+      (p) => _applySosTrigger(p),
+    ));
+    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
+      WsEventType.incidentAssigned,
+      (p) => _applyIncidentAssigned(p),
+    ));
+    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
+      WsEventType.incidentResolved,
+      (_) => _applyIncidentResolved(),
+    ));
+  }
+
+  void _applySosTrigger(BuiltMap<String, Object?> payload) {
+    final current = _state.value;
+    if (current == null) return;
+    final triggeredBy = payload['triggered_by'] as String?;
+    final reason = payload['reason'] as String?;
+    _state = AsyncValue.data(
+      current.copyWith(
+        sos: current.sos.withTrigger(triggeredBy: triggeredBy, reason: reason),
+      ),
+    );
+    _stateController.add(_state);
+  }
+
+  void _applyIncidentAssigned(BuiltMap<String, Object?> payload) {
+    final current = _state.value;
+    if (current == null) return;
+    final assigneeName = payload['assignee_name'] as String?;
+    _state = AsyncValue.data(
+      current.copyWith(sos: current.sos.withAssignee(assigneeName)),
+    );
+    _stateController.add(_state);
+  }
+
+  void _applyIncidentResolved() {
+    final current = _state.value;
+    if (current == null) return;
+    _state = AsyncValue.data(
+      current.copyWith(sos: current.sos.withResolved()),
+    );
+    _stateController.add(_state);
   }
 
   void _setupLegacyListener() {
