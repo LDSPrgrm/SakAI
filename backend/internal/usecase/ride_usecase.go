@@ -281,8 +281,11 @@ func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain
 		by = domain.CancelledByDriver
 	}
 
-	// Validate reason code if provided.
-	if reasonCode != nil && !domain.IsValidCancellationReason(*reasonCode) {
+	// Validate reason code against the actor's taxonomy. RFC v2 §8:
+	// passenger codes from drivers (and vice versa) are silently dropped
+	// — the cancel still proceeds, but the audit log won't record a
+	// cross-actor reason that would skew analytics.
+	if reasonCode != nil && !domain.IsValidCancellationReasonFor(by, *reasonCode) {
 		reasonCode = nil
 	}
 

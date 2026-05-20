@@ -107,3 +107,70 @@ func TestPaymentPendingReachable(t *testing.T) {
 		}
 	}
 }
+
+func TestIsValidCancellationReasonFor_PassengerCodes(t *testing.T) {
+	passengerOK := []CancellationReason{
+		ReasonDriverTooFar, ReasonChangedPlans, ReasonWrongPickup,
+		ReasonDriverNotMoving, ReasonSafetyConcern, ReasonOther,
+	}
+	for _, r := range passengerOK {
+		if !IsValidCancellationReasonFor(CancelledByPassenger, string(r)) {
+			t.Errorf("passenger code %q rejected for passenger", r)
+		}
+	}
+	driverOnly := []CancellationReason{
+		ReasonPassengerNoShow, ReasonUnsafePickupArea, ReasonVehicleIssue,
+		ReasonPassengerRequest, ReasonOtherDriverReason,
+	}
+	for _, r := range driverOnly {
+		if IsValidCancellationReasonFor(CancelledByPassenger, string(r)) {
+			t.Errorf("driver-only code %q accepted for passenger", r)
+		}
+	}
+}
+
+func TestIsValidCancellationReasonFor_DriverCodes(t *testing.T) {
+	driverOK := []CancellationReason{
+		ReasonPassengerNoShow, ReasonUnsafePickupArea, ReasonVehicleIssue,
+		ReasonPassengerRequest, ReasonOtherDriverReason, ReasonOther,
+	}
+	for _, r := range driverOK {
+		if !IsValidCancellationReasonFor(CancelledByDriver, string(r)) {
+			t.Errorf("driver code %q rejected for driver", r)
+		}
+	}
+	passengerOnly := []CancellationReason{
+		ReasonDriverTooFar, ReasonChangedPlans, ReasonWrongPickup,
+		ReasonDriverNotMoving, ReasonSafetyConcern,
+	}
+	for _, r := range passengerOnly {
+		if IsValidCancellationReasonFor(CancelledByDriver, string(r)) {
+			t.Errorf("passenger-only code %q accepted for driver", r)
+		}
+	}
+}
+
+func TestIsValidCancellationReasonFor_System(t *testing.T) {
+	if !IsValidCancellationReasonFor(CancelledBySystem, string(ReasonDriverTooFar)) {
+		t.Error("system actor should accept passenger codes")
+	}
+	if !IsValidCancellationReasonFor(CancelledBySystem, string(ReasonPassengerNoShow)) {
+		t.Error("system actor should accept driver codes")
+	}
+	if IsValidCancellationReasonFor(CancelledBySystem, "totally_made_up_code") {
+		t.Error("system actor should still reject unknown codes")
+	}
+}
+
+func TestIsValidCancellationReason_LegacyAnyActor(t *testing.T) {
+	for _, r := range []CancellationReason{
+		ReasonDriverTooFar, ReasonPassengerNoShow, ReasonOther,
+	} {
+		if !IsValidCancellationReason(string(r)) {
+			t.Errorf("legacy any-actor check rejected %q", r)
+		}
+	}
+	if IsValidCancellationReason("not_a_real_code") {
+		t.Error("legacy any-actor check accepted unknown code")
+	}
+}
