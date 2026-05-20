@@ -9,6 +9,21 @@ import '../providers/sos_safety_prefs.dart';
 /// required by RFC v2 §20 decision 3: ambient audio capture during an
 /// active SOS is OPT-IN ONLY, defaulting to OFF, with the consent text
 /// visible on the same screen as the toggle.
+///
+/// OUTSTANDING (MOB-P6.3 evidence collection — blocked on privacy review):
+///   - Wire ambientAudioOptIn → actual mic capture during an active SOS.
+///     The capture pipeline (60s record → AES-encrypt → upload) is NOT
+///     YET BUILT. Requires sign-off from legal + safety leads per plan
+///     §P6 "Open Items / Risks" item 1.
+///   - Wire liveLocationOptIn → 5s GPS pings to POST /api/incidents/:id/location
+///     (backend endpoint already exists; the client-side pusher service
+///     does not).
+///   - Wire photoOptIn → in-app camera prompt during the SOS banner.
+///     Photo upload destination is TBD — bucket + retention policy must
+///     match the 90-day text shown below.
+///   - Settings copy review: the "60 seconds" + "90 days" numbers MUST
+///     match the final legal disclosure language. Treat the strings as
+///     authoritative once the legal sign-off lands.
 class SosSafetySettingsScreen extends ConsumerWidget {
   const SosSafetySettingsScreen({super.key});
 

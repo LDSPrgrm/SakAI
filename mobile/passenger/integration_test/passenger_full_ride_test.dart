@@ -65,14 +65,25 @@ void main() {
     expect(find.byType(Scaffold), findsWidgets,
         reason: 'app shell renders against staging with seeded JWT');
 
-    // TODO(P9): once the WS test-harness on staging exposes a control
-    // channel to publish events for `fixture.rideId`, drive the
-    // lifecycle:
-    //   1. publish ride.accepted, assert match screen appears once.
-    //   2. republish ride.accepted (duplicate event_id), assert no flicker.
-    //   3. publish status_changed cascade.
-    //   4. force conn close mid-trip, reconnect, assert state_sync hydrates.
-    //   5. publish ride.completed with fare/breakdown/tip.
-    //   6. submit rating, assert POST /rides/{id}/rating fired once.
+    // OUTSTANDING (P9 live execution — blockers, in order):
+    //   1. Backend: ship POST /api/e2e/publish-event (sketched in
+    //      e2e_handler.go's package doc) so this test can drive WS events
+    //      against fixture.rideId without going through the real HTTP
+    //      flow. Without this we can't deterministically trigger
+    //      ride.accepted / ride.completed / SOS lifecycle states.
+    //   2. Staging: deploy with E2E_ENABLED=true + a rotating
+    //      E2E_SEED_TOKEN; CI must inject both as --dart-define before
+    //      this suite runs.
+    //   3. Then drive the lifecycle:
+    //        a. publish ride.accepted, assert match screen appears once.
+    //        b. republish ride.accepted (duplicate event_id), assert no
+    //           flicker / no second match screen.
+    //        c. publish status_changed cascade (accepted → en_route →
+    //           arrived → in_progress).
+    //        d. force conn close mid-trip, reconnect, assert state_sync
+    //           hydrates without REST refetch.
+    //        e. publish ride.completed with fare/breakdown/tip; assert
+    //           phased reveal animates.
+    //        f. submit rating, assert POST /rides/{id}/rating fired once.
   });
 }

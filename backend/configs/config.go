@@ -47,6 +47,15 @@ type Config struct {
 	// MUST be false in production — the route block is unauthenticated and
 	// the seed token is the only gate. Default is "false" so a missing env
 	// fails closed.
+	//
+	// OUTSTANDING (RFC v2 P9 live execution):
+	//   1. Staging deploy: set E2E_ENABLED=true + E2E_SEED_TOKEN=<rotating-secret>
+	//      so /api/e2e/seed is reachable from the integration test runner.
+	//      The token should rotate at least weekly and live in the same
+	//      secret manager as other staging-only credentials.
+	//   2. NEVER set E2E_ENABLED=true on production. The router defence-in-
+	//      depth check still keeps the route off the mux, but the env should
+	//      remain blank to avoid surprise.
 	E2EEnabled  bool
 	E2ESeedToken string
 }

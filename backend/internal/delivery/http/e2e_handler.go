@@ -22,8 +22,24 @@ import (
 // Per RFC v2 P9, the integration tests need a stable {passengerId, driverId,
 // rideId, jwt} bundle that survives across runs. We achieve that by deriving
 // IDs from a known seed and upserting on email — running the seed twice
-// returns the same triple, so the integration test can drive WS events
+// returns the same user IDs, so the integration test can drive WS events
 // against fixed identifiers without DB cleanup between runs.
+//
+// OUTSTANDING (P9 follow-ups, not blocking this handler):
+//   1. WS control channel: the mobile tests need a way to publish arbitrary
+//      events for fixture.rideId (e.g. ride.accepted, ride.completed with
+//      tip > 0) without going through the production HTTP flow. Add a
+//      sibling endpoint POST /api/e2e/publish-event guarded by the same
+//      seed token. Payload: {rideId, eventType, payload}. Routes through
+//      the existing ws.Dispatcher.PublishToRide so the cluster fanout is
+//      identical to a real event.
+//   2. Cleanup endpoint: DELETE /api/e2e/seed should hard-delete the
+//      seeded passenger + driver + rides so a long-running staging
+//      doesn't accumulate test data across weeks of CI runs.
+//   3. Per-suite isolation: today every test uses the same passenger +
+//      driver pair. If two suites run in parallel they'll race on the
+//      same ride row. Add a ?suite=<name> query param to namespace
+//      emails (e2e-passenger-<suite>@sakai.test) so suites are isolated.
 type E2EHandler struct {
 	userRepo     domain.UserRepository
 	driverRepo   domain.DriverRepository

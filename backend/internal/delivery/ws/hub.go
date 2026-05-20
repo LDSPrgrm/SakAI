@@ -145,6 +145,15 @@ func (h *Hub) AckTracker() *AckTracker { return h.ackTracker }
 // If the same user already has a connection, the old one is evicted.
 // The protocol argument is the Sec-WebSocket-Protocol value selected during
 // upgrade — empty means a v1 client (no v2 envelope fields on the wire).
+//
+// OUTSTANDING (RFC v2 §7.4 + §20 decision 2 — multi-device fanout, N≤3):
+// the current single-slot eviction model is incompatible with the multi-
+// device claim. To support phone+tablet for the same user the clients map
+// must become map[uuid.UUID][]*Client with a 3-element cap, and every
+// fanout site (sendEnvelope / BroadcastToRide / BroadcastToRideByIDs)
+// must iterate the slice. ack_tracker.Track keys on event_id only, so
+// multi-device ACK semantics already hold — a single client ACK drops the
+// pending entry and stops retries to all peers.
 func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) {
 	cl := newClient(userID, conn, protocol)
 	h.mu.Lock()

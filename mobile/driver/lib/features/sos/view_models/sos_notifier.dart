@@ -46,6 +46,15 @@ class SosState {
   }
 }
 
+// OUTSTANDING (MOB-P6 driver parity with passenger):
+//   - Driver settings screen does NOT yet expose the SOS privacy opt-ins
+//     that the passenger app now has (ambient audio / live location /
+//     scene photo). Mirror sos_safety_prefs.dart on the driver side and
+//     gate the same data flows behind it.
+//   - Counterpart-SOS banner triggered by passenger SOS lands via the
+//     WS handlers below; haptic + sound feedback per RFC §P6 still
+//     pending (MOB-P6.2).
+
 class SosNotifier extends Notifier<SosState> {
   Timer? _countdown;
   WsDispatcher? _dispatcher;

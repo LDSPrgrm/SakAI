@@ -539,6 +539,19 @@ func (h *RideHandler) TriggerSOS(c *gin.Context) {
 // We deliberately keep the request body minimal (lat/lng + optional
 // recorded_at_client) so this route works under flaky cellular conditions
 // where any extra serialization adds risk.
+//
+// OUTSTANDING (MOB-P6 client wiring):
+//   - Passenger app: when sos_safety_prefs.liveLocationOptIn is true AND an
+//     incident is active, push GPS every 5s to this endpoint. Repo lives at
+//     mobile/passenger/lib/features/support/repositories/sos_repository_impl.dart
+//     — getActiveIncident() is currently stubbed to null; needs to subscribe
+//     to the sos.* WS events to know when an incident is open.
+//   - Driver app: same flow gated on a driver-side liveLocation toggle (not
+//     yet built — driver settings screen would need to mirror the passenger
+//     SOS & Safety screen for parity).
+//   - Both apps must NEVER push before opt-in; the privacy invariant is
+//     enforced UI-side, not server-side, so a bug in the toggle gate would
+//     leak coordinates.
 func (h *RideHandler) AppendIncidentLocation(c *gin.Context) {
 	if h.incidentRepo == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "FEATURE_DISABLED", "message": "incident location streaming not configured"})

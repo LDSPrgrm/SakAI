@@ -69,13 +69,23 @@ void main() {
     expect(find.byType(Scaffold), findsWidgets,
         reason: 'tablet shell mounts second');
 
-    // TODO(P9): drive the multi-device invariant once the staging WS
-    // control-channel exists:
-    //   1. open both sessions as the same passenger; backend must serve
-    //      both upgrades (eviction-on-third covered by a separate test).
-    //   2. publish ride.completed with AckRequired:true for fixture.rideId.
-    //   3. assert receipt UI surfaces on BOTH devices once.
-    //   4. ACK only on the phone; assert backend ack_tracker drops pending
-    //      (no second delivery to the tablet on the next reconnect).
+    // OUTSTANDING (P9 multi-device live execution):
+    //   1. Backend: ship POST /api/e2e/publish-event AND expose
+    //      GET /api/e2e/ack-tracker-state so step 4 below can verify
+    //      the server actually dropped the pending entry rather than
+    //      timing out silently.
+    //   2. Backend: the current hub.Register evicts the prior connection
+    //      for a userID (see hub.go:147). Multi-device fanout (§7.4 N≤3)
+    //      requires the hub to hold a list of clients per user, not a
+    //      single slot. Until that lands, this test cannot exercise the
+    //      true two-device path — it'll just see the tablet evict the
+    //      phone connection.
+    //   3. Then drive:
+    //        a. open both sessions as the same passenger; backend must
+    //           serve both upgrades.
+    //        b. publish ride.completed with AckRequired:true.
+    //        c. assert receipt UI surfaces on BOTH devices exactly once.
+    //        d. ACK only on the phone; query ack-tracker-state and assert
+    //           pending=0 (no second delivery to the tablet on reconnect).
   });
 }

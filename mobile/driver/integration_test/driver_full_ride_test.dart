@@ -60,18 +60,23 @@ void main() {
     expect(find.byType(Scaffold), findsWidgets,
         reason: 'driver app shell renders against staging with seeded JWT');
 
-    // TODO(P9): once the WS test-harness on staging exposes a control
-    // channel to publish events for `fixture.rideId`, drive the
-    // lifecycle:
-    //   1. go online via the toggle, assert PUT /driver/status fired once.
-    //   2. publish ride.requested for fixture.rideId; assert RideOfferScreen.
-    //   3. republish ride.requested (duplicate event_id), assert no flicker.
-    //   4. accept; drive ActiveRideScreen enRoute → arrived → inProgress
-    //      → completed states.
-    //   5. publish ride.completed with tip_amount > 0; assert
-    //      SakaiTipCelebration appears exactly once.
-    //   6. force WS close mid-trip; reconnect; assert ride.state_sync
-    //      restores active ride without REST refetch.
-    //   7. submit rating, assert POST /rides/{id}/rating fired once.
+    // OUTSTANDING (P9 live execution — same blockers as the passenger
+    // counterpart):
+    //   1. Backend: POST /api/e2e/publish-event endpoint required to
+    //      publish WS events for fixture.rideId from the test harness.
+    //   2. Staging: E2E_ENABLED=true + rotating E2E_SEED_TOKEN.
+    //   3. Then drive the lifecycle:
+    //        a. go online via the toggle, assert PUT /driver/status fired once.
+    //        b. publish ride.requested for fixture.rideId; assert
+    //           RideOfferScreen renders.
+    //        c. republish ride.requested (duplicate event_id), assert no
+    //           flicker / no second offer.
+    //        d. accept; drive ActiveRideScreen enRoute → arrived →
+    //           inProgress → completed states.
+    //        e. publish ride.completed with tip_amount > 0; assert
+    //           SakaiTipCelebration appears exactly once.
+    //        f. force WS close mid-trip; reconnect; assert ride.state_sync
+    //           restores active ride without REST refetch.
+    //        g. submit rating, assert POST /rides/{id}/rating fired once.
   });
 }
