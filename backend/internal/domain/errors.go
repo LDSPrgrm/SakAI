@@ -14,6 +14,11 @@ var (
 	ErrPassengerHasActiveRide = errors.New("passenger already has an active ride")
 	ErrDriverHasActiveRide    = errors.New("driver already has an active ride")
 	ErrInvalidStateTransition = errors.New("invalid ride state transition")
+	// ErrCancelRaceLost signals a cancel arrived after the ride was already
+	// cancelled by another actor — the loser of an actor race (RFC v2 §8 C9).
+	// Distinguishes "your cancel was concurrent" from generic invalid transitions,
+	// allowing handlers to surface current_status so clients can reconcile.
+	ErrCancelRaceLost = errors.New("ride already cancelled by another actor")
 	ErrNoDriversAvailable     = errors.New("no drivers available")
 	ErrForbidden              = errors.New("forbidden")
 	ErrCannotGoOffline        = errors.New("cannot go offline while ride is in progress")

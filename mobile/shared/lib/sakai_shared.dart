@@ -17,6 +17,9 @@ export 'models/backend_unavailable_exception.dart';
 export 'models/models.dart';
 export 'repositories/sos_repository.dart';
 
+// Cancellation taxonomy (mirrors Go domain — RFC v2 §8.6)
+export 'cancellation/driver_cancel_reason.dart';
+
 // WebSocket client (new)
 export 'ws/ws_events.dart';
 export 'ws/ws_client.dart';

@@ -13,6 +13,7 @@ import '../../earnings/view_models/earnings_notifier.dart';
 import '../models/active_ride_step.dart';
 import '../services/location_stream_service.dart';
 import '../view_models/active_ride_notifier.dart';
+import '../widgets/cancel_reason_sheet.dart';
 
 /// Active ride screen with state-driven action buttons.
 class ActiveRideScreen extends ConsumerStatefulWidget {
@@ -305,17 +306,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
   }
 
   Future<void> _showCancelConfirmation(BuildContext context) async {
-    final confirmed = await SakaiDialog.confirm(
-      context,
-      title: 'Cancel Ride',
-      message: 'Are you sure you want to cancel this ride?',
-      confirmLabel: 'Yes, Cancel',
-      cancelLabel: 'No',
-      destructive: true,
-    );
-    if (confirmed && context.mounted) {
-      _manager.cancelRide();
-    }
+    final result = await showCancelReasonSheet(context);
+    if (result == null || !context.mounted) return;
+    await _manager.cancelRide(reasonText: result.toReasonText());
   }
 
   String _statusLabel(ActiveRideStep step) {

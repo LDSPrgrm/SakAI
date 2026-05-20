@@ -275,13 +275,13 @@ class ActiveRideManager extends ChangeNotifier {
     }
   }
 
-  Future<void> cancelRide() async {
+  Future<void> cancelRide({String? reasonText}) async {
     if (_state.isTransitioning) return;
     if (_state.currentStep == ActiveRideStep.inProgress) return;
     _state = _state.copyWith(isTransitioning: true, errorMessage: null);
     notifyListeners();
     try {
-      await _repo.cancelRide(_state.ride!.id);
+      await _repo.cancelRide(_state.ride!.id, reasonText: reasonText);
       _locationStream?.stop();
       _state = _state.copyWith(isTransitioning: false);
       notifyListeners();

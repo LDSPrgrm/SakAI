@@ -18,5 +18,11 @@ abstract class ActiveRideRepository {
   Future<void> completeRide(String rideId, LatLng driverLocation);
 
   /// Cancels the ride (any non-terminal state → cancelled).
-  Future<void> cancelRide(String rideId);
+  ///
+  /// [reasonText] carries the driver's selected reason from the cancel
+  /// sheet. Wire-level reason codes for driver actors land with the
+  /// OpenAPI v2 bump (RFC v2 §8.6, API-1) — until then the picker
+  /// serialises the wire code as a prefix in [reasonText] so the
+  /// backend audit still records it.
+  Future<void> cancelRide(String rideId, {String? reasonText});
 }

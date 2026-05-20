@@ -289,21 +289,28 @@ func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain
 		reasonCode = nil
 	}
 
-	// Determine cancellation fee from fare configs.
-	// Use default rates — in production these come from fare_configs table.
+	// Penalty schedule is owned by product/ops — see CalculatePenalty for the
+	// current placeholder. Threaded through a struct so call sites stay stable
+	// when the real schedule (per-actor, elapsed-time tiers) lands.
+	penalty := CalculatePenalty(CancellationPenaltyInput{Ride: ride, Actor: by})
 	var cancellationFee *float64
-	if ride.RideType != "" {
-		// Default cancellation fee: 10% of estimated fare, minimum 20.0
-		if ride.EstimatedFare != nil && *ride.EstimatedFare > 0 {
-			fee := (*ride.EstimatedFare) * 0.10
-			if fee < 20.0 {
-				fee = 20.0
-			}
-			cancellationFee = &fee
-		}
+	if penalty.Fee > 0 {
+		fee := penalty.Fee
+		cancellationFee = &fee
 	}
 
+	// SetCancelled is atomic optimistic-lock: UPDATE ... WHERE id=$ AND status=$expected.
+	// That single statement IS the cancellation transaction — no explicit BEGIN/COMMIT
+	// needed (RFC v2 §8 C9). If two actors race a cancel, only the first UPDATE matches;
+	// the loser sees RowsAffected=0 → ErrInvalidStateTransition. We refetch to
+	// distinguish the race ("ride was just cancelled") from generic bad transitions
+	// ("ride is completed/in_progress and cannot be cancelled by you now").
 	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee, ride.Status); err != nil {
+		if errors.Is(err, domain.ErrInvalidStateTransition) {
+			if current, getErr := uc.rideRepo.GetByID(ctx, rideID); getErr == nil && current.Status == domain.RideStatusCancelled {
+				return current, domain.ErrCancelRaceLost
+			}
+		}
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)

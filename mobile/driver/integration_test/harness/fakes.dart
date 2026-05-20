@@ -147,7 +147,7 @@ class FakeActiveRideRepository implements ActiveRideRepository {
   Future<void> completeRide(String rideId, LatLng driverLocation) async {}
 
   @override
-  Future<void> cancelRide(String rideId) async {}
+  Future<void> cancelRide(String rideId, {String? reasonText}) async {}
 }
 
 class FakeOnboardingService implements OnboardingService {

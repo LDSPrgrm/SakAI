@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -393,6 +394,20 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 	role := contextUserRole(c)
 	ride, err := h.uc.Cancel(c.Request.Context(), userID, role, rideID, req.ReasonCode, req.ReasonText)
 	if err != nil {
+		// Race lost: another actor cancelled first. Surface the current
+		// ride snapshot so the client can reconcile UI without a second
+		// REST round-trip (RFC v2 §8 C9). The client should still receive
+		// the canonical ride.cancelled WS event published by the winner.
+		if errors.Is(err, domain.ErrCancelRaceLost) && ride != nil {
+			c.JSON(http.StatusConflict, gin.H{
+				"code":            "CANCEL_RACE_LOST",
+				"message":         err.Error(),
+				"current_status":  ride.Status,
+				"cancelled_by":    ride.CancelledBy,
+				"cancellation_reason": ride.CancellationReason,
+			})
+			return
+		}
 		respondError(c, err)
 		return
 	}

@@ -23,6 +23,7 @@ var errorCodeMap = []struct {
 	{domain.ErrPassengerHasActiveRide, http.StatusConflict, "PASSENGER_HAS_ACTIVE_RIDE"},
 	{domain.ErrDriverHasActiveRide, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
 	{domain.ErrInvalidStateTransition, http.StatusConflict, "RIDE_INVALID_STATE_TRANSITION"},
+	{domain.ErrCancelRaceLost, http.StatusConflict, "CANCEL_RACE_LOST"},
 	{domain.ErrNoDriversAvailable, http.StatusServiceUnavailable, "NO_DRIVERS_AVAILABLE"},
 	{domain.ErrForbidden, http.StatusForbidden, "FORBIDDEN"},
 	{domain.ErrCannotGoOffline, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
