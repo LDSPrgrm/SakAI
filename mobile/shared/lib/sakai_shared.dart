@@ -75,3 +75,6 @@ export 'widgets/sakai_text_field.dart';
 export 'widgets/sakai_welcome_carousel.dart';
 export 'widgets/sakai_animated_backdrop.dart';
 export 'widgets/sakai_tactile.dart';
+// RFC v2 P7 — receipt + earnings reveal motion + driver tip celebration.
+export 'widgets/sakai_phased_reveal.dart';
+export 'widgets/sakai_tip_celebration.dart';
