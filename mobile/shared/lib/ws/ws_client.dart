@@ -59,6 +59,13 @@ class WsClient {
   final WsCursorStorage? _cursorStorage;
   String? _lastEventId;
 
+  /// Ring buffer of event_ids the dispatcher has already surfaced. New
+  /// frames whose event_id appears here are ACKed but NOT re-emitted,
+  /// so handlers run exactly-once even though the wire is at-least-once.
+  static const int _dedupCapacity = 128;
+  final _seenEventIds = <String>{};
+  final _seenOrder = <String>[];
+
   WebSocketChannel? _channel;
   final _eventController = StreamController<WsEvent>.broadcast();
   final _malformedController =
@@ -117,8 +124,14 @@ class WsClient {
           try {
             final message = jsonDecode(raw) as Map<String, dynamic>;
             final event = WsEvent.fromMessage(message);
-            _eventController.add(event);
-            _recordEventId(event.eventId);
+            final isDuplicate = _markSeen(event.eventId);
+            if (!isDuplicate) {
+              _eventController.add(event);
+              _recordEventId(event.eventId);
+            }
+            // ACK is sent for every ack_required envelope — even duplicates —
+            // so the server stops retrying immediately.
+            _maybeAck(event);
           } catch (e, st) {
             _log.warning('parse failed: $e', e, st);
             _malformedController.add(
@@ -189,6 +202,36 @@ class WsClient {
     }));
   }
 
+  /// Returns true if [eventId] was already surfaced on this connection.
+  /// Maintains a bounded LRU so memory stays flat on long sessions.
+  bool _markSeen(String? eventId) {
+    if (eventId == null || eventId.isEmpty) return false;
+    if (_seenEventIds.contains(eventId)) return true;
+    _seenEventIds.add(eventId);
+    _seenOrder.add(eventId);
+    if (_seenOrder.length > _dedupCapacity) {
+      final evicted = _seenOrder.removeAt(0);
+      _seenEventIds.remove(evicted);
+    }
+    return false;
+  }
+
+  /// Emits {type:"ack", event_id} when the envelope demands acknowledgement.
+  /// Server-side AckTracker drops the pending entry; without this, critical
+  /// events would retransmit up to four times before failing.
+  void _maybeAck(WsEvent event) {
+    if (event.ackRequired != true) return;
+    final eventId = event.eventId;
+    if (eventId == null || eventId.isEmpty) return;
+    final ch = _channel;
+    if (ch == null) return;
+    try {
+      ch.sink.add(jsonEncode({'type': 'ack', 'event_id': eventId}));
+    } catch (e) {
+      debugPrint('[WS] ack send failed: $e');
+    }
+  }
+
   Future<void> disconnect() async {
     _explicitlyDisconnected = true;
     _reconnectTimer?.cancel();
@@ -202,6 +245,8 @@ class WsClient {
     _channel = null;
     _isConnected = false;
     _negotiatedProtocol = null;
+    _seenEventIds.clear();
+    _seenOrder.clear();
   }
 
   /// Start the dual-timer heartbeat: outbound JSON ping every 20s to keep

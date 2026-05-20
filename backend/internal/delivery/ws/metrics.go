@@ -12,6 +12,10 @@ type wsMetrics struct {
 	emitted         map[EventType]int64
 	invalid         map[EventType]map[string]int64
 	envelopeIDFback int64
+	ackTracked      map[EventType]int64
+	ackAcked        map[EventType]int64
+	ackRetried      map[EventType]int64
+	ackFailed       map[EventType]int64
 }
 
 // metrics is the package-level singleton. Tests use newMetrics() for isolation.
@@ -19,9 +23,62 @@ var metrics = newMetrics()
 
 func newMetrics() *wsMetrics {
 	return &wsMetrics{
-		emitted: make(map[EventType]int64),
-		invalid: make(map[EventType]map[string]int64),
+		emitted:    make(map[EventType]int64),
+		invalid:    make(map[EventType]map[string]int64),
+		ackTracked: make(map[EventType]int64),
+		ackAcked:   make(map[EventType]int64),
+		ackRetried: make(map[EventType]int64),
+		ackFailed:  make(map[EventType]int64),
 	}
+}
+
+// IncAckTracked records that an envelope was registered with the AckTracker.
+func (m *wsMetrics) IncAckTracked(event EventType) {
+	m.mu.Lock()
+	m.ackTracked[event]++
+	m.mu.Unlock()
+}
+
+// IncAckAcked records a successful ACK from the client.
+func (m *wsMetrics) IncAckAcked(event EventType) {
+	m.mu.Lock()
+	m.ackAcked[event]++
+	m.mu.Unlock()
+}
+
+// IncAckRetried records a retransmission attempt (separate from the initial
+// Track) so failure-rate dashboards can reason about delivery quality.
+func (m *wsMetrics) IncAckRetried(event EventType) {
+	m.mu.Lock()
+	m.ackRetried[event]++
+	m.mu.Unlock()
+}
+
+// IncAckFailed records that an envelope exhausted its retry budget without
+// being acknowledged. Triggers operator visibility — these are the events
+// that may need REST fallback or admin intervention.
+func (m *wsMetrics) IncAckFailed(event EventType) {
+	m.mu.Lock()
+	m.ackFailed[event]++
+	m.mu.Unlock()
+}
+
+func (m *wsMetrics) AckTrackedCount(event EventType) int64 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.ackTracked[event]
+}
+
+func (m *wsMetrics) AckAckedCount(event EventType) int64 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.ackAcked[event]
+}
+
+func (m *wsMetrics) AckFailedCount(event EventType) int64 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.ackFailed[event]
 }
 
 func (m *wsMetrics) IncEmitted(event EventType) {

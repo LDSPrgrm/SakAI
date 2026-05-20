@@ -115,6 +115,7 @@ type Hub struct {
 	mu           sync.RWMutex
 	clients      map[uuid.UUID]*Client // userID → client
 	pingInterval time.Duration
+	ackTracker   *AckTracker
 }
 
 // NewHub creates a ready-to-use Hub.
@@ -124,6 +125,17 @@ func NewHub(pingInterval time.Duration) *Hub {
 		pingInterval: pingInterval,
 	}
 }
+
+// WithAckTracker wires the [AckTracker] so envelopes published with
+// `AckRequired:true` are retried until the client confirms or the budget
+// is exhausted. nil disables retry (best-effort delivery only).
+func (h *Hub) WithAckTracker(t *AckTracker) *Hub {
+	h.ackTracker = t
+	return h
+}
+
+// AckTracker returns the attached tracker (nil if none).
+func (h *Hub) AckTracker() *AckTracker { return h.ackTracker }
 
 // Register adds a client to the hub and starts its write pump.
 // If the same user already has a connection, the old one is evicted.
@@ -171,6 +183,10 @@ func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
 // sendEnvelope dispatches an already-built Envelope. Used by RedisDispatcher
 // so timestamp + event_id stay stable across the cluster — the publishing
 // node stamps once, all subscribing nodes forward the same envelope.
+//
+// If [AckTracker] is wired and env.AckRequired is true, the envelope is
+// registered for retry on the same call. Track is idempotent on event_id,
+// so a retransmission from the tracker re-uses the original entry.
 func (h *Hub) sendEnvelope(userID uuid.UUID, env Envelope) {
 	h.mu.RLock()
 	cl, ok := h.clients[userID]
@@ -181,6 +197,9 @@ func (h *Hub) sendEnvelope(userID uuid.UUID, env Envelope) {
 	}
 	select {
 	case cl.send <- env:
+		if h.ackTracker != nil && env.AckRequired != nil && *env.AckRequired {
+			h.ackTracker.Track(userID, env)
+		}
 	default:
 		// Slow consumer — evict to avoid head-of-line blocking.
 		h.Unregister(userID)

@@ -126,8 +126,9 @@ func (h *Handler) handleInbound(userID uuid.UUID, raw []byte) {
 	case "replay.request":
 		h.handleReplayRequest(userID, frame.LastEventID)
 	case "ack":
-		// P3 wires this to AckTracker; for now ignore so v2 clients can
-		// emit ACK frames without errors during the rollout.
+		if tracker := h.hub.AckTracker(); tracker != nil && frame.EventID != "" {
+			tracker.Ack(frame.EventID)
+		}
 	}
 }
 

@@ -11,6 +11,20 @@ import (
 // connections strip this field before write (see hub.writePump).
 const EnvelopeVersion = 2
 
+// criticalEvents lists event types that REQUIRE client acknowledgement.
+// Anything in this set is published with `ack_required:true` on the wire
+// and tracked by [AckTracker]; the client must emit {type:"ack",event_id}
+// after applying. RFC v2 §4.4.
+var criticalEvents = map[EventType]bool{
+	EventRideRequested: true,
+	EventRideAccepted:  true,
+	EventRideCancelled: true,
+	EventRideSOS:       true,
+}
+
+// isAckRequired reports whether an event type is in the critical set.
+func isAckRequired(event EventType) bool { return criticalEvents[event] }
+
 // Envelope is the canonical JSON shape pushed over every WebSocket connection.
 //
 // The wire format is documented in openapi/swagger.yaml under WsEnvelope.
@@ -44,11 +58,17 @@ func NewEnvelope(event EventType, payload any) Envelope {
 		metrics.IncEnvelopeIDFallback()
 	}
 	metrics.IncEmitted(event)
+	var ackPtr *bool
+	if isAckRequired(event) {
+		t := true
+		ackPtr = &t
+	}
 	return Envelope{
-		Event:     event,
-		Payload:   payload,
-		Timestamp: time.Now().UTC(),
-		EventID:   id,
-		V:         EnvelopeVersion,
+		Event:       event,
+		Payload:     payload,
+		Timestamp:   time.Now().UTC(),
+		EventID:     id,
+		V:           EnvelopeVersion,
+		AckRequired: ackPtr,
 	}
 }
