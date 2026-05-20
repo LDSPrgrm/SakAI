@@ -76,10 +76,14 @@ func (g *globalEvent) UnmarshalJSON(b []byte) error {
 // When a ReplayStore is attached (via [RedisDispatcher.WithReplayStore]), every
 // publish is mirrored to a per-recipient durable stream so that a reconnecting
 // client can request the events it missed during the disconnect.
+//
+// When an AuditWriter is attached (via [RedisDispatcher.WithAuditWriter]),
+// every publish appends a PII-safe row to the long-term audit store.
 type RedisDispatcher struct {
 	rdb         *redis.Client
 	hub         *Hub
 	replayStore ReplayStore
+	auditWriter AuditWriter
 }
 
 // NewRedisDispatcher creates a new pub/sub dispatcher.
@@ -109,6 +113,23 @@ func (d *RedisDispatcher) appendReplay(ctx context.Context, userID uuid.UUID, en
 	}
 	if err := d.replayStore.Append(ctx, userID, env); err != nil {
 		log.Printf("ws: replay append failed for user %s: %v", userID, err)
+	}
+}
+
+// WithAuditWriter attaches an [AuditWriter]. Each PublishTo* writes one
+// audit row per envelope (the envelope itself, not per-recipient).
+func (d *RedisDispatcher) WithAuditWriter(w AuditWriter) *RedisDispatcher {
+	d.auditWriter = w
+	return d
+}
+
+// writeAudit best-effort persists an AuditEvent. Logged + non-fatal.
+func (d *RedisDispatcher) writeAudit(ctx context.Context, ev AuditEvent) {
+	if d.auditWriter == nil {
+		return
+	}
+	if err := d.auditWriter.Write(ctx, ev); err != nil {
+		log.Printf("ws: audit write failed event=%s id=%s: %v", ev.EventType, ev.EventID, err)
 	}
 }
 
@@ -179,6 +200,7 @@ func extractRideRecipients(payload any) (passengerID uuid.UUID, driverID *uuid.U
 func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, event EventType, payload any) error {
 	env := NewEnvelope(event, payload)
 	d.appendReplay(ctx, userID, env)
+	d.writeAudit(ctx, EnvelopeAuditEvent(env, &userID, nil))
 	ge := globalEvent{
 		TargetUserID: &userID,
 		Envelope:     env,
@@ -220,6 +242,7 @@ func (d *RedisDispatcher) PublishToRide(ctx context.Context, ride *domain.Ride, 
 	if ride.DriverID != nil {
 		d.appendReplay(ctx, *ride.DriverID, env)
 	}
+	d.writeAudit(ctx, EnvelopeAuditEvent(env, nil, &ride.ID))
 	ge := globalEvent{
 		RideID:   &ride.ID,
 		Envelope: env,
