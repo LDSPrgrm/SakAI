@@ -144,6 +144,7 @@ enum WsEventType {
   rideNoDrivers('ride.no_drivers'),
   driverLocationUpdated('driver.location_updated'),
   connWelcome('conn.welcome'),
+  rideStateSync('ride.state_sync'),
   unknown('');
 
   final String wire;
@@ -171,6 +172,7 @@ class WsEventNames {
   static const rideNoDrivers = 'ride.no_drivers';
   static const driverLocationUpdated = 'driver.location_updated';
   static const connWelcome = 'conn.welcome';
+  static const rideStateSync = 'ride.state_sync';
 }
 
 /// WebSocket subprotocol identifiers used in Sec-WebSocket-Protocol

@@ -77,6 +77,21 @@ type NoDriversAvailablePayload struct {
 	Message string    `json:"message,omitempty"`
 }
 
+// RideStateSyncPayload carries the data for `ride.state_sync`, emitted by
+// the WS handler when a reconnecting client's `last_event_id` is outside
+// the replay window. The client uses this to reconcile UI state without
+// hitting REST.
+type RideStateSyncPayload struct {
+	// HasActiveRide tells the client whether to drop into "no active ride"
+	// UI (false) or hydrate the active-ride screen (true).
+	HasActiveRide bool       `json:"has_active_ride"`
+	RideID        *uuid.UUID `json:"ride_id,omitempty"`
+	Status        string     `json:"status,omitempty"`
+	DriverID      *uuid.UUID `json:"driver_id,omitempty"`
+	PassengerID   *uuid.UUID `json:"passenger_id,omitempty"`
+	UpdatedAt     *time.Time `json:"updated_at,omitempty"`
+}
+
 // DriverLocationPayload carries the data for `driver.location_updated`.
 //
 // Marked high-frequency in the spec — clients may use a hand-coded

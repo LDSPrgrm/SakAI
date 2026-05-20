@@ -72,9 +72,14 @@ func (g *globalEvent) UnmarshalJSON(b []byte) error {
 
 // RedisDispatcher acts as a scalable event bus across multiple backend instances.
 // It publishes events to Redis and subscribes to Redis to forward them to the local Hub.
+//
+// When a ReplayStore is attached (via [RedisDispatcher.WithReplayStore]), every
+// publish is mirrored to a per-recipient durable stream so that a reconnecting
+// client can request the events it missed during the disconnect.
 type RedisDispatcher struct {
-	rdb *redis.Client
-	hub *Hub
+	rdb         *redis.Client
+	hub         *Hub
+	replayStore ReplayStore
 }
 
 // NewRedisDispatcher creates a new pub/sub dispatcher.
@@ -82,6 +87,28 @@ func NewRedisDispatcher(rdb *redis.Client, hub *Hub) *RedisDispatcher {
 	return &RedisDispatcher{
 		rdb: rdb,
 		hub: hub,
+	}
+}
+
+// WithReplayStore attaches a ReplayStore so PublishTo* also durably records
+// envelopes for replay. nil disables replay (default).
+func (d *RedisDispatcher) WithReplayStore(store ReplayStore) *RedisDispatcher {
+	d.replayStore = store
+	return d
+}
+
+// ReplayStore returns the attached store (nil if none).
+func (d *RedisDispatcher) ReplayStore() ReplayStore { return d.replayStore }
+
+// appendReplay best-effort writes the envelope to the recipient's stream.
+// Errors are logged but never propagated — replay failures must not break
+// real-time delivery.
+func (d *RedisDispatcher) appendReplay(ctx context.Context, userID uuid.UUID, env Envelope) {
+	if d.replayStore == nil {
+		return
+	}
+	if err := d.replayStore.Append(ctx, userID, env); err != nil {
+		log.Printf("ws: replay append failed for user %s: %v", userID, err)
 	}
 }
 
@@ -150,9 +177,11 @@ func extractRideRecipients(payload any) (passengerID uuid.UUID, driverID *uuid.U
 
 // PublishToUser sends an event to a specific user across the cluster.
 func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, event EventType, payload any) error {
+	env := NewEnvelope(event, payload)
+	d.appendReplay(ctx, userID, env)
 	ge := globalEvent{
 		TargetUserID: &userID,
-		Envelope:     NewEnvelope(event, payload),
+		Envelope:     env,
 	}
 	b, err := json.Marshal(ge)
 	if err != nil {
@@ -186,9 +215,14 @@ func (d *RedisDispatcher) PublishToRide(ctx context.Context, ride *domain.Ride, 
 		}
 		canonical = m
 	}
+	env := NewEnvelope(event, canonical)
+	d.appendReplay(ctx, ride.PassengerID, env)
+	if ride.DriverID != nil {
+		d.appendReplay(ctx, *ride.DriverID, env)
+	}
 	ge := globalEvent{
 		RideID:   &ride.ID,
-		Envelope: NewEnvelope(event, canonical),
+		Envelope: env,
 	}
 	b, err := json.Marshal(ge)
 	if err != nil {

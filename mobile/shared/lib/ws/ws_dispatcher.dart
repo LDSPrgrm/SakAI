@@ -190,6 +190,12 @@ class WsDispatcher {
         // Protocol metadata event — handlers (if any) take the raw payload.
         return BuiltMap<String, Object?>.from(payload);
 
+      case WsEventType.rideStateSync:
+        // Reconnect-time snapshot. No generated model yet (OpenAPI bump
+        // will land WsEventRideStateSync); expose raw map so notifiers can
+        // pull has_active_ride / ride_id / status without waiting on regen.
+        return BuiltMap<String, Object?>.from(payload);
+
       case WsEventType.unknown:
         return null;
     }

@@ -19,6 +19,29 @@ final _log = Logger('WsClient');
 const _defaultHeartbeatInterval = Duration(seconds: 20);
 const _defaultWatchdogTimeout = Duration(seconds: 45);
 
+/// Persistence contract for the last applied `event_id`. The WsClient uses
+/// it to send `replay.request` on reconnect so the server can drain any
+/// envelopes the client missed during the disconnect.
+///
+/// Implementations are expected to be per-user — callers wire the right
+/// instance through the WsClient constructor when the user logs in.
+abstract class WsCursorStorage {
+  Future<String?> read();
+  Future<void> write(String eventId);
+  Future<void> clear();
+}
+
+/// In-memory [WsCursorStorage] for tests and apps that don't yet persist.
+class InMemoryWsCursorStorage implements WsCursorStorage {
+  String? _id;
+  @override
+  Future<String?> read() async => _id;
+  @override
+  Future<void> write(String eventId) async => _id = eventId;
+  @override
+  Future<void> clear() async => _id = null;
+}
+
 /// WebSocket client with auto-reconnect, state resync, and client-side
 /// heartbeat. The constructor takes the negotiated subprotocol list from
 /// [WsSubprotocols]; the server picks the first match.
@@ -26,11 +49,15 @@ class WsClient {
   WsClient({
     Duration? heartbeatInterval,
     Duration? watchdogTimeout,
+    WsCursorStorage? cursorStorage,
   })  : _heartbeatInterval = heartbeatInterval ?? _defaultHeartbeatInterval,
-        _watchdogTimeout = watchdogTimeout ?? _defaultWatchdogTimeout;
+        _watchdogTimeout = watchdogTimeout ?? _defaultWatchdogTimeout,
+        _cursorStorage = cursorStorage;
 
   final Duration _heartbeatInterval;
   final Duration _watchdogTimeout;
+  final WsCursorStorage? _cursorStorage;
+  String? _lastEventId;
 
   WebSocketChannel? _channel;
   final _eventController = StreamController<WsEvent>.broadcast();
@@ -89,7 +116,9 @@ class WsClient {
           final raw = data is String ? data : data.toString();
           try {
             final message = jsonDecode(raw) as Map<String, dynamic>;
-            _eventController.add(WsEvent.fromMessage(message));
+            final event = WsEvent.fromMessage(message);
+            _eventController.add(event);
+            _recordEventId(event.eventId);
           } catch (e, st) {
             _log.warning('parse failed: $e', e, st);
             _malformedController.add(
@@ -116,10 +145,48 @@ class WsClient {
       _isConnected = true;
       _reconnectAttempts = 0;
       _startHeartbeat(baseUrl: baseUrl, accessToken: accessToken);
+      // Ask the server to drain anything we missed since [_lastEventId].
+      // Empty/null cursor on a v2 conn still triggers a replay path on the
+      // server side (full stream up to retention) — caller may prefer to
+      // attach cursorStorage only after onboarding completes.
+      unawaited(_requestReplay());
     } catch (e) {
       debugPrint('[WS] Connect failed: $e');
       _scheduleReconnect(baseUrl: baseUrl, accessToken: accessToken);
     }
+  }
+
+  /// Sends a `replay.request` frame using the last persisted event_id (if
+  /// any). No-op when no cursor storage is wired or when the underlying
+  /// channel went away between connect and this microtask.
+  Future<void> _requestReplay() async {
+    final storage = _cursorStorage;
+    if (storage == null) return;
+    final cursor = await storage.read();
+    _lastEventId = cursor;
+    final ch = _channel;
+    if (ch == null) return;
+    try {
+      ch.sink.add(jsonEncode({
+        'type': 'replay.request',
+        if (cursor != null && cursor.isNotEmpty) 'last_event_id': cursor,
+      }));
+    } catch (e) {
+      debugPrint('[WS] replay.request send failed: $e');
+    }
+  }
+
+  /// Records the event_id of the just-parsed envelope to persistent storage
+  /// so the next reconnect can resume from it. Failures are swallowed — the
+  /// next ride.state_sync (or fresh REST refetch) heals state.
+  void _recordEventId(String? eventId) {
+    if (eventId == null || eventId.isEmpty) return;
+    _lastEventId = eventId;
+    final storage = _cursorStorage;
+    if (storage == null) return;
+    unawaited(storage.write(eventId).catchError((e, st) {
+      _log.warning('cursor persist failed: $e', e, st);
+    }));
   }
 
   Future<void> disconnect() async {

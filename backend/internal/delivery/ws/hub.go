@@ -43,6 +43,7 @@ const (
 	EventRideSOS               EventType = "ride.sos_triggered"
 	EventDriverLocationUpdated EventType = "driver.location_updated"
 	EventConnWelcome           EventType = "conn.welcome"
+	EventRideStateSync         EventType = "ride.state_sync"
 )
 
 // Client wraps a single WebSocket connection for one authenticated user.
