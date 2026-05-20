@@ -147,6 +147,9 @@ func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) 
 	h.mu.Lock()
 	if old, ok := h.clients[userID]; ok {
 		old.close()
+		// Old eviction does not change conn_active because we replace 1:1.
+	} else {
+		ConnOpened()
 	}
 	h.clients[userID] = cl
 	h.mu.Unlock()
@@ -168,6 +171,7 @@ func (h *Hub) Unregister(userID uuid.UUID) {
 	if cl, ok := h.clients[userID]; ok {
 		cl.close()
 		delete(h.clients, userID)
+		ConnClosed()
 	}
 	h.mu.Unlock()
 }

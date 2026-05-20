@@ -44,6 +44,7 @@ func (m *wsMetrics) IncAckAcked(event EventType) {
 	m.mu.Lock()
 	m.ackAcked[event]++
 	m.mu.Unlock()
+	promIncAck(event)
 }
 
 // IncAckRetried records a retransmission attempt (separate from the initial
@@ -61,6 +62,7 @@ func (m *wsMetrics) IncAckFailed(event EventType) {
 	m.mu.Lock()
 	m.ackFailed[event]++
 	m.mu.Unlock()
+	promIncNack(event)
 }
 
 func (m *wsMetrics) AckTrackedCount(event EventType) int64 {
@@ -85,6 +87,7 @@ func (m *wsMetrics) IncEmitted(event EventType) {
 	m.mu.Lock()
 	m.emitted[event]++
 	m.mu.Unlock()
+	promIncEmitted(event)
 }
 
 func (m *wsMetrics) IncInvalid(event EventType, reason string) {
@@ -94,12 +97,14 @@ func (m *wsMetrics) IncInvalid(event EventType, reason string) {
 	}
 	m.invalid[event][reason]++
 	m.mu.Unlock()
+	promIncFSMRejection(event, reason)
 }
 
 func (m *wsMetrics) IncEnvelopeIDFallback() {
 	m.mu.Lock()
 	m.envelopeIDFback++
 	m.mu.Unlock()
+	promIncEnvelopeIDFallback()
 }
 
 func (m *wsMetrics) EmittedCount(event EventType) int64 {

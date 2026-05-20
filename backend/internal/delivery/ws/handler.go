@@ -94,6 +94,12 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		for {
 			msgType, raw, err := conn.ReadMessage()
 			if err != nil {
+				// ReadMessage returns a net.OpError with Timeout()==true when
+				// the read deadline (heartbeat watchdog) fires. Other errors
+				// are normal disconnects.
+				if ne, ok := err.(interface{ Timeout() bool }); ok && ne.Timeout() {
+					HeartbeatMissed()
+				}
 				break
 			}
 			if msgType != websocket.TextMessage {
@@ -124,6 +130,7 @@ func (h *Handler) handleInbound(userID uuid.UUID, raw []byte) {
 		// Client heartbeat — no response needed; presence of the read kept
 		// the read-deadline timer fresh upstream.
 	case "replay.request":
+		ReplayRequested()
 		h.handleReplayRequest(userID, frame.LastEventID)
 	case "ack":
 		if tracker := h.hub.AckTracker(); tracker != nil && frame.EventID != "" {

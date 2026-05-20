@@ -209,7 +209,11 @@ func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, e
 	if err != nil {
 		return err
 	}
-	return d.rdb.Publish(ctx, pubsubChannel, string(b)).Err()
+	if pubErr := d.rdb.Publish(ctx, pubsubChannel, string(b)).Err(); pubErr != nil {
+		RedisPublishError()
+		return pubErr
+	}
+	return nil
 }
 
 // PublishToRide sends an event to all participants of a ride across the cluster.
@@ -251,5 +255,9 @@ func (d *RedisDispatcher) PublishToRide(ctx context.Context, ride *domain.Ride, 
 	if err != nil {
 		return err
 	}
-	return d.rdb.Publish(ctx, pubsubChannel, string(b)).Err()
+	if pubErr := d.rdb.Publish(ctx, pubsubChannel, string(b)).Err(); pubErr != nil {
+		RedisPublishError()
+		return pubErr
+	}
+	return nil
 }

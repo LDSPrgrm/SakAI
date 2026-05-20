@@ -190,6 +190,10 @@ func main() {
 		AppVersion:     cfg.AppVersion,
 	}
 
+	// Wire WebSocket metrics into Prometheus's default registry. Safe to call
+	// once at startup — RegisterPrometheus is sync.Once-guarded.
+	ws.RegisterPrometheus(nil)
+
 	engine := router.New(cfg.JWTSecret, deps)
 
 	// ── Background workers ───────────────────────────────────────────────────
