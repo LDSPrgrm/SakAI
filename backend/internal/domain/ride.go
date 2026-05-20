@@ -19,23 +19,37 @@ const (
 type RideStatus string
 
 const (
+	// RideStatusCreated marks a ride that was just placed but is not yet
+	// being dispatched to drivers (e.g. waiting for fare confirmation).
+	// RFC v2 §7 — pre-`requested` state.
+	RideStatusCreated RideStatus = "created"
+
 	RideStatusRequested  RideStatus = "requested"
 	RideStatusAccepted   RideStatus = "accepted"
 	RideStatusArrived    RideStatus = "arrived"
 	RideStatusInProgress RideStatus = "in_progress"
-	RideStatusCompleted  RideStatus = "completed"
-	RideStatusCancelled  RideStatus = "cancelled"
+
+	// RideStatusPaymentPending sits between in_progress and completed for
+	// rides that finish with a non-cash payment method whose settlement
+	// hasn't been confirmed by the gateway. RFC v2 §7. Driver sees
+	// "Payment processing…" until payment.succeeded transitions through.
+	RideStatusPaymentPending RideStatus = "payment_pending"
+
+	RideStatusCompleted RideStatus = "completed"
+	RideStatusCancelled RideStatus = "cancelled"
 )
 
 // validTransitions defines the allowed state machine transitions.
 // Any transition not listed here is invalid and must be rejected.
 var validTransitions = map[RideStatus]map[RideStatus]bool{
-	RideStatusRequested:  {RideStatusAccepted: true, RideStatusCancelled: true},
-	RideStatusAccepted:   {RideStatusArrived: true, RideStatusCancelled: true},
-	RideStatusArrived:    {RideStatusInProgress: true, RideStatusCancelled: true},
-	RideStatusInProgress: {RideStatusCompleted: true},
-	RideStatusCompleted:  {},
-	RideStatusCancelled:  {},
+	RideStatusCreated:        {RideStatusRequested: true, RideStatusCancelled: true},
+	RideStatusRequested:      {RideStatusAccepted: true, RideStatusCancelled: true},
+	RideStatusAccepted:       {RideStatusArrived: true, RideStatusCancelled: true},
+	RideStatusArrived:        {RideStatusInProgress: true, RideStatusCancelled: true},
+	RideStatusInProgress:     {RideStatusCompleted: true, RideStatusPaymentPending: true},
+	RideStatusPaymentPending: {RideStatusCompleted: true, RideStatusCancelled: true},
+	RideStatusCompleted:      {},
+	RideStatusCancelled:      {},
 }
 
 // CanTransitionTo returns true if moving from the current status to next is a valid transition.
