@@ -58,7 +58,7 @@ func TestRedisDispatcher_RouteLocally_DeliversSameEnvelope(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade: %v", err)
 		}
-		hub.Register(userID, conn)
+		hub.Register(userID, conn, conn.Subprotocol())
 	}))
 	defer srv.Close()
 

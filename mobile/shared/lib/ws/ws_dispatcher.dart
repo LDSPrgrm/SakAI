@@ -186,6 +186,10 @@ class WsDispatcher {
         // that want raw access.
         return BuiltMap<String, Object?>.from(payload);
 
+      case WsEventType.connWelcome:
+        // Protocol metadata event — handlers (if any) take the raw payload.
+        return BuiltMap<String, Object?>.from(payload);
+
       case WsEventType.unknown:
         return null;
     }

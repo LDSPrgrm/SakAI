@@ -10,9 +10,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// upgrader advertises both protocol versions; gorilla/websocket picks the
+// first match against the client's Sec-WebSocket-Protocol list. v2-aware
+// clients propose "sakai-ws-v2" first; legacy clients send nothing and the
+// selected subprotocol on the resulting conn is the empty string.
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 4096,
+	Subprotocols:    []string{SubprotocolV2, SubprotocolV1},
 	// In production, restrict CheckOrigin to your app's domains.
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
@@ -34,8 +39,16 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		// upgrader already wrote the HTTP error response.
 		return
 	}
-	log.Printf("[WS] Registered connection for user %s (%s)", userID, c.GetString("role"))
-	h.hub.Register(userID, conn)
+	protocol := conn.Subprotocol()
+	log.Printf("[WS] Registered connection for user %s (%s, proto=%q)", userID, c.GetString("role"), protocol)
+	h.hub.Register(userID, conn, protocol)
+
+	// First server-pushed event: announces the negotiated protocol so clients
+	// can verify the upgrade succeeded before sending replay/ack frames.
+	h.hub.SendToUser(userID, EventConnWelcome, map[string]any{
+		"protocol": protocol,
+		"v":        EnvelopeVersion,
+	})
 
 	// Hardening: read limit and deadline prevent resource exhaustion.
 	conn.SetReadLimit(4096)

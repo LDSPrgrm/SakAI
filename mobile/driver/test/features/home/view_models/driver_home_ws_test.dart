@@ -28,6 +28,10 @@ class _StubWsClient implements WsClient {
   bool get isConnected => true;
   @override
   set onResync(VoidCallback cb) {}
+  @override
+  String? get negotiatedProtocol => null;
+  @override
+  bool get isV2 => false;
 
   Future<void> close() async {
     await _events.close();

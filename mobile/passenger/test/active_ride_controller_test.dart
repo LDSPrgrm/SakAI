@@ -35,6 +35,12 @@ class MockWsClient implements WsClient {
 
   @override
   set onResync(VoidCallback cb) {}
+
+  @override
+  String? get negotiatedProtocol => null;
+
+  @override
+  bool get isV2 => false;
 }
 
 class _TestAdapter implements HttpClientAdapter {

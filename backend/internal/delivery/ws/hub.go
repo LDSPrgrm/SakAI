@@ -7,11 +7,20 @@ import (
 	"context"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/sakai/backend/internal/domain"
+)
+
+// Subprotocol identifiers used in the Sec-WebSocket-Protocol negotiation.
+// SubprotocolV2 enables envelope v2 fields (seq, corr_id, ack_required) on
+// the wire; anything else is treated as v1.
+const (
+	SubprotocolV1 = "sakai-ws-v1"
+	SubprotocolV2 = "sakai-ws-v2"
 )
 
 // Dispatcher is the interface for isolating HTTP handlers from the concrete
@@ -33,24 +42,30 @@ const (
 	EventRideOfferExpired      EventType = "ride.offer_expired"
 	EventRideSOS               EventType = "ride.sos_triggered"
 	EventDriverLocationUpdated EventType = "driver.location_updated"
+	EventConnWelcome           EventType = "conn.welcome"
 )
 
 // Client wraps a single WebSocket connection for one authenticated user.
 //
 // The wire envelope is defined in envelope.go; the channel here carries
-// already-stamped Envelopes so the writePump never has to allocate.
+// already-stamped Envelopes so the writePump never has to allocate. seq is
+// stamped per-connection at write time so envelopes re-broadcast across pods
+// get the correct sequence on each peer.
 type Client struct {
-	userID uuid.UUID
-	conn   *websocket.Conn
-	send   chan Envelope
-	once   sync.Once
+	userID   uuid.UUID
+	conn     *websocket.Conn
+	send     chan Envelope
+	once     sync.Once
+	protocol string
+	seq      atomic.Uint64
 }
 
-func newClient(userID uuid.UUID, conn *websocket.Conn) *Client {
+func newClient(userID uuid.UUID, conn *websocket.Conn, protocol string) *Client {
 	return &Client{
-		userID: userID,
-		conn:   conn,
-		send:   make(chan Envelope, 64),
+		userID:   userID,
+		conn:     conn,
+		send:     make(chan Envelope, 64),
+		protocol: protocol,
 	}
 }
 
@@ -68,6 +83,15 @@ func (cl *Client) writePump(pingInterval time.Duration) {
 			if !ok {
 				cl.conn.WriteMessage(websocket.CloseMessage, nil) //nolint:errcheck
 				return
+			}
+			if cl.protocol == SubprotocolV2 {
+				msg.Seq = cl.seq.Add(1)
+			} else {
+				// v1 connections see a v1.3-shape envelope.
+				msg.V = 0
+				msg.Seq = 0
+				msg.CorrID = ""
+				msg.AckRequired = nil
 			}
 			if err := cl.conn.WriteJSON(msg); err != nil {
 				return
@@ -102,8 +126,10 @@ func NewHub(pingInterval time.Duration) *Hub {
 
 // Register adds a client to the hub and starts its write pump.
 // If the same user already has a connection, the old one is evicted.
-func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn) {
-	cl := newClient(userID, conn)
+// The protocol argument is the Sec-WebSocket-Protocol value selected during
+// upgrade — empty means a v1 client (no v2 envelope fields on the wire).
+func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) {
+	cl := newClient(userID, conn, protocol)
 	h.mu.Lock()
 	if old, ok := h.clients[userID]; ok {
 		old.close()

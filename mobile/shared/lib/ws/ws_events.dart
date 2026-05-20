@@ -3,10 +3,12 @@ library;
 
 import 'package:meta/meta.dart';
 
-/// Base event wrapper parsing the { event, payload, timestamp?, event_id? }
-/// envelope. Extra fields (timestamp, event_id) introduced in spec v1.3.0
-/// are forward-compatible: older clients ignore them, newer clients
-/// surface them via [timestamp] and [eventId].
+/// Base event wrapper parsing the { event, payload, timestamp?, event_id?,
+/// v?, seq?, corr_id?, ack_required? } envelope.
+///
+/// v1.3 fields (timestamp, event_id) and v2 fields (v, seq, corr_id,
+/// ack_required) are forward-compatible: a client compiled against an older
+/// spec ignores unknown keys; this client surfaces both old and new fields.
 class WsEvent {
   final String type;
   final Map<String, dynamic> payload;
@@ -19,11 +21,29 @@ class WsEvent {
   /// client-side dedup across reconnects.
   final String? eventId;
 
+  /// Envelope protocol version. Null on v1 wire; 2 on v2.
+  final int? v;
+
+  /// Per-connection monotonic sequence number. Null on v1 wire. Used by
+  /// clients to detect gaps and trigger replay.
+  final int? seq;
+
+  /// Lifecycle correlation id. Null on v1 wire. Used to thread audit logs.
+  final String? corrId;
+
+  /// True when the server requires the client to ACK this event (P3).
+  /// Null on v1 wire or for non-critical events.
+  final bool? ackRequired;
+
   WsEvent({
     required this.type,
     required this.payload,
     this.timestamp,
     this.eventId,
+    this.v,
+    this.seq,
+    this.corrId,
+    this.ackRequired,
   });
 
   factory WsEvent.fromMessage(Map<String, dynamic> message) {
@@ -48,11 +68,39 @@ class WsEvent {
     final eidVal = message['event_id'];
     if (eidVal is String && eidVal.isNotEmpty) eid = eidVal;
 
+    int? v;
+    final vVal = message['v'];
+    if (vVal is int) {
+      v = vVal;
+    } else if (vVal is num) {
+      v = vVal.toInt();
+    }
+
+    int? seq;
+    final seqVal = message['seq'];
+    if (seqVal is int) {
+      seq = seqVal;
+    } else if (seqVal is num) {
+      seq = seqVal.toInt();
+    }
+
+    String? corrId;
+    final corrVal = message['corr_id'];
+    if (corrVal is String && corrVal.isNotEmpty) corrId = corrVal;
+
+    bool? ackRequired;
+    final ackVal = message['ack_required'];
+    if (ackVal is bool) ackRequired = ackVal;
+
     return WsEvent(
       type: type,
       payload: payload,
       timestamp: ts,
       eventId: eid,
+      v: v,
+      seq: seq,
+      corrId: corrId,
+      ackRequired: ackRequired,
     );
   }
 }
@@ -95,6 +143,7 @@ enum WsEventType {
   rideSosTriggered('ride.sos_triggered'),
   rideNoDrivers('ride.no_drivers'),
   driverLocationUpdated('driver.location_updated'),
+  connWelcome('conn.welcome'),
   unknown('');
 
   final String wire;
@@ -121,4 +170,13 @@ class WsEventNames {
   static const rideSosTriggered = 'ride.sos_triggered';
   static const rideNoDrivers = 'ride.no_drivers';
   static const driverLocationUpdated = 'driver.location_updated';
+  static const connWelcome = 'conn.welcome';
+}
+
+/// WebSocket subprotocol identifiers used in Sec-WebSocket-Protocol
+/// negotiation. Clients propose v2 first; server picks the first match.
+class WsSubprotocols {
+  static const v1 = 'sakai-ws-v1';
+  static const v2 = 'sakai-ws-v2';
+  static const all = <String>[v2, v1];
 }

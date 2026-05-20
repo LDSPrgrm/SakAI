@@ -23,7 +23,7 @@ func dialHub(t *testing.T, hub *Hub, userID uuid.UUID) (*websocket.Conn, func())
 		if err != nil {
 			t.Fatalf("upgrade: %v", err)
 		}
-		hub.Register(userID, conn)
+		hub.Register(userID, conn, conn.Subprotocol())
 	}))
 
 	u, _ := url.Parse(srv.URL)
