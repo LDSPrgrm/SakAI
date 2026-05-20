@@ -55,6 +55,13 @@ class SettingsMenuScreen extends StatelessWidget {
           ),
           _buildTile(
             context,
+            Icons.shield_outlined,
+            'SOS & Safety',
+            'Ambient audio, live location, photo opt-ins',
+            onTap: () => context.push(Routes.settingsSosSafety),
+          ),
+          _buildTile(
+            context,
             Icons.language_outlined,
             'Language',
             'Choose your preferred language',

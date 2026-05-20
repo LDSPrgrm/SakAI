@@ -19,6 +19,7 @@ import (
 	handler "github.com/sakai/backend/internal/delivery/http"
 	"github.com/sakai/backend/internal/delivery/http/router"
 	"github.com/sakai/backend/internal/delivery/ws"
+	"github.com/sakai/backend/internal/domain"
 	"github.com/sakai/backend/internal/infrastructure/alerting"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
@@ -162,7 +163,7 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo),
 		Admin:          handler.NewAdminHandler(adminUC, auditUC, dispatcher, rideRepo),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),
@@ -183,6 +184,7 @@ func main() {
 		Promotion:      handler.NewPromotionHandler(promotionUC),
 		SavedPlace:     handler.NewSavedPlaceHandler(savedPlaceUC),
 		WS:             ws.NewHandler(hub),
+		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo),
 		PerfSampler:    systemRepo,
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
@@ -234,6 +236,22 @@ func main() {
 		log.Printf("graceful shutdown error: %v", err)
 	}
 	log.Println("server stopped")
+}
+
+// e2eHandlerIfEnabled returns an E2EHandler when both E2E_ENABLED and a
+// non-empty E2E_SEED_TOKEN are present. Returns nil otherwise so the route
+// stays off the mux entirely on production deploys — defence in depth on
+// top of the in-handler bearer check.
+func e2eHandlerIfEnabled(
+	cfg *configs.Config,
+	userRepo domain.UserRepository,
+	driverRepo domain.DriverRepository,
+	rideRepo domain.RideRepository,
+) *handler.E2EHandler {
+	if !cfg.E2EEnabled || cfg.E2ESeedToken == "" {
+		return nil
+	}
+	return handler.NewE2EHandler(userRepo, driverRepo, rideRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.E2ESeedToken)
 }
 
 // mustUploader builds the storage backend used for driver documents. Empty

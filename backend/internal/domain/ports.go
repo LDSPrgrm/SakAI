@@ -330,6 +330,13 @@ type IncidentRepository interface {
 	// Called only when FindActiveByDriver returned at least one id.
 	RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error
 
+	// RecordIncidentLocation appends one trail point attributed to any ride
+	// participant (passenger OR driver). Used by the participant-driven
+	// `POST /incidents/:id/location` endpoint. Returns the recorded ping
+	// so the handler can publish a `sos.location_stream` WS event with the
+	// authoritative server timestamp.
+	RecordIncidentLocation(ctx context.Context, incidentID, actorID uuid.UUID, lat, lng float64) (*IncidentLocationPoint, error)
+
 	// Create inserts a new incident record.
 	Create(ctx context.Context, incident *Incident) error
 }

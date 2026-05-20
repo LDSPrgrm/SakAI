@@ -125,6 +125,19 @@ type IncidentResolvedPayload struct {
 	ResolvedAt      time.Time `json:"resolved_at"`
 }
 
+// SosLocationStreamPayload carries the data for `sos.location_stream`
+// (server → ride participants + assigned operator: a live GPS ping from
+// the SOS actor while the incident is open). Emitted whenever the
+// passenger or driver POSTs to `/incidents/:id/location` while the
+// incident is unresolved.
+type SosLocationStreamPayload struct {
+	RideID     uuid.UUID `json:"ride_id"`
+	IncidentID uuid.UUID `json:"incident_id"`
+	ActorID    uuid.UUID `json:"actor_id"`
+	Location   LatLng    `json:"location"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // NoDriversAvailablePayload carries the data for `ride.no_drivers`.
 type NoDriversAvailablePayload struct {
 	RideID  uuid.UUID `json:"ride_id"`

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'harness/e2e_seed_client.dart';
 import 'harness/test_app.dart';
 
 /// RFC v2 P9.3 — multi-device fanout invariant.
@@ -17,9 +18,10 @@ import 'harness/test_app.dart';
 ///
 /// This test models two devices (phone + tablet) by mounting the harness
 /// twice within the same Flutter binding. Both sessions auth as the same
-/// passenger and subscribe to the same ride. When the backend publishes
-/// `ride.completed`, both devices must surface the receipt UI; the server
-/// must clear the pending ACK after either side acknowledges.
+/// passenger (seeded by /api/e2e/seed) and subscribe to the same ride.
+/// When the backend publishes `ride.completed`, both devices must surface
+/// the receipt UI; the server must clear the pending ACK after either
+/// side acknowledges.
 ///
 /// Skipped unless `--tags e2e-staging` AND `--dart-define E2E_API_URL`
 /// and `E2E_SEED_TOKEN` are set.
@@ -39,8 +41,23 @@ void main() {
       return;
     }
 
+    final fixture = await E2ESeedClient(
+      apiUrl: apiUrl,
+      seedToken: seedToken,
+    ).seed();
+
     final phone = TestHarness(seenWelcome: true);
     final tablet = TestHarness(seenWelcome: true);
+    await phone.tokenStorage.save(
+      accessToken: fixture.passengerJwt,
+      refreshToken: 'e2e-refresh-phone',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
+    await tablet.tokenStorage.save(
+      accessToken: fixture.passengerJwt,
+      refreshToken: 'e2e-refresh-tablet',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
 
     await tester.pumpWidget(phone.buildApp());
     await tester.pumpAndSettle();
@@ -52,11 +69,12 @@ void main() {
     expect(find.byType(Scaffold), findsWidgets,
         reason: 'tablet shell mounts second');
 
-    // TODO(P9): drive the multi-device invariant:
-    //   1. Auth both sessions as the same passenger; backend must serve
-    //      both WS upgrades (eviction-on-third covered by a separate test).
-    //   2. Publish ride.completed with AckRequired:true.
-    //   3. Assert receipt UI surfaces on BOTH devices once.
+    // TODO(P9): drive the multi-device invariant once the staging WS
+    // control-channel exists:
+    //   1. open both sessions as the same passenger; backend must serve
+    //      both upgrades (eviction-on-third covered by a separate test).
+    //   2. publish ride.completed with AckRequired:true for fixture.rideId.
+    //   3. assert receipt UI surfaces on BOTH devices once.
     //   4. ACK only on the phone; assert backend ack_tracker drops pending
     //      (no second delivery to the tablet on the next reconnect).
   });

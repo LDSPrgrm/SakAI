@@ -39,6 +39,9 @@ type Deps struct {
 	Promotion      *handler.PromotionHandler
 	SavedPlace     *handler.SavedPlaceHandler
 	WS             *ws.Handler
+	// E2E is the deterministic-seed handler for the mobile integration
+	// test suite. Nil disables the route entirely — never expose in prod.
+	E2E *handler.E2EHandler
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
 	PerfSampler middleware.PerfSampler
@@ -89,6 +92,15 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	// ── Public: service area coverage (mobile discovery) ─────────────────────
 	if d.ServiceArea != nil {
 		api.GET("/service-area", d.ServiceArea.ListPublic)
+	}
+
+	// ── E2E test fixtures (mounted only when configured) ─────────────────────
+	// The handler itself enforces the bearer-token check; the nil guard here
+	// keeps the route off the mux entirely in production deploys that don't
+	// configure E2E_ENABLED + E2E_SEED_TOKEN. See e2e_handler.go for the
+	// privacy/idempotency contract.
+	if d.E2E != nil {
+		api.POST("/e2e/seed", d.E2E.Seed)
 	}
 
 	// ── Public auth routes ────────────────────────────────────────────────────
@@ -316,6 +328,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 		// Payment processing route
 		authed.POST("/payments/process", middleware.RequireRole(domain.RolePassenger), d.PayProcess.ProcessPayment)
+
+		// Participant-driven incident location stream (passenger OR driver
+		// pushes live GPS during an open SOS). Authorization is enforced
+		// per-incident inside the handler — both ride parties may write.
+		authed.POST("/incidents/:incidentId/location", d.Ride.AppendIncidentLocation)
 
 		// User rating lookup (any authenticated user)
 		authed.GET("/users/:userId/rating", d.Rating.GetUserRating)

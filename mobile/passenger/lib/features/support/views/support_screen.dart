@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/routes.dart';
+import '../../settings/providers/sos_safety_prefs.dart';
 import '../view_models/support_view_model.dart';
 
 class SupportScreen extends ConsumerStatefulWidget {
@@ -249,26 +252,60 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
 
   void _showSosDialog(BuildContext context, SupportViewModel vm) {
     final reasonController = TextEditingController();
+    final prefs = ref.read(sosSafetyPrefsProvider);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Trigger Emergency SOS?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'This will alert authorities and SakAI safety operations. Please enter a reason if possible.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Reason (optional)',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This will alert SakAI Trust & Safety and your emergency contacts. '
+                'Use only when you feel unsafe — false triggers may slow real responses.',
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              const _ConsentSummary(),
+              const SizedBox(height: 8),
+              _PrivacyOptInRow(
+                label: 'Ambient audio (60s)',
+                optedIn: prefs.ambientAudioOptIn,
+              ),
+              _PrivacyOptInRow(
+                label: 'Live location streaming',
+                optedIn: prefs.liveLocationOptIn,
+              ),
+              _PrivacyOptInRow(
+                label: 'Scene photo prompt',
+                optedIn: prefs.photoOptIn,
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push(Routes.settingsSosSafety);
+                },
+                child: Text(
+                  'Change opt-ins',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -282,12 +319,52 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
             ),
             onPressed: () {
               Navigator.pop(context);
-              // For now, triggering a mock SOS or active ride SOS
-              // We can pass an empty ride ID if no ride is active, which will throw,
-              // so let's provide a graceful fallback or just mock it for general support.
               vm.triggerSOS('mock-active-ride', reasonController.text);
             },
             child: const Text('TRIGGER'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsentSummary extends StatelessWidget {
+  const _ConsentSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Per your privacy settings, the following will be collected during this incident:',
+      style: Theme.of(context).textTheme.bodySmall,
+    );
+  }
+}
+
+class _PrivacyOptInRow extends StatelessWidget {
+  const _PrivacyOptInRow({required this.label, required this.optedIn});
+
+  final String label;
+  final bool optedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            optedIn ? Icons.check_circle : Icons.do_not_disturb_on_outlined,
+            size: 16,
+            color: optedIn ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$label — ${optedIn ? 'enabled' : 'off'}',
+              style: theme.textTheme.bodySmall,
+            ),
           ),
         ],
       ),

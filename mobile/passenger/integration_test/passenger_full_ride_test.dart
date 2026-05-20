@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'harness/e2e_seed_client.dart';
 import 'harness/test_app.dart';
 
 /// RFC v2 P9.1 — cold-start passenger lifecycle.
@@ -21,9 +22,10 @@ import 'harness/test_app.dart';
 ///   - ride.state_sync emitted after a forced disconnect rehydrates UI.
 ///
 /// Skipped automatically unless `--tags e2e-staging` is passed AND
-/// `--dart-define E2E_API_URL` is non-empty. The deterministic seed
-/// endpoint (`E2E_SEED_TOKEN`) still needs a backend ticket — until
-/// then this file serves as the contract specification for the seed.
+/// `--dart-define E2E_API_URL` and `--dart-define E2E_SEED_TOKEN` are
+/// non-empty. The seed endpoint is built into the backend (see
+/// `internal/delivery/http/e2e_handler.go`) and produces deterministic
+/// fixtures so each test run starts from a known state.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -34,29 +36,43 @@ void main() {
       (tester) async {
     if (apiUrl.isEmpty || seedToken.isEmpty) {
       markTestSkipped(
-        'E2E_API_URL and E2E_SEED_TOKEN required. Backend ticket pending: '
-        'seed endpoint must return {passengerId, driverId, rideId, jwt} '
-        'so this test can drive the lifecycle deterministically.',
+        'E2E_API_URL and E2E_SEED_TOKEN required. Backend must run with '
+        'E2E_ENABLED=true so /api/e2e/seed is mounted.',
       );
       return;
     }
 
+    // Stage 0: ask the backend to materialise deterministic fixtures.
+    // Failures here are NOT skips — a missing seed endpoint means the
+    // staging deploy is misconfigured and the test must report red.
+    final fixture = await E2ESeedClient(
+      apiUrl: apiUrl,
+      seedToken: seedToken,
+    ).seed();
+
     final harness = TestHarness(seenWelcome: true);
+    // Pre-stage the access token from the seed so the auth-gated flows
+    // skip the login screen — we're not testing login here, we're
+    // testing the active-ride lifecycle.
+    await harness.tokenStorage.save(
+      accessToken: fixture.passengerJwt,
+      refreshToken: 'e2e-refresh-placeholder',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
     await tester.pumpWidget(harness.buildApp());
     await tester.pumpAndSettle();
 
-    // Sanity: app shell rendered. The full journey assertions land here
-    // once the seed contract is final — see plan §P9 BACKEND REQUIRED.
     expect(find.byType(Scaffold), findsWidgets,
-        reason: 'app shell renders against staging');
+        reason: 'app shell renders against staging with seeded JWT');
 
-    // TODO(P9): drive lifecycle via WS events fed by --seed-token harness:
-    //   1. send ride.accepted, assert match screen appears once.
-    //   2. resend ride.accepted (duplicate event_id), assert UI unchanged.
-    //   3. send ride.status_changed (en_route → arrived → in_progress).
-    //   4. force conn close mid-trip, reconnect, assert ride.state_sync
-    //      restores currentStep without REST refetch.
-    //   5. send ride.completed with fare/breakdown/tip, assert phased reveal.
+    // TODO(P9): once the WS test-harness on staging exposes a control
+    // channel to publish events for `fixture.rideId`, drive the
+    // lifecycle:
+    //   1. publish ride.accepted, assert match screen appears once.
+    //   2. republish ride.accepted (duplicate event_id), assert no flicker.
+    //   3. publish status_changed cascade.
+    //   4. force conn close mid-trip, reconnect, assert state_sync hydrates.
+    //   5. publish ride.completed with fare/breakdown/tip.
     //   6. submit rating, assert POST /rides/{id}/rating fired once.
   });
 }

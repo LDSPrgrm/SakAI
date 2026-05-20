@@ -971,6 +971,21 @@ func (mr *MockIncidentRepositoryMockRecorder) ListStatusHistory(ctx, id any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStatusHistory", reflect.TypeOf((*MockIncidentRepository)(nil).ListStatusHistory), ctx, id)
 }
 
+// RecordIncidentLocation mocks base method.
+func (m *MockIncidentRepository) RecordIncidentLocation(ctx context.Context, incidentID, actorID uuid.UUID, lat, lng float64) (*domain.IncidentLocationPoint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordIncidentLocation", ctx, incidentID, actorID, lat, lng)
+	ret0, _ := ret[0].(*domain.IncidentLocationPoint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordIncidentLocation indicates an expected call of RecordIncidentLocation.
+func (mr *MockIncidentRepositoryMockRecorder) RecordIncidentLocation(ctx, incidentID, actorID, lat, lng any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIncidentLocation", reflect.TypeOf((*MockIncidentRepository)(nil).RecordIncidentLocation), ctx, incidentID, actorID, lat, lng)
+}
+
 // RecordLocationPing mocks base method.
 func (m *MockIncidentRepository) RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error {
 	m.ctrl.T.Helper()
