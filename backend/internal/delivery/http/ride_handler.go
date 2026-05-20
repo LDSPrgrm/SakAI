@@ -379,9 +379,14 @@ func (h *RideHandler) Cancel(c *gin.Context) {
 	}
 
 	var req dto.CancelRideRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
-		return
+	// The cancel body is fully optional — clients may send no body at all.
+	// ShouldBindJSON returns EOF on an empty body, which we treat as a valid
+	// zero-value request (all fields nil / omitted).
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+			return
+		}
 	}
 
 	userID := c.MustGet("userID").(uuid.UUID)

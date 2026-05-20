@@ -1,6 +1,8 @@
-import 'package:dio/dio.dart' show DioException;
+import 'package:built_value/serializer.dart';
+import 'package:dio/dio.dart' show DioException, DioExceptionType;
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../models/rating_exception.dart';
 import 'ride_complete_repository.dart';
 
 /// Implementation of RideCompleteRepository using the generated SakaiApiClient.
@@ -31,8 +33,8 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
         rideId: rideId,
         submitRatingRequest: request,
       );
-    } on DioException catch (_) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _fromDio(e);
     }
   }
 
@@ -61,6 +63,51 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
       rethrow;
+    }
+  }
+
+  RatingException _fromDio(DioException e) {
+    final data = e.response?.data;
+    if (data != null) {
+      try {
+        final err =
+            standardSerializers.deserialize(
+                  data,
+                  specifiedType: const FullType(ErrorResponse),
+                )
+                as ErrorResponse;
+        return RatingException(
+          machineCode: err.code.name,
+          userMessage: _friendlyMessage(err.code),
+        );
+      } catch (_) {
+        /* fall through */
+      }
+    }
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return const RatingException(
+        userMessage: 'Connection timed out. Please try again.',
+      );
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return const RatingException(
+        userMessage: 'No connection. Check your network and try again.',
+      );
+    }
+    return RatingException(
+      userMessage: e.message ?? 'Failed to submit rating. Please try again.',
+    );
+  }
+
+  String _friendlyMessage(ErrorCode code) {
+    switch (code) {
+      case ErrorCode.ALREADY_RATED:
+        return 'You have already rated this ride.';
+      case ErrorCode.RATE_LIMIT_EXCEEDED:
+        return 'Too many requests. Please wait a moment and try again.';
+      default:
+        return 'Failed to submit rating. Please try again.';
     }
   }
 }
