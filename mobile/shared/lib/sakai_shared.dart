@@ -20,6 +20,8 @@ export 'repositories/sos_repository.dart';
 // WebSocket client (new)
 export 'ws/ws_events.dart';
 export 'ws/ws_client.dart';
+export 'ws/ws_dispatcher.dart';
+export 'ws/ws_telemetry.dart';
 
 // API client (generated — do not hand-edit)
 // Hide PaymentMethod to avoid conflict with domain-level PaymentMethod in ride_entity.dart

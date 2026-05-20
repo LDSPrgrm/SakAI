@@ -35,17 +35,14 @@ const (
 	EventDriverLocationUpdated EventType = "driver.location_updated"
 )
 
-// envelope is the JSON shape sent over every WebSocket connection.
-type envelope struct {
-	Event   EventType `json:"event"`
-	Payload any       `json:"payload"`
-}
-
 // Client wraps a single WebSocket connection for one authenticated user.
+//
+// The wire envelope is defined in envelope.go; the channel here carries
+// already-stamped Envelopes so the writePump never has to allocate.
 type Client struct {
 	userID uuid.UUID
 	conn   *websocket.Conn
-	send   chan envelope
+	send   chan Envelope
 	once   sync.Once
 }
 
@@ -53,7 +50,7 @@ func newClient(userID uuid.UUID, conn *websocket.Conn) *Client {
 	return &Client{
 		userID: userID,
 		conn:   conn,
-		send:   make(chan envelope, 64),
+		send:   make(chan Envelope, 64),
 	}
 }
 
@@ -136,7 +133,18 @@ func (h *Hub) Unregister(userID uuid.UUID) {
 }
 
 // SendToUser sends an event to a specific user if they are connected.
+//
+// The payload is wrapped in a fresh Envelope (timestamp + UUIDv7 event_id
+// stamped at send time). Callers may still pass `gin.H` maps or typed
+// payload structs; the wire format is normalized here.
 func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
+	h.sendEnvelope(userID, NewEnvelope(event, payload))
+}
+
+// sendEnvelope dispatches an already-built Envelope. Used by RedisDispatcher
+// so timestamp + event_id stay stable across the cluster — the publishing
+// node stamps once, all subscribing nodes forward the same envelope.
+func (h *Hub) sendEnvelope(userID uuid.UUID, env Envelope) {
 	h.mu.RLock()
 	cl, ok := h.clients[userID]
 	h.mu.RUnlock()
@@ -145,7 +153,7 @@ func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
 		return
 	}
 	select {
-	case cl.send <- envelope{Event: event, Payload: payload}:
+	case cl.send <- env:
 	default:
 		// Slow consumer — evict to avoid head-of-line blocking.
 		h.Unregister(userID)
@@ -158,19 +166,24 @@ func (h *Hub) SendToDriver(driverID uuid.UUID, event EventType, payload any) {
 }
 
 // BroadcastToRide targets both the passenger and the assigned driver of a ride.
+// Both recipients receive the *same* Envelope (same event_id) so clients can
+// dedupe across reconnects without coordination.
 func (h *Hub) BroadcastToRide(ride *domain.Ride, event EventType, payload any) {
-	h.SendToUser(ride.PassengerID, event, payload)
+	env := NewEnvelope(event, payload)
+	h.sendEnvelope(ride.PassengerID, env)
 	if ride.DriverID != nil {
-		h.SendToUser(*ride.DriverID, event, payload)
+		h.sendEnvelope(*ride.DriverID, env)
 	}
 }
 
 // BroadcastToRideByIDs targets both the passenger and driver given explicit IDs,
 // avoiding the need to construct a full domain.Ride for Redis-sourced events.
+// Like BroadcastToRide, both recipients share the same Envelope/event_id.
 func (h *Hub) BroadcastToRideByIDs(rideID uuid.UUID, passengerID uuid.UUID, driverID *uuid.UUID, event EventType, payload any) {
-	h.SendToUser(passengerID, event, payload)
+	env := NewEnvelope(event, payload)
+	h.sendEnvelope(passengerID, env)
 	if driverID != nil {
-		h.SendToUser(*driverID, event, payload)
+		h.sendEnvelope(*driverID, env)
 	}
 	_ = rideID // rideID is logged/available for future tracing
 }

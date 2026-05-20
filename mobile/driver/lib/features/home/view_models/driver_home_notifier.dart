@@ -64,7 +64,11 @@ typedef OnRideCancelled = void Function(String rideId);
 typedef OnActiveRideDetected = void Function(RideResponse activeRide);
 
 class DriverHomeNotifier extends Notifier<DriverHomeState> {
-  StreamSubscription<WsEvent>? _wsSubscription;
+  /// WS dispatcher we built ourselves (via [setupWsListener]). When the
+  /// caller hands us a dispatcher via [setupWsDispatcher] we don't own it
+  /// and don't dispose it.
+  WsDispatcher? _ownedDispatcher;
+  final List<void Function()> _wsDisposers = [];
   Timer? _gpsTimer;
   Timer? _incomingRidePollTimer;
   final GpsLocationService _gpsService = GpsLocationService();
@@ -87,15 +91,46 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   }
 
   /// Sets up WS event subscriptions. Called by the screen on init.
+  /// Builds an internal [WsDispatcher] owned by the notifier — disposed
+  /// alongside the notifier.
   void setupWsListener(WsClient wsClient) {
     _unsubscribeWs();
-    _wsSubscription = wsClient.events.listen(_handleWsEvent);
+    final dispatcher = WsDispatcher(wsClient);
+    _ownedDispatcher = dispatcher;
+    setupWsDispatcher(dispatcher);
     // Resync hook: every reconnect re-polls incoming-ride and active-ride
     // so the UI doesn't go stale across a WS gap.
     wsClient.onResync = () {
       unawaited(pollIncomingRide(wsClient));
       unawaited(checkForActiveRide());
     };
+  }
+
+  /// Registers handlers on an externally owned [WsDispatcher]. Use this in
+  /// tests or in higher-level coordinators that want one dispatcher
+  /// instance shared across multiple notifiers.
+  void setupWsDispatcher(WsDispatcher dispatcher) {
+    _unsubscribeHandlersOnly();
+
+    _wsDisposers.add(dispatcher.on<WsEventRideRequested>(
+      WsEventType.rideRequested,
+      (offer) => onRideOffer?.call(offer),
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideOfferExpired>(
+      WsEventType.rideOfferExpired,
+      (e) => onOfferExpired?.call(e.rideId),
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
+      WsEventType.rideStatusChanged,
+      (e) {
+        final status = _parseRideStatus(e.status.toString());
+        if (status != null) onStatusChanged?.call(e.rideId, status);
+      },
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideCancelled>(
+      WsEventType.rideCancelled,
+      (e) => onRideCancelled?.call(e.rideId),
+    ));
   }
 
   /// Connects the WebSocket client. Should be called after authentication.
@@ -193,44 +228,6 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     } catch (e) {
       debugPrint('[DRIVER] Check for active ride error: $e');
       return false;
-    }
-  }
-
-  void _handleWsEvent(WsEvent event) {
-    switch (event.type) {
-      case WsEventNames.rideRequested:
-        final offer = _parseRideRequested(event.payload);
-        if (offer != null) onRideOffer?.call(offer);
-        break;
-      case WsEventNames.rideOfferExpired:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        onOfferExpired?.call(rideId);
-        break;
-      case WsEventNames.rideStatusChanged:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        final statusStr = event.payload['status'] as String? ?? '';
-        final status = _parseRideStatus(statusStr);
-        if (status != null) onStatusChanged?.call(rideId, status);
-        break;
-      case WsEventNames.rideCancelled:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        onRideCancelled?.call(rideId);
-        break;
-    }
-  }
-
-  WsEventRideRequested? _parseRideRequested(Map<String, dynamic> payload) {
-    try {
-      debugPrint('[DRIVER] _parseRideRequested payload: $payload');
-      return standardSerializers.deserializeWith(
-        WsEventRideRequested.serializer,
-        payload,
-      );
-    } catch (e, stackTrace) {
-      debugPrint('[DRIVER] Failed to parse ride requested: $e');
-      debugPrint('[DRIVER] Stack trace: $stackTrace');
-      debugPrint('[DRIVER] Payload was: $payload');
-      return null;
     }
   }
 
@@ -452,8 +449,19 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     _unsubscribeWs();
   }
 
+  void _unsubscribeHandlersOnly() {
+    for (final dispose in _wsDisposers) {
+      dispose();
+    }
+    _wsDisposers.clear();
+  }
+
   void _unsubscribeWs() {
-    _wsSubscription?.cancel();
-    _wsSubscription = null;
+    _unsubscribeHandlersOnly();
+    final owned = _ownedDispatcher;
+    if (owned != null) {
+      unawaited(owned.dispose());
+      _ownedDispatcher = null;
+    }
   }
 }

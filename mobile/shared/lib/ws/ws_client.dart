@@ -3,15 +3,20 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
 import '../api/sakai_api_support.dart';
 import 'ws_events.dart';
 
+final _log = Logger('WsClient');
+
 /// WebSocket client with auto-reconnect and state resync.
 class WsClient {
   WebSocketChannel? _channel;
   final _eventController = StreamController<WsEvent>.broadcast();
+  final _malformedController =
+      StreamController<WsMalformedEvent>.broadcast();
   bool _isConnected = false;
   bool _explicitlyDisconnected = false;
   int _reconnectAttempts = 0;
@@ -19,6 +24,12 @@ class WsClient {
   VoidCallback? _onResync;
 
   Stream<WsEvent> get events => _eventController.stream;
+
+  /// Stream of frames that could NOT be parsed into a [WsEvent]. Apps wire
+  /// this to telemetry (Sentry, analytics) so silent parse failures
+  /// surface in monitoring instead of vanishing.
+  Stream<WsMalformedEvent> get malformed => _malformedController.stream;
+
   bool get isConnected => _isConnected;
 
   /// Callback fired on reconnect to resync state (should call GET /rides/active).
@@ -40,11 +51,19 @@ class WsClient {
 
       _channel!.stream.listen(
         (data) {
+          final raw = data is String ? data : data.toString();
           try {
-            final message = jsonDecode(data as String) as Map<String, dynamic>;
+            final message = jsonDecode(raw) as Map<String, dynamic>;
             _eventController.add(WsEvent.fromMessage(message));
-          } catch (_) {
-            // Ignore malformed messages.
+          } catch (e, st) {
+            _log.warning('parse failed: $e', e, st);
+            _malformedController.add(
+              WsMalformedEvent(
+                rawPayload: raw,
+                reason: 'parse: ${e.runtimeType}',
+                error: e,
+              ),
+            );
           }
         },
         onError: (error) {

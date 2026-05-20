@@ -33,12 +33,26 @@ info:
 
     All messages use the envelope format:
     ```json
-    { "event": "ride.accepted", "payload": { ... } }
+    {
+      "event": "ride.accepted",
+      "payload": { ... },
+      "timestamp": "2026-05-20T12:34:56Z",
+      "event_id": "018f4e6e-8b1c-7000-a000-000000000000"
+    }
     ```
+
+    - `event` — one of the values in the `WsEventType` enum.
+    - `payload` — event-specific payload; see `WsEnvelope.payload` oneOf in
+      `components/schemas` for the per-event shape.
+    - `timestamp` — RFC3339 UTC timestamp stamped by the server when the
+      envelope is built. Optional on the wire for backward compatibility
+      (older servers omit it); clients should tolerate its absence.
+    - `event_id` — UUIDv7 stamped by the server. Enables client-side
+      idempotency / dedup. Optional for backward compatibility.
 
     See **WebSocket Event Schemas** in `components/schemas` for all payload definitions.
 
-  version: "1.2.0"
+  version: "1.3.0"
   contact:
     name: SakAI Engineering
   x-ci:
@@ -4577,18 +4591,57 @@ components:
     #   - Drivers only receive events for their assigned ride
     #   - Passengers only receive events for their own ride
     # ==================================================================
+    WsEventType:
+      type: string
+      description: |
+        Canonical WebSocket event identifier. Used as the discriminator
+        for `WsEnvelope.payload`. Add new values here in lockstep with
+        the matching `WsEvent*` payload schema below.
+      enum:
+        - ride.requested
+        - ride.accepted
+        - ride.declined
+        - ride.offer_expired
+        - ride.status_changed
+        - ride.cancelled
+        - ride.sos_triggered
+        - ride.no_drivers
+        - driver.location_updated
+
     WsEnvelope:
       type: object
-      description: Wrapper for all WebSocket messages
+      description: |
+        Wrapper for all WebSocket messages. The `event` field selects which
+        payload schema in the oneOf below applies — clients should validate
+        against the matching schema after dispatching on `event`.
       required: [event, payload]
       properties:
         event:
-          type: string
-          description: Event name
-          example: "ride.status_changed"
+          $ref: "#/components/schemas/WsEventType"
         payload:
-          type: object
-          description: Event-specific payload — see schemas below
+          description: Event-specific payload — shape depends on `event`.
+          oneOf:
+            - $ref: "#/components/schemas/WsEventRideRequested"
+            - $ref: "#/components/schemas/WsEventRideAccepted"
+            - $ref: "#/components/schemas/WsEventRideDeclined"
+            - $ref: "#/components/schemas/WsEventRideOfferExpired"
+            - $ref: "#/components/schemas/WsEventRideStatusChanged"
+            - $ref: "#/components/schemas/WsEventRideCancelled"
+            - $ref: "#/components/schemas/WsEventRideSOSTriggered"
+            - $ref: "#/components/schemas/WsEventNoDriversAvailable"
+            - $ref: "#/components/schemas/WsEventDriverLocationUpdated"
+        timestamp:
+          type: string
+          format: date-time
+          description: |
+            RFC3339 UTC timestamp stamped by the server. Optional for
+            backward compatibility — older servers omit it.
+        event_id:
+          type: string
+          format: uuid
+          description: |
+            UUIDv7 stamped by the server. Enables client-side idempotency.
+            Optional for backward compatibility.
 
     WsEventRideRequested:
       type: object
@@ -4671,11 +4724,16 @@ components:
 
     WsEventDriverLocationUpdated:
       type: object
+      x-high-frequency: true
       description: |
         **Event:** `driver.location_updated`
         **Direction:** server → passenger
         Pushed on every `PUT /driver/location` call during an active ride.
         Use to animate the driver pin on the passenger's map in real time.
+
+        Marked `x-high-frequency: true` — clients may use a hand-tuned
+        fast-path deserializer (lat/lng/heading/ride_id only) instead of
+        the full schema validator on the hot path.
       required: [ride_id, location]
       properties:
         ride_id:
@@ -4743,6 +4801,31 @@ components:
         message:
           type: string
           example: "No drivers are available in your area right now. Please try again shortly."
+
+    WsEventRideSOSTriggered:
+      type: object
+      description: |
+        **Event:** `ride.sos_triggered`
+        **Direction:** server → both passenger and driver on the active ride
+        Fired when either party invokes `POST /rides/{rideId}/sos`.
+        Clients should display an emergency banner and surface the
+        safety contact action.
+      required: [ride_id, incident_id, triggered_by]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        incident_id:
+          type: string
+          format: uuid
+          description: ID of the incident row created by the trigger.
+        triggered_by:
+          type: string
+          enum: [rider, driver]
+        reason:
+          type: string
+          nullable: true
+          description: Free-text reason the trigger user supplied.
 
     DashboardResponse:
       type: object
