@@ -124,7 +124,7 @@ func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID, expectedSt
 }
 
 func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64, expectedStatus domain.RideStatus) error {
-	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, fare = COALESCE($4, fare), updated_at = NOW() WHERE id = $5 AND status = $6`
+	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, actual_fare = COALESCE($4, actual_fare), updated_at = NOW() WHERE id = $5 AND status = $6`
 	tag, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id, expectedStatus)
 	if err != nil {
 		return err
