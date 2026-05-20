@@ -163,7 +163,7 @@ func main() {
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
 		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo),
-		Admin:          handler.NewAdminHandler(adminUC, auditUC),
+		Admin:          handler.NewAdminHandler(adminUC, auditUC, dispatcher, rideRepo),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),
 		Role:           handler.NewRoleHandler(roleUC, authUC),

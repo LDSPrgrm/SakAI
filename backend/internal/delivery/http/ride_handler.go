@@ -499,14 +499,21 @@ func (h *RideHandler) TriggerSOS(c *gin.Context) {
 		return
 	}
 
-	// Publish SOS event to WebSocket for system monitoring or ride participants
+	// Publish SOS event to WebSocket for system monitoring or ride participants.
+	// Uses a typed payload — dispatcher merges into the routing envelope via
+	// `mergePayloadFields`, so all fields survive the Redis bus.
 	ride, rideErr := h.rideRepo.GetByID(c.Request.Context(), rideID)
 	if rideErr == nil {
-		payload := gin.H{
-			"ride_id":      ride.ID,
-			"incident_id":  incident.ID,
-			"triggered_by": incident.TriggeredBy,
-			"reason":       req.Reason,
+		var reason *string
+		if req.Reason != "" {
+			r := req.Reason
+			reason = &r
+		}
+		payload := ws.RideSOSPayload{
+			RideID:      ride.ID,
+			IncidentID:  incident.ID,
+			TriggeredBy: incident.TriggeredBy,
+			Reason:      reason,
 		}
 		_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideSOS, payload)
 	}

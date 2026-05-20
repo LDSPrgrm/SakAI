@@ -1,23 +1,57 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sakai/backend/internal/delivery/http/dto"
+	"github.com/sakai/backend/internal/delivery/ws"
 	"github.com/sakai/backend/internal/domain"
 )
 
 type AdminHandler struct {
-	uc      domain.AdminUseCase
-	auditUc domain.AuditUseCase
+	uc         domain.AdminUseCase
+	auditUc    domain.AuditUseCase
+	dispatcher ws.Dispatcher
+	rideRepo   domain.RideRepository
 }
 
-func NewAdminHandler(uc domain.AdminUseCase, auditUc domain.AuditUseCase) *AdminHandler {
-	return &AdminHandler{uc: uc, auditUc: auditUc}
+// NewAdminHandler builds the admin HTTP handler. The dispatcher + rideRepo are
+// only used by incident-lifecycle endpoints (Assign / Resolve) to fan out
+// `incident.assigned` / `incident.resolved` WS events to ride participants —
+// both may be nil in test wiring where the publish path is irrelevant.
+func NewAdminHandler(uc domain.AdminUseCase, auditUc domain.AuditUseCase, dispatcher ws.Dispatcher, rideRepo domain.RideRepository) *AdminHandler {
+	return &AdminHandler{uc: uc, auditUc: auditUc, dispatcher: dispatcher, rideRepo: rideRepo}
+}
+
+// publishIncidentLifecycle fetches the ride for an incident and fans out a
+// typed WS event to both participants. Failures are logged but never
+// propagated — the REST mutation has already succeeded and a publish miss
+// must not surface as a 5xx.
+func (h *AdminHandler) publishIncidentLifecycle(ctx context.Context, incidentID uuid.UUID, event ws.EventType, build func(inc *domain.Incident) any) {
+	if h.dispatcher == nil || h.rideRepo == nil {
+		return
+	}
+	detail, err := h.uc.GetIncident(ctx, incidentID)
+	if err != nil || detail == nil || detail.Incident == nil {
+		log.Printf("admin: publishIncidentLifecycle: get incident %s: %v", incidentID, err)
+		return
+	}
+	inc := detail.Incident
+	ride, err := h.rideRepo.GetByID(ctx, inc.RideID)
+	if err != nil || ride == nil {
+		log.Printf("admin: publishIncidentLifecycle: get ride %s for incident %s: %v", inc.RideID, incidentID, err)
+		return
+	}
+	if err := h.dispatcher.PublishToRide(ctx, ride, event, build(inc)); err != nil {
+		log.Printf("admin: publishIncidentLifecycle: publish %s for incident %s: %v", event, incidentID, err)
+	}
 }
 
 func (h *AdminHandler) GetDashboard(c *gin.Context) {
@@ -154,6 +188,15 @@ func (h *AdminHandler) AssignIncident(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
+	h.publishIncidentLifecycle(c.Request.Context(), incidentID, ws.EventIncidentAssigned, func(inc *domain.Incident) any {
+		return ws.IncidentAssignedPayload{
+			RideID:       inc.RideID,
+			IncidentID:   inc.ID,
+			AssigneeID:   assigneeID,
+			AssigneeName: inc.AssignedToName,
+			AssignedAt:   time.Now().UTC(),
+		}
+	})
 	c.Status(http.StatusNoContent)
 }
 
@@ -196,6 +239,18 @@ func (h *AdminHandler) ResolveIncident(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
+	h.publishIncidentLifecycle(c.Request.Context(), incidentID, ws.EventIncidentResolved, func(inc *domain.Incident) any {
+		resolvedAt := time.Now().UTC()
+		if inc.ResolvedAt != nil {
+			resolvedAt = inc.ResolvedAt.UTC()
+		}
+		return ws.IncidentResolvedPayload{
+			RideID:          inc.RideID,
+			IncidentID:      inc.ID,
+			ResolutionNotes: req.Notes,
+			ResolvedAt:      resolvedAt,
+		}
+	})
 	c.Status(http.StatusNoContent)
 }
 
