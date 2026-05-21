@@ -46,6 +46,7 @@ abstract final class SakaiApiSupport {
     final effectiveBaseUrl = baseUrl ?? SakaiApiEndpoints.defaultRestBaseUrl;
     final client = SakaiApiClient(
       basePathOverride: effectiveBaseUrl.isNotEmpty ? effectiveBaseUrl : null,
+      serializers: standardSerializers,
     );
 
     // Set default timeouts for resilience.

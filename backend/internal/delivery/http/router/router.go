@@ -279,6 +279,10 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			rides.POST("/:rideId/cancel", d.Ride.Cancel)
 			rides.POST("/:rideId/sos", d.Ride.TriggerSOS)
 
+			// Rating routes (passenger or driver)
+			rides.POST("/:rideId/rating", d.Rating.SubmitRating)
+			rides.GET("/:rideId/receipt", d.PayProcess.GetReceipt)
+
 			// Driver lifecycle transitions
 			driverRides := rides.Group("/:rideId")
 			driverRides.Use(middleware.RequireRole(domain.RoleDriver))
@@ -289,10 +293,6 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 				driverRides.POST("/start", d.Ride.Start)
 				driverRides.POST("/complete", d.Ride.Complete)
 			}
-
-			// Rating routes (passenger or driver)
-			rides.POST("/:rideId/rating", d.Rating.SubmitRating)
-			rides.GET("/:rideId/receipt", d.PayProcess.GetReceipt)
 
 			// Tip route (passenger only)
 			rides.POST("/:rideId/tip", middleware.RequireRole(domain.RolePassenger), d.Tip.AddTip)

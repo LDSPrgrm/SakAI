@@ -39,7 +39,7 @@ class _HomeRecentTripsState extends ConsumerState<HomeRecentTrips> {
           children: List.generate(2, (_) {
             return Padding(
               padding: EdgeInsets.only(bottom: tokens.spaceSm),
-              child: SakaiSkeleton.card(height: 64),
+              child: SakaiSkeleton.card(height: 72),
             );
           }),
         ),
@@ -50,12 +50,27 @@ class _HomeRecentTripsState extends ConsumerState<HomeRecentTrips> {
       return Padding(
         padding: EdgeInsets.symmetric(
           horizontal: tokens.spaceLg,
-          vertical: tokens.spaceSm,
+          vertical: tokens.spaceMd,
         ),
-        child: Text(
-          'No recent trips yet. Book your first ride above.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: Container(
+          padding: EdgeInsets.all(tokens.spaceLg),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            children: [
+              Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.outline, size: 32),
+              SizedBox(height: tokens.spaceSm),
+              Text(
+                'No recent trips yet. Your journey starts here!',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -64,13 +79,13 @@ class _HomeRecentTripsState extends ConsumerState<HomeRecentTrips> {
     final visible = state.items.take(3).toList();
     return Column(
       key: const Key('home_recent_trips_list'),
-      children: visible.map((item) => _RecentTripTile(item: item)).toList(),
+      children: visible.map((item) => _RecentTripCard(item: item)).toList(),
     );
   }
 }
 
-class _RecentTripTile extends StatelessWidget {
-  const _RecentTripTile({required this.item});
+class _RecentTripCard extends StatelessWidget {
+  const _RecentTripCard({required this.item});
 
   final RideHistoryItem item;
 
@@ -80,45 +95,93 @@ class _RecentTripTile extends StatelessWidget {
     if (diff.inDays == 0) return 'Today';
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${when.month}/${when.day}/${when.year % 100}';
+    return '${when.month}/${when.day}';
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = SakaiDesignTokens.of(context);
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final fareValue = item.fare ?? item.estimatedFare;
 
-    return MergeSemantics(
-      child: SakaiListTile(
-        leading: Container(
-          width: 36,
-          height: 36,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(tokens.spaceLg, 0, tokens.spaceLg, tokens.spaceMd),
+      child: SakaiTactile(
+        onTap: () => context.push(Routes.rideDetail.replaceFirst(':rideId', item.id)),
+        child: Container(
+          padding: EdgeInsets.all(tokens.spaceMd),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.place_outlined,
-            size: tokens.iconMd,
-            color: scheme.primary,
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.history_rounded,
+                  size: 20,
+                  color: scheme.outline,
+                ),
+              ),
+              SizedBox(width: tokens.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.destinationAddress,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '${_dateLabel(item.createdAt)} · ${item.statusLabel}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: tokens.spaceMd),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₱${fareValue.toStringAsFixed(0)}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Icon(Icons.chevron_right_rounded, size: 16, color: scheme.outline),
+                ],
+              ),
+            ],
           ),
         ),
-        title: Text(
-          item.destinationAddress,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text('${_dateLabel(item.createdAt)} · ${item.statusLabel}'),
-        trailing: Text(
-          '₱${fareValue.toStringAsFixed(0)}',
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        onTap: () =>
-            context.push(Routes.rideDetail.replaceFirst(':rideId', item.id)),
-        dense: true,
       ),
     );
   }

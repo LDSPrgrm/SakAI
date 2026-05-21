@@ -13,40 +13,40 @@ class HomeQuickActionsGrid extends StatelessWidget {
     final actions = <_QuickAction>[
       _QuickAction(
         key: const Key('home_qa_saved_places'),
-        icon: Icons.bookmark_outline,
-        label: 'Saved Places',
+        icon: Icons.bookmark_rounded,
+        label: 'Saved',
         onTap: () => context.push(Routes.savedPlaces),
       ),
       _QuickAction(
         key: const Key('home_qa_schedule_ride'),
-        icon: Icons.schedule,
-        label: 'Schedule Ride',
+        icon: Icons.calendar_today_rounded,
+        label: 'Schedule',
         onTap: () => context.push(Routes.comingSoon, extra: 'Schedule Ride'),
       ),
       _QuickAction(
         key: const Key('home_qa_promotions'),
-        icon: Icons.local_offer_outlined,
-        label: 'Promotions',
+        icon: Icons.auto_awesome_rounded,
+        label: 'Offers',
         onTap: () => context.push(Routes.promotions),
       ),
       _QuickAction(
         key: const Key('home_qa_ride_history'),
-        icon: Icons.history,
-        label: 'Ride History',
+        icon: Icons.history_rounded,
+        label: 'Activity',
         onTap: () => context.push(Routes.rideHistory),
       ),
     ];
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: tokens.spaceMd,
-        crossAxisSpacing: tokens.spaceMd,
-        childAspectRatio: 2.0,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        children: actions.map(_QuickActionTile.new).toList(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: actions.map((a) => Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.spaceXs),
+            child: _QuickActionTile(a),
+          ),
+        )).toList(),
       ),
     );
   }
@@ -80,47 +80,55 @@ class _QuickActionTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: action.label,
-      child: SakaiTactile(
-        key: action.key,
-        onTap: action.onTap,
-        child: Container(
-          constraints: BoxConstraints(minHeight: tokens.touchTargetMin * 2),
-          padding: EdgeInsets.all(tokens.spaceMd),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SakaiTactile(
+            key: action.key,
+            onTap: action.onTap,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(tokens.radiusLg),
+                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Container(
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  color: scheme.primaryContainer.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
                 ),
-                alignment: Alignment.center,
                 child: Icon(
                   action.icon,
-                  size: tokens.iconMd,
-                  color: scheme.onPrimaryContainer,
+                  size: 24,
+                  color: scheme.primary,
                 ),
               ),
-              SizedBox(width: tokens.spaceMd),
-              Expanded(
-                child: Text(
-                  action.label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          SizedBox(height: tokens.spaceSm),
+          Text(
+            action.label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface,
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

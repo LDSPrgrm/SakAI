@@ -72,20 +72,26 @@ type DriverDocumentsListResponse struct {
 // ─── Rating DTOs ─────────────────────────────────────────────────────────────
 
 // SubmitRatingRequest is the JSON body for POST /rides/{rideId}/rating.
+// No binding tags here to allow permissive unmarshaling; validation is manual.
 type SubmitRatingRequest struct {
-	Stars    int     `json:"stars" binding:"required,min=1,max=5"`
-	Feedback *string `json:"feedback" binding:"max=500"`
+	Stars    float64 `json:"stars"`
+	Feedback *string `json:"feedback"`
+}
+
+// GetStars returns the stars as an integer.
+func (r SubmitRatingRequest) GetStars() int {
+	return int(r.Stars)
 }
 
 // RatingResponse is the public API shape for a submitted rating.
 type RatingResponse struct {
 	ID        string    `json:"id"`
-	RideID    string    `json:"ride_id"`
-	RaterID   string    `json:"rater_id"`
-	RateeID   string    `json:"ratee_id"`
+	RideID    string    `json:"rideId"`
+	RaterID   string    `json:"raterId"`
+	RateeID   string    `json:"rateeId"`
 	Stars     int       `json:"stars"`
 	Feedback  *string   `json:"feedback,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 // NewRatingResponse maps a domain.Rating into the API response.
@@ -103,10 +109,10 @@ func NewRatingResponse(r *domain.Rating) RatingResponse {
 
 // UserRatingResponse is the public API shape for a user's average rating.
 type UserRatingResponse struct {
-	UserID        string  `json:"user_id"`
-	AverageRating float64 `json:"average_rating"`
-	RatingCount   int     `json:"rating_count"`
-	LastUpdated   time.Time `json:"last_updated"`
+	UserID        string  `json:"userId"`
+	AverageRating float64 `json:"averageRating"`
+	RatingCount   int     `json:"ratingCount"`
+	LastUpdated   time.Time `json:"lastUpdated"`
 }
 
 // NewUserRatingResponse maps a domain.RatingSummary into the API response.
@@ -135,13 +141,13 @@ func (r PaymentProcessRequest) ParseRideID() (uuid.UUID, error) {
 // PaymentResponse is the public API shape for a processed payment.
 type PaymentResponse struct {
 	ID                   string  `json:"id"`
-	RideID               string  `json:"ride_id"`
+	RideID               string  `json:"rideId"`
 	Amount               float64 `json:"amount"`
 	Currency             string  `json:"currency"`
 	Method               domain.PaymentMethod `json:"method"`
 	Status               domain.PaymentStatus `json:"status"`
-	GatewayTransactionID *string `json:"gateway_transaction_id,omitempty"`
-	ProcessedAt          *time.Time `json:"processed_at,omitempty"`
+	GatewayTransactionID *string `json:"gatewayTransactionId,omitempty"`
+	ProcessedAt          *time.Time `json:"processedAt,omitempty"`
 }
 
 // NewPaymentResponse maps a domain.Payment into the API response.
@@ -160,20 +166,20 @@ func NewPaymentResponse(p *domain.Payment) PaymentResponse {
 
 // ReceiptResponse is the public API shape for a ride payment receipt.
 type ReceiptResponse struct {
-	RideID             string               `json:"ride_id"`
-	PassengerName      string               `json:"passenger_name"`
-	DriverName         string               `json:"driver_name"`
-	PickupAddress      string               `json:"pickup_address"`
-	DestinationAddress string               `json:"destination_address"`
+	RideID             string               `json:"rideId"`
+	PassengerName      string               `json:"passengerName"`
+	DriverName         string               `json:"driverName"`
+	PickupAddress      string               `json:"pickupAddress"`
+	DestinationAddress string               `json:"destinationAddress"`
 	Amount             float64              `json:"amount"`
 	Currency           string               `json:"currency"`
-	PaymentMethod      domain.PaymentMethod `json:"payment_method"`
-	PaymentStatus      domain.PaymentStatus `json:"payment_status"`
-	CompletedAt        time.Time            `json:"completed_at"`
-	ProcessedAt        *time.Time           `json:"processed_at,omitempty"`
-	EstimatedFare      *float64             `json:"estimated_fare,omitempty"`
-	ActualFare         *float64             `json:"actual_fare,omitempty"`
-	FareBreakdown      *domain.JSONMap      `json:"fare_breakdown,omitempty"`
+	PaymentMethod      domain.PaymentMethod `json:"paymentMethod"`
+	PaymentStatus      domain.PaymentStatus `json:"paymentStatus"`
+	CompletedAt        time.Time            `json:"completedAt"`
+	ProcessedAt        *time.Time           `json:"processedAt,omitempty"`
+	EstimatedFare      *float64             `json:"estimatedFare,omitempty"`
+	ActualFare         *float64             `json:"actualFare,omitempty"`
+	FareBreakdown      *domain.JSONMap      `json:"fareBreakdown,omitempty"`
 }
 
 // ─── Tip DTOs ────────────────────────────────────────────────────────────────
@@ -185,14 +191,14 @@ type AddTipRequest struct {
 
 // TipResponse is the public API shape for a successfully added tip.
 type TipResponse struct {
-	RideID        string    `json:"ride_id"`
-	BaseFare      float64   `json:"base_fare"`
-	TipAmount     float64   `json:"tip_amount"`
-	FinalTotal    float64   `json:"final_total"`
+	RideID        string    `json:"rideId"`
+	BaseFare      float64   `json:"baseFare"`
+	TipAmount     float64   `json:"tipAmount"`
+	FinalTotal    float64   `json:"finalTotal"`
 	Currency      string    `json:"currency"`
-	PaymentMethod string    `json:"payment_method"`
-	TransactionID string    `json:"transaction_id"`
-	ProcessedAt   time.Time `json:"processed_at"`
+	PaymentMethod string    `json:"paymentMethod"`
+	TransactionID string    `json:"transactionId"`
+	ProcessedAt   time.Time `json:"processedAt"`
 }
 
 // NewTipResponse maps a domain.TipOutput into the API response.

@@ -16,11 +16,12 @@ class HomePromoCarousel extends ConsumerStatefulWidget {
 
 class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
   late final PageController _controller;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController(viewportFraction: 0.88);
+    _controller = PageController(viewportFraction: 0.92);
     Future.microtask(() {
       if (!mounted) return;
       final state = ref.read(promotionsNotifierProvider);
@@ -40,6 +41,7 @@ class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
   Widget build(BuildContext context) {
     final tokens = SakaiDesignTokens.of(context);
     final state = ref.watch(promotionsNotifierProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     if (state.status == PromotionsStatus.error) {
       return const SizedBox.shrink();
@@ -48,30 +50,50 @@ class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
       return const SizedBox.shrink();
     }
 
-    return SizedBox(
-      height: 140,
-      child: state.isLoading
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-              child: Row(
-                children: [
-                  Expanded(child: SakaiSkeleton.card(height: 140)),
-                  SizedBox(width: tokens.spaceMd),
-                  Expanded(child: SakaiSkeleton.card(height: 140)),
-                ],
+    return Column(
+      children: [
+        SizedBox(
+          height: 160,
+          child: state.isLoading
+              ? Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                  child: SakaiSkeleton.card(height: 160),
+                )
+              : PageView.builder(
+                  controller: _controller,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemCount: state.promotions.length,
+                  itemBuilder: (context, i) {
+                    final promo = state.promotions[i];
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: tokens.spaceXs),
+                      child: _PromoCard(promotion: promo),
+                    );
+                  },
+                ),
+        ),
+        if (!state.isLoading && state.promotions.length > 1) ...[
+          SizedBox(height: tokens.spaceMd),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              state.promotions.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                height: 4,
+                width: _currentPage == index ? 16 : 4,
+                decoration: BoxDecoration(
+                  color: _currentPage == index
+                      ? scheme.primary
+                      : scheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            )
-          : PageView.builder(
-              controller: _controller,
-              itemCount: state.promotions.length,
-              itemBuilder: (context, i) {
-                final promo = state.promotions[i];
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceSm),
-                  child: _PromoCard(promotion: promo),
-                );
-              },
             ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -102,78 +124,78 @@ class _PromoCard extends StatelessWidget {
       child: SakaiTactile(
         onTap: () => context.push(Routes.promotions),
         child: Container(
-          padding: EdgeInsets.all(tokens.spaceMd),
+          padding: EdgeInsets.all(tokens.spaceLg),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [scheme.primary, scheme.secondary],
+              colors: [
+                scheme.primary,
+                Color.lerp(scheme.primary, scheme.secondary, 0.4)!,
+              ],
             ),
             borderRadius: BorderRadius.circular(tokens.radiusLg),
-            boxShadow: tokens.elevationMd,
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: tokens.spaceSm,
                       vertical: tokens.spaceXs,
                     ),
                     decoration: BoxDecoration(
-                      color: scheme.onPrimary.withValues(alpha: 0.16),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(tokens.radiusSm),
                     ),
                     child: Text(
-                      _discountLabel(),
+                      'LIMITED OFFER',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
-                ],
-              ),
-              Text(
-                promotion.description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onPrimary.withValues(alpha: 0.85),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.confirmation_number_outlined,
-                    size: tokens.iconSm,
-                    color: scheme.onPrimary,
-                  ),
-                  SizedBox(width: tokens.spaceXs),
                   Text(
-                    promotion.code,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: scheme.onPrimary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
+                    _discountLabel(),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
+              ),
+              const Spacer(),
+              Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: tokens.spaceXs),
+              Text(
+                promotion.description,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  height: 1.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

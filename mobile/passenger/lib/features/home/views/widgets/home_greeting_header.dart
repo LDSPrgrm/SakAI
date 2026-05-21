@@ -29,9 +29,9 @@ class _HomeGreetingHeaderState extends ConsumerState<HomeGreetingHeader> {
 
   String _timeGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning,';
-    if (hour < 18) return 'Good afternoon,';
-    return 'Good evening,';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 
   @override
@@ -59,15 +59,18 @@ class _HomeGreetingHeaderState extends ConsumerState<HomeGreetingHeader> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _timeGreeting(),
+                    '${_timeGreeting()},',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
+                      letterSpacing: 0.2,
                     ),
                   ),
                   Text(
                     displayName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                      height: 1.1,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -83,44 +86,44 @@ class _HomeGreetingHeaderState extends ConsumerState<HomeGreetingHeader> {
             child: SakaiTactile(
               onTap: () => context.push(Routes.notifications),
               child: Container(
-                width: tokens.touchTargetMin,
-                height: tokens.touchTargetMin,
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
                     Icon(
-                      Icons.notifications_outlined,
-                      size: tokens.iconMd,
+                      Icons.notifications_rounded,
+                      size: 24,
                       color: scheme.onSurface,
                     ),
                     if (unread > 0)
                       Positioned(
                         key: const Key('home_notif_badge'),
-                        right: -2,
-                        top: -2,
+                        right: -1,
+                        top: -1,
                         child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: tokens.spaceXs,
-                            vertical: 1,
-                          ),
+                          padding: const EdgeInsets.all(2),
                           constraints: const BoxConstraints(
                             minWidth: 16,
                             minHeight: 16,
                           ),
                           decoration: BoxDecoration(
                             color: scheme.error,
-                            borderRadius: BorderRadius.circular(
-                              tokens.radiusFull,
-                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: scheme.surface, width: 2),
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            unread > 9 ? '9+' : '$unread',
+                            unread > 9 ? '9' : '$unread',
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: scheme.onError,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 8,
                             ),
                           ),
                         ),

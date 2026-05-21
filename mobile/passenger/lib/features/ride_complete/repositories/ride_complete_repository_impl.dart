@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart' show DioException, DioExceptionType;
+import 'package:flutter/foundation.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/rating_exception.dart';
@@ -23,17 +25,29 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
 
   @override
   Future<void> submitRating(String rideId, int stars, String? feedback) async {
+    debugPrint('[P-Rating] Submitting rating: rideId=$rideId, stars=$stars, feedback=$feedback');
     try {
       final request = SubmitRatingRequest(
         (SubmitRatingRequestBuilder b) => b
           ..stars = stars
           ..feedback = feedback,
       );
+
+      final serialized = standardSerializers.serialize(
+        request,
+        specifiedType: const FullType(SubmitRatingRequest),
+      );
+      debugPrint('[P-Rating] Serialized body JSON: ${json.encode(serialized)}');
+
       await _client.getRidesApi().submitRating(
         rideId: rideId,
         submitRatingRequest: request,
       );
+      debugPrint('[P-Rating] Rating submission successful');
     } on DioException catch (e) {
+      debugPrint('[P-Rating] DioException: ${e.message}');
+      debugPrint('[P-Rating] Response data: ${e.response?.data}');
+      debugPrint('[P-Rating] Response status: ${e.response?.statusCode}');
       throw _fromDio(e);
     }
   }
@@ -76,12 +90,13 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
                   specifiedType: const FullType(ErrorResponse),
                 )
                 as ErrorResponse;
+        debugPrint('[P-Rating] Server Error: code=${err.code.name}, message=${err.message}');
         return RatingException(
           machineCode: err.code.name,
           userMessage: _friendlyMessage(err.code),
         );
-      } catch (_) {
-        /* fall through */
+      } catch (ex) {
+        debugPrint('[P-Rating] Failed to parse error response: $ex');
       }
     }
     if (e.type == DioExceptionType.connectionTimeout ||

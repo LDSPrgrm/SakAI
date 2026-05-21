@@ -64,7 +64,7 @@ class WaitingViewModel extends ChangeNotifier {
   /// On failure, sets [errorMessage].
   Future<void> cancel() async {
     debugPrint('[WaitingVM] cancel() called, _cancelling=$_cancelling');
-    if (_cancelling) return;
+    if (_cancelling || _cancelled) return;
 
     _cancelling = true;
     _errorMessage = null;
@@ -79,6 +79,14 @@ class WaitingViewModel extends ChangeNotifier {
     } catch (e, st) {
       debugPrint('[WaitingVM] cancelRide failed: $e');
       debugPrint('[WaitingVM] stack: $st');
+      
+      // Guard: If the server already confirmed cancellation via WS while this
+      // request was in flight, ignore the HTTP error (e.g. timeout or 409).
+      if (_cancelled) {
+        debugPrint('[WaitingVM] HTTP failed but ride is already cancelled via WS. Ignoring error.');
+        return;
+      }
+
       if (e is RideException) {
         debugPrint(
           '[WaitingVM] RideException: code=${e.machineCode}, msg=${e.userMessage}',

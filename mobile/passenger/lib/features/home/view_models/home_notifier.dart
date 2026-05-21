@@ -14,6 +14,7 @@ import '../models/ride_type_option.dart';
 import '../models/nearby_driver.dart';
 import '../models/service_area.dart';
 import '../repositories/driver_repository.dart';
+import '../repositories/geocoding_service.dart';
 import '../repositories/service_area_repository.dart';
 
 enum HomeStatus {
@@ -252,7 +253,9 @@ class HomeNotifier extends Notifier<HomeState> {
             p.locality,
           ].where((s) => s != null && s.isNotEmpty).join(', ');
 
-    debugPrint('[P-Home] _updatePickupFromGps: got position (${pos.latitude}, ${pos.longitude}), address=$address');
+    debugPrint(
+      '[P-Home] _updatePickupFromGps: got position (${pos.latitude}, ${pos.longitude}), address=$address',
+    );
     state = state.copyWith(
       status: HomeStatus.idle,
       currentLatLng: currentLatLng,
@@ -333,7 +336,8 @@ class HomeNotifier extends Notifier<HomeState> {
       );
       return false;
     }
-    final granted = permission == LocationPermission.whileInUse ||
+    final granted =
+        permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always;
     if (granted && state.permissionPermanentlyDenied) {
       state = state.copyWith(permissionPermanentlyDenied: false);
@@ -348,7 +352,9 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void setDestination(RideLocation destination) {
-    debugPrint('[P-Home] setDestination: ${destination.address} (${destination.lat}, ${destination.lng})');
+    debugPrint(
+      '[P-Home] setDestination: ${destination.address} (${destination.lat}, ${destination.lng})',
+    );
     // Pre-populate ride type options so the UI never blocks on the
     // "Checking nearby drivers…" loader while the first poll is in flight.
     // Subsequent polls overwrite with live driver counts.
@@ -392,6 +398,37 @@ class HomeNotifier extends Notifier<HomeState> {
   void setSelectedRideType(VehicleType type) {
     debugPrint('[P-Home] setSelectedRideType: $type');
     state = state.copyWith(selectedRideType: type);
+  }
+
+  /// Sets pickup using an address string.
+  Future<void> setPickupFromString(String address) async {
+    try {
+      final loc = await GeocodingService().geocode(address);
+      setPickup(loc);
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Could not find that location.');
+    }
+  }
+
+  /// Sets destination using an address string.
+  Future<void> setDestinationFromString(String address) async {
+    try {
+      final loc = await GeocodingService().geocode(address);
+      setDestination(loc);
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Could not find that location.');
+    }
+  }
+
+  /// Clears the transient [createdRide] state after it has been handled by the UI.
+  void clearCreatedRide() {
+    if (state.createdRide != null) {
+      debugPrint('[P-Home] clearCreatedRide');
+      state = state.copyWith(
+        clearCreatedRide: true,
+        status: HomeStatus.destinationSet,
+      );
+    }
   }
 
   bool _isLocationInServiceArea(RideLocation location) {
