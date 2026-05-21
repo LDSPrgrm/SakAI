@@ -1622,6 +1622,37 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/support-staff:
+    get:
+      tags: [Admin]
+      summary: List candidate assignees for incident reassignment
+      description: |
+        Slim list of admin/support users that may be assigned an incident.
+        Narrower than `/admin/users` (no creation metadata, no password
+        flags) so the route can be exposed to operations and support
+        callers without leaking sensitive admin-account fields.
+      operationId: listAssigneeCandidates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of candidate assignees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name, role]
+                  properties:
+                    id: { type: string, format: uuid }
+                    name: { type: string }
+                    role: { type: string, description: "Admin role slug (e.g. superadmin, support, operations)." }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/rides:
     get:
       tags: [Admin]
@@ -3208,28 +3239,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-
-  # ── Admin self-profile ─────────────────────────────────────────────────────────────────────────
-
-  /admin/users/me:
-    get:
-      tags: [Admin]
-      summary: Get the authenticated admin's own profile
-      description: |
-        Returns the current admin's profile including role_id, role_name, and status.
-        Call on admin app cold-start to re-hydrate session state.
-      operationId: adminGetMe
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Admin profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminUser"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
 
   # ── Admin self permissions ─────────────────────────────────────────────────────────────────────────
 

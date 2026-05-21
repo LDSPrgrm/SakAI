@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Demo data UUID prefix map (see admin/PLAN_MOCK_DATA.md):
+// Demo data UUID prefix map:
 //   20000001-... passenger users
 //   20000002-... driver users
 //   20000003-... rides

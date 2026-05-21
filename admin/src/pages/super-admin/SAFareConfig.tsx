@@ -43,6 +43,18 @@ const VEHICLE_TABS: { value: VehicleTab; label: string }[] = [
   { value: 'car', label: 'Car (4-seater)' },
 ];
 
+// Metro Manila city centroids — origin presets for the Fare Simulator. Picked
+// from each LGU's commercial core so simulated rides cross representative road
+// networks. Destination is offset from origin by the user-entered distance/time.
+const CITY_PRESETS = [
+  { key: 'manila',  label: 'Manila (City Hall)',     lat: 14.5995, lng: 120.9842 },
+  { key: 'makati',  label: 'Makati (Ayala)',         lat: 14.5547, lng: 121.0244 },
+  { key: 'bgc',     label: 'BGC (Bonifacio High St)', lat: 14.5520, lng: 121.0507 },
+  { key: 'qc',      label: 'Quezon City (Cubao)',    lat: 14.6206, lng: 121.0530 },
+  { key: 'pasig',   label: 'Pasig (Ortigas CBD)',    lat: 14.5859, lng: 121.0617 },
+] as const;
+type CityPreset = typeof CITY_PRESETS[number]['key'];
+
 const FARE_FIELDS: { key: keyof FareFormValues; label: string; unit: string }[] = [
   { key: 'base_fare', label: 'Base Fare', unit: 'PHP' },
   { key: 'per_km_rate', label: 'Per-KM Rate', unit: 'PHP/km' },
@@ -181,6 +193,7 @@ export function SAFareConfig() {
   const [simDistance, setSimDistance] = useState('');
   const [simTime, setSimTime] = useState('');
   const [simVehicle, setSimVehicle] = useState<VehicleTab>('motorcycle');
+  const [simOrigin, setSimOrigin] = useState<CityPreset>('manila');
   const [simResult, setSimResult] = useState<number | null>(null);
   const [simError, setSimError] = useState('');
 
@@ -218,10 +231,11 @@ export function SAFareConfig() {
       setSimError('Enter a valid time (minutes).');
       return;
     }
+    const preset = CITY_PRESETS.find((c) => c.key === simOrigin) ?? CITY_PRESETS[0];
     const result = await simulateFare.mutateAsync({
       vehicle: simVehicle,
-      origin: { lat: 14.5995, lng: 120.9842 },
-      destination: { lat: 14.5995 + dist * 0.01, lng: 120.9842 + time * 0.001 },
+      origin: { lat: preset.lat, lng: preset.lng },
+      destination: { lat: preset.lat + dist * 0.01, lng: preset.lng + time * 0.001 },
     });
     setSimResult(result);
   }
@@ -367,6 +381,25 @@ export function SAFareConfig() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Origin
+                </label>
+                <select
+                  value={simOrigin}
+                  onChange={(e) => {
+                    setSimOrigin(e.target.value as CityPreset);
+                    setSimResult(null);
+                  }}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Simulator origin"
+                >
+                  {CITY_PRESETS.map((c) => (
+                    <option key={c.key} value={c.key}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1">
                   Distance (km)

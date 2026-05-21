@@ -19,7 +19,7 @@ import {
 } from '@/hooks/useRoles';
 import { formatDate } from '@/utils/formatDate';
 import {
-  PermissionGrid, PERM_ROWS, emptyGrid, fromPermissions, toPermissions,
+  PermissionGrid, PERM_ROWS, emptyGrid, parsePermissions, toPermissions,
   type PermGrid,
 } from '@/components/super-admin/forms/PermissionGrid';
 import type { AdminRoleDefinition, RolePermissionKey } from '@/types/super-admin';
@@ -57,6 +57,7 @@ export function SARoleManagement() {
   const [viewingRole, setViewingRole] = useState<AdminRoleDefinition | null>(null);
   const [permGrid, setPermGrid] = useState<PermGrid>(emptyGrid());
   const [permError, setPermError] = useState('');
+  const [permWarning, setPermWarning] = useState('');
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
@@ -91,21 +92,28 @@ export function SARoleManagement() {
     setEditingRole(null);
     setPermGrid(emptyGrid());
     setPermError('');
+    setPermWarning('');
     reset({ name: '', description: '' });
     setModalOpen(true);
   }
 
   function openEdit(role: AdminRoleDefinition) {
+    const { grid, unknownKeys } = parsePermissions(role.permissions);
     setEditingRole(role);
-    setPermGrid(fromPermissions(role.permissions));
+    setPermGrid(grid);
     setPermError('');
+    setPermWarning(
+      unknownKeys.length > 0
+        ? `${unknownKeys.length} unrecognized permission key(s) on this role were dropped from the editor (${unknownKeys.join(', ')}). Saving overwrites them.`
+        : '',
+    );
     reset({ name: role.name, description: role.description ?? '' });
     setModalOpen(true);
   }
 
   function openView(role: AdminRoleDefinition) {
     setViewingRole(role);
-    setPermGrid(fromPermissions(role.permissions));
+    setPermGrid(parsePermissions(role.permissions).grid);
   }
 
   // ── Form submit ───────────────────────────────────────────────────────────
@@ -374,6 +382,9 @@ export function SARoleManagement() {
                 />
                 {permError && (
                   <p className="text-xs text-danger mt-2">{permError}</p>
+                )}
+                {permWarning && (
+                  <p className="text-xs text-warning mt-2">{permWarning}</p>
                 )}
               </div>
 

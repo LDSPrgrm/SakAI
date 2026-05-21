@@ -30,9 +30,11 @@ func TestPrometheusEmitCounter(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	// Force a fresh collector set for this test by resetting the singleton
 	// guard. Production code uses sync.Once so RegisterPrometheus is no-op
-	// after the first call; tests need to bypass that.
+	// after the first call; tests need to bypass that. promMetrics is an
+	// atomic.Pointer so the Store(nil) is safe against concurrent
+	// Conn*/promInc* reads from goroutines leaked by other tests.
 	promOnce = sync.Once{}
-	promMetrics = nil
+	promMetrics.Store(nil)
 	RegisterPrometheus(reg)
 
 	// Drive the in-memory counter — the Inc wires the Prometheus side too.
@@ -53,9 +55,9 @@ func TestPrometheusNotRegistered(t *testing.T) {
 	// no-ops. We can't rebind the singleton mid-test cheaply, so simply
 	// assert that nil-safety holds by invoking the helpers directly with
 	// the singleton zeroed.
-	saved := promMetrics
-	promMetrics = nil
-	defer func() { promMetrics = saved }()
+	saved := promMetrics.Load()
+	promMetrics.Store(nil)
+	defer promMetrics.Store(saved)
 
 	// These should not panic.
 	promIncEmitted(EventRideRequested)

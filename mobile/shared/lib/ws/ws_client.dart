@@ -57,7 +57,6 @@ class WsClient {
   final Duration _heartbeatInterval;
   final Duration _watchdogTimeout;
   final WsCursorStorage? _cursorStorage;
-  String? _lastEventId;
 
   /// Ring buffer of event_ids the dispatcher has already surfaced. New
   /// frames whose event_id appears here are ACKed but NOT re-emitted,
@@ -158,10 +157,10 @@ class WsClient {
       _isConnected = true;
       _reconnectAttempts = 0;
       _startHeartbeat(baseUrl: baseUrl, accessToken: accessToken);
-      // Ask the server to drain anything we missed since [_lastEventId].
-      // Empty/null cursor on a v2 conn still triggers a replay path on the
-      // server side (full stream up to retention) — caller may prefer to
-      // attach cursorStorage only after onboarding completes.
+      // Ask the server to drain anything we missed since the persisted
+      // cursor. Empty/null cursor on a v2 conn still triggers a replay path
+      // on the server side (full stream up to retention) — caller may prefer
+      // to attach cursorStorage only after onboarding completes.
       unawaited(_requestReplay());
     } catch (e) {
       debugPrint('[WS] Connect failed: $e');
@@ -176,7 +175,6 @@ class WsClient {
     final storage = _cursorStorage;
     if (storage == null) return;
     final cursor = await storage.read();
-    _lastEventId = cursor;
     final ch = _channel;
     if (ch == null) return;
     try {
@@ -194,7 +192,6 @@ class WsClient {
   /// next ride.state_sync (or fresh REST refetch) heals state.
   void _recordEventId(String? eventId) {
     if (eventId == null || eventId.isEmpty) return;
-    _lastEventId = eventId;
     final storage = _cursorStorage;
     if (storage == null) return;
     unawaited(storage.write(eventId).catchError((e, st) {

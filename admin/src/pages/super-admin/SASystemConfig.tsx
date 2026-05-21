@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -293,7 +293,16 @@ interface TemplateEditorProps {
 
 function TemplateEditor({ template, onSave }: TemplateEditorProps) {
   const [body, setBody] = useState(template.body);
+  // Treat the variables present in the backend-shipped body as the supported
+  // set. Anything the user adds beyond that is flagged "unknown" so it can't
+  // be saved by accident — the backend won't render unknown tokens.
+  const supportedVars = useMemo(
+    () => new Set(extractVariables(template.body)),
+    [template.body],
+  );
   const variables = extractVariables(body);
+  const unknownVars = variables.filter((v) => !supportedVars.has(v));
+  const hasUnknownVars = unknownVars.length > 0;
 
   return (
     <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-3">
@@ -310,21 +319,39 @@ function TemplateEditor({ template, onSave }: TemplateEditorProps) {
       />
 
       {variables.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 items-center">
           <span className="text-xs text-text-muted">Variables:</span>
-          {variables.map((v) => (
-            <code
-              key={v}
-              className="text-xs bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5"
-            >
-              {v}
-            </code>
-          ))}
+          {variables.map((v) => {
+            const known = supportedVars.has(v);
+            return (
+              <code
+                key={v}
+                className={
+                  known
+                    ? 'text-xs bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5'
+                    : 'text-xs bg-danger/10 text-danger border border-danger/20 rounded px-1.5 py-0.5'
+                }
+                title={known ? 'Supported variable' : 'Unknown variable — backend will not render this'}
+              >
+                {v}
+              </code>
+            );
+          })}
         </div>
       )}
 
+      {hasUnknownVars && (
+        <p className="text-xs text-danger">
+          Unknown variables: {unknownVars.join(', ')}. Remove them or revert to a supported variable before saving.
+        </p>
+      )}
+
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => onSave(template.event, body)}>
+        <Button
+          size="sm"
+          onClick={() => onSave(template.event, body)}
+          disabled={hasUnknownVars}
+        >
           Save Template
         </Button>
       </div>
@@ -340,14 +367,18 @@ interface FeatureFlagRowProps {
 function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const isDestructive = flag.key === 'maintenance_mode';
+  const nextEnabled = !flag.enabled;
 
-  const handleClick = () => {
-    if (isDestructive && !flag.enabled) {
-      setConfirmOpen(true);
-    } else {
-      onToggle(flag.key, !flag.enabled);
-    }
-  };
+  const handleClick = () => setConfirmOpen(true);
+
+  const title = isDestructive && nextEnabled
+    ? 'Enable Maintenance Mode'
+    : `${nextEnabled ? 'Enable' : 'Disable'} ${flag.label}`;
+  const description = isDestructive && nextEnabled
+    ? 'This will disable ride booking for all users and show a maintenance message. Are you sure you want to enable Maintenance Mode?'
+    : `${nextEnabled ? 'Enable' : 'Disable'} ${flag.label}? ${flag.description ?? ''}`.trim();
+  const confirmLabel = nextEnabled ? 'Enable' : 'Disable';
+  const variant: 'danger' | 'warning' = isDestructive && nextEnabled ? 'danger' : 'warning';
 
   return (
     <div className="flex items-center justify-between p-4 bg-surface-hover rounded-lg border border-border">
@@ -372,12 +403,12 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
 
       <ConfirmationModal
         open={confirmOpen}
-        title="Enable Maintenance Mode"
-        description="This will disable ride booking for all users and show a maintenance message. Are you sure you want to enable Maintenance Mode?"
-        confirmLabel="Enable"
-        variant="danger"
+        title={title}
+        description={description}
+        confirmLabel={confirmLabel}
+        variant={variant}
         onConfirm={() => {
-          onToggle(flag.key, true);
+          onToggle(flag.key, nextEnabled);
           setConfirmOpen(false);
         }}
         onCancel={() => setConfirmOpen(false)}
