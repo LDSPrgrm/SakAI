@@ -53,14 +53,14 @@ class DriverRepository {
     }
   }
 
-  VehicleType _mapVehicleType(NearbyDriverResponseVehicleTypeEnum? type) {
+  VehicleType _mapVehicleType(NearbyDriverVehicleTypeEnum? type) {
     if (type == null) return VehicleType.car;
     switch (type) {
-      case NearbyDriverResponseVehicleTypeEnum.motorcycle:
+      case NearbyDriverVehicleTypeEnum.motorcycle:
         return VehicleType.motorcycle;
-      case NearbyDriverResponseVehicleTypeEnum.tricycle:
+      case NearbyDriverVehicleTypeEnum.tricycle:
         return VehicleType.tricycle;
-      case NearbyDriverResponseVehicleTypeEnum.car:
+      case NearbyDriverVehicleTypeEnum.car:
       default:
         return VehicleType.car;
     }

@@ -312,13 +312,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: scheme.surface.withValues(alpha: 0.9),
-                    child: IconButton(
-                      icon: Icon(Icons.menu, color: scheme.onSurface),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
+                  Builder(builder: (context) {
+                    return CircleAvatar(
+                      backgroundColor: scheme.surface.withValues(alpha: 0.9),
+                      child: IconButton(
+                        icon: Icon(Icons.menu, color: scheme.onSurface),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    );
+                  }),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

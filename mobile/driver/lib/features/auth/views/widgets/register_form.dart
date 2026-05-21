@@ -88,13 +88,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     if (_plateCtrl.text.trim().isEmpty) errors['vehiclePlate'] = 'Plate number is required';
     if (_colorCtrl.text.trim().isEmpty) errors['vehicleColor'] = 'Color is required';
 
-    final year = int.tryParse(_yearCtrl.text.trim());
-    if (_yearCtrl.text.trim().isEmpty) {
-      errors['vehicleYear'] = 'Year is required';
-    } else if (year == null || year < 1990 || year > DateTime.now().year + 1) {
-      errors['vehicleYear'] = 'Enter a valid year (e.g. 2020)';
-    }
-
     String? termsError;
     if (!_agreeToTerms) termsError = 'You must agree to the Terms & Privacy Policy';
 
@@ -122,7 +115,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           vehicleModel: _modelCtrl.text.trim(),
           vehiclePlate: _plateCtrl.text.trim(),
           vehicleColor: _colorCtrl.text.trim(),
-          vehicleYear: _yearCtrl.text.trim(),
         );
   }
 
@@ -273,8 +265,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 ),
               ),
               SizedBox(height: tokens.spaceLg),
-              SakaiTactile(
-                onTap: () {
+              SakaiPrimaryButton(
+                label: 'Next: Vehicle Info',
+                icon: Icons.arrow_forward_rounded,
+                onPressed: () {
                   if (!_validateStep1()) {
                     HapticFeedback.heavyImpact();
                     return;
@@ -282,13 +276,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                   FocusScope.of(context).unfocus();
                   setState(() => _currentStep = 1);
                 },
-                child: IgnorePointer(
-                  child: SakaiPrimaryButton(
-                    label: 'Next: Vehicle Info',
-                    icon: Icons.arrow_forward_rounded,
-                    onPressed: () {},
-                  ),
-                ),
               ),
             ],
             if (_currentStep == 1) ...[
@@ -396,26 +383,13 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       label: 'Color',
                       hint: 'Silver',
                       errorText: _fieldError('vehicleColor', registerState),
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
                       enabled: !registerState.busy,
                       onChanged: (_) =>
                           ref.read(registerNotifierProvider.notifier).clearError(),
                     ),
                   ),
                 ],
-              ),
-              SakaiTextField(
-                key: const Key('register_year'),
-                controller: _yearCtrl,
-                label: 'Year',
-                hint: '2020',
-                errorText: _fieldError('vehicleYear', registerState),
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                enabled: !registerState.busy,
-                prefixIcon: const Icon(Icons.calendar_today_outlined),
-                onChanged: (_) =>
-                    ref.read(registerNotifierProvider.notifier).clearError(),
               ),
               SizedBox(height: tokens.spaceLg),
             Row(
@@ -472,18 +446,13 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: SakaiTactile(
-                      onTap: registerState.busy ? null : _onRegister,
-                      child: IgnorePointer(
-                        child: SakaiPrimaryButton(
-                          key: const Key('register_submit'),
-                          label: registerState.busy
-                              ? 'Creating Account…'
-                              : 'Sign Up',
-                          icon: Icons.person_add_rounded,
-                          onPressed: registerState.busy ? null : () {},
-                        ),
-                      ),
+                    child: SakaiPrimaryButton(
+                      key: const Key('register_submit'),
+                      label: registerState.busy
+                          ? 'Creating Account…'
+                          : 'Sign Up',
+                      icon: Icons.person_add_rounded,
+                      onPressed: registerState.busy ? null : _onRegister,
                     ),
                   ),
                 ],
