@@ -79,6 +79,7 @@ class FakeDriverAuthRepository implements DriverAuthRepository {
     required String vehicleModel,
     required String vehiclePlate,
     required String vehicleColor,
+    required int vehicleYear,
     required String vehicleType,
   }) async {
     if (failNextRegister) {

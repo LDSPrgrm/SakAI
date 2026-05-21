@@ -12,6 +12,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -357,6 +358,10 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 			files := handler.NewFilesHandler(d.FilesRoot)
 			authed.GET("/files/*filepath", files.Serve)
 		}
+	}
+
+	for _, route := range r.Routes() {
+		log.Printf("[ROUTE] %-6s %s", route.Method, route.Path)
 	}
 
 	return r

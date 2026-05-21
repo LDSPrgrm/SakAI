@@ -13,6 +13,7 @@ abstract class DriverAuthRepository {
     required String vehicleModel,
     required String vehiclePlate,
     required String vehicleColor,
+    required int vehicleYear,
     required String vehicleType,
   });
 

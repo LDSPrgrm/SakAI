@@ -115,6 +115,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           vehicleModel: _modelCtrl.text.trim(),
           vehiclePlate: _plateCtrl.text.trim(),
           vehicleColor: _colorCtrl.text.trim(),
+          vehicleYear: _yearCtrl.text.trim(),
         );
   }
 
@@ -383,13 +384,27 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       label: 'Color',
                       hint: 'Silver',
                       errorText: _fieldError('vehicleColor', registerState),
-                      textInputAction: TextInputAction.done,
+                      textInputAction: TextInputAction.next,
                       enabled: !registerState.busy,
                       onChanged: (_) =>
                           ref.read(registerNotifierProvider.notifier).clearError(),
                     ),
                   ),
                 ],
+              ),
+              SizedBox(height: tokens.spaceMd),
+              SakaiTextField(
+                key: const Key('register_year'),
+                controller: _yearCtrl,
+                label: 'Year',
+                hint: '2020',
+                errorText: _fieldError('vehicleYear', registerState),
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                enabled: !registerState.busy,
+                prefixIcon: const Icon(Icons.calendar_today_outlined),
+                onChanged: (_) =>
+                    ref.read(registerNotifierProvider.notifier).clearError(),
               ),
               SizedBox(height: tokens.spaceLg),
             Row(

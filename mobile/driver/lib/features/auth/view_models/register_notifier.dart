@@ -84,6 +84,7 @@ class RegisterNotifier extends Notifier<RegisterState> {
     required String vehicleModel,
     required String vehiclePlate,
     required String vehicleColor,
+    required String vehicleYear,
   }) async {
     final errors = _validate(
       name.trim(),
@@ -94,6 +95,7 @@ class RegisterNotifier extends Notifier<RegisterState> {
       vehicleModel.trim(),
       vehiclePlate.trim(),
       vehicleColor.trim(),
+      vehicleYear.trim(),
     );
     if (errors.isNotEmpty) {
       state = RegisterState(
@@ -117,6 +119,7 @@ class RegisterNotifier extends Notifier<RegisterState> {
         vehicleModel: vehicleModel.trim(),
         vehiclePlate: vehiclePlate.trim(),
         vehicleColor: vehicleColor.trim(),
+        vehicleYear: int.parse(vehicleYear.trim()),
         vehicleType: state.selectedVehicleType.apiValue,
       );
       await ref
@@ -151,6 +154,7 @@ class RegisterNotifier extends Notifier<RegisterState> {
     String vehicleModel,
     String vehiclePlate,
     String vehicleColor,
+    String vehicleYear,
   ) {
     final errors = <String, String>{};
     if (name.isEmpty) errors['name'] = 'Enter your name';
@@ -170,6 +174,16 @@ class RegisterNotifier extends Notifier<RegisterState> {
     if (vehicleModel.isEmpty) errors['vehicleModel'] = 'Enter vehicle model';
     if (vehiclePlate.isEmpty) errors['vehiclePlate'] = 'Enter vehicle plate';
     if (vehicleColor.isEmpty) errors['vehicleColor'] = 'Enter vehicle color';
+    if (vehicleYear.isEmpty) {
+      errors['vehicleYear'] = 'Enter vehicle year';
+    } else {
+      final yearInt = int.tryParse(vehicleYear);
+      if (yearInt == null ||
+          yearInt < 1990 ||
+          yearInt > DateTime.now().year + 1) {
+        errors['vehicleYear'] = 'Valid vehicle year required';
+      }
+    }
     return errors;
   }
 }
