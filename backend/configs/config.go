@@ -40,6 +40,24 @@ type Config struct {
 
 	// Regional
 	Currency string
+
+	// E2E (integration test harness). When true, the /api/e2e/* routes are
+	// mounted; they let the staging integration tests seed deterministic
+	// fixtures and mint short-lived JWTs without touching production data.
+	// MUST be false in production — the route block is unauthenticated and
+	// the seed token is the only gate. Default is "false" so a missing env
+	// fails closed.
+	//
+	// OUTSTANDING (RFC v2 P9 live execution):
+	//   1. Staging deploy: set E2E_ENABLED=true + E2E_SEED_TOKEN=<rotating-secret>
+	//      so /api/e2e/seed is reachable from the integration test runner.
+	//      The token should rotate at least weekly and live in the same
+	//      secret manager as other staging-only credentials.
+	//   2. NEVER set E2E_ENABLED=true on production. The router defence-in-
+	//      depth check still keeps the route off the mux, but the env should
+	//      remain blank to avoid surprise.
+	E2EEnabled  bool
+	E2ESeedToken string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -61,6 +79,8 @@ func Load() *Config {
 		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
 		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/api/files"),
 		Currency:                getEnv("CURRENCY", "USD"),
+		E2EEnabled:              getEnv("E2E_ENABLED", "false") == "true",
+		E2ESeedToken:            getEnv("E2E_SEED_TOKEN", ""),
 	}
 
 	// Security: refuse to start with the default JWT secret outside of local dev.

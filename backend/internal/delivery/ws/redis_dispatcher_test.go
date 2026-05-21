@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+
+	"github.com/sakai/backend/internal/observability/corrid"
 )
 
 // TestGlobalEvent_PreservesEnvelopeAcrossBus simulates the round-trip a
@@ -47,6 +50,85 @@ func TestGlobalEvent_PreservesEnvelopeAcrossBus(t *testing.T) {
 	if got.TargetUserID == nil || *got.TargetUserID != userID {
 		t.Errorf("target_user_id = %v, want %v", got.TargetUserID, userID)
 	}
+}
+
+// TestMergePayloadFields_TypedStruct guards against the regression where
+// typed payloads (e.g. RideCompletedPayload, RideSOSPayload) failed a naive
+// `payload.(map[string]any)` assertion in PublishToRide and were silently
+// dropped — leaving subscribers with only the base routing fields and zero
+// fare / breakdown / SOS reason data.
+func TestMergePayloadFields_TypedStruct(t *testing.T) {
+	tip := 50.0
+	rideID := uuid.New()
+	payload := RideCompletedPayload{
+		RideID: rideID,
+		Fare:   180.0,
+		FareBreakdown: &FareBreakdown{
+			BaseFare:       40,
+			DistanceCharge: 120,
+			TimeCharge:     20,
+			BookingFee:     0,
+		},
+		PaymentMethod: "gcash",
+		TipAmount:     &tip,
+		CompletedAt:   time.Now().UTC(),
+	}
+
+	m, ok := mergePayloadFields(payload)
+	if !ok {
+		t.Fatalf("mergePayloadFields returned ok=false for typed struct")
+	}
+	required := []string{"ride_id", "fare", "fare_breakdown", "payment_method", "tip_amount", "completed_at"}
+	for _, k := range required {
+		if _, present := m[k]; !present {
+			t.Errorf("merged payload missing key %q: %#v", k, m)
+		}
+	}
+	if got, _ := m["fare"].(float64); got != 180.0 {
+		t.Errorf("fare = %v, want 180", got)
+	}
+	if got, _ := m["payment_method"].(string); got != "gcash" {
+		t.Errorf("payment_method = %q, want gcash", got)
+	}
+}
+
+// TestMergePayloadFields_MapPassthrough ensures gin.H / map[string]any
+// callers (the legacy path) still work without an unnecessary JSON
+// round-trip.
+func TestMergePayloadFields_MapPassthrough(t *testing.T) {
+	in := map[string]any{"foo": "bar", "n": 7}
+	out, ok := mergePayloadFields(in)
+	if !ok {
+		t.Fatal("ok=false for map[string]any")
+	}
+	if &in == &out {
+		// pointers differ in Go map semantics; just check key survival
+	}
+	if out["foo"] != "bar" || out["n"] != 7 {
+		t.Errorf("map fields not preserved: %#v", out)
+	}
+}
+
+// TestStampCorrID guards the corr_id threading wired in P8.2: when the call
+// site's context carries a correlation ID, the envelope must surface it on
+// the wire so audit + replay + client traces can all stitch back to the
+// originating HTTP request.
+func TestStampCorrID(t *testing.T) {
+	t.Run("absent ctx leaves envelope unchanged", func(t *testing.T) {
+		env := NewEnvelope(EventRideAccepted, map[string]any{"ride_id": "r1"})
+		stampCorrID(context.Background(), &env)
+		if env.CorrID != "" {
+			t.Fatalf("CorrID = %q, want empty (no value on ctx)", env.CorrID)
+		}
+	})
+	t.Run("present ctx populates CorrID", func(t *testing.T) {
+		env := NewEnvelope(EventRideAccepted, map[string]any{"ride_id": "r1"})
+		ctx := corrid.WithCorrID(context.Background(), "req-42")
+		stampCorrID(ctx, &env)
+		if env.CorrID != "req-42" {
+			t.Fatalf("CorrID = %q, want req-42", env.CorrID)
+		}
+	})
 }
 
 func TestRedisDispatcher_RouteLocally_DeliversSameEnvelope(t *testing.T) {

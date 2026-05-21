@@ -26,6 +26,7 @@ abstract class Routes {
   static const settingsTerms = '/settings/terms';
   static const settingsPrivacy = '/settings/privacy';
   static const settingsLanguage = '/settings/language';
+  static const settingsSosSafety = '/settings/sos-safety';
 
   // Gap-fill additions
   static const wallet = '/wallet';

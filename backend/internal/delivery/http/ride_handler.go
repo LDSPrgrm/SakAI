@@ -26,11 +26,21 @@ type RideHandler struct {
 	userRepo        domain.UserRepository
 	driverRepo      domain.DriverRepository
 	paymentRepo     domain.RidePaymentRepository
+	incidentRepo    domain.IncidentRepository
 	upsert          ws.Dispatcher
 }
 
 func NewRideHandler(uc domain.RideUseCase, userRideUC usecase.UserRideUseCase, upsert ws.Dispatcher, rideRepo domain.RideRepository, userRepo domain.UserRepository, driverRepo domain.DriverRepository, paymentRepo domain.RidePaymentRepository) *RideHandler {
 	return &RideHandler{uc: uc, userRideUC: userRideUC, rideRepo: rideRepo, userRepo: userRepo, driverRepo: driverRepo, paymentRepo: paymentRepo, upsert: upsert}
+}
+
+// WithIncidentRepo wires the incident repo used by the participant-driven
+// `POST /incidents/:incidentId/location` endpoint. Optional — when nil the
+// route 503s. Kept off the constructor so existing callers (and tests that
+// don't exercise SOS location streaming) don't have to change shape.
+func (h *RideHandler) WithIncidentRepo(repo domain.IncidentRepository) *RideHandler {
+	h.incidentRepo = repo
+	return h
 }
 
 // rideEnricher implements dto.RideResponseEnricher for the handler.
@@ -499,19 +509,110 @@ func (h *RideHandler) TriggerSOS(c *gin.Context) {
 		return
 	}
 
-	// Publish SOS event to WebSocket for system monitoring or ride participants
+	// Publish SOS event to WebSocket for system monitoring or ride participants.
+	// Uses a typed payload — dispatcher merges into the routing envelope via
+	// `mergePayloadFields`, so all fields survive the Redis bus.
 	ride, rideErr := h.rideRepo.GetByID(c.Request.Context(), rideID)
 	if rideErr == nil {
-		payload := gin.H{
-			"ride_id":      ride.ID,
-			"incident_id":  incident.ID,
-			"triggered_by": incident.TriggeredBy,
-			"reason":       req.Reason,
+		var reason *string
+		if req.Reason != "" {
+			r := req.Reason
+			reason = &r
+		}
+		payload := ws.RideSOSPayload{
+			RideID:      ride.ID,
+			IncidentID:  incident.ID,
+			TriggeredBy: incident.TriggeredBy,
+			Reason:      reason,
 		}
 		_ = h.upsert.PublishToRide(c.Request.Context(), ride, ws.EventRideSOS, payload)
 	}
 
 	respondOK(c, dto.NewIncidentDTO(incident))
+}
+
+// AppendIncidentLocation persists a participant-driven GPS ping for an open
+// incident and fans out a `sos.location_stream` event to both ride parties.
+//
+// Auth: the caller must be either the passenger or assigned driver on the
+// ride that owns the incident, and the incident must still be unresolved.
+// We deliberately keep the request body minimal (lat/lng + optional
+// recorded_at_client) so this route works under flaky cellular conditions
+// where any extra serialization adds risk.
+//
+// OUTSTANDING (MOB-P6 client wiring):
+//   - Passenger app: when sos_safety_prefs.liveLocationOptIn is true AND an
+//     incident is active, push GPS every 5s to this endpoint. Repo lives at
+//     mobile/passenger/lib/features/support/repositories/sos_repository_impl.dart
+//     — getActiveIncident() is currently stubbed to null; needs to subscribe
+//     to the sos.* WS events to know when an incident is open.
+//   - Driver app: same flow gated on a driver-side liveLocation toggle (not
+//     yet built — driver settings screen would need to mirror the passenger
+//     SOS & Safety screen for parity).
+//   - Both apps must NEVER push before opt-in; the privacy invariant is
+//     enforced UI-side, not server-side, so a bug in the toggle gate would
+//     leak coordinates.
+func (h *RideHandler) AppendIncidentLocation(c *gin.Context) {
+	if h.incidentRepo == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "FEATURE_DISABLED", "message": "incident location streaming not configured"})
+		return
+	}
+	incidentID, err := uuid.Parse(c.Param("incidentId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "invalid incident ID"})
+		return
+	}
+	var req dto.IncidentLocationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
+		return
+	}
+	if req.Lat < -90 || req.Lat > 90 || req.Lng < -180 || req.Lng > 180 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "lat/lng out of range"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	incident, err := h.incidentRepo.GetIncidentByID(ctx, incidentID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	if incident.ResolvedAt != nil {
+		c.JSON(http.StatusConflict, gin.H{"code": "INCIDENT_RESOLVED", "message": "incident is already resolved"})
+		return
+	}
+
+	userID := c.MustGet("userID").(uuid.UUID)
+	if userID != incident.RiderID && userID != incident.DriverID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "NOT_PARTICIPANT", "message": "only ride participants may stream incident location"})
+		return
+	}
+
+	ping, err := h.incidentRepo.RecordIncidentLocation(ctx, incidentID, userID, req.Lat, req.Lng)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	ride, rideErr := h.rideRepo.GetByID(ctx, incident.RideID)
+	if rideErr == nil {
+		_ = h.upsert.PublishToRide(ctx, ride, ws.EventSosLocationStream, ws.SosLocationStreamPayload{
+			RideID:     incident.RideID,
+			IncidentID: incidentID,
+			ActorID:    userID,
+			Location:   ws.LatLng{Lat: ping.Lat, Lng: ping.Lng},
+			RecordedAt: ping.RecordedAt,
+		})
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"incident_id": incidentID,
+		"actor_id":    userID,
+		"lat":         ping.Lat,
+		"lng":         ping.Lng,
+		"recorded_at": ping.RecordedAt,
+	})
 }
 
 // driverTransition is a shared helper for driver-only state-advancing endpoints.

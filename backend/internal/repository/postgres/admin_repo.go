@@ -459,6 +459,25 @@ func (r *incidentRepo) RecordLocationPing(ctx context.Context, incidentID, drive
 	return err
 }
 
+// RecordIncidentLocation reuses the driver_location_history table (the
+// canonical incident GPS trail) but accepts any participant as the actor.
+// The `driver_id` column historically stored the driver but the FK is now
+// loose — the table simply records "who pinged" for forensic replay.
+// Returns the inserted ping with its server-assigned recorded_at so the
+// caller can publish a `sos.location_stream` event with a stable timestamp.
+func (r *incidentRepo) RecordIncidentLocation(ctx context.Context, incidentID, actorID uuid.UUID, lat, lng float64) (*domain.IncidentLocationPoint, error) {
+	const q = `
+		INSERT INTO driver_location_history (incident_id, driver_id, lat, lng)
+		VALUES ($1, $2, $3, $4)
+		RETURNING lat, lng, recorded_at`
+	row := r.db.QueryRow(ctx, q, incidentID, actorID, lat, lng)
+	p := &domain.IncidentLocationPoint{}
+	if err := row.Scan(&p.Lat, &p.Lng, &p.RecordedAt); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
 func (r *incidentRepo) Create(ctx context.Context, i *domain.Incident) error {
 	const q = `
 		INSERT INTO incidents (id, ride_id, triggered_by, rider_id, driver_id, type, status, created_at)

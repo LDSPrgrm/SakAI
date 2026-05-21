@@ -2716,16 +2716,20 @@ export interface components {
          *     the matching `WsEvent*` payload schema below.
          * @enum {string}
          */
-        WsEventType: "ride.requested" | "ride.accepted" | "ride.declined" | "ride.offer_expired" | "ride.status_changed" | "ride.cancelled" | "ride.sos_triggered" | "ride.no_drivers" | "driver.location_updated";
+        WsEventType: "ride.requested" | "ride.accepted" | "ride.declined" | "ride.offer_expired" | "ride.status_changed" | "ride.completed" | "ride.cancelled" | "ride.sos_triggered" | "ride.no_drivers" | "ride.state_sync" | "incident.assigned" | "incident.resolved" | "driver.location_updated" | "conn.welcome";
         /**
          * @description Wrapper for all WebSocket messages. The `event` field selects which
          *     payload schema in the oneOf below applies — clients should validate
          *     against the matching schema after dispatching on `event`.
+         *
+         *     v2 fields (`v`, `seq`, `corr_id`, `ack_required`) are populated when
+         *     the client negotiated the `sakai.v2` subprotocol (RFC v2 §4). v1
+         *     clients see them absent.
          */
         WsEnvelope: {
             event: components["schemas"]["WsEventType"];
             /** @description Event-specific payload — shape depends on `event`. */
-            payload: components["schemas"]["WsEventRideRequested"] | components["schemas"]["WsEventRideAccepted"] | components["schemas"]["WsEventRideDeclined"] | components["schemas"]["WsEventRideOfferExpired"] | components["schemas"]["WsEventRideStatusChanged"] | components["schemas"]["WsEventRideCancelled"] | components["schemas"]["WsEventRideSOSTriggered"] | components["schemas"]["WsEventNoDriversAvailable"] | components["schemas"]["WsEventDriverLocationUpdated"];
+            payload: components["schemas"]["WsEventRideRequested"] | components["schemas"]["WsEventRideAccepted"] | components["schemas"]["WsEventRideDeclined"] | components["schemas"]["WsEventRideOfferExpired"] | components["schemas"]["WsEventRideStatusChanged"] | components["schemas"]["WsEventRideCompleted"] | components["schemas"]["WsEventRideCancelled"] | components["schemas"]["WsEventRideSOSTriggered"] | components["schemas"]["WsEventNoDriversAvailable"] | components["schemas"]["WsEventRideStateSync"] | components["schemas"]["WsEventIncidentAssigned"] | components["schemas"]["WsEventIncidentResolved"] | components["schemas"]["WsEventDriverLocationUpdated"] | components["schemas"]["WsEventConnWelcome"];
             /**
              * Format: date-time
              * @description RFC3339 UTC timestamp stamped by the server. Optional for
@@ -2738,6 +2742,30 @@ export interface components {
              *     Optional for backward compatibility.
              */
             event_id?: string;
+            /**
+             * @description Envelope protocol version. Present only when the client
+             *     negotiated the `sakai.v2` subprotocol. RFC v2 §4.1.
+             * @example 2
+             */
+            v?: number;
+            /**
+             * Format: int64
+             * @description Monotonic per-user sequence number. Clients use this to detect
+             *     gaps and request replay. v2-only. RFC v2 §4.2.
+             */
+            seq?: number;
+            /**
+             * @description Correlation ID propagated from the originating HTTP request (or
+             *     internal job). Lets clients/operators link a UI event back to
+             *     the API call that produced it. v2-only. RFC v2 §4.3 / §12.4.
+             */
+            corr_id?: string;
+            /**
+             * @description When true, the client must emit `{type:"ack", event_id}` after
+             *     applying the event. Set for critical events (ride.requested,
+             *     ride.accepted, ride.completed, …). RFC v2 §4.4.
+             */
+            ack_required?: boolean;
         };
         /**
          * @description **Event:** `ride.requested`
@@ -2875,6 +2903,144 @@ export interface components {
             triggered_by: "rider" | "driver";
             /** @description Free-text reason the trigger user supplied. */
             reason?: string | null;
+        };
+        /**
+         * @description **Event:** `ride.completed`
+         *     **Direction:** server → both passenger and driver
+         *     Fired when the driver completes the ride and the fare is finalised.
+         *     Passenger app should show the receipt; driver app should show the
+         *     earnings reveal.
+         *
+         *     `fare_breakdown` may be omitted by older servers — clients should
+         *     gracefully fall back to displaying only the total `fare`.
+         */
+        WsEventRideCompleted: {
+            /** Format: uuid */
+            ride_id: string;
+            /**
+             * Format: float
+             * @description Total fare charged to the passenger in PHP.
+             */
+            fare: number;
+            fare_breakdown?: components["schemas"]["FareBreakdown"];
+            /** @enum {string} */
+            payment_method: "cash" | "gcash" | "paymaya" | "card";
+            /**
+             * Format: float
+             * @description Driver tip in PHP, when one was already received.
+             */
+            tip_amount?: number | null;
+            /** Format: date-time */
+            completed_at: string;
+        };
+        /**
+         * @description Components of the final fare. Sum of (`base_fare` + `distance_charge`
+         *     + `time_charge` + `booking_fee`) × `surge_multiplier` − `discount`
+         *     should equal `fare` on `WsEventRideCompleted`.
+         */
+        FareBreakdown: {
+            /** Format: float */
+            base_fare: number;
+            /** Format: float */
+            distance_charge: number;
+            /** Format: float */
+            time_charge: number;
+            /** Format: float */
+            booking_fee: number;
+            /**
+             * Format: float
+             * @description Active surge multiplier (1.0 means no surge). Omitted when 1.0.
+             */
+            surge_multiplier?: number;
+            /**
+             * Format: float
+             * @description Total promo / loyalty discount applied. Omitted when zero.
+             */
+            discount?: number;
+        };
+        /**
+         * @description **Event:** `incident.assigned`
+         *     **Direction:** server → both passenger and driver on the SOS ride
+         *     Fired when an admin/operator assigns themselves (or another operator)
+         *     to the SOS incident. Clients should update the emergency banner with
+         *     the assignee's name when present.
+         *
+         *     `assignee_id` is null when an admin clears the assignment.
+         */
+        WsEventIncidentAssigned: {
+            /** Format: uuid */
+            ride_id: string;
+            /** Format: uuid */
+            incident_id: string;
+            /** Format: uuid */
+            assignee_id?: string | null;
+            /**
+             * @description Display name of the assignee. Optional — publishers populate it
+             *     only when the value can be resolved cheaply.
+             */
+            assignee_name?: string;
+            /** Format: date-time */
+            assigned_at: string;
+        };
+        /**
+         * @description **Event:** `incident.resolved`
+         *     **Direction:** server → both passenger and driver on the SOS ride
+         *     Fired when the SOS incident is closed by an operator. Clients should
+         *     dismiss the emergency banner and may surface `resolution_notes` as
+         *     an informational toast (PII-redacted upstream).
+         */
+        WsEventIncidentResolved: {
+            /** Format: uuid */
+            ride_id: string;
+            /** Format: uuid */
+            incident_id: string;
+            /** @description Operator notes. May be redacted before send. */
+            resolution_notes?: string;
+            /** Format: date-time */
+            resolved_at: string;
+        };
+        /**
+         * @description **Event:** `ride.state_sync`
+         *     **Direction:** server → client (originating user only)
+         *     Emitted by the WS handler when a reconnecting client's
+         *     `last_event_id` falls outside the replay window. Carries a snapshot
+         *     of the user's active-ride state so the UI can reconcile without
+         *     round-tripping REST.
+         *
+         *     When `has_active_ride` is false, the client should drop into the
+         *     "no active ride" screen and clear local ride state.
+         */
+        WsEventRideStateSync: {
+            has_active_ride: boolean;
+            /** Format: uuid */
+            ride_id?: string | null;
+            status?: components["schemas"]["RideStatus"];
+            /** Format: uuid */
+            driver_id?: string | null;
+            /** Format: uuid */
+            passenger_id?: string | null;
+            /** Format: date-time */
+            updated_at?: string | null;
+        };
+        /**
+         * @description **Event:** `conn.welcome`
+         *     **Direction:** server → client (single-shot on successful upgrade)
+         *     First server-pushed frame after a successful WebSocket upgrade.
+         *     Announces the negotiated subprotocol so clients can verify the
+         *     upgrade before sending replay/ack frames. RFC v2 §4.1.
+         */
+        WsEventConnWelcome: {
+            /**
+             * @description Negotiated WebSocket subprotocol. Empty string for v1 clients,
+             *     `"sakai.v2"` for v2.
+             * @example sakai.v2
+             */
+            protocol?: string;
+            /**
+             * @description Envelope protocol version supported by the server.
+             * @example 2
+             */
+            v: number;
         };
         DashboardResponse: {
             active_riders?: number;

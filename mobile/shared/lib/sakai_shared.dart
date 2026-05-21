@@ -20,6 +20,11 @@ export 'repositories/sos_repository.dart';
 // Cancellation taxonomy (mirrors Go domain — RFC v2 §8.6)
 export 'cancellation/driver_cancel_reason.dart';
 
+// SOS lifecycle UI state (RFC v2 P6 — privacy-clamped at the shared layer
+// so passenger + driver banners agree on what's shown).
+export 'sos/sos_ui_state.dart';
+export 'sos/sos_banner.dart';
+
 // WebSocket client (new)
 export 'ws/ws_events.dart';
 export 'ws/ws_client.dart';
@@ -70,3 +75,6 @@ export 'widgets/sakai_text_field.dart';
 export 'widgets/sakai_welcome_carousel.dart';
 export 'widgets/sakai_animated_backdrop.dart';
 export 'widgets/sakai_tactile.dart';
+// RFC v2 P7 — receipt + earnings reveal motion + driver tip celebration.
+export 'widgets/sakai_phased_reveal.dart';
+export 'widgets/sakai_tip_celebration.dart';

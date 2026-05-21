@@ -7,8 +7,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/observability/corrid"
 )
+
+// stampCorrID copies the correlation ID from ctx onto env when one is
+// present. Pulled out of the publish call sites so the v1 audit / replay
+// snapshot uses the same stamped envelope as the wire payload — diverging
+// shapes between bus + audit produced the dispatcher bug we hit at
+// 19a60de..8d88b5d.
+func stampCorrID(ctx context.Context, env *Envelope) {
+	if cid := corrid.FromContext(ctx); cid != "" {
+		env.CorrID = cid
+	}
+}
 
 // The global channel name for broadcasting events across all API instances.
 const pubsubChannel = "sakai:ws:events"
@@ -178,6 +191,34 @@ func (d *RedisDispatcher) routeLocally(ge *globalEvent) {
 	}
 }
 
+// mergePayloadFields normalizes a payload into a map[string]any so caller
+// fields can be merged into the canonical ride envelope. Accepts:
+//   - map[string]any / gin.H  → returned as-is
+//   - typed structs           → JSON round-trip into a map
+//   - nil                     → (nil, false)
+//
+// This guards against the previous bug where typed structs (e.g.
+// [RideCompletedPayload], [RideSOSPayload]) failed a naive
+// `payload.(map[string]any)` assertion and were silently dropped, leaving
+// subscribers with only the base routing fields.
+func mergePayloadFields(payload any) (map[string]any, bool) {
+	if payload == nil {
+		return nil, false
+	}
+	if m, ok := payload.(map[string]any); ok {
+		return m, true
+	}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return nil, false
+	}
+	var m map[string]any
+	if err := json.Unmarshal(b, &m); err != nil || m == nil {
+		return nil, false
+	}
+	return m, true
+}
+
 // extractRideRecipients pulls passenger_id and driver_id (optional) from a
 // ride-scoped payload. Tolerates both RideEventPayload structs and the
 // `map[string]any` form callers historically used.
@@ -199,6 +240,7 @@ func extractRideRecipients(payload any) (passengerID uuid.UUID, driverID *uuid.U
 // PublishToUser sends an event to a specific user across the cluster.
 func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, event EventType, payload any) error {
 	env := NewEnvelope(event, payload)
+	stampCorrID(ctx, &env)
 	d.appendReplay(ctx, userID, env)
 	d.writeAudit(ctx, EnvelopeAuditEvent(env, &userID, nil))
 	ge := globalEvent{
@@ -218,30 +260,33 @@ func (d *RedisDispatcher) PublishToUser(ctx context.Context, userID uuid.UUID, e
 
 // PublishToRide sends an event to all participants of a ride across the cluster.
 // The payload is normalized to a RideEventPayload for consistent serialization;
-// extra fields from `gin.H` callers are preserved as map keys.
+// extra fields from callers (`gin.H` maps OR typed structs) are preserved as
+// map keys. Typed structs are normalized via JSON round-trip so the dispatcher
+// never silently drops payload fields the way a naive `payload.(map[string]any)`
+// assertion would.
 func (d *RedisDispatcher) PublishToRide(ctx context.Context, ride *domain.Ride, event EventType, payload any) error {
-	base := RideEventPayload{
-		RideID:      ride.ID,
-		Status:      string(ride.Status),
-		DriverID:    ride.DriverID,
-		PassengerID: ride.PassengerID,
+	base := map[string]any{
+		"ride_id":      ride.ID,
+		"status":       string(ride.Status),
+		"passenger_id": ride.PassengerID,
+	}
+	if ride.DriverID != nil {
+		base["driver_id"] = *ride.DriverID
 	}
 	var canonical any = base
-	if extra, ok := payload.(map[string]any); ok {
-		m := map[string]any{
-			"ride_id":      base.RideID,
-			"status":       base.Status,
-			"passenger_id": base.PassengerID,
-		}
-		if base.DriverID != nil {
-			m["driver_id"] = *base.DriverID
-		}
+	if extra, ok := mergePayloadFields(payload); ok {
 		for k, v := range extra {
-			m[k] = v
+			// Routing fields win — never let a caller overwrite the
+			// passenger/driver/ride_id used by [routeLocally].
+			if _, reserved := base[k]; reserved {
+				continue
+			}
+			base[k] = v
 		}
-		canonical = m
+		canonical = base
 	}
 	env := NewEnvelope(event, canonical)
+	stampCorrID(ctx, &env)
 	d.appendReplay(ctx, ride.PassengerID, env)
 	if ride.DriverID != nil {
 		d.appendReplay(ctx, *ride.DriverID, env)

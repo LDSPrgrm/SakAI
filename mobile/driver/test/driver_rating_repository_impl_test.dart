@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:driver/features/ride_complete/models/driver_rating_exception.dart';
 import 'package:driver/features/ride_complete/repositories/driver_rating_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sakai_shared/sakai_shared.dart';
@@ -56,14 +57,14 @@ void main() {
       expect(called, isTrue);
     });
 
-    test('rethrows error on failure', () async {
+    test('wraps DioException in DriverRatingException on failure', () async {
       client.dio.httpClientAdapter = _TestAdapter((options) async {
         return ResponseBody.fromString('Error', 500);
       });
 
-      expect(
-        () => repository.submitRating('ride-123', 4, null),
-        throwsA(isA<DioException>()),
+      await expectLater(
+        repository.submitRating('ride-123', 4, null),
+        throwsA(isA<DriverRatingException>()),
       );
     });
   });

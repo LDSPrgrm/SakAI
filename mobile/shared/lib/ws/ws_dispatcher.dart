@@ -186,6 +186,20 @@ class WsDispatcher {
         // that want raw access.
         return BuiltMap<String, Object?>.from(payload);
 
+      case WsEventType.rideCompleted:
+        // OpenAPI bump introduced WsEventRideCompleted but the
+        // built_value regen is queued; pass through as a raw map so
+        // passenger receipt + driver earnings handlers can already wire
+        // up without waiting on the codegen sweep.
+        return BuiltMap<String, Object?>.from(payload);
+
+      case WsEventType.incidentAssigned:
+      case WsEventType.incidentResolved:
+        // SOS lifecycle (P6). Models pending built_value regen — expose
+        // raw payload so the SOS banner can read assignee + resolution
+        // fields immediately.
+        return BuiltMap<String, Object?>.from(payload);
+
       case WsEventType.connWelcome:
         // Protocol metadata event — handlers (if any) take the raw payload.
         return BuiltMap<String, Object?>.from(payload);

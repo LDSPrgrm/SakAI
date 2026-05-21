@@ -1,4 +1,14 @@
 // Package router assembles the Gin engine with all routes and middleware.
+//
+// BLOCKED follow-ups (RFC v2 P9 — require operator action, not code):
+//   - Staging deploy must set E2E_ENABLED=true + a rotating
+//     E2E_SEED_TOKEN secret so the /api/e2e/* routes are reachable
+//     from the mobile integration test runner. The handlers fail
+//     closed in production; nothing else gates the deploy.
+//   - Manual QA checklist per RFC §16.5 must run on real devices
+//     before P9 closes: SOS countdown cancel, WiFi↔LTE switch
+//     mid-ride, background→foreground state restore, 2-passenger
+//     cancel race, receipt across cash/GCash/PayMaya/Card.
 package router
 
 import (
@@ -39,6 +49,9 @@ type Deps struct {
 	Promotion      *handler.PromotionHandler
 	SavedPlace     *handler.SavedPlaceHandler
 	WS             *ws.Handler
+	// E2E is the deterministic-seed handler for the mobile integration
+	// test suite. Nil disables the route entirely — never expose in prod.
+	E2E *handler.E2EHandler
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
 	PerfSampler middleware.PerfSampler
@@ -62,6 +75,9 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(middleware.CORS())
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
+	// CorrID must run before any handler that publishes WS events so the
+	// dispatcher can read the value off the request context (RFC v2 §4.3).
+	r.Use(middleware.CorrID())
 	r.Use(middleware.Perf(d.PerfSampler))
 
 	// Permission guard factory — superadmin bypass, 30s LRU cache.
@@ -86,6 +102,17 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	// ── Public: service area coverage (mobile discovery) ─────────────────────
 	if d.ServiceArea != nil {
 		api.GET("/service-area", d.ServiceArea.ListPublic)
+	}
+
+	// ── E2E test fixtures (mounted only when configured) ─────────────────────
+	// The handler itself enforces the bearer-token check; the nil guard here
+	// keeps the route off the mux entirely in production deploys that don't
+	// configure E2E_ENABLED + E2E_SEED_TOKEN. See e2e_handler.go for the
+	// privacy/idempotency contract.
+	if d.E2E != nil {
+		api.POST("/e2e/seed", d.E2E.Seed)
+		api.DELETE("/e2e/seed", d.E2E.CleanupSeed)
+		api.POST("/e2e/publish-event", d.E2E.PublishEvent)
 	}
 
 	// ── Public auth routes ────────────────────────────────────────────────────
@@ -313,6 +340,11 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 
 		// Payment processing route
 		authed.POST("/payments/process", middleware.RequireRole(domain.RolePassenger), d.PayProcess.ProcessPayment)
+
+		// Participant-driven incident location stream (passenger OR driver
+		// pushes live GPS during an open SOS). Authorization is enforced
+		// per-incident inside the handler — both ride parties may write.
+		authed.POST("/incidents/:incidentId/location", d.Ride.AppendIncidentLocation)
 
 		// User rating lookup (any authenticated user)
 		authed.GET("/users/:userId/rating", d.Rating.GetUserRating)

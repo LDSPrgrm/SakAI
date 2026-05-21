@@ -42,6 +42,9 @@ const (
 	EventRideCancelled         EventType = "ride.cancelled"
 	EventRideOfferExpired      EventType = "ride.offer_expired"
 	EventRideSOS               EventType = "ride.sos_triggered"
+	EventSosLocationStream     EventType = "sos.location_stream"
+	EventIncidentAssigned      EventType = "incident.assigned"
+	EventIncidentResolved      EventType = "incident.resolved"
 	EventDriverLocationUpdated EventType = "driver.location_updated"
 	EventConnWelcome           EventType = "conn.welcome"
 	EventRideStateSync         EventType = "ride.state_sync"
@@ -111,10 +114,18 @@ func (cl *Client) close() {
 	cl.once.Do(func() { close(cl.send) })
 }
 
-// Hub maintains the registry of connected WebSocket clients.
+// MaxDevicesPerUser caps concurrent WS connections per user at RFC v2 §7.4
+// + §20 decision 2's documented N≤3. Registering a fourth connection
+// evicts the OLDEST existing one (FIFO) so a long-suspended phone in a
+// bag doesn't block a tablet the user is actively using.
+const MaxDevicesPerUser = 3
+
+// Hub maintains the registry of connected WebSocket clients. Each user
+// may have up to [MaxDevicesPerUser] simultaneous connections — fanout
+// iterates the slice so every device sees the event.
 type Hub struct {
 	mu           sync.RWMutex
-	clients      map[uuid.UUID]*Client // userID → client
+	clients      map[uuid.UUID][]*Client // userID → connected clients (cap MaxDevicesPerUser)
 	pingInterval time.Duration
 	ackTracker   *AckTracker
 }
@@ -122,7 +133,7 @@ type Hub struct {
 // NewHub creates a ready-to-use Hub.
 func NewHub(pingInterval time.Duration) *Hub {
 	return &Hub{
-		clients:      make(map[uuid.UUID]*Client),
+		clients:      make(map[uuid.UUID][]*Client),
 		pingInterval: pingInterval,
 	}
 }
@@ -142,38 +153,115 @@ func (h *Hub) AckTracker() *AckTracker { return h.ackTracker }
 // If the same user already has a connection, the old one is evicted.
 // The protocol argument is the Sec-WebSocket-Protocol value selected during
 // upgrade — empty means a v1 client (no v2 envelope fields on the wire).
-func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) {
+//
+// OUTSTANDING (RFC v2 §7.4 + §20 decision 2 — multi-device fanout, N≤3):
+// the current single-slot eviction model is incompatible with the multi-
+// device claim. To support phone+tablet for the same user the clients map
+// must become map[uuid.UUID][]*Client with a 3-element cap, and every
+// fanout site (sendEnvelope / BroadcastToRide / BroadcastToRideByIDs)
+// must iterate the slice. ack_tracker.Track keys on event_id only, so
+// multi-device ACK semantics already hold — a single client ACK drops the
+// pending entry and stops retries to all peers.
+// Register returns the *Client so the caller's readPump goroutine can
+// invoke UnregisterClient on exit. Coarse Unregister still exists for
+// codepaths that want to evict all of a user's devices (e.g. force
+// logout) but new callers should prefer per-device cleanup.
+func (h *Hub) Register(userID uuid.UUID, conn *websocket.Conn, protocol string) *Client {
 	cl := newClient(userID, conn, protocol)
 	h.mu.Lock()
-	if old, ok := h.clients[userID]; ok {
-		old.close()
-		// Old eviction does not change conn_active because we replace 1:1.
+	existing := h.clients[userID]
+	// Evict the oldest if we're at capacity. FIFO eviction matches the
+	// "long-stale phone in a bag" intuition — newer connections are more
+	// likely to be the active device.
+	if len(existing) >= MaxDevicesPerUser {
+		oldest := existing[0]
+		existing = existing[1:]
+		oldest.close()
+		// Capacity eviction keeps the user-level conn_active gauge steady:
+		// one client closed, one opened.
 	} else {
+		// Net-new device: bump the gauge once.
 		ConnOpened()
 	}
-	h.clients[userID] = cl
+	h.clients[userID] = append(existing, cl)
 	h.mu.Unlock()
 
 	go cl.writePump(h.pingInterval)
+	return cl
 }
 
-// Size returns the number of currently-connected clients. Used by health
-// probes and the SystemHealth dashboard.
+// Size returns the count of distinct connected USERS (not devices). Used
+// by health probes / SystemHealth dashboard, which historically tracked
+// "how many people online" rather than raw socket count.
 func (h *Hub) Size() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.clients)
 }
 
-// Unregister removes a client for the given user.
+// DeviceCount returns the total number of connected sockets across all
+// users. Useful for capacity planning + Prometheus-side cross-checks
+// against the conn_active counter.
+func (h *Hub) DeviceCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	total := 0
+	for _, devices := range h.clients {
+		total += len(devices)
+	}
+	return total
+}
+
+// Unregister removes ALL clients for the given user. Used at the
+// readPump-exit path for now; per-device cleanup happens transparently
+// when the underlying conn returns from ReadMessage with an error and
+// the corresponding writePump exits via cl.send close.
+//
+// NOTE: this is a coarse-grained unregister — it kills every device for
+// a user. The per-device readPump-driven path needs UnregisterClient
+// (added below) so one bad socket doesn't take down the user's other
+// devices.
 func (h *Hub) Unregister(userID uuid.UUID) {
 	h.mu.Lock()
-	if cl, ok := h.clients[userID]; ok {
-		cl.close()
+	if devices, ok := h.clients[userID]; ok {
+		for _, cl := range devices {
+			cl.close()
+		}
 		delete(h.clients, userID)
-		ConnClosed()
+		// One ConnClosed per device — keeps Prometheus aligned with the
+		// per-device ConnOpened calls in Register.
+		for range devices {
+			ConnClosed()
+		}
 	}
 	h.mu.Unlock()
+}
+
+// UnregisterClient removes a single device. Called by the readPump
+// goroutine when its conn returns an error. Other devices for the same
+// user remain registered.
+func (h *Hub) UnregisterClient(userID uuid.UUID, cl *Client) {
+	h.mu.Lock()
+	devices := h.clients[userID]
+	kept := devices[:0]
+	removed := 0
+	for _, d := range devices {
+		if d == cl {
+			d.close()
+			removed++
+			continue
+		}
+		kept = append(kept, d)
+	}
+	if len(kept) == 0 {
+		delete(h.clients, userID)
+	} else {
+		h.clients[userID] = kept
+	}
+	h.mu.Unlock()
+	for i := 0; i < removed; i++ {
+		ConnClosed()
+	}
 }
 
 // SendToUser sends an event to a specific user if they are connected.
@@ -194,20 +282,38 @@ func (h *Hub) SendToUser(userID uuid.UUID, event EventType, payload any) {
 // so a retransmission from the tracker re-uses the original entry.
 func (h *Hub) sendEnvelope(userID uuid.UUID, env Envelope) {
 	h.mu.RLock()
-	cl, ok := h.clients[userID]
+	devices := h.clients[userID]
+	// Snapshot the slice header so the broadcast loop runs without
+	// holding the read lock — sends below may block on a slow consumer.
+	snapshot := make([]*Client, len(devices))
+	copy(snapshot, devices)
 	h.mu.RUnlock()
-	if !ok {
-		log.Printf("[WS] SendToUser FAILED: user %s not connected (total clients: %d)", userID, len(h.clients))
+
+	if len(snapshot) == 0 {
+		log.Printf("[WS] SendToUser FAILED: user %s not connected (total users: %d)", userID, h.Size())
 		return
 	}
-	select {
-	case cl.send <- env:
-		if h.ackTracker != nil && env.AckRequired != nil && *env.AckRequired {
-			h.ackTracker.Track(userID, env)
+	var slow []*Client
+	delivered := false
+	for _, cl := range snapshot {
+		select {
+		case cl.send <- env:
+			delivered = true
+		default:
+			// Slow consumer — collect for eviction outside the loop so
+			// we don't mutate the map while iterating.
+			slow = append(slow, cl)
 		}
-	default:
-		// Slow consumer — evict to avoid head-of-line blocking.
-		h.Unregister(userID)
+	}
+	// ack_tracker.Track keys on event_id; recording once per envelope is
+	// correct even with N devices because any one ACK drops the pending
+	// entry. Skip if literally no device accepted the frame — there's
+	// nothing to retry to.
+	if delivered && h.ackTracker != nil && env.AckRequired != nil && *env.AckRequired {
+		h.ackTracker.Track(userID, env)
+	}
+	for _, cl := range slow {
+		h.UnregisterClient(userID, cl)
 	}
 }
 

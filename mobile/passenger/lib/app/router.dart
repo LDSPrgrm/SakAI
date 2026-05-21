@@ -29,6 +29,7 @@ import '../features/support/views/support_screen.dart';
 import '../features/settings/views/terms_screen.dart';
 import '../features/settings/views/privacy_policy_screen.dart';
 import '../features/settings/views/language_selection_screen.dart';
+import '../features/settings/views/sos_safety_settings_screen.dart';
 import '../features/saved_places/views/saved_places_screen.dart';
 import '../features/promotions/views/promotions_screen.dart';
 import '../features/coming_soon/views/coming_soon_screen.dart';
@@ -217,6 +218,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settingsLanguage,
         builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsSosSafety,
+        builder: (context, state) => const SosSafetySettingsScreen(),
       ),
       GoRoute(
         path: Routes.savedPlaces,

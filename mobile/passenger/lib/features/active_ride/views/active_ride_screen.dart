@@ -210,6 +210,15 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
         children: [
           mapWidget,
 
+          // P6 SOS banner — anchored at the top so it sits above the
+          // driver card. Renders an empty SizedBox when sos.active==false.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SosBanner(state: rideState.sos),
+          ),
+
           if (rideState.driverName != null)
             Positioned(
               top: 16,

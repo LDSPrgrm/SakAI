@@ -24,6 +24,12 @@ class SOSRepositoryImpl implements SOSRepository {
   Future<api.Incident?> getActiveIncident(String rideId) async {
     // Current API doesn't have a direct "get active incident for ride" endpoint
     // In a real app, this might be a separate call or part of ride details.
+    //
+    // OUTSTANDING (MOB-P6.1): wire this to the WS dispatcher's SOS lifecycle
+    // state instead of REST. ActiveRideController already folds
+    // ride.sos_triggered / incident.assigned / incident.resolved into
+    // SosUiState (see active_ride_notifier.dart) — surface that state here so
+    // the support screen / location pusher know when an incident is open.
     return null;
   }
 }

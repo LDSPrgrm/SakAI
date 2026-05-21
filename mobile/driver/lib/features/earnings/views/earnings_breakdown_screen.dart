@@ -144,45 +144,47 @@ class _EarningsBreakdownScreenState
                           ),
                         )
                       else
-                        for (final r in _earnings.rideBreakdowns)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: t.spaceXs),
-                            child: SakaiSurfaceCard(
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          DateFormat.yMMMd()
-                                              .add_jm()
-                                              .format(r.completedAt),
-                                          style: theme.textTheme.titleSmall,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Fare ${NumberFormat.currency(symbol: '\$').format(r.fare)} • Tip ${NumberFormat.currency(symbol: '\$').format(r.tip)}',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
-                                        ),
-                                      ],
+                        SakaiPhasedReveal(
+                          spacing: t.spaceXs,
+                          children: [
+                            for (final r in _earnings.rideBreakdowns)
+                              SakaiSurfaceCard(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            DateFormat.yMMMd()
+                                                .add_jm()
+                                                .format(r.completedAt),
+                                            style: theme.textTheme.titleSmall,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Fare ${NumberFormat.currency(symbol: '\$').format(r.fare)} • Tip ${NumberFormat.currency(symbol: '\$').format(r.tip)}',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    NumberFormat.currency(symbol: '\$')
-                                        .format(r.total),
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                ],
+                                    Text(
+                                      NumberFormat.currency(symbol: '\$')
+                                          .format(r.total),
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
+                          ],
+                        ),
                     ],
                   ),
       ),

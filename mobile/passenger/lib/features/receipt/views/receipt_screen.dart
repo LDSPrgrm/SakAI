@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../models/ride_receipt.dart';
+import '../services/receipt_pdf_builder.dart';
 import '../view_models/receipt_view_model.dart';
 
 /// Receipt screen displaying a professional fare breakdown for a completed ride.
@@ -68,6 +69,32 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     }
   }
 
+  Future<void> _onShareReceiptPdf() async {
+    try {
+      final receipt =
+          ref.read(receiptNotifierProvider).receipt;
+      if (receipt == null) return;
+      final bytes = await ReceiptPdfBuilder.build(receipt);
+      final tempDir = await getTemporaryDirectory();
+      final file = await File(
+        '${tempDir.path}/receipt_${widget.rideId}.pdf',
+      ).writeAsBytes(bytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: 'SakAI Ride Receipt',
+          text: 'PDF receipt for your SakAI ride',
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share PDF: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(receiptNotifierProvider);
@@ -82,12 +109,18 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          if (state.status == ReceiptStatus.success)
+          if (state.status == ReceiptStatus.success) ...[
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Share as PDF',
+              onPressed: _onShareReceiptPdf,
+            ),
             IconButton(
               icon: const Icon(Icons.share),
               tooltip: 'Share Receipt',
               onPressed: _onShareReceipt,
             ),
+          ],
         ],
       ),
       body: _buildBody(state, tokens, theme),
@@ -303,41 +336,45 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
             ),
             const Divider(),
             SizedBox(height: tokens.spaceSm),
-            if (receipt.estimatedFare != null) ...[
-              _FareRow(
-                label: 'Estimated Fare',
-                amount: receipt.formatAmount(receipt.estimatedFare!),
-              ),
-              SizedBox(height: tokens.spaceXs),
-            ],
-            if (receipt.actualFare != null) ...[
-              _FareRow(
-                label: 'Actual Fare',
-                amount: receipt.formatAmount(receipt.actualFare!),
-                highlight: true,
-              ),
-              SizedBox(height: tokens.spaceXs),
-            ],
+            // P7 phased reveal — fare components animate in one-by-one
+            // so the breakdown reads like a running tally rather than a
+            // dump. Divider + total stay outside the reveal so they
+            // remain anchored.
+            SakaiPhasedReveal(
+              spacing: tokens.spaceXs,
+              children: [
+                if (receipt.estimatedFare != null)
+                  _FareRow(
+                    label: 'Estimated Fare',
+                    amount: receipt.formatAmount(receipt.estimatedFare!),
+                  ),
+                if (receipt.actualFare != null)
+                  _FareRow(
+                    label: 'Actual Fare',
+                    amount: receipt.formatAmount(receipt.actualFare!),
+                    highlight: true,
+                  ),
+                if (hasBreakdown) ...[
+                  _FareRow(
+                    label: 'Base Fare',
+                    amount: receipt.formatAmount(baseFare),
+                  ),
+                  _FareRow(
+                    label: 'Distance Charge',
+                    amount: receipt.formatAmount(distanceCharge),
+                  ),
+                  _FareRow(
+                    label: 'Time Charge',
+                    amount: receipt.formatAmount(timeCharge),
+                  ),
+                  _FareRow(
+                    label: 'Booking Fee',
+                    amount: receipt.formatAmount(bookingFee),
+                  ),
+                ],
+              ],
+            ),
             if (hasBreakdown) ...[
-              _FareRow(
-                label: 'Base Fare',
-                amount: receipt.formatAmount(baseFare),
-              ),
-              SizedBox(height: tokens.spaceXs),
-              _FareRow(
-                label: 'Distance Charge',
-                amount: receipt.formatAmount(distanceCharge),
-              ),
-              SizedBox(height: tokens.spaceXs),
-              _FareRow(
-                label: 'Time Charge',
-                amount: receipt.formatAmount(timeCharge),
-              ),
-              SizedBox(height: tokens.spaceXs),
-              _FareRow(
-                label: 'Booking Fee',
-                amount: receipt.formatAmount(bookingFee),
-              ),
               const Divider(),
               SizedBox(height: tokens.spaceSm),
             ],

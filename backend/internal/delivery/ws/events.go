@@ -99,6 +99,45 @@ type RideSOSPayload struct {
 	Reason      *string   `json:"reason,omitempty"`
 }
 
+// IncidentAssignedPayload carries the data for `incident.assigned`
+// (server → ride participants: a support operator has picked up the SOS).
+//
+// AssigneeID is nil when an admin clears the assignment (un-assigns).
+// AssigneeName is populated only if the publisher can resolve it cheaply —
+// mobile clients should not depend on it being present.
+type IncidentAssignedPayload struct {
+	RideID       uuid.UUID  `json:"ride_id"`
+	IncidentID   uuid.UUID  `json:"incident_id"`
+	AssigneeID   *uuid.UUID `json:"assignee_id,omitempty"`
+	AssigneeName string     `json:"assignee_name,omitempty"`
+	AssignedAt   time.Time  `json:"assigned_at"`
+}
+
+// IncidentResolvedPayload carries the data for `incident.resolved`
+// (server → ride participants: the SOS is closed).
+//
+// ResolutionNotes mirrors what was stored on the incident row. Clients should
+// treat it as informational only — operations may redact PII before display.
+type IncidentResolvedPayload struct {
+	RideID          uuid.UUID `json:"ride_id"`
+	IncidentID      uuid.UUID `json:"incident_id"`
+	ResolutionNotes string    `json:"resolution_notes,omitempty"`
+	ResolvedAt      time.Time `json:"resolved_at"`
+}
+
+// SosLocationStreamPayload carries the data for `sos.location_stream`
+// (server → ride participants + assigned operator: a live GPS ping from
+// the SOS actor while the incident is open). Emitted whenever the
+// passenger or driver POSTs to `/incidents/:id/location` while the
+// incident is unresolved.
+type SosLocationStreamPayload struct {
+	RideID     uuid.UUID `json:"ride_id"`
+	IncidentID uuid.UUID `json:"incident_id"`
+	ActorID    uuid.UUID `json:"actor_id"`
+	Location   LatLng    `json:"location"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // NoDriversAvailablePayload carries the data for `ride.no_drivers`.
 type NoDriversAvailablePayload struct {
 	RideID  uuid.UUID `json:"ride_id"`

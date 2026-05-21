@@ -10,6 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
 import '../../earnings/view_models/earnings_notifier.dart';
+import '../../earnings/view_models/tip_celebration_notifier.dart';
+import '../../sos/view_models/sos_notifier.dart';
 import '../models/active_ride_step.dart';
 import '../services/location_stream_service.dart';
 import '../view_models/active_ride_notifier.dart';
@@ -106,6 +108,31 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
 
   @override
   Widget build(BuildContext context) {
+    // P7 tip celebration: pop a one-shot dialog when ride.completed
+    // arrives with tip_amount > 0. ref.listen MUST live on the
+    // ConsumerStatefulWidget's own build (not inside ListenableBuilder)
+    // or Riverpod asserts `debugDoingBuild`.
+    ref.listen<TipCelebrationState>(tipCelebrationProvider, (prev, next) {
+      final amount = next.pendingAmount;
+      if (amount == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          builder: (_) => Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SakaiTipCelebration(
+                amount: amount,
+                subtitle: 'Thanks for the smooth ride!',
+              ),
+            ),
+          ),
+        );
+        ref.read(tipCelebrationProvider.notifier).acknowledge();
+      });
+    });
+
     return ListenableBuilder(
       listenable: _manager,
       builder: (context, _) => _buildUI(context),
@@ -155,6 +182,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // P6 SOS banner — driven by sosNotifierProvider, which
+                  // subscribes to ride.sos_triggered / incident.assigned /
+                  // incident.resolved on the shared WS dispatcher.
+                  SosBanner(state: ref.watch(sosNotifierProvider).ui),
                   if (_locationState.isDegraded)
                     Padding(
                       padding: EdgeInsets.only(bottom: tokens.spaceSm),

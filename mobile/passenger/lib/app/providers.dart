@@ -210,3 +210,31 @@ final activeRideStateProvider =
       final controller = ref.watch(activeRideProvider(rideId));
       return controller.state;
     });
+
+/// Streams the controller's state so widgets/providers can rebuild on
+/// every WS-driven transition. Use this when synchronous `.state` reads
+/// would miss SOS/incident lifecycle updates that arrive after mount.
+final activeRideStateStreamProvider =
+    StreamProvider.family<ActiveRideState, String>((ref, rideId) {
+      final controller = ref.watch(activeRideProvider(rideId));
+      return controller.stateStream
+          .where((async) => async.value != null)
+          .map((async) => async.value!);
+    });
+
+/// Surfaces just the SosUiState for a ride. Wraps the stream provider so
+/// callers don't have to extract `.sos` themselves. Returns
+/// [SosUiState.idle] until the first state frame arrives.
+///
+/// Replaces the stubbed `SOSRepository.getActiveIncident` for in-app
+/// consumers — that REST contract still exists but always returns null
+/// (no backend endpoint). Anything that needs to know whether an
+/// incident is open for the active ride should watch this.
+final passengerSosStateProvider =
+    Provider.family<SosUiState, String>((ref, rideId) {
+      final async = ref.watch(activeRideStateStreamProvider(rideId));
+      return async.maybeWhen(
+        data: (state) => state.sos,
+        orElse: () => SosUiState.idle,
+      );
+    });

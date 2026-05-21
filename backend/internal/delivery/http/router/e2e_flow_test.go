@@ -84,7 +84,7 @@ func TestE2ECrossAppFlow(t *testing.T) {
 	deps := router.Deps{
 		Ride:       handler.NewRideHandler(mockRideUC, nil, &dummyDispatcher{}, mockRideRepo, mockUserRepo, mockDriverRepo, mockPaymentRepo),
 		Rating:     handler.NewRatingHandler(mockRatingUC),
-		Admin:      handler.NewAdminHandler(mockAdminUC, mockAuditUC),
+		Admin:      handler.NewAdminHandler(mockAdminUC, mockAuditUC, &dummyDispatcher{}, mockRideRepo),
 		Metrics:    handler.NewMetricsHandler(mockMetricsUC),
 		PayProcess: handler.NewRidePaymentHandler(nil, nil, nil),
 		AuthUC:     mockAuthUC,
