@@ -2,6 +2,7 @@ package ws
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -32,9 +33,15 @@ type promCollectors struct {
 	envelopeIDFallbacks    prometheus.Counter
 }
 
+// promMetrics is held in an atomic.Pointer so the hot-path reads in
+// promInc* / Conn* / Replay* / Heartbeat* / Redis* / SendBuffer*
+// stay lock-free while tests can swap the collectors in and out
+// without racing pod goroutines still in flight (data race observed
+// in CI between TestPrometheusEmitCounter resetting the pointer and
+// Hub.Unregister's deferred ConnClosed() read from a chaos-test pod).
 var (
 	promOnce    sync.Once
-	promMetrics *promCollectors
+	promMetrics atomic.Pointer[promCollectors]
 )
 
 // RegisterPrometheus registers the WebSocket metric collectors with the
@@ -48,20 +55,21 @@ func RegisterPrometheus(reg prometheus.Registerer) {
 		reg = prometheus.DefaultRegisterer
 	}
 	promOnce.Do(func() {
-		promMetrics = newPromCollectors()
+		c := newPromCollectors()
 		reg.MustRegister(
-			promMetrics.connTotal,
-			promMetrics.connActive,
-			promMetrics.eventsEmittedTotal,
-			promMetrics.eventsAckTotal,
-			promMetrics.eventsNackTotal,
-			promMetrics.replayRequestsTotal,
-			promMetrics.fsmRejectionsTotal,
-			promMetrics.heartbeatMissesTotal,
-			promMetrics.redisPublishErrors,
-			promMetrics.sendBufferFullTotal,
-			promMetrics.envelopeIDFallbacks,
+			c.connTotal,
+			c.connActive,
+			c.eventsEmittedTotal,
+			c.eventsAckTotal,
+			c.eventsNackTotal,
+			c.replayRequestsTotal,
+			c.fsmRejectionsTotal,
+			c.heartbeatMissesTotal,
+			c.redisPublishErrors,
+			c.sendBufferFullTotal,
+			c.envelopeIDFallbacks,
 		)
+		promMetrics.Store(c)
 	})
 }
 
@@ -119,75 +127,75 @@ func newPromCollectors() *promCollectors {
 // the Prometheus path while still exercising the in-memory counters.
 
 func promIncEmitted(event EventType) {
-	if promMetrics != nil {
-		promMetrics.eventsEmittedTotal.WithLabelValues(string(event)).Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.eventsEmittedTotal.WithLabelValues(string(event)).Inc()
 	}
 }
 
 func promIncAck(event EventType) {
-	if promMetrics != nil {
-		promMetrics.eventsAckTotal.WithLabelValues(string(event)).Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.eventsAckTotal.WithLabelValues(string(event)).Inc()
 	}
 }
 
 func promIncNack(event EventType) {
-	if promMetrics != nil {
-		promMetrics.eventsNackTotal.WithLabelValues(string(event)).Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.eventsNackTotal.WithLabelValues(string(event)).Inc()
 	}
 }
 
 func promIncFSMRejection(event EventType, reason string) {
-	if promMetrics != nil {
-		promMetrics.fsmRejectionsTotal.WithLabelValues(string(event), reason).Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.fsmRejectionsTotal.WithLabelValues(string(event), reason).Inc()
 	}
 }
 
 func promIncEnvelopeIDFallback() {
-	if promMetrics != nil {
-		promMetrics.envelopeIDFallbacks.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.envelopeIDFallbacks.Inc()
 	}
 }
 
 // ConnOpened / ConnClosed are public so the Hub can record lifecycle events.
 // They no-op when Prometheus isn't wired.
 func ConnOpened() {
-	if promMetrics != nil {
-		promMetrics.connTotal.Inc()
-		promMetrics.connActive.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.connTotal.Inc()
+		p.connActive.Inc()
 	}
 }
 
 func ConnClosed() {
-	if promMetrics != nil {
-		promMetrics.connActive.Dec()
+	if p := promMetrics.Load(); p != nil {
+		p.connActive.Dec()
 	}
 }
 
 // ReplayRequested is incremented from the WS handler when an inbound
 // replay.request frame is dispatched to the replay store.
 func ReplayRequested() {
-	if promMetrics != nil {
-		promMetrics.replayRequestsTotal.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.replayRequestsTotal.Inc()
 	}
 }
 
 // HeartbeatMissed is incremented when the read-deadline watchdog fires.
 func HeartbeatMissed() {
-	if promMetrics != nil {
-		promMetrics.heartbeatMissesTotal.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.heartbeatMissesTotal.Inc()
 	}
 }
 
 // RedisPublishError is incremented from redis_dispatcher on a publish failure.
 func RedisPublishError() {
-	if promMetrics != nil {
-		promMetrics.redisPublishErrors.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.redisPublishErrors.Inc()
 	}
 }
 
 // SendBufferFull is incremented when the per-client send queue drops a frame.
 func SendBufferFull() {
-	if promMetrics != nil {
-		promMetrics.sendBufferFullTotal.Inc()
+	if p := promMetrics.Load(); p != nil {
+		p.sendBufferFullTotal.Inc()
 	}
 }
