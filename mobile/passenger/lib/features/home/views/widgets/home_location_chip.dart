@@ -23,25 +23,42 @@ class HomeLocationChip extends ConsumerWidget {
     return Semantics(
       label: 'Current location: $label',
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 220),
+        constraints: const BoxConstraints(maxWidth: 200),
         padding: EdgeInsets.symmetric(
           horizontal: tokens.spaceMd,
-          vertical: tokens.spaceSm,
+          vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: 0.92),
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(tokens.radiusFull),
-          boxShadow: tokens.elevationSm,
+          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.my_location,
-              size: tokens.iconSm,
-              color: scheme.primary,
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.4),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
             ),
-            SizedBox(width: tokens.spaceXs),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
                 label,
@@ -49,9 +66,16 @@ class HomeLocationChip extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: scheme.onSurface,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: scheme.onSurfaceVariant,
             ),
           ],
         ),

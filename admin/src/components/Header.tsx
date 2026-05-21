@@ -26,11 +26,11 @@ export function Header({ onMenuToggle }: HeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex-1 max-w-sm hidden sm:block">
+        <div className="flex-1 max-w-md hidden sm:block">
           <Input
-            placeholder="Search rides, users..."
+            placeholder="Search records (rides, users)..."
             icon={<Search className="w-4 h-4" />}
-            className="bg-background border-border"
+            className="bg-background border-border shadow-sm focus:border-primary transition-all duration-200"
           />
         </div>
       </div>

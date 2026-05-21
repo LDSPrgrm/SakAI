@@ -12,45 +12,68 @@ class HomeSearchHero extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-      child: Semantics(
-        button: true,
-        label: 'Search destination',
-        child: SakaiTactile(
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.spaceMd,
-              vertical: tokens.spaceMd,
-            ),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              border: Border.all(color: scheme.outlineVariant),
-              boxShadow: tokens.elevationSm,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, size: tokens.iconMd, color: scheme.primary),
-                SizedBox(width: tokens.spaceMd),
-                Expanded(
-                  child: Text(
-                    'Where to?',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
+    return Semantics(
+      button: true,
+      label: 'Search destination',
+      child: SakaiTactile(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 56),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(tokens.radiusFull),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.search_rounded,
+                size: 22,
+                color: scheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Where to?',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: tokens.iconMd,
-                  color: scheme.outline,
-                ),
-              ],
-            ),
+              ),
+              Container(
+                width: 1,
+                height: 20,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                color: scheme.outlineVariant,
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Now',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

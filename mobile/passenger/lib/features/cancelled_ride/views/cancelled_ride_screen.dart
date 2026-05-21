@@ -45,7 +45,10 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(_cancelledRideViewModelProvider(widget.rideId));
-    return _buildContent(context, vm.state);
+    return ListenableBuilder(
+      listenable: vm,
+      builder: (context, _) => _buildContent(context, vm.state),
+    );
   }
 
   Widget _buildContent(BuildContext context, CancelledRideState state) {

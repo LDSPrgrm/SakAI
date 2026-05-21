@@ -6,8 +6,6 @@ import 'package:sakai_shared/sakai_shared.dart'
 import '../models/nearby_driver.dart';
 
 /// Repository for fetching nearby drivers.
-///
-/// Uses raw Dio for HTTP transport (avoids built_value deserialization issues).
 class DriverRepository {
   final SakaiApiClient _client;
 
@@ -17,7 +15,6 @@ class DriverRepository {
           SakaiApiSupport.createClient(authInterceptor: authInterceptor);
 
   /// Fetches nearby drivers for all vehicle types in a single call.
-  /// Returns a map of ride type → driver list.
   Future<Map<String, List<NearbyDriver>>> fetchNearbyDriversAll(
     LatLng location,
   ) async {
@@ -41,30 +38,31 @@ class DriverRepository {
                 name: d.name,
                 location: LatLng(d.location.lat, d.location.lng),
                 heading: d.heading ?? 0.0,
-                vehicleType: _parseVehicleType(d.vehicleType.toString()),
+                vehicleType: _mapVehicleType(d.vehicleType),
               ),
             )
             .toList();
       }
-
-      final total = result.values.fold<int>(0, (a, b) => a + b.length);
-      debugPrint(
-        '[DriverRepository] Fetched $total nearby drivers (car=${result['car']?.length ?? 0}, '
-        'motorcycle=${result['motorcycle']?.length ?? 0}, tricycle=${result['tricycle']?.length ?? 0})',
-      );
       return result;
+    } on DioException catch (e) {
+      debugPrint('[DriverRepository] DioException: ${e.response?.statusCode} ${e.message}');
+      return {};
     } catch (e, st) {
-      debugPrint('DriverRepository.fetchNearbyDriversAll error: $e');
-      debugPrint('$st');
+      debugPrint('[DriverRepository] Unexpected error: $e\n$st');
       return {};
     }
   }
 
-  VehicleType _parseVehicleType(dynamic raw) {
-    if (raw == null) return VehicleType.car;
-    final s = raw.toString().toLowerCase();
-    if (s.contains('motorcycle')) return VehicleType.motorcycle;
-    if (s.contains('tricycle')) return VehicleType.tricycle;
-    return VehicleType.car;
+  VehicleType _mapVehicleType(NearbyDriverVehicleTypeEnum? type) {
+    if (type == null) return VehicleType.car;
+    switch (type) {
+      case NearbyDriverVehicleTypeEnum.motorcycle:
+        return VehicleType.motorcycle;
+      case NearbyDriverVehicleTypeEnum.tricycle:
+        return VehicleType.tricycle;
+      case NearbyDriverVehicleTypeEnum.car:
+      default:
+        return VehicleType.car;
+    }
   }
 }

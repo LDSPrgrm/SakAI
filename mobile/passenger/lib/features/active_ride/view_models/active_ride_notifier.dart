@@ -199,6 +199,10 @@ class ActiveRideController {
     final dispatcher = WsDispatcher(_wsClient);
     _dispatcher = dispatcher;
 
+    _wsDisposers.add(dispatcher.on<WsEventRideAccepted>(
+      WsEventType.rideAccepted,
+      (e) => _applyRideAccepted(e.driver),
+    ));
     _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
       WsEventType.rideStatusChanged,
       (e) => _applyStatusChange(e.status.toString()),
@@ -285,6 +289,13 @@ class ActiveRideController {
           break;
       }
     });
+  }
+
+  void _applyRideAccepted(DriverSummary driver) {
+    debugPrint('[P-ActiveRide] WS rideAccepted: driver=${driver.name}');
+    final vehicle = driver.vehicle;
+    final vehicleStr = vehicle != null ? '${vehicle.make} ${vehicle.model}' : null;
+    enrichDriverInfo(name: driver.name, vehicle: vehicleStr);
   }
 
   void _applyStatusChange(String rawStatus) {
