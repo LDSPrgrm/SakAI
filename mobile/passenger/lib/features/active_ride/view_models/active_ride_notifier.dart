@@ -69,10 +69,12 @@ class ActiveRideController {
        _sosRepository = sosRepository;
 
   Future<void> triggerSOS({String? reason}) async {
+    debugPrint('[P-ActiveRide] triggerSOS: rideId=$rideId, reason=$reason');
     try {
       await _sosRepository.triggerSOS(rideId, reason: reason);
+      debugPrint('[P-ActiveRide] triggerSOS succeeded');
     } catch (e, st) {
-      debugPrint('[PASSENGER] SOS trigger failed: $e\n$st');
+      debugPrint('[P-ActiveRide] SOS trigger failed: $e\n$st');
       final current = _state.value;
       if (current != null) {
         _state = AsyncValue.data(
@@ -90,12 +92,14 @@ class ActiveRideController {
   }
 
   Future<void> _loadRide() async {
+    debugPrint('[P-ActiveRide] _loadRide: rideId=$rideId');
     try {
       final apiResponse = await _client.getRidesApi().rideGet(rideId: rideId);
       final response = apiResponse.data;
       if (response == null) {
         throw Exception('No ride data found');
       }
+      debugPrint('[P-ActiveRide] _loadRide succeeded, status=${response.status}');
 
       _setupWebSocketListener();
       _setupE2EPolling();
@@ -104,12 +108,14 @@ class ActiveRideController {
       _state = AsyncValue.data(ActiveRideState.fromRideResponse(response));
       _stateController.add(_state);
     } on DioException catch (e) {
+      debugPrint('[P-ActiveRide] _loadRide DioException: $e');
       _state = AsyncValue.error(
         Exception('Failed to load ride: $e'),
         StackTrace.current,
       );
       _stateController.add(_state);
     } catch (e, st) {
+      debugPrint('[P-ActiveRide] _loadRide unexpected error: $e');
       _state = AsyncValue.error(Exception('Failed to load ride: $e'), st);
       _stateController.add(_state);
     }
@@ -118,16 +124,19 @@ class ActiveRideController {
   /// Fires before each WS reconnect attempt. Refetches the ride so any state
   /// transitions that happened during the disconnect window are reconciled.
   void _onWsResync() {
+    debugPrint('[P-ActiveRide] _onWsResync: rideId=$rideId');
     if (_terminated) return;
     unawaited(_refetchRide());
   }
 
   Future<void> _refetchRide() async {
+    debugPrint('[P-ActiveRide] _refetchRide: rideId=$rideId');
     try {
       final apiResponse = await _client.getRidesApi().rideGet(rideId: rideId);
       final response = apiResponse.data;
       if (response == null) return;
       final rideStatus = RideState.fromString(response.status.name);
+      debugPrint('[P-ActiveRide] _refetchRide: status=$rideStatus');
       final next = ActiveRideState.fromRideResponse(response);
       _state = AsyncValue.data(next);
       _stateController.add(_state);
@@ -135,6 +144,7 @@ class ActiveRideController {
           (rideStatus == RideState.completed ||
               rideStatus == RideState.cancelled)) {
         _terminated = true;
+        debugPrint('[P-ActiveRide] _refetchRide: terminal=$rideStatus, firing callback');
         if (rideStatus == RideState.completed) {
           onCompleted?.call(rideId);
         } else {
@@ -142,7 +152,7 @@ class ActiveRideController {
         }
       }
     } catch (e) {
-      debugPrint('[PASSENGER] WS resync refetch failed: $e');
+      debugPrint('[P-ActiveRide] WS resync refetch failed: $e');
     }
   }
 
@@ -185,6 +195,7 @@ class ActiveRideController {
   }
 
   void _setupDispatcherListener() {
+    debugPrint('[P-ActiveRide] _setupDispatcherListener: rideId=$rideId');
     final dispatcher = WsDispatcher(_wsClient);
     _dispatcher = dispatcher;
 
@@ -218,6 +229,7 @@ class ActiveRideController {
   }
 
   void _applySosTrigger(BuiltMap<String, Object?> payload) {
+    debugPrint('[P-ActiveRide] WS rideSosTriggered: incidentId=${payload["incident_id"]}, triggeredBy=${payload["triggered_by"]}');
     final current = _state.value;
     if (current == null) return;
     final incidentId = payload['incident_id'] as String?;
@@ -236,6 +248,7 @@ class ActiveRideController {
   }
 
   void _applyIncidentAssigned(BuiltMap<String, Object?> payload) {
+    debugPrint('[P-ActiveRide] WS incidentAssigned: assignee=${payload["assignee_name"]}');
     final current = _state.value;
     if (current == null) return;
     final assigneeName = payload['assignee_name'] as String?;
@@ -246,6 +259,7 @@ class ActiveRideController {
   }
 
   void _applyIncidentResolved() {
+    debugPrint('[P-ActiveRide] WS incidentResolved');
     final current = _state.value;
     if (current == null) return;
     _state = AsyncValue.data(
@@ -275,6 +289,7 @@ class ActiveRideController {
 
   void _applyStatusChange(String rawStatus) {
     final rideStatus = RideState.fromString(rawStatus);
+    debugPrint('[P-ActiveRide] WS rideStatusChanged: $rideStatus (raw=$rawStatus)');
     final current = _state.value;
     if (current == null) return;
 
@@ -288,6 +303,7 @@ class ActiveRideController {
         (rideStatus == RideState.completed ||
             rideStatus == RideState.cancelled)) {
       _terminated = true;
+      debugPrint('[P-ActiveRide] Terminal status=$rideStatus — firing callback');
       if (rideStatus == RideState.completed) {
         onCompleted?.call(rideId);
       } else {
@@ -425,6 +441,7 @@ class ActiveRideController {
   }
 
   void _handleRideCancelled() {
+    debugPrint('[P-ActiveRide] WS rideCancelled: rideId=$rideId, _terminated=$_terminated');
     final current = _state.value;
     if (current == null || _terminated) return;
 
@@ -461,6 +478,7 @@ class ActiveRideController {
   }
 
   void dispose() {
+    debugPrint('[P-ActiveRide] dispose: rideId=$rideId');
     _wsSubscription?.cancel();
     for (final d in _wsDisposers) {
       d();

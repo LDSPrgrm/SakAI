@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
@@ -41,8 +42,10 @@ class LoginNotifier extends Notifier<LoginState> {
 
   Future<void> signIn({required String email, required String password}) async {
     final trimmed = email.trim();
+    debugPrint('[D-Auth] signIn: email=$trimmed');
     final validation = _validate(trimmed, password);
     if (validation != null) {
+      debugPrint('[D-Auth] signIn validation failed: $validation');
       state = LoginState(errorMessage: validation);
       return;
     }
@@ -50,7 +53,9 @@ class LoginNotifier extends Notifier<LoginState> {
     state = const LoginState(busy: true);
 
     try {
+      debugPrint('[D-Auth] calling authRepo.login...');
       final session = await _authRepo.login(email: trimmed, password: password);
+      debugPrint('[D-Auth] login succeeded, saving tokens...');
       await ref
           .read(tokenStorageProvider)
           .save(
@@ -58,41 +63,53 @@ class LoginNotifier extends Notifier<LoginState> {
             refreshToken: session.refreshToken,
             expiresAt: session.accessTokenExpiresAt,
           );
+      debugPrint('[D-Auth] tokens saved, marking authenticated');
       ref.read(authStateProvider.notifier).markAuthenticated();
 
       // Connect WebSocket for real-time ride updates.
+      debugPrint('[D-Auth] connecting WebSocket...');
       await ref.read(wsConnectionProvider).connectIfAuthenticated();
+      debugPrint('[D-Auth] WebSocket connected, signIn complete');
 
       state = const LoginState(succeeded: true);
     } on AuthException catch (e) {
+      debugPrint('[D-Auth] signIn AuthException: ${e.userMessage}');
       state = LoginState(errorMessage: e.userMessage);
+    } catch (e, st) {
+      debugPrint('[D-Auth] signIn unexpected error: $e\n$st');
+      state = LoginState(errorMessage: 'An unexpected error occurred.');
     }
   }
 
   Future<void> signInWithGoogle() async {
+    debugPrint('[D-Auth] signInWithGoogle called (not yet implemented)');
     state = const LoginState(busy: true);
     try {
       // TODO: implement OAuth Google flow with backend
       await Future.delayed(const Duration(milliseconds: 500));
       state = const LoginState(errorMessage: 'Google Sign-In coming soon');
     } catch (e) {
+      debugPrint('[D-Auth] signInWithGoogle error: $e');
       state = LoginState(errorMessage: e.toString());
     }
   }
 
   Future<void> signInWithPhone() async {
+    debugPrint('[D-Auth] signInWithPhone called (not yet implemented)');
     state = const LoginState(busy: true);
     try {
       // TODO: navigate to phone verification screen
       await Future.delayed(const Duration(milliseconds: 300));
       state = const LoginState(errorMessage: 'Phone Sign-In coming soon');
     } catch (e) {
+      debugPrint('[D-Auth] signInWithPhone error: $e');
       state = LoginState(errorMessage: e.toString());
     }
   }
 
   void clearError() {
     if (state.errorMessage != null) {
+      debugPrint('[D-Auth] clearError');
       state = state.copyWith(errorMessage: null);
     }
   }

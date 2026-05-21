@@ -208,10 +208,12 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   Future<void> initLocation() async {
+    debugPrint('[P-Home] initLocation called');
     state = state.copyWith(status: HomeStatus.locating);
     try {
       final permission = await _ensureLocationPermission();
       if (!permission) {
+        debugPrint('[P-Home] initLocation: location permission denied');
         state = state.copyWith(
           status: HomeStatus.idle,
           errorMessage: 'Location permission is required to request a ride.',
@@ -221,6 +223,7 @@ class HomeNotifier extends Notifier<HomeState> {
       await _updatePickupFromGps();
       _startLocationStreaming();
     } catch (e) {
+      debugPrint('[P-Home] initLocation error: $e');
       state = state.copyWith(
         status: HomeStatus.idle,
         errorMessage: 'Could not determine your location. Check GPS settings.',
@@ -249,6 +252,7 @@ class HomeNotifier extends Notifier<HomeState> {
             p.locality,
           ].where((s) => s != null && s.isNotEmpty).join(', ');
 
+    debugPrint('[P-Home] _updatePickupFromGps: got position (${pos.latitude}, ${pos.longitude}), address=$address');
     state = state.copyWith(
       status: HomeStatus.idle,
       currentLatLng: currentLatLng,
@@ -344,6 +348,7 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void setDestination(RideLocation destination) {
+    debugPrint('[P-Home] setDestination: ${destination.address} (${destination.lat}, ${destination.lng})');
     // Pre-populate ride type options so the UI never blocks on the
     // "Checking nearby drivers…" loader while the first poll is in flight.
     // Subsequent polls overwrite with live driver counts.
@@ -361,6 +366,7 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void setPickup(RideLocation pickup) {
+    debugPrint('[P-Home] setPickup: ${pickup.address}');
     state = state.copyWith(
       pickup: pickup,
       status: state.destination != null
@@ -371,6 +377,7 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void clearDestination() {
+    debugPrint('[P-Home] clearDestination');
     _stopNearbyDriverPolling();
     state = state.copyWith(
       status: HomeStatus.idle,
@@ -383,6 +390,7 @@ class HomeNotifier extends Notifier<HomeState> {
 
   /// Sets the selected ride type.
   void setSelectedRideType(VehicleType type) {
+    debugPrint('[P-Home] setSelectedRideType: $type');
     state = state.copyWith(selectedRideType: type);
   }
 
@@ -466,6 +474,7 @@ class HomeNotifier extends Notifier<HomeState> {
 
   void clearError() {
     if (state.errorMessage != null) {
+      debugPrint('[P-Home] clearError');
       state = state.copyWith(clearError: true);
     }
   }

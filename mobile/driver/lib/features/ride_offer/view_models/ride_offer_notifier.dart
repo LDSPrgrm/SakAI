@@ -42,6 +42,7 @@ class RideOfferManager extends ChangeNotifier {
   }
 
   void startCountdown() {
+    debugPrint('[D-Offer] startCountdown: rideId=${_offer.rideId}, expiresAt=${_offer.expiresAt}, initial=${_countdownSeconds}s');
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(
       const Duration(seconds: 1),
@@ -56,11 +57,15 @@ class RideOfferManager extends ChangeNotifier {
       _countdownSeconds = clamped;
       notifyListeners();
     }
-    if (clamped <= 0) onExpired?.call();
+    if (clamped <= 0) {
+      debugPrint('[D-Offer] countdown expired for rideId=${_offer.rideId}');
+      onExpired?.call();
+    }
   }
 
   Future<void> acceptRide() async {
     if (_accepting) return;
+    debugPrint('[D-Offer] acceptRide: rideId=${_offer.rideId}');
     _accepting = true;
     _error = null;
     notifyListeners();
@@ -68,7 +73,9 @@ class RideOfferManager extends ChangeNotifier {
     int attempts = 0;
     while (attempts < 3) {
       try {
+        debugPrint('[D-Offer] acceptRide attempt ${attempts + 1}/3...');
         await _apiClient.getRidesApi().rideAccept(rideId: _offer.rideId);
+        debugPrint('[D-Offer] acceptRide succeeded on attempt ${attempts + 1}');
         _accepting = false;
         onAccepted?.call(_offer.rideId);
         notifyListeners();
@@ -76,12 +83,14 @@ class RideOfferManager extends ChangeNotifier {
       } on DioException catch (e) {
         // If it's a 409, the offer might have already been accepted or expired.
         if (e.response?.statusCode == 409) {
+          debugPrint('[D-Offer] acceptRide got 409 — offer no longer available');
           _accepting = false;
           _error = 'This offer is no longer available.';
           notifyListeners();
           return;
         }
         attempts++;
+        debugPrint('[D-Offer] acceptRide DioException (attempt $attempts): ${e.message}');
         if (attempts >= 3) {
           _accepting = false;
           _error = 'Accept failed — please wait for the next offer.';
@@ -89,8 +98,9 @@ class RideOfferManager extends ChangeNotifier {
           return;
         }
         await Future.delayed(const Duration(seconds: 1));
-      } catch (_) {
+      } catch (e) {
         attempts++;
+        debugPrint('[D-Offer] acceptRide unexpected error (attempt $attempts): $e');
         if (attempts >= 3) {
           _accepting = false;
           _error = 'Accept failed — please wait for the next offer.';
@@ -104,19 +114,23 @@ class RideOfferManager extends ChangeNotifier {
 
   Future<void> declineRide() async {
     if (_declining) return;
+    debugPrint('[D-Offer] declineRide: rideId=${_offer.rideId}');
     _declining = true;
     _error = null;
     notifyListeners();
     try {
       await _apiClient.getRidesApi().rideDecline(rideId: _offer.rideId);
+      debugPrint('[D-Offer] declineRide succeeded');
       _declining = false;
       onDeclined?.call();
       notifyListeners();
-    } on DioException catch (_) {
+    } on DioException catch (e) {
+      debugPrint('[D-Offer] declineRide DioException: ${e.message}');
       _declining = false;
       _error = 'Failed to decline. Please try again.';
       notifyListeners();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[D-Offer] declineRide unexpected error: $e');
       _declining = false;
       _error = 'Failed to decline. Please try again.';
       notifyListeners();
@@ -124,12 +138,14 @@ class RideOfferManager extends ChangeNotifier {
   }
 
   void clearError() {
+    debugPrint('[D-Offer] clearError');
     _error = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    debugPrint('[D-Offer] dispose: rideId=${_offer.rideId}');
     _countdownTimer?.cancel();
     onAccepted = null;
     onDeclined = null;

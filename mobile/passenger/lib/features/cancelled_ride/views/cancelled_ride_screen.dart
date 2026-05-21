@@ -52,7 +52,8 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
     final tokens = SakaiDesignTokens.of(context);
     final theme = Theme.of(context);
 
-    if (state.status == CancelledRideStatus.loading) {
+    if (state.status == CancelledRideStatus.initial ||
+        state.status == CancelledRideStatus.loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 

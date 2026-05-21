@@ -94,6 +94,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// Builds an internal [WsDispatcher] owned by the notifier — disposed
   /// alongside the notifier.
   void setupWsListener(WsClient wsClient) {
+    debugPrint('[D-Home] setupWsListener');
     _unsubscribeWs();
     final dispatcher = WsDispatcher(wsClient);
     _ownedDispatcher = dispatcher;
@@ -101,6 +102,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     // Resync hook: every reconnect re-polls incoming-ride and active-ride
     // so the UI doesn't go stale across a WS gap.
     wsClient.onResync = () {
+      debugPrint('[D-Home] WS onResync: polling incoming + active ride');
       unawaited(pollIncomingRide(wsClient));
       unawaited(checkForActiveRide());
     };
@@ -110,26 +112,37 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// tests or in higher-level coordinators that want one dispatcher
   /// instance shared across multiple notifiers.
   void setupWsDispatcher(WsDispatcher dispatcher) {
+    debugPrint('[D-Home] setupWsDispatcher: registering handlers');
     _unsubscribeHandlersOnly();
 
     _wsDisposers.add(dispatcher.on<WsEventRideRequested>(
       WsEventType.rideRequested,
-      (offer) => onRideOffer?.call(offer),
+      (offer) {
+        debugPrint('[D-Home] WS rideRequested: rideId=${offer.rideId}');
+        onRideOffer?.call(offer);
+      },
     ));
     _wsDisposers.add(dispatcher.on<WsEventRideOfferExpired>(
       WsEventType.rideOfferExpired,
-      (e) => onOfferExpired?.call(e.rideId),
+      (e) {
+        debugPrint('[D-Home] WS rideOfferExpired: rideId=${e.rideId}');
+        onOfferExpired?.call(e.rideId);
+      },
     ));
     _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
       WsEventType.rideStatusChanged,
       (e) {
         final status = _parseRideStatus(e.status.toString());
+        debugPrint('[D-Home] WS rideStatusChanged: rideId=${e.rideId}, status=$status');
         if (status != null) onStatusChanged?.call(e.rideId, status);
       },
     ));
     _wsDisposers.add(dispatcher.on<WsEventRideCancelled>(
       WsEventType.rideCancelled,
-      (e) => onRideCancelled?.call(e.rideId),
+      (e) {
+        debugPrint('[D-Home] WS rideCancelled: rideId=${e.rideId}');
+        onRideCancelled?.call(e.rideId);
+      },
     ));
   }
 
@@ -137,12 +150,13 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// Skips if already connected (e.g., splash screen handled it).
   Future<void> connectWebSocket(WsClient wsClient) async {
     if (wsClient.isConnected) {
-      debugPrint('[DRIVER] WebSocket already connected, skipping reconnect');
+      debugPrint('[D-Home] connectWebSocket: already connected, reusing');
       // Still set up listener and poll for missed offers.
       setupWsListener(wsClient);
       await pollIncomingRide(wsClient);
       return;
     }
+    debugPrint('[D-Home] connectWebSocket: connecting...');
     try {
       final tokenStorage = ref.read(tokenStorageProvider);
       final accessToken = await tokenStorage.getAccessToken();
@@ -151,13 +165,16 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
           baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
           accessToken: accessToken,
         );
+        debugPrint('[D-Home] connectWebSocket: connected, setting up listener');
         setupWsListener(wsClient);
         // Missed offer recovery: poll for incoming ride after WS reconnect.
         await pollIncomingRide(wsClient);
+      } else {
+        debugPrint('[D-Home] connectWebSocket: no access token, skipping');
       }
     } catch (e) {
       // WS connection failure is not fatal — will retry on next init.
-      debugPrint('WS connection failed: $e');
+      debugPrint('[D-Home] connectWebSocket failed: $e');
     }
   }
 
@@ -310,6 +327,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// Starts GPS tracking (always runs, regardless of online status).
   /// Position updates the marker; backend updates only happen when online.
   void startGpsTracking() {
+    debugPrint('[D-Home] startGpsTracking');
     _stopGpsStreaming();
     _gpsTimer = Timer.periodic(
       const Duration(seconds: 4),
@@ -441,11 +459,13 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
 
   void clearError() {
     if (state.errorMessage != null) {
+      debugPrint('[D-Home] clearError');
       state = state.copyWith(errorMessage: null);
     }
   }
 
   void unsubscribeWs() {
+    debugPrint('[D-Home] unsubscribeWs');
     _unsubscribeWs();
   }
 
