@@ -869,6 +869,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/support-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List candidate assignees for incident reassignment
+         * @description Slim list of admin/support users that may be assigned an incident.
+         *     Narrower than `/admin/users` (no creation metadata, no password
+         *     flags) so the route can be exposed to operations and support
+         *     callers without leaking sensitive admin-account fields.
+         */
+        get: operations["listAssigneeCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/rides": {
         parameters: {
             query?: never;
@@ -1961,27 +1984,6 @@ export interface paths {
          * @description Returns a CSV file of audit log entries matching optional filters.
          */
         get: operations["adminAuditExport"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/users/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the authenticated admin's own profile
-         * @description Returns the current admin's profile including role_id, role_name, and status.
-         *     Call on admin app cold-start to re-hydrate session state.
-         */
-        get: operations["adminGetMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5642,6 +5644,34 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    listAssigneeCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of candidate assignees */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        /** @description Admin role slug (e.g. superadmin, support, operations). */
+                        role: string;
+                    }[];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     adminListRides: {
         parameters: {
             query?: {
@@ -7150,27 +7180,6 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Admin profile */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminUser"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
         };
     };
     adminGetMyPermissions: {
