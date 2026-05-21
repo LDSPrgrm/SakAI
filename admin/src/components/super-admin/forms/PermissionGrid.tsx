@@ -33,13 +33,26 @@ export function emptyGrid(): PermGrid {
 }
 
 export function fromPermissions(perms: RolePermission[]): PermGrid {
+  return parsePermissions(perms).grid;
+}
+
+// Same as fromPermissions but also returns the list of permission keys that
+// were dropped because PERM_ROWS doesn't know them. Useful for surfacing
+// schema drift to the user instead of silently losing data.
+export function parsePermissions(perms: RolePermission[]): { grid: PermGrid; unknownKeys: string[] } {
   const grid = emptyGrid();
+  const unknownKeys: string[] = [];
   for (const p of perms) {
     if (grid[p.permission_key] !== undefined) {
       grid[p.permission_key] = { read: p.read, write: p.write };
+    } else {
+      unknownKeys.push(p.permission_key);
     }
   }
-  return grid;
+  if (unknownKeys.length > 0) {
+    console.warn('[PermissionGrid] dropped unknown permission keys:', unknownKeys);
+  }
+  return { grid, unknownKeys };
 }
 
 export function toPermissions(grid: PermGrid): RolePermission[] {

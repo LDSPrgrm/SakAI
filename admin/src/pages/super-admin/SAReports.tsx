@@ -104,7 +104,10 @@ export function SAReports() {
     URL.revokeObjectURL(url);
   }
 
+  const selectedReportItem = reportList.find((r) => r.id === selectedReport) ?? null;
+
   async function handleExportAll() {
+    if (!selectedReport) return;
     await handleExport(selectedReport);
   }
 
@@ -115,12 +118,19 @@ export function SAReports() {
 
       <PageHeader
         title="Reports & Analytics"
+        subtitle={selectedReportItem ? `Selected report: ${selectedReportItem.title}` : 'Pick a report below to export.'}
         actions={
           <>
             <DateRangePicker value={dateRange} onChange={setDateRange} />
-            <Button variant="outline" size="sm" onClick={handleExportAll}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAll}
+              disabled={!selectedReport || exportReport.isPending}
+              title={selectedReportItem ? `Export ${selectedReportItem.title} as CSV` : 'Select a report to enable export'}
+            >
               <Download className="w-4 h-4 mr-1.5" />
-              Export CSV
+              {selectedReportItem ? `Export: ${selectedReportItem.title}` : 'Export CSV'}
             </Button>
           </>
         }
