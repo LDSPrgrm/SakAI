@@ -41,6 +41,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   int _currentIndex = 0;
 
   // Sheet & Search State
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _sheetController = DraggableScrollableController();
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
@@ -319,9 +320,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    ref.watch(homeNotifierProvider).destination?.address ?? 'Where to?',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  Expanded(
+                    child: Text(
+                      ref.watch(homeNotifierProvider).destination?.address ?? 'Where to?',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                    ),
                   ),
                 ],
               ),

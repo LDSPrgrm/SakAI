@@ -23,7 +23,7 @@ class DriverHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
-class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
+class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with WidgetsBindingObserver {
   late final DriverHomeNotifier _notifier;
   GoogleMapController? _mapController;
   LatLng _currentLatLng = const LatLng(14.5995, 120.9842);
@@ -31,6 +31,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _notifier = ref.read(driverHomeNotifierProvider.notifier);
     _setupWsListener();
     _initLocation();
@@ -73,6 +74,17 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> {
         context.go(Routes.rideActive, extra: activeRide);
       }
     };
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached || state == AppLifecycleState.hidden) {
+      final isOnline = ref.read(driverHomeNotifierProvider).online;
+      if (isOnline) {
+        debugPrint('[DRIVER] App detached/hidden while online - forcing offline');
+        _notifier.toggleStatus(); 
+      }
+    }
   }
 
   Future<void> _initLocation() async {
