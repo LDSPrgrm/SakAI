@@ -49,4 +49,19 @@ describe('displayRole', () => {
   it('treats empty role_name as missing (regression guard for `||` vs `??`)', () => {
     expect(displayRole({ role: 'admin', role_name: '' })).toBe('admin');
   });
+
+  it('reflects role rename when roleDefs name changes for the same role_id', () => {
+    const before = [{ id: 'r-x', name: 'marketing' }];
+    const after  = [{ id: 'r-x', name: 'growth' }];
+    const admin = { role: 'admin', role_id: 'r-x', role_name: 'marketing' };
+    expect(displayRole(admin, before)).toBe('marketing');
+    expect(displayRole(admin, after)).toBe('growth');
+  });
+
+  it('prefers fresh roleDefs over stale role_name on rename', () => {
+    const renamed = [{ id: 'r-ops', name: 'operations-v2' }];
+    expect(
+      displayRole({ role: 'admin', role_id: 'r-ops', role_name: 'operations' }, renamed),
+    ).toBe('operations-v2');
+  });
 });

@@ -157,10 +157,10 @@ class WsClient {
       _isConnected = true;
       _reconnectAttempts = 0;
       _startHeartbeat(baseUrl: baseUrl, accessToken: accessToken);
-      // Ask the server to drain anything we missed since [_lastEventId].
-      // Empty/null cursor on a v2 conn still triggers a replay path on the
-      // server side (full stream up to retention) — caller may prefer to
-      // attach cursorStorage only after onboarding completes.
+      // Ask the server to drain anything we missed since the persisted
+      // cursor. Empty/null cursor on a v2 conn still triggers a replay path
+      // on the server side (full stream up to retention) — caller may prefer
+      // to attach cursorStorage only after onboarding completes.
       unawaited(_requestReplay());
     } catch (e) {
       debugPrint('[WS] Connect failed: $e');
