@@ -13,7 +13,6 @@ import '../../../app/routes.dart';
 import 'activity_screen.dart';
 import 'destination_sheet.dart';
 
-import '../repositories/geocoding_service.dart';
 import '../repositories/service_area_repository.dart';
 import '../models/service_area.dart';
 import '../models/nearby_driver.dart';
@@ -21,7 +20,6 @@ import '../models/ride_type_option.dart';
 import '../view_models/home_notifier.dart';
 import 'profile_screen.dart';
 import 'widgets/home_greeting_header.dart';
-import 'widgets/home_location_chip.dart';
 import 'widgets/home_promo_carousel.dart';
 import 'widgets/home_quick_actions_grid.dart';
 import 'widgets/home_recent_trips.dart';
@@ -41,14 +39,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   int _currentIndex = 0;
 
   // Sheet & Search State
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _sheetController = DraggableScrollableController();
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   bool _isSearching = false;
-  bool _isLoadingSuggestions = false;
-  LocationSearchMode? _searchMode;
-  List<String> _suggestions = [];
   List<NearbyDriver> _nearbyDrivers = [];
   Timer? _debounce;
   Timer? _driverTimer;
@@ -103,34 +97,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String val) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
-      if (val.trim().isEmpty) {
-        setState(() {
-          _suggestions = [];
-          _isLoadingSuggestions = false;
-        });
-        return;
-      }
-
-      setState(() => _isLoadingSuggestions = true);
-      try {
-        // No service area biasing — search globally
-        final results = await GeocodingService().getSuggestions(val);
-        if (mounted) {
-          setState(() {
-            _suggestions = results;
-            _isLoadingSuggestions = false;
-          });
-        }
-      } catch (_) {
-        if (mounted) {
-          setState(() => _isLoadingSuggestions = false);
-        }
-      }
-    });
-  }
 
   // ignore: unused_element
   ServiceArea? _getNearestAreaBias(LatLng? currentLoc) {
@@ -435,28 +401,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, ColorScheme scheme) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            CircleAvatar(
-              backgroundColor: scheme.surface.withAlpha(235),
-              child: Builder(
-                builder: (context) => IconButton(
-                  icon: Icon(Icons.menu, color: scheme.onSurface),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            ),
-            const Flexible(child: HomeLocationChip()),
-          ],
-        ),
-      ),
-    );
-  }
 
   // --- Navigation & Bottom Sheets ---
 
@@ -656,47 +600,11 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
-  void _handleSuggestionTapped(String address) async {
-    final notifier = ref.read(homeNotifierProvider.notifier);
-    final mode = _searchMode; // Save before clearing
-    setState(() {
-      _isSearching = false;
-      _suggestions = [];
-      _searchMode = null;
-      _searchController.text = address;
-    });
-    _searchFocus.unfocus();
-    _sheetController.animateTo(
-      0.35,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-
-    try {
-      final loc = await GeocodingService().geocode(address);
-      if (mounted) {
-        if (mode == LocationSearchMode.pickup) {
-          notifier.setPickup(loc);
-        } else {
-          notifier.setDestination(loc);
-          // setDestination() auto-starts ride type polling
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not find that location.')),
-        );
-      }
-    }
-  }
 
   void _openLocationSearch(LocationSearchMode mode) {
     setState(() {
-      _searchMode = mode;
       _isSearching = true;
       _searchController.clear();
-      _suggestions = [];
     });
     _sheetController.animateTo(
       0.9,
@@ -706,47 +614,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     _searchFocus.requestFocus();
   }
 
-  void _closeLocationSearch() {
-    setState(() {
-      _searchMode = null;
-      _isSearching = false;
-      _suggestions = [];
-      _searchController.clear();
-    });
-    _searchFocus.unfocus();
-    _sheetController.animateTo(
-      0.35,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
 
-  Widget _buildSearchField(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
-    return SakaiTextField(
-      controller: _searchController,
-      focusNode: _searchFocus,
-      label: 'Where to?',
-      hint: 'Enter destination...',
-      prefixIcon: Icon(Icons.search, color: scheme.primary),
-      textInputAction: TextInputAction.search,
-      onChanged: _onSearchChanged,
-      suffixIcon: _searchController.text.isNotEmpty
-          ? IconButton(
-              icon: const Icon(Icons.clear, size: 18),
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  _suggestions = [];
-                });
-              },
-            )
-          : null,
-    );
-  }
 
   // ignore: unused_element
   Widget _buildRecentItem(
