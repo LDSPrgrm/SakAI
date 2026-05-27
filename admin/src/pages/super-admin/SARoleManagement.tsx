@@ -18,10 +18,10 @@ import {
   useRoles, useCreateRole, useUpdateRole, useDeleteRole, useDuplicateRole,
 } from '@/hooks/useRoles';
 import { formatDate } from '@/utils/formatDate';
+import { PermissionGrid } from '@/components/super-admin/forms/PermissionGrid';
 import {
-  PermissionGrid, PERM_ROWS, emptyGrid, parsePermissions, toPermissions,
-  type PermGrid,
-} from '@/components/super-admin/forms/PermissionGrid';
+  PERM_ROWS, emptyGrid, parsePermissions, toPermissions, type PermGrid,
+} from '@/components/super-admin/forms/permissionGrid.helpers';
 import type { AdminRoleDefinition, RolePermissionKey } from '@/types/super-admin';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────

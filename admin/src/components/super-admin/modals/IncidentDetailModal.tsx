@@ -92,7 +92,7 @@ export function IncidentDetailModal({ open, incidentId, onClose }: IncidentDetai
         tabIndex={-1}
         className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto focus:outline-none"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-main" aria-label="Close">
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-main" aria-label="Close">
           <X className="w-5 h-5" />
         </button>
 

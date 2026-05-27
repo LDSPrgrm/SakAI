@@ -61,6 +61,7 @@ export function TransactionDetailModal({ open, transaction, onClose }: Transacti
         className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto focus:outline-none"
       >
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
           className="absolute top-4 right-4 text-text-muted hover:text-text-main rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface transition-colors"

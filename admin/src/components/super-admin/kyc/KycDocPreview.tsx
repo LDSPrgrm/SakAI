@@ -73,6 +73,7 @@ export function KycDocPreview({ docs }: KycDocPreviewProps) {
                 {active.label ?? active.type ?? 'Document'}
               </p>
               <button
+                type="button"
                 onClick={() => setActive(null)}
                 className="text-text-muted hover:text-text-main transition-colors"
                 aria-label="Close preview"

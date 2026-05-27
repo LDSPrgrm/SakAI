@@ -19,6 +19,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
     <header className="h-16 bg-surface border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 gap-3">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <button
+          type="button"
           aria-label="Open menu"
           onClick={onMenuToggle}
           className="md:hidden p-2 text-text-muted hover:text-text-main transition-colors rounded-lg hover:bg-surface-hover flex-shrink-0"

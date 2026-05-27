@@ -26,7 +26,7 @@ export function CreateRoleModal({ open, existing, loading, onSubmit, onCancel }:
           <h3 className="text-base font-semibold text-text-main">
             {isEdit ? `Edit Role: ${existing!.name}` : 'Create Role'}
           </h3>
-          <button onClick={onCancel} className="text-text-muted hover:text-text-main">
+          <button type="button" onClick={onCancel} className="text-text-muted hover:text-text-main">
             <X className="w-5 h-5" />
           </button>
         </div>

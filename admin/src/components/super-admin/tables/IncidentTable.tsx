@@ -31,6 +31,7 @@ export function IncidentTable({ data, onResolve, className }: IncidentTableProps
         if (!onResolve || incident.status === 'resolved') return null;
         return (
           <button
+            type="button"
             onClick={() => onResolve(incident)}
             className="px-2 py-1 text-xs rounded bg-success/10 text-success hover:bg-success/20 transition-colors"
           >
