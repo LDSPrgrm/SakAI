@@ -37,6 +37,7 @@ export function ActivityFeed({ events, className, initialVisible = 6 }: Activity
         <div className="flex rounded-lg overflow-hidden border border-border bg-background">
           {(['all', 'alerts'] as Filter[]).map((f) => (
             <button
+              type="button"
               key={f}
               onClick={() => { setFilter(f); setExpanded(false); }}
               className={cn(

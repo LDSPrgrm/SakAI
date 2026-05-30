@@ -64,6 +64,7 @@ export function ConfirmationModal({
 
       <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5 animate-[confirm-pop_150ms_ease-out]">
         <button
+          type="button"
           onClick={onCancel}
           aria-label="Close"
           className="absolute top-4 right-4 text-text-muted hover:text-text-main transition-colors"
@@ -85,6 +86,7 @@ export function ConfirmationModal({
 
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={onCancel}
             disabled={loading}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-text-muted hover:text-text-main hover:border-primary/50 transition-colors disabled:opacity-50"
@@ -92,6 +94,7 @@ export function ConfirmationModal({
             {cancelLabel}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={loading}
             className={cn('px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50', styles.confirm)}

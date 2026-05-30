@@ -255,6 +255,7 @@ function DiffModal({ open, log, onClose }: DiffModalProps) {
             {humanizeResourceType(log.resource_type)}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-text-muted hover:text-text-main rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface transition-colors flex-shrink-0"
             aria-label="Close"

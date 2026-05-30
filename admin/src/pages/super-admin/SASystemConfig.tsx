@@ -388,6 +388,7 @@ function FeatureFlagRow({ flag, onToggle }: FeatureFlagRowProps) {
       </div>
 
       <button
+        type="button"
         role="switch"
         aria-checked={flag.enabled}
         aria-label={`${flag.enabled ? 'Disable' : 'Enable'} ${flag.label}`}

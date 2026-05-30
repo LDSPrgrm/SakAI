@@ -33,7 +33,7 @@ export function FareChangePreview({ open, before, after, loading, onConfirm, onC
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
       <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-lg p-6">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-text-muted hover:text-text-main">
+        <button type="button" onClick={onCancel} className="absolute top-4 right-4 text-text-muted hover:text-text-main">
           <X className="w-5 h-5" />
         </button>
         <h3 className="text-base font-semibold text-text-main mb-1">Confirm Fare Changes</h3>
@@ -57,10 +57,11 @@ export function FareChangePreview({ open, before, after, loading, onConfirm, onC
         )}
 
         <div className="flex justify-end gap-3">
-          <button onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-border text-text-muted hover:text-text-main transition-colors">
+          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-lg border border-border text-text-muted hover:text-text-main transition-colors">
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={loading || changed.length === 0}
             className="px-4 py-2 text-sm rounded-lg bg-primary hover:bg-primary/90 text-white font-medium transition-colors disabled:opacity-50"

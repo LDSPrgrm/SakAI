@@ -33,17 +33,17 @@ export function AdminTable({ data, onEdit, onSuspend, onDeactivate, className }:
         return (
           <div className="flex items-center gap-1">
             {onEdit && (
-              <button onClick={() => onEdit(user)} className="px-2 py-1 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+              <button type="button" onClick={() => onEdit(user)} className="px-2 py-1 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                 Edit
               </button>
             )}
             {onSuspend && user.status === 'active' && (
-              <button onClick={() => onSuspend(user)} className="px-2 py-1 text-xs rounded bg-warning/10 text-warning hover:bg-warning/20 transition-colors">
+              <button type="button" onClick={() => onSuspend(user)} className="px-2 py-1 text-xs rounded bg-warning/10 text-warning hover:bg-warning/20 transition-colors">
                 Suspend
               </button>
             )}
             {onDeactivate && user.status !== 'deactivated' && (
-              <button onClick={() => onDeactivate(user)} className="px-2 py-1 text-xs rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors">
+              <button type="button" onClick={() => onDeactivate(user)} className="px-2 py-1 text-xs rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors">
                 Deactivate
               </button>
             )}

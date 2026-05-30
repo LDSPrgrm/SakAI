@@ -56,6 +56,7 @@ export function PasswordResetResultModal({
 
       <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5 animate-[pwreset-pop_150ms_ease-out]">
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
           className="absolute top-4 right-4 text-text-muted hover:text-text-main transition-colors"

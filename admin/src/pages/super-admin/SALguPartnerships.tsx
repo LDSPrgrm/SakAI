@@ -72,6 +72,7 @@ export function SALguPartnerships() {
 
       <div className="flex items-center gap-2 border-b border-border">
         <button
+          type="button"
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             tab === 'partnerships' ? 'border-primary text-text-main' : 'border-transparent text-text-muted'
           }`}
@@ -81,6 +82,7 @@ export function SALguPartnerships() {
           Partnerships ({partnerships.length})
         </button>
         <button
+          type="button"
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             tab === 'areas' ? 'border-primary text-text-main' : 'border-transparent text-text-muted'
           }`}

@@ -28,12 +28,12 @@ export function KYCQueue({ data, onApprove, onReject, className }: KYCQueueProps
         return (
           <div className="flex gap-1">
             {onApprove && (
-              <button onClick={() => onApprove(entry)} className="px-2 py-1 text-xs rounded bg-success/10 text-success hover:bg-success/20 transition-colors">
+              <button type="button" onClick={() => onApprove(entry)} className="px-2 py-1 text-xs rounded bg-success/10 text-success hover:bg-success/20 transition-colors">
                 Approve
               </button>
             )}
             {onReject && (
-              <button onClick={() => onReject(entry)} className="px-2 py-1 text-xs rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors">
+              <button type="button" onClick={() => onReject(entry)} className="px-2 py-1 text-xs rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors">
                 Reject
               </button>
             )}
