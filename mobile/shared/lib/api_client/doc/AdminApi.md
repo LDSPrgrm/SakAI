@@ -39,7 +39,6 @@ Method | HTTP request | Description
 [**adminGetIntegrations**](AdminApi.md#admingetintegrations) | **GET** /admin/system/integrations | Get 3rd party integrations
 [**adminGetKycQueue**](AdminApi.md#admingetkycqueue) | **GET** /admin/safety/kyc | Get KYC queue
 [**adminGetLGUPartnership**](AdminApi.md#admingetlgupartnership) | **GET** /admin/lgu-partnerships/{id} | Get an LGU partnership
-[**adminGetMe**](AdminApi.md#admingetme) | **GET** /admin/users/me | Get the authenticated admin&#39;s own profile
 [**adminGetMyPermissions**](AdminApi.md#admingetmypermissions) | **GET** /admin/me/permissions | Get the authenticated admin&#39;s own role and permissions
 [**adminGetNotificationTemplates**](AdminApi.md#admingetnotificationtemplates) | **GET** /admin/system/notification-templates | Get notification templates
 [**adminGetPaymentConfig**](AdminApi.md#admingetpaymentconfig) | **GET** /admin/payments/config | Get payment gateway configurations
@@ -87,6 +86,7 @@ Method | HTTP request | Description
 [**adminUpdateServiceArea**](AdminApi.md#adminupdateservicearea) | **PUT** /admin/service-areas/{id} | Update a service area
 [**adminUpdateSurge**](AdminApi.md#adminupdatesurge) | **PUT** /admin/surge | Update surge configuration
 [**adminUpdateUser**](AdminApi.md#adminupdateuser) | **PUT** /admin/users/{id} | Update administrator status
+[**listAssigneeCandidates**](AdminApi.md#listassigneecandidates) | **GET** /admin/support-staff | List candidate assignees for incident reassignment
 
 
 # **adminApprovePayout**
@@ -1324,45 +1324,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**LGUPartnership**](LGUPartnership.md)
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **adminGetMe**
-> AdminUser adminGetMe()
-
-Get the authenticated admin's own profile
-
-Returns the current admin's profile including role_id, role_name, and status. Call on admin app cold-start to re-hydrate session state. 
-
-### Example
-```dart
-import 'package:sakai_api_client/api.dart';
-
-final api = SakaiApiClient().getAdminApi();
-
-try {
-    final response = api.adminGetMe();
-    print(response);
-} on DioException catch (e) {
-    print('Exception when calling AdminApi->adminGetMe: $e\n');
-}
-```
-
-### Parameters
-This endpoint does not need any parameter.
-
-### Return type
-
-[**AdminUser**](AdminUser.md)
 
 ### Authorization
 
@@ -3350,6 +3311,45 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listAssigneeCandidates**
+> BuiltList<ListAssigneeCandidates200ResponseInner> listAssigneeCandidates()
+
+List candidate assignees for incident reassignment
+
+Slim list of admin/support users that may be assigned an incident. Narrower than `/admin/users` (no creation metadata, no password flags) so the route can be exposed to operations and support callers without leaking sensitive admin-account fields. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.listAssigneeCandidates();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->listAssigneeCandidates: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**BuiltList&lt;ListAssigneeCandidates200ResponseInner&gt;**](ListAssigneeCandidates200ResponseInner.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

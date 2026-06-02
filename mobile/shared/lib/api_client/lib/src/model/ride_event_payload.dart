@@ -2,7 +2,7 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/ride_status.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -21,8 +21,8 @@ abstract class RideEventPayload implements Built<RideEventPayload, RideEventPayl
   String? get rideId;
 
   @BuiltValueField(wireName: r'status')
-  RideEventPayloadStatusEnum? get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  RideStatus? get status;
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'driver_id')
   String? get driverId;
@@ -64,7 +64,7 @@ class _$RideEventPayloadSerializer implements PrimitiveSerializer<RideEventPaylo
       yield r'status';
       yield serializers.serialize(
         object.status,
-        specifiedType: const FullType(RideEventPayloadStatusEnum),
+        specifiedType: const FullType(RideStatus),
       );
     }
     if (object.driverId != null) {
@@ -114,8 +114,8 @@ class _$RideEventPayloadSerializer implements PrimitiveSerializer<RideEventPaylo
         case r'status':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(RideEventPayloadStatusEnum),
-          ) as RideEventPayloadStatusEnum;
+            specifiedType: const FullType(RideStatus),
+          ) as RideStatus;
           result.status = valueDes;
           break;
         case r'driver_id':
@@ -161,28 +161,5 @@ class _$RideEventPayloadSerializer implements PrimitiveSerializer<RideEventPaylo
     );
     return result.build();
   }
-}
-
-class RideEventPayloadStatusEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'requested')
-  static const RideEventPayloadStatusEnum requested = _$rideEventPayloadStatusEnum_requested;
-  @BuiltValueEnumConst(wireName: r'accepted')
-  static const RideEventPayloadStatusEnum accepted = _$rideEventPayloadStatusEnum_accepted;
-  @BuiltValueEnumConst(wireName: r'arrived')
-  static const RideEventPayloadStatusEnum arrived = _$rideEventPayloadStatusEnum_arrived;
-  @BuiltValueEnumConst(wireName: r'in_progress')
-  static const RideEventPayloadStatusEnum inProgress = _$rideEventPayloadStatusEnum_inProgress;
-  @BuiltValueEnumConst(wireName: r'completed')
-  static const RideEventPayloadStatusEnum completed = _$rideEventPayloadStatusEnum_completed;
-  @BuiltValueEnumConst(wireName: r'cancelled')
-  static const RideEventPayloadStatusEnum cancelled = _$rideEventPayloadStatusEnum_cancelled;
-
-  static Serializer<RideEventPayloadStatusEnum> get serializer => _$rideEventPayloadStatusEnumSerializer;
-
-  const RideEventPayloadStatusEnum._(String name): super(name);
-
-  static BuiltSet<RideEventPayloadStatusEnum> get values => _$rideEventPayloadStatusEnumValues;
-  static RideEventPayloadStatusEnum valueOf(String name) => _$rideEventPayloadStatusEnumValueOf(name);
 }
 

@@ -14,6 +14,7 @@ part 'kyc_entry.g.dart';
 /// Properties:
 /// * [id] 
 /// * [driverId] 
+/// * [driverDisplayId] - Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
 /// * [driverName] 
 /// * [submittedAt] 
 /// * [docs] 
@@ -25,6 +26,10 @@ abstract class KycEntry implements Built<KycEntry, KycEntryBuilder> {
 
   @BuiltValueField(wireName: r'driver_id')
   String? get driverId;
+
+  /// Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
+  @BuiltValueField(wireName: r'driver_display_id')
+  String? get driverDisplayId;
 
   @BuiltValueField(wireName: r'driver_name')
   String? get driverName;
@@ -73,6 +78,13 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
       yield r'driver_id';
       yield serializers.serialize(
         object.driverId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.driverDisplayId != null) {
+      yield r'driver_display_id';
+      yield serializers.serialize(
+        object.driverDisplayId,
         specifiedType: const FullType(String),
       );
     }
@@ -140,6 +152,13 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
             specifiedType: const FullType(String),
           ) as String;
           result.driverId = valueDes;
+          break;
+        case r'driver_display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.driverDisplayId = valueDes;
           break;
         case r'driver_name':
           final valueDes = serializers.deserialize(

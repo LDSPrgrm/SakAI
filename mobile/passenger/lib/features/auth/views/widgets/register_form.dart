@@ -229,10 +229,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             ),
             SizedBox(height: tokens.spaceLg),
             SakaiTactile(
+              key: const Key('register_submit'),
               onTap: registerState.busy ? null : _onRegister,
               child: IgnorePointer(
                 child: SakaiPrimaryButton(
-                  key: const Key('register_submit'),
                   label: registerState.busy
                       ? 'Creating Account…'
                       : 'Sign Up',

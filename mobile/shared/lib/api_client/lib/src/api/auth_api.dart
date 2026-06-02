@@ -118,7 +118,7 @@ class AuthApi {
   }
 
   /// Logout and invalidate tokens
-  /// Invalidates the refresh token server-side. The access token will remain technically valid until its expiry â€” clients should discard it immediately. Call this on explicit user logout. 
+  /// Invalidates the refresh token server-side. The access token will remain technically valid until its expiry — clients should discard it immediately. Call this on explicit user logout. 
   ///
   /// Parameters:
   /// * [logoutRequest] 
@@ -191,7 +191,7 @@ class AuthApi {
   }
 
   /// Refresh the access token
-  /// Exchanges a valid refresh token for a new access token (and rotated refresh token). Call this silently before the access token expires â€” typically at 80% of its TTL. Refresh token rotation means the old refresh token is invalidated on use. 
+  /// Exchanges a valid refresh token for a new access token (and rotated refresh token). Call this silently before the access token expires — typically at 80% of its TTL. Refresh token rotation means the old refresh token is invalidated on use. 
   ///
   /// Parameters:
   /// * [refreshRequest] 
@@ -286,7 +286,7 @@ class AuthApi {
   }
 
   /// Register a new user
-  /// Creates a passenger or driver account. Role is fixed at registration. Returns an access token and refresh token immediately â€” no separate login needed. 
+  /// Creates a passenger or driver account. Role is fixed at registration. Returns an access token and refresh token immediately — no separate login needed. 
   ///
   /// Parameters:
   /// * [registerRequest] 

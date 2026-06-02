@@ -61,7 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ana'), findsOneWidget);
-    expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_rounded), findsOneWidget);
   });
 
   testWidgets('shows unread badge when notifications.unreadCount > 0', (

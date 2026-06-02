@@ -30,7 +30,7 @@ abstract class UserRideItem implements Built<UserRideItem, UserRideItemBuilder> 
 
   @BuiltValueField(wireName: r'status')
   RideStatus get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'origin_address')
   String get originAddress;
@@ -43,7 +43,7 @@ abstract class UserRideItem implements Built<UserRideItem, UserRideItemBuilder> 
   double? get fare;
 
   @BuiltValueField(wireName: r'estimated_fare')
-  double get estimatedFare;
+  double? get estimatedFare;
 
   @BuiltValueField(wireName: r'driver')
   DriverSummary? get driver;
@@ -108,11 +108,13 @@ class _$UserRideItemSerializer implements PrimitiveSerializer<UserRideItem> {
         specifiedType: const FullType.nullable(double),
       );
     }
-    yield r'estimated_fare';
-    yield serializers.serialize(
-      object.estimatedFare,
-      specifiedType: const FullType(double),
-    );
+    if (object.estimatedFare != null) {
+      yield r'estimated_fare';
+      yield serializers.serialize(
+        object.estimatedFare,
+        specifiedType: const FullType(double),
+      );
+    }
     if (object.driver != null) {
       yield r'driver';
       yield serializers.serialize(

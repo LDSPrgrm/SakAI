@@ -9,7 +9,7 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **rideId** | **String** |  | [optional] 
-**status** | **String** |  | [optional] 
+**status** | [**RideStatus**](RideStatus.md) |  | [optional] 
 **driverId** | **String** |  | [optional] 
 **passengerId** | **String** |  | [optional] 
 

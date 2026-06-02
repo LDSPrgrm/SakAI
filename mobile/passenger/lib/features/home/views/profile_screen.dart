@@ -18,19 +18,28 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Trigger load on first build.
-    ref.listen<ProfileState>(profileNotifierProvider, (previous, next) {
-      if (previous?.status == ProfileStatus.initial &&
-          next.status == ProfileStatus.initial) {
-        ref.read(profileNotifierProvider.notifier).loadProfile();
-      }
-    });
-
     final state = ref.watch(profileNotifierProvider);
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(profileNotifierProvider.notifier).refresh(),
-      child: _buildContent(context, state, ref),
+    // Trigger load on first build if status is initial.
+    if (state.status == ProfileStatus.initial) {
+      Future.microtask(() {
+        ref.read(profileNotifierProvider.notifier).loadProfile();
+      });
+    }
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Dynamic Orbital Organic Blobs Background
+          const Positioned.fill(
+            child: SakaiAnimatedBackdrop(),
+          ),
+          RefreshIndicator(
+            onRefresh: () => ref.read(profileNotifierProvider.notifier).refresh(),
+            child: _buildContent(context, state, ref),
+          ),
+        ],
+      ),
     );
   }
 
@@ -155,212 +164,268 @@ class _ProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final warningColor = SakaiSemanticColors.of(context).warning;
+    final scheme = theme.colorScheme;
 
     return ListView(
       padding: EdgeInsets.zero,
+      physics: const BouncingScrollPhysics(),
       children: [
-        // Profile Card
+        SizedBox(height: MediaQuery.of(context).padding.top + 24),
+
+        // Profile Details Card
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            children: [
-              // Avatar circle with initials or image
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  SakaiAvatar(
-                    initials: profile.initials,
-                    size: SakaiAvatarSize.lg,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: theme.colorScheme.primary,
-                      border: Border.all(
-                        color: theme.scaffoldBackgroundColor,
-                        width: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.4),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Avatar circle with neon glow halo
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [scheme.primary, scheme.primary.withValues(alpha: 0.7)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: scheme.primary.withValues(alpha: 0.2),
+                            blurRadius: 16,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: SakaiAvatar(
+                        initials: profile.initials,
+                        size: SakaiAvatarSize.lg,
                       ),
                     ),
-                    child: Icon(
-                      Icons.edit,
-                      size: 16,
-                      color: theme.colorScheme.onPrimary,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: scheme.primary,
+                      ),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        size: 14,
+                        color: scheme.onPrimary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Name
-              Text(
-                profile.name,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 4),
+                const SizedBox(height: 18),
 
-              // Email
-              Text(
-                profile.email,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              // Phone (if available)
-              if (profile.phone != null && profile.phone!.isNotEmpty)
+                // Name
                 Text(
-                  profile.phone!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  profile.name,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Email
+                Text(
+                  profile.email,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                
+                // Phone
+                if (profile.phone != null && profile.phone!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    profile.phone!,
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.65),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
 
-              // Rating Badge (if available)
-              if (profile.rating != null) ...[
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        profile.rating!.toStringAsFixed(1),
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: warningColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                // Rating Badge
+                if (profile.rating != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB300).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: const Color(0xFFFFB300).withValues(alpha: 0.4),
+                        width: 1,
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.star, size: 16, color: warningColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Rider Rating',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          profile.rating!.toStringAsFixed(1),
+                          style: const TextStyle(
+                            color: Color(0xFFFFB300),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        const Icon(Icons.star_rounded, size: 16, color: Color(0xFFFFB300)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Rider Rating',
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
-              const SizedBox(height: 12),
-
-              // Edit Profile Button
-              TextButton(
-                onPressed: onEditProfile,
-                child: const Text(
-                  'Edit Profile',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+        const SizedBox(height: 16),
 
-        const Divider(thickness: 8, height: 8),
+        // Grouped Sleek Glass Cards
 
-        // Payment Methods
+        // Section: Payment Methods
         _buildSectionHeader(context, 'Payment Methods'),
-        _buildStandardTile(
+        _buildGroupedCard(
           context,
-          Icons.account_balance_wallet,
-          'Payment Methods',
-          onTap: () => context.push(Routes.paymentMethods),
+          scheme,
+          [
+            _buildStandardTile(
+              context,
+              Icons.account_balance_wallet_rounded,
+              'Payment Methods',
+              onTap: () => context.push(Routes.paymentMethods),
+            ),
+          ],
         ),
 
-        const Divider(thickness: 8, height: 8),
-
-        // Safety
+        // Section: Safety
         _buildSectionHeader(context, 'Safety'),
-        _buildStandardTile(
+        _buildGroupedCard(
           context,
-          Icons.emergency_share,
-          'Emergency Contacts',
-          onTap: () => context.push(Routes.settingsEmergencyContacts),
-        ),
-        const Divider(indent: 52, height: 1),
-        _buildStandardTile(
-          context,
-          Icons.notifications_active,
-          'Notifications',
-          onTap: () => context.push(Routes.settingsNotifications),
+          scheme,
+          [
+            _buildStandardTile(
+              context,
+              Icons.emergency_share_rounded,
+              'Emergency Contacts',
+              onTap: () => context.push(Routes.settingsEmergencyContacts),
+            ),
+            _buildDivider(scheme),
+            _buildStandardTile(
+              context,
+              Icons.notifications_active_rounded,
+              'Notifications',
+              onTap: () => context.push(Routes.settingsNotifications),
+            ),
+          ],
         ),
 
-        const Divider(thickness: 8, height: 8),
-
-        // General
+        // Section: General Settings
         _buildSectionHeader(context, 'General'),
-        _buildStandardTile(
+        _buildGroupedCard(
           context,
-          Icons.language,
-          'Language',
-          onTap: () => context.push(Routes.settingsLanguage),
+          scheme,
+          [
+            _buildStandardTile(
+              context,
+              Icons.language_rounded,
+              'Language',
+              onTap: () => context.push(Routes.settingsLanguage),
+            ),
+            _buildDivider(scheme),
+            _buildStandardTile(
+              context,
+              Icons.settings_suggest_rounded,
+              'Settings',
+              onTap: () => context.push(Routes.settings),
+            ),
+            _buildDivider(scheme),
+            _buildStandardTile(
+              context,
+              Icons.description_rounded,
+              'Terms of Service',
+              onTap: () => context.push(Routes.settingsTerms),
+            ),
+            _buildDivider(scheme),
+            _buildStandardTile(
+              context,
+              Icons.shield_rounded,
+              'Privacy Policy',
+              onTap: () => context.push(Routes.settingsPrivacy),
+            ),
+            _buildDivider(scheme),
+            _buildStandardTile(
+              context,
+              Icons.help_center_rounded,
+              'Help Center',
+              onTap: () => context.push(Routes.settingsHelp),
+            ),
+          ],
         ),
-        const Divider(indent: 52, height: 1),
-        _buildStandardTile(
-          context,
-          Icons.settings_outlined,
-          'Settings',
-          onTap: () => context.push(Routes.settings),
-        ),
-        const Divider(indent: 52, height: 1),
-        _buildStandardTile(
-          context,
-          Icons.description_outlined,
-          'Terms of Service',
-          onTap: () => context.push(Routes.settingsTerms),
-        ),
-        const Divider(indent: 52, height: 1),
-        _buildStandardTile(
-          context,
-          Icons.shield_outlined,
-          'Privacy Policy',
-          onTap: () => context.push(Routes.settingsPrivacy),
-        ),
-        const Divider(indent: 52, height: 1),
-        _buildStandardTile(
-          context,
-          Icons.help_outline,
-          'Help Center',
-          onTap: () => context.push(Routes.settingsHelp),
-        ),
-
-        const Divider(thickness: 8, height: 8),
 
         // Footer / Logout
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: OutlinedButton.icon(
             onPressed: onSignOut,
             style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-              side: BorderSide(
-                color: theme.colorScheme.error.withValues(alpha: 0.3),
+              foregroundColor: const Color(0xFFFF4E4E),
+              side: const BorderSide(
+                color: Color(0x33FF4E4E),
+                width: 1.2,
               ),
-              backgroundColor: theme.colorScheme.error.withValues(alpha: 0.05),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: const Color(0x0FFF4E4E),
+              padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFFFF4E4E)),
             label: const Text(
               'Log Out',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
@@ -368,27 +433,59 @@ class _ProfileContent extends StatelessWidget {
         Center(
           child: Text(
             'Version 2.4.0 (Build 192)',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: TextStyle(
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 96), // Extra bottom padding for floating nav bar
       ],
     );
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
       child: Text(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.2,
         ),
       ),
+    );
+  }
+
+  Widget _buildGroupedCard(BuildContext context, ColorScheme scheme, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.4),
+          width: 1.2,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: children,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider(ColorScheme scheme) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 64,
+      color: scheme.outlineVariant.withValues(alpha: 0.08),
     );
   }
 
@@ -399,26 +496,47 @@ class _ProfileContent extends StatelessWidget {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
-    return SakaiSurfaceCard(
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Icon(icon, color: Theme.of(context).iconTheme.color),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-            ),
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: scheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              if (trailing != null) ...[trailing, const SizedBox(width: 8)],
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+            ],
           ),
-          if (trailing != null) ...[trailing, const SizedBox(width: 8)],
-          Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ],
+        ),
       ),
     );
   }

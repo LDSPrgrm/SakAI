@@ -4,7 +4,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
+import 'package:sakai_api_client/sakai_api_client.dart' hide WsEventType;
 import 'package:sakai_shared/ws/ws_client.dart';
 import 'package:sakai_shared/ws/ws_dispatcher.dart';
 import 'package:sakai_shared/ws/ws_events.dart';

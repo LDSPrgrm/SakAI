@@ -11,12 +11,12 @@ import '../features/wallet/views/wallet_screen.dart';
 import '../features/notifications/views/notifications_screen.dart';
 import '../features/ride/views/no_drivers_screen.dart';
 import '../features/connectivity/views/no_internet_screen.dart';
+import '../features/home/views/activity_screen.dart';
 import '../features/home/views/rider_home_screen.dart';
 import '../features/profile/views/edit_profile_screen.dart';
 import '../features/ride/views/waiting_screen.dart';
 import '../features/active_ride/views/active_ride_screen.dart';
 import '../features/ride_complete/views/ride_complete_screen.dart';
-import '../features/ride_history/views/ride_history_list_screen.dart';
 import '../features/ride_history/views/ride_detail_screen.dart';
 import '../features/cancelled_ride/views/cancelled_ride_screen.dart';
 import '../features/receipt/views/receipt_screen.dart';
@@ -167,7 +167,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.rideHistory,
-        builder: (context, state) => const RideHistoryListScreen(),
+        builder: (context, state) => const ActivityScreen(isStandalone: true),
       ),
       GoRoute(
         path: Routes.rideDetail,

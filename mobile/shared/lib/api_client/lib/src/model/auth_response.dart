@@ -12,7 +12,7 @@ part 'auth_response.g.dart';
 ///
 /// Properties:
 /// * [accessToken] - Short-lived JWT (60 min). Include as `Authorization: Bearer <access_token>`. 
-/// * [refreshToken] - Long-lived opaque token (30 days). Store securely (e.g., flutter_secure_storage). Use with `POST /auth/refresh` to silently obtain new access tokens. Rotated on every use â€” old token is invalidated. 
+/// * [refreshToken] - Long-lived opaque token (30 days). Store securely (e.g., flutter_secure_storage). Use with `POST /auth/refresh` to silently obtain new access tokens. Rotated on every use — old token is invalidated. 
 /// * [accessTokenExpiresAt] - UTC expiry of the access token. Refresh before this time.
 /// * [user] 
 @BuiltValue()
@@ -21,7 +21,7 @@ abstract class AuthResponse implements Built<AuthResponse, AuthResponseBuilder> 
   @BuiltValueField(wireName: r'access_token')
   String get accessToken;
 
-  /// Long-lived opaque token (30 days). Store securely (e.g., flutter_secure_storage). Use with `POST /auth/refresh` to silently obtain new access tokens. Rotated on every use â€” old token is invalidated. 
+  /// Long-lived opaque token (30 days). Store securely (e.g., flutter_secure_storage). Use with `POST /auth/refresh` to silently obtain new access tokens. Rotated on every use — old token is invalidated. 
   @BuiltValueField(wireName: r'refresh_token')
   String get refreshToken;
 

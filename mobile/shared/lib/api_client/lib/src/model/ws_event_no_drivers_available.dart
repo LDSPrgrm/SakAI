@@ -7,7 +7,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_no_drivers_available.g.dart';
 
-/// **Event:** `ride.no_drivers` **Direction:** server â†’ passenger Fired when the matching engine exhausts all available drivers. The ride is automatically set to `cancelled`. Passenger app should exit the ride flow and prompt the user to try again later. 
+/// **Event:** `ride.no_drivers` **Direction:** server → passenger Fired when the matching engine exhausts all available drivers. The ride is automatically set to `cancelled`. Passenger app should exit the ride flow and prompt the user to try again later. 
 ///
 /// Properties:
 /// * [rideId] 

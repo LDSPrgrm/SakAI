@@ -14,6 +14,8 @@ part 'admin_user.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. USR-0042).
 /// * [name] 
 /// * [email] 
 /// * [role] 
@@ -65,6 +67,25 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
     AdminUser object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    yield r'role';
+    yield serializers.serialize(
+      object.role,
+      specifiedType: const FullType(UserProfileRoleEnum),
+    );
+    if (object.roleId != null) {
+      yield r'role_id';
+      yield serializers.serialize(
+        object.roleId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.vehicle != null) {
+      yield r'vehicle';
+      yield serializers.serialize(
+        object.vehicle,
+        specifiedType: const FullType.nullable(VehicleInfo),
+      );
+    }
     yield r'created_at';
     yield serializers.serialize(
       object.createdAt,
@@ -77,22 +98,10 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
         specifiedType: const FullType.nullable(DateTime),
       );
     }
-    yield r'role';
-    yield serializers.serialize(
-      object.role,
-      specifiedType: const FullType(UserProfileRoleEnum),
-    );
     if (object.createdBy != null) {
       yield r'created_by';
       yield serializers.serialize(
         object.createdBy,
-        specifiedType: const FullType(String),
-      );
-    }
-    if (object.roleId != null) {
-      yield r'role_id';
-      yield serializers.serialize(
-        object.roleId,
         specifiedType: const FullType(String),
       );
     }
@@ -113,6 +122,20 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
       object.id,
       specifiedType: const FullType(String),
     );
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
     yield r'email';
     yield serializers.serialize(
       object.email,
@@ -123,13 +146,6 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
       yield serializers.serialize(
         object.status,
         specifiedType: const FullType(AdminUserStatusEnum),
-      );
-    }
-    if (object.vehicle != null) {
-      yield r'vehicle';
-      yield serializers.serialize(
-        object.vehicle,
-        specifiedType: const FullType.nullable(VehicleInfo),
       );
     }
   }
@@ -155,6 +171,28 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'role':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(UserProfileRoleEnum),
+          ) as UserProfileRoleEnum;
+          result.role = valueDes;
+          break;
+        case r'role_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.roleId = valueDes;
+          break;
+        case r'vehicle':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(VehicleInfo),
+          ) as VehicleInfo?;
+          if (valueDes == null) continue;
+          result.vehicle.replace(valueDes);
+          break;
         case r'created_at':
           final valueDes = serializers.deserialize(
             value,
@@ -170,26 +208,12 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
           if (valueDes == null) continue;
           result.lastLoginAt = valueDes;
           break;
-        case r'role':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(UserProfileRoleEnum),
-          ) as UserProfileRoleEnum;
-          result.role = valueDes;
-          break;
         case r'created_by':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
           result.createdBy = valueDes;
-          break;
-        case r'role_id':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.roleId = valueDes;
           break;
         case r'role_name':
           final valueDes = serializers.deserialize(
@@ -212,6 +236,20 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
           ) as String;
           result.id = valueDes;
           break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
+          break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
         case r'email':
           final valueDes = serializers.deserialize(
             value,
@@ -225,14 +263,6 @@ class _$AdminUserSerializer implements PrimitiveSerializer<AdminUser> {
             specifiedType: const FullType(AdminUserStatusEnum),
           ) as AdminUserStatusEnum;
           result.status = valueDes;
-          break;
-        case r'vehicle':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(VehicleInfo),
-          ) as VehicleInfo?;
-          if (valueDes == null) continue;
-          result.vehicle.replace(valueDes);
           break;
         default:
           unhandled.add(key);

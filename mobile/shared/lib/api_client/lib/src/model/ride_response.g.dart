@@ -213,6 +213,12 @@ abstract mixin class RideResponseBuilder {
   String? get id;
   set id(String? id);
 
+  int? get seq;
+  set seq(int? seq);
+
+  String? get displayId;
+  set displayId(String? displayId);
+
   RideStatus? get status;
   set status(RideStatus? status);
 
@@ -278,6 +284,10 @@ class _$$RideResponse extends $RideResponse {
   @override
   final String id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final RideStatus status;
   @override
   final UserProfile passenger;
@@ -323,6 +333,8 @@ class _$$RideResponse extends $RideResponse {
 
   _$$RideResponse._({
     required this.id,
+    this.seq,
+    this.displayId,
     required this.status,
     required this.passenger,
     this.driver,
@@ -356,6 +368,8 @@ class _$$RideResponse extends $RideResponse {
     if (identical(other, this)) return true;
     return other is $RideResponse &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         status == other.status &&
         passenger == other.passenger &&
         driver == other.driver &&
@@ -382,6 +396,8 @@ class _$$RideResponse extends $RideResponse {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, passenger.hashCode);
     _$hash = $jc(_$hash, driver.hashCode);
@@ -410,6 +426,8 @@ class _$$RideResponse extends $RideResponse {
   String toString() {
     return (newBuiltValueToStringHelper(r'$RideResponse')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('status', status)
           ..add('passenger', passenger)
           ..add('driver', driver)
@@ -443,6 +461,14 @@ class $RideResponseBuilder
   String? _id;
   String? get id => _$this._id;
   set id(covariant String? id) => _$this._id = id;
+
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(covariant int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(covariant String? displayId) => _$this._displayId = displayId;
 
   RideStatus? _status;
   RideStatus? get status => _$this._status;
@@ -546,6 +572,8 @@ class $RideResponseBuilder
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _status = $v.status;
       _passenger = $v.passenger;
       _driver = $v.driver?.toBuilder();
@@ -595,6 +623,8 @@ class $RideResponseBuilder
               r'$RideResponse',
               'id',
             ),
+            seq: seq,
+            displayId: displayId,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'$RideResponse',

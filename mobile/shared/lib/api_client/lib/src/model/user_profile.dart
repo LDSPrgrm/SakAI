@@ -13,6 +13,8 @@ part 'user_profile.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. USR-0042).
 /// * [name] 
 /// * [email] 
 /// * [role] 
@@ -22,6 +24,13 @@ part 'user_profile.g.dart';
 abstract class UserProfile  {
   @BuiltValueField(wireName: r'id')
   String get id;
+
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. USR-0042).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
 
   @BuiltValueField(wireName: r'name')
   String get name;
@@ -61,6 +70,20 @@ class _$UserProfileSerializer implements PrimitiveSerializer<UserProfile> {
       object.id,
       specifiedType: const FullType(String),
     );
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'name';
     yield serializers.serialize(
       object.name,
@@ -157,6 +180,20 @@ class _$$UserProfileSerializer implements PrimitiveSerializer<$UserProfile> {
             specifiedType: const FullType(String),
           ) as String;
           result.id = valueDes;
+          break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
           break;
         case r'name':
           final valueDes = serializers.deserialize(

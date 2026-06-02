@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_accepted.g.dart';
 
-/// **Event:** `ride.accepted` **Direction:** server â†’ passenger Sent when the matched driver accepts the ride. Passenger app should display driver details and begin showing live location. 
+/// **Event:** `ride.accepted` **Direction:** server → passenger Sent when the matched driver accepts the ride. Passenger app should display driver details and begin showing live location. 
 ///
 /// Properties:
 /// * [rideId] 

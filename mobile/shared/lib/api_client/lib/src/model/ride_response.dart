@@ -17,6 +17,8 @@ part 'ride_response.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. RIDE-000123).
 /// * [status] 
 /// * [passenger] 
 /// * [driver] - Null until a driver is matched and accepts.
@@ -42,9 +44,16 @@ abstract class RideResponse  {
   @BuiltValueField(wireName: r'id')
   String get id;
 
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. RIDE-000123).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
+
   @BuiltValueField(wireName: r'status')
   RideStatus get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'passenger')
   UserProfile get passenger;
@@ -138,6 +147,20 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
       object.id,
       specifiedType: const FullType(String),
     );
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'status';
     yield serializers.serialize(
       object.status,
@@ -335,6 +358,20 @@ class _$$RideResponseSerializer implements PrimitiveSerializer<$RideResponse> {
             specifiedType: const FullType(String),
           ) as String;
           result.id = valueDes;
+          break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
           break;
         case r'status':
           final valueDes = serializers.deserialize(

@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | [optional] 
 **driverId** | **String** |  | [optional] 
+**driverDisplayId** | **String** | Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing. | [optional] 
 **driverName** | **String** |  | [optional] 
 **submittedAt** | [**DateTime**](DateTime.md) |  | [optional] 
 **docs** | [**BuiltList&lt;KycDocument&gt;**](KycDocument.md) |  | [optional] 

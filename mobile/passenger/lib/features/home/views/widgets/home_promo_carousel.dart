@@ -47,8 +47,9 @@ class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
       return const SizedBox.shrink();
     }
     if (state.status == PromotionsStatus.loaded && state.promotions.isEmpty) {
-      return const SizedBox.shrink();
+      return _EmptyPromoTeaser();
     }
+
 
     return Column(
       children: [
@@ -57,7 +58,13 @@ class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
           child: state.isLoading
               ? Padding(
                   padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-                  child: SakaiSkeleton.card(height: 160),
+                  child: Row(
+                    children: [
+                      Expanded(child: SakaiSkeleton.card(height: 160)),
+                      SizedBox(width: tokens.spaceMd),
+                      Expanded(child: SakaiSkeleton.card(height: 160)),
+                    ],
+                  ),
                 )
               : PageView.builder(
                   controller: _controller,
@@ -159,7 +166,7 @@ class _PromoCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(tokens.radiusSm),
                     ),
                     child: Text(
-                      'LIMITED OFFER',
+                      promotion.code.toUpperCase(),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -204,3 +211,169 @@ class _PromoCard extends StatelessWidget {
     );
   }
 }
+
+// ── Empty Promo Teaser ────────────────────────────────────────────────────────
+
+class _EmptyPromoTeaser extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+      child: SakaiTactile(
+        onTap: () => context.push(Routes.promotions),
+        child: Container(
+          height: 120,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.primary.withValues(alpha: 0.12),
+                scheme.tertiary.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Decorative circle
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: scheme.primary.withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 10,
+                bottom: -30,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: scheme.tertiary.withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(tokens.spaceMd),
+                child: Row(
+                  children: [
+                    // Icon stack
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.primary.withValues(alpha: 0.08),
+                          ),
+                        ),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                scheme.primary.withValues(alpha: 0.9),
+                                scheme.primary,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: scheme.primary.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.local_offer_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(width: tokens.spaceMd),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'No active promotions',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'New deals will appear here. Tap to apply a promo code.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.confirmation_number_rounded, color: Colors.white, size: 11),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Enter Code',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: scheme.primary.withValues(alpha: 0.6),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

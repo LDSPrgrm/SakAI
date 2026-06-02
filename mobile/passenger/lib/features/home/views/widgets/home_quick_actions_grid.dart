@@ -14,25 +14,25 @@ class HomeQuickActionsGrid extends StatelessWidget {
       _QuickAction(
         key: const Key('home_qa_saved_places'),
         icon: Icons.bookmark_rounded,
-        label: 'Saved',
+        label: 'Saved Places',
         onTap: () => context.push(Routes.savedPlaces),
       ),
       _QuickAction(
         key: const Key('home_qa_schedule_ride'),
         icon: Icons.calendar_today_rounded,
-        label: 'Schedule',
+        label: 'Schedule Ride',
         onTap: () => context.push(Routes.comingSoon, extra: 'Schedule Ride'),
       ),
       _QuickAction(
         key: const Key('home_qa_promotions'),
         icon: Icons.auto_awesome_rounded,
-        label: 'Offers',
+        label: 'Promotions',
         onTap: () => context.push(Routes.promotions),
       ),
       _QuickAction(
         key: const Key('home_qa_ride_history'),
         icon: Icons.history_rounded,
-        label: 'Activity',
+        label: 'Ride History',
         onTap: () => context.push(Routes.rideHistory),
       ),
     ];

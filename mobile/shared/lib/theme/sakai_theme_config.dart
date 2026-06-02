@@ -21,23 +21,23 @@ class SakaiThemeConfig {
     this.darkBorderColor,
   });
 
-  /// Passenger app default: bold, energetic red palette.
+  /// Passenger app default: bold, energetic GoRide Green palette.
   factory SakaiThemeConfig.passenger() => SakaiThemeConfig(
-    primarySeed: const Color(0xFFff4b4b),
-    secondarySeed: const Color(0xFFe04343),
+    primarySeed: const Color(0xFF00DC82),
+    secondarySeed: const Color(0xFF00B86C),
     tokens: SakaiDesignTokens.defaults,
   );
 
-  /// Driver app default: same red brand identity.
+  /// Driver app default: same GoRide Green brand identity, with deep slate/charcoal dark theme.
   factory SakaiThemeConfig.driver() => SakaiThemeConfig(
-    primarySeed: const Color(0xFFff4b4b),
-    secondarySeed: const Color(0xFFff4b4b),
-    successColor: const Color(0xFF34A853),
+    primarySeed: const Color(0xFF00DC82),
+    secondarySeed: const Color(0xFF00B86C),
+    successColor: const Color(0xFF00DC82),
     dangerColor: const Color(0xFFEA4335),
     warningColor: const Color(0xFFFBBC04),
-    darkBackgroundColor: const Color(0xFF0D1117),
-    darkSurfaceColor: const Color(0xFF161B22),
-    darkBorderColor: const Color(0xFF30363D),
+    darkBackgroundColor: const Color(0xFF0F172A),
+    darkSurfaceColor: const Color(0xFF1E293B),
+    darkBorderColor: const Color(0xFF334155),
     tokens: SakaiDesignTokens.defaults,
   );
 

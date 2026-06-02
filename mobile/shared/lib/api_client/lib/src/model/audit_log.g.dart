@@ -10,9 +10,17 @@ class _$AuditLog extends AuditLog {
   @override
   final String? id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final DateTime? timestamp;
   @override
   final String? actorId;
+  @override
+  final String? actorDisplayId;
+  @override
+  final String? actorName;
   @override
   final String? ipAddress;
   @override
@@ -33,8 +41,12 @@ class _$AuditLog extends AuditLog {
 
   _$AuditLog._({
     this.id,
+    this.seq,
+    this.displayId,
     this.timestamp,
     this.actorId,
+    this.actorDisplayId,
+    this.actorName,
     this.ipAddress,
     this.action,
     this.resourceType,
@@ -55,8 +67,12 @@ class _$AuditLog extends AuditLog {
     if (identical(other, this)) return true;
     return other is AuditLog &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         timestamp == other.timestamp &&
         actorId == other.actorId &&
+        actorDisplayId == other.actorDisplayId &&
+        actorName == other.actorName &&
         ipAddress == other.ipAddress &&
         action == other.action &&
         resourceType == other.resourceType &&
@@ -70,8 +86,12 @@ class _$AuditLog extends AuditLog {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, timestamp.hashCode);
     _$hash = $jc(_$hash, actorId.hashCode);
+    _$hash = $jc(_$hash, actorDisplayId.hashCode);
+    _$hash = $jc(_$hash, actorName.hashCode);
     _$hash = $jc(_$hash, ipAddress.hashCode);
     _$hash = $jc(_$hash, action.hashCode);
     _$hash = $jc(_$hash, resourceType.hashCode);
@@ -87,8 +107,12 @@ class _$AuditLog extends AuditLog {
   String toString() {
     return (newBuiltValueToStringHelper(r'AuditLog')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('timestamp', timestamp)
           ..add('actorId', actorId)
+          ..add('actorDisplayId', actorDisplayId)
+          ..add('actorName', actorName)
           ..add('ipAddress', ipAddress)
           ..add('action', action)
           ..add('resourceType', resourceType)
@@ -107,6 +131,14 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
 
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(String? displayId) => _$this._displayId = displayId;
+
   DateTime? _timestamp;
   DateTime? get timestamp => _$this._timestamp;
   set timestamp(DateTime? timestamp) => _$this._timestamp = timestamp;
@@ -114,6 +146,15 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
   String? _actorId;
   String? get actorId => _$this._actorId;
   set actorId(String? actorId) => _$this._actorId = actorId;
+
+  String? _actorDisplayId;
+  String? get actorDisplayId => _$this._actorDisplayId;
+  set actorDisplayId(String? actorDisplayId) =>
+      _$this._actorDisplayId = actorDisplayId;
+
+  String? _actorName;
+  String? get actorName => _$this._actorName;
+  set actorName(String? actorName) => _$this._actorName = actorName;
 
   String? _ipAddress;
   String? get ipAddress => _$this._ipAddress;
@@ -155,8 +196,12 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _timestamp = $v.timestamp;
       _actorId = $v.actorId;
+      _actorDisplayId = $v.actorDisplayId;
+      _actorName = $v.actorName;
       _ipAddress = $v.ipAddress;
       _action = $v.action;
       _resourceType = $v.resourceType;
@@ -189,8 +234,12 @@ class AuditLogBuilder implements Builder<AuditLog, AuditLogBuilder> {
           _$v ??
           _$AuditLog._(
             id: id,
+            seq: seq,
+            displayId: displayId,
             timestamp: timestamp,
             actorId: actorId,
+            actorDisplayId: actorDisplayId,
+            actorName: actorName,
             ipAddress: ipAddress,
             action: action,
             resourceType: resourceType,

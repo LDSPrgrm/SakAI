@@ -533,7 +533,7 @@ class DriverApi {
   }
 
   /// Set driver online/offline status
-  /// Toggles the driver&#39;s availability. Only users with &#x60;role&#x3D;driver&#x60; may call this. Setting to &#x60;online&#x60; enters the driver into the matching pool. Setting to &#x60;offline&#x60; removes the driver immediately â€” they will not receive new rides. Cannot go offline while a ride is &#x60;in_progress&#x60;. 
+  /// Toggles the driver&#39;s availability. Only users with &#x60;role&#x3D;driver&#x60; may call this. Setting to &#x60;online&#x60; enters the driver into the matching pool. Setting to &#x60;offline&#x60; removes the driver immediately — they will not receive new rides. Cannot go offline while a ride is &#x60;in_progress&#x60;. 
   ///
   /// Parameters:
   /// * [driverStatusRequest] 
@@ -634,7 +634,7 @@ class DriverApi {
   }
 
   /// Update driver&#39;s current location
-  /// Called periodically by the driver app (recommended every 3â€“5 seconds) while the driver is online. Location is stored in PostGIS and used for geospatial proximity matching.  **Rate limit:** 30 requests/min per driver. Exceeding this returns &#x60;429&#x60;.  During an active ride, each update also pushes a &#x60;driver.location_updated&#x60; WebSocket event to the passenger. 
+  /// Called periodically by the driver app (recommended every 3–5 seconds) while the driver is online. Location is stored in PostGIS and used for geospatial proximity matching.  **Rate limit:** 30 requests/min per driver. Exceeding this returns &#x60;429&#x60;.  During an active ride, each update also pushes a &#x60;driver.location_updated&#x60; WebSocket event to the passenger. 
   ///
   /// Parameters:
   /// * [locationUpdateRequest] 

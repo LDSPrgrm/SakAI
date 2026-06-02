@@ -59,9 +59,9 @@ void main() {
     );
 
     // Initially driver is offline
-    expect(find.text('Unavailable'), findsOneWidget);
-    expect(find.text('Start shift'), findsOneWidget);
-    expect(find.text('View earnings'), findsOneWidget);
+    expect(find.text('INACTIVE'), findsOneWidget);
+    expect(find.text('Live Dispatch'), findsOneWidget);
+    expect(find.text('GROSS CASH'), findsOneWidget);
     expect(find.byType(IconButton), findsWidgets); // menu button
   });
 

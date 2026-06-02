@@ -23,7 +23,7 @@ class RideHistoryItem {
       originAddress: item.originAddress,
       destinationAddress: item.destinationAddress,
       fare: item.fare,
-      estimatedFare: item.estimatedFare,
+      estimatedFare: item.estimatedFare ?? 0.0,
       driverName: item.driver?.name,
       paymentMethod: item.paymentMethod.name,
       createdAt: item.createdAt,
@@ -51,12 +51,15 @@ class RideHistoryItem {
   }
 
   String get statusLabel {
-    if (status == RideStatus.requested) return 'Requested';
-    if (status == RideStatus.accepted) return 'Accepted';
-    if (status == RideStatus.arrived) return 'Arrived';
-    if (status == RideStatus.inProgress) return 'In Progress';
-    if (status == RideStatus.completed) return 'Completed';
-    if (status == RideStatus.cancelled) return 'Cancelled';
-    throw StateError('Unknown RideStatus: $status');
+    final name = status.name;
+    if (name == 'created') return 'Created';
+    if (name == 'requested') return 'Requested';
+    if (name == 'accepted') return 'Accepted';
+    if (name == 'arrived') return 'Arrived';
+    if (name == 'inProgress' || name == 'in_progress') return 'In Progress';
+    if (name == 'paymentPending' || name == 'payment_pending') return 'Payment Pending';
+    if (name == 'completed') return 'Completed';
+    if (name == 'cancelled') return 'Cancelled';
+    return name;
   }
 }

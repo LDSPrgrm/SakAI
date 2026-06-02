@@ -70,6 +70,12 @@ abstract mixin class UserProfileBuilder {
   String? get id;
   set id(String? id);
 
+  int? get seq;
+  set seq(int? seq);
+
+  String? get displayId;
+  set displayId(String? displayId);
+
   String? get name;
   set name(String? name);
 
@@ -90,6 +96,10 @@ class _$$UserProfile extends $UserProfile {
   @override
   final String id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final String name;
   @override
   final String email;
@@ -105,6 +115,8 @@ class _$$UserProfile extends $UserProfile {
 
   _$$UserProfile._({
     required this.id,
+    this.seq,
+    this.displayId,
     required this.name,
     required this.email,
     required this.role,
@@ -123,6 +135,8 @@ class _$$UserProfile extends $UserProfile {
     if (identical(other, this)) return true;
     return other is $UserProfile &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         name == other.name &&
         email == other.email &&
         role == other.role &&
@@ -134,6 +148,8 @@ class _$$UserProfile extends $UserProfile {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
@@ -147,6 +163,8 @@ class _$$UserProfile extends $UserProfile {
   String toString() {
     return (newBuiltValueToStringHelper(r'$UserProfile')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('name', name)
           ..add('email', email)
           ..add('role', role)
@@ -163,6 +181,14 @@ class $UserProfileBuilder
   String? _id;
   String? get id => _$this._id;
   set id(covariant String? id) => _$this._id = id;
+
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(covariant int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(covariant String? displayId) => _$this._displayId = displayId;
 
   String? _name;
   String? get name => _$this._name;
@@ -193,6 +219,8 @@ class $UserProfileBuilder
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _name = $v.name;
       _email = $v.email;
       _role = $v.role;
@@ -227,6 +255,8 @@ class $UserProfileBuilder
               r'$UserProfile',
               'id',
             ),
+            seq: seq,
+            displayId: displayId,
             name: BuiltValueNullFieldError.checkNotNull(
               name,
               r'$UserProfile',

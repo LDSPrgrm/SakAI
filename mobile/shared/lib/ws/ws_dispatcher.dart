@@ -13,7 +13,7 @@ import 'dart:convert';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:logging/logging.dart';
-import 'package:sakai_api_client/sakai_api_client.dart';
+import 'package:sakai_api_client/sakai_api_client.dart' hide WsEventType;
 
 import 'ws_client.dart';
 import 'ws_events.dart';

@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_status_changed.g.dart';
 
-/// **Event:** `ride.status_changed` **Direction:** server â†’ both passenger and driver Fired on transitions: `arrived`, `in_progress`, `completed`. Both apps should update their local ride state from this event. 
+/// **Event:** `ride.status_changed` **Direction:** server → both passenger and driver Fired on transitions: `arrived`, `in_progress`, `completed`. Both apps should update their local ride state from this event. 
 ///
 /// Properties:
 /// * [rideId] 
@@ -21,7 +21,7 @@ abstract class WsEventRideStatusChanged implements Built<WsEventRideStatusChange
 
   @BuiltValueField(wireName: r'status')
   RideStatus get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'updated_at')
   DateTime get updatedAt;

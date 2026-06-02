@@ -11,6 +11,10 @@ import 'package:passenger/features/auth/repositories/auth_repository.dart';
 import 'package:passenger/features/auth/views/welcome_screen.dart';
 import 'package:passenger/features/home/view_models/home_notifier.dart';
 import 'package:passenger/features/ride/repositories/ride_repository.dart';
+import 'package:passenger/features/profile/models/user_profile.dart';
+import 'package:passenger/features/profile/view_models/profile_view_model.dart';
+import 'package:passenger/features/promotions/view_models/promotions_view_model.dart';
+import 'package:passenger/features/notifications/view_models/notifications_notifier.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 class FakeTokenStorage extends TokenStorage {
@@ -189,6 +193,27 @@ class _FakeHomeNotifier extends HomeNotifier {
   }
 }
 
+class _FakeProfileNotifier extends ProfileNotifier {
+  _FakeProfileNotifier(this._state);
+  final ProfileState _state;
+  @override
+  ProfileState build() => _state;
+}
+
+class _FakePromotionsNotifier extends PromotionsNotifier {
+  _FakePromotionsNotifier(this._state);
+  final PromotionsState _state;
+  @override
+  PromotionsState build() => _state;
+}
+
+class _FakeNotificationsNotifier extends NotificationsNotifier {
+  _FakeNotificationsNotifier(this._state);
+  final NotificationsState _state;
+  @override
+  NotificationsState build() => _state;
+}
+
 void main() {
   late _FakeAuthRepository authRepo;
   late FakeTokenStorage tokenStorage;
@@ -212,6 +237,13 @@ void main() {
 
   Widget createTestWidget({bool seenWelcome = true}) {
     onboardingService.seenWelcome = seenWelcome;
+    final fakeProfile = UserProfileModel(
+      id: 'test-user',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'passenger',
+      createdAt: DateTime(2025, 1, 1),
+    );
     return ProviderScope(
       overrides: [
         tokenStorageProvider.overrideWithValue(tokenStorage),
@@ -220,6 +252,22 @@ void main() {
         onboardingServiceProvider.overrideWith((ref) => onboardingService),
         homeNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
         wsConnectionProvider.overrideWithValue(_FakeWsConnectionManager()),
+        profileNotifierProvider.overrideWith(
+          () => _FakeProfileNotifier(
+            ProfileState(status: ProfileStatus.loaded, profile: fakeProfile),
+          ),
+        ),
+        promotionsNotifierProvider.overrideWith(
+          () => _FakePromotionsNotifier(
+            const PromotionsState(
+              status: PromotionsStatus.loaded,
+              promotions: [],
+            ),
+          ),
+        ),
+        notificationsNotifierProvider.overrideWith(
+          () => _FakeNotificationsNotifier(const NotificationsState()),
+        ),
       ],
       child: const PassengerApp(),
     );
@@ -410,10 +458,12 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.textContaining('Where to?'), findsOneWidget);
 
-        // Open the drawer to reveal the logout button
-        await tester.tap(find.byIcon(Icons.menu).first);
+        // Switch to the Profile screen tab in the bottom navigation bar
+        await tester.tap(find.byIcon(Icons.person_rounded));
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.logout).first);
+
+        // Tap the Log Out button inside the Profile screen
+        await tester.tap(find.byIcon(Icons.logout_rounded).first);
         await tester.pumpAndSettle();
 
         expect(authRepo.lastLogoutToken, 'refresh-token');
@@ -435,10 +485,12 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        // Open the drawer to reveal the logout button
-        await tester.tap(find.byIcon(Icons.menu).first);
+        // Switch to the Profile screen tab in the bottom navigation bar
+        await tester.tap(find.byIcon(Icons.person_rounded));
         await tester.pumpAndSettle();
-        await tester.tap(find.byIcon(Icons.logout).first);
+
+        // Tap the Log Out button inside the Profile screen
+        await tester.tap(find.byIcon(Icons.logout_rounded).first);
         await tester.pumpAndSettle();
 
         expect(authRepo.lastLogoutToken, 'refresh-token');

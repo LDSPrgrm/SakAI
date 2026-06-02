@@ -7,7 +7,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_offer_expired.g.dart';
 
-/// **Event:** `ride.offer_expired` **Direction:** server â†’ driver Sent when the driver's acceptance window closes without a response. The driver UI should dismiss the incoming request card. Re-matching will begin automatically. 
+/// **Event:** `ride.offer_expired` **Direction:** server → driver Sent when the driver's acceptance window closes without a response. The driver UI should dismiss the incoming request card. Re-matching will begin automatically. 
 ///
 /// Properties:
 /// * [rideId] 

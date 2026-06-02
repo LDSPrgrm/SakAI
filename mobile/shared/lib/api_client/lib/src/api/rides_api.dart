@@ -323,7 +323,7 @@ class RidesApi {
   }
 
   /// Driver accepts the ride offer
-  /// Transitions: &#x60;requested&#x60; â†’ &#x60;accepted&#x60;. Only the driver currently assigned to this ride may call this. Must be called before &#x60;expires_at&#x60; from the &#x60;ride.requested&#x60; WS event â€” otherwise the offer has already been reassigned and this returns &#x60;409&#x60;. Triggers: &#x60;ride.accepted&#x60; WebSocket event â†’ passenger. 
+  /// Transitions: &#x60;requested&#x60; → &#x60;accepted&#x60;. Only the driver currently assigned to this ride may call this. Must be called before &#x60;expires_at&#x60; from the &#x60;ride.requested&#x60; WS event — otherwise the offer has already been reassigned and this returns &#x60;409&#x60;. Triggers: &#x60;ride.accepted&#x60; WebSocket event → passenger. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -404,7 +404,7 @@ class RidesApi {
   }
 
   /// Driver signals arrival at pickup
-  /// Transitions: &#x60;accepted&#x60; â†’ &#x60;arrived&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. Requires driver to be within 50 meters of pickup location. 
+  /// Transitions: &#x60;accepted&#x60; → &#x60;arrived&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. Requires driver to be within 50 meters of pickup location. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -507,7 +507,7 @@ class RidesApi {
   }
 
   /// Cancel an active ride
-  /// Permitted cancellation states: &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;. Cancellation is **not permitted** once the ride is &#x60;in_progress&#x60;. Either the passenger or the assigned driver may cancel. Triggers: &#x60;ride.cancelled&#x60; WebSocket event â†’ both parties. 
+  /// Permitted cancellation states: &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;. Cancellation is **not permitted** once the ride is &#x60;in_progress&#x60;. Either the passenger or the assigned driver may cancel. Triggers: &#x60;ride.cancelled&#x60; WebSocket event → both parties. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -610,7 +610,7 @@ class RidesApi {
   }
 
   /// Driver completes the ride at dropoff
-  /// Transitions: &#x60;in_progress&#x60; â†’ &#x60;completed&#x60;. Driver status automatically returns to &#x60;online&#x60; after completion. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. Requires driver to be within 100 meters of destination location. 
+  /// Transitions: &#x60;in_progress&#x60; → &#x60;completed&#x60;. Driver status automatically returns to &#x60;online&#x60; after completion. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. Requires driver to be within 100 meters of destination location. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -713,7 +713,7 @@ class RidesApi {
   }
 
   /// Driver declines the ride offer
-  /// Transitions: ride returns to &#x60;requested&#x60; and the matching engine finds another driver. Triggers: &#x60;ride.declined&#x60; WebSocket event â†’ passenger (informs re-matching is in progress). 
+  /// Transitions: ride returns to &#x60;requested&#x60; and the matching engine finds another driver. Triggers: &#x60;ride.declined&#x60; WebSocket event → passenger (informs re-matching is in progress). 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
@@ -875,7 +875,7 @@ class RidesApi {
   }
 
   /// Get the caller&#39;s current active ride
-  /// Returns the active ride for the authenticated user â€” whether they are the passenger or driver. A ride is \&quot;active\&quot; if its status is &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;, or &#x60;in_progress&#x60;.  **Call this on app launch / WebSocket reconnect** to re-hydrate local state before subscribing to WebSocket events. Returns &#x60;404&#x60; if no active ride exists. 
+  /// Returns the active ride for the authenticated user — whether they are the passenger or driver. A ride is \&quot;active\&quot; if its status is &#x60;requested&#x60;, &#x60;accepted&#x60;, &#x60;arrived&#x60;, or &#x60;in_progress&#x60;.  **Call this on app launch / WebSocket reconnect** to re-hydrate local state before subscribing to WebSocket events. Returns &#x60;404&#x60; if no active ride exists. 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1150,7 +1150,7 @@ class RidesApi {
   }
 
   /// Driver starts the ride after passenger boards
-  /// Transitions: &#x60;arrived&#x60; â†’ &#x60;in_progress&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event â†’ both parties. 
+  /// Transitions: &#x60;arrived&#x60; → &#x60;in_progress&#x60;. Triggers: &#x60;ride.status_changed&#x60; WebSocket event → both parties. 
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride

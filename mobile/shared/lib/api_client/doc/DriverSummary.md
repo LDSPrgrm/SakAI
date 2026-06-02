@@ -9,6 +9,7 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
+**displayId** | **String** | Human-readable reference for the driver's user record (e.g. USR-0042). | [optional] 
 **name** | **String** |  | 
 **vehicle** | [**VehicleInfo**](VehicleInfo.md) | Null if driver has no vehicle record yet. | [optional] 
 **currentLocation** | [**LatLng**](LatLng.md) |  | [optional] 

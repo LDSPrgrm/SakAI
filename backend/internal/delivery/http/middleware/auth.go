@@ -18,7 +18,12 @@ import (
 func Auth(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
+		log.Printf("[DEBUG-AUTH] URL path: %s", c.Request.URL.Path)
+		log.Printf("[DEBUG-AUTH] Header Auth: %s", c.GetHeader("Authorization"))
+		log.Printf("[DEBUG-AUTH] Query token: %s", c.Query("token"))
+		log.Printf("[DEBUG-AUTH] Extracted token length: %d", len(tokenStr))
 		if tokenStr == "" {
+			log.Printf("[DEBUG-AUTH] Aborted: Token is empty")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "missing or malformed Authorization header",
@@ -27,6 +32,7 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		}
 		claims, err := pkgjwt.ValidateAccessToken(tokenStr, jwtSecret)
 		if err != nil {
+			log.Printf("[DEBUG-AUTH] ValidateAccessToken failed: %v", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "invalid or expired access token",
@@ -49,6 +55,9 @@ func extractToken(c *gin.Context) string {
 	}
 	// Fallback to query parameter (used by WebSocket connections).
 	if t := c.Query("token"); t != "" {
+		if strings.HasPrefix(t, "Bearer ") {
+			return strings.TrimPrefix(t, "Bearer ")
+		}
 		return t
 	}
 	return ""

@@ -13,8 +13,12 @@ part 'audit_log.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. AUD-0042).
 /// * [timestamp] 
 /// * [actorId] 
+/// * [actorDisplayId] - Human-readable reference for the actor user (e.g. USR-0042).
+/// * [actorName] - Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous.
 /// * [ipAddress] 
 /// * [action] 
 /// * [resourceType] 
@@ -27,11 +31,26 @@ abstract class AuditLog implements Built<AuditLog, AuditLogBuilder> {
   @BuiltValueField(wireName: r'id')
   String? get id;
 
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. AUD-0042).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
+
   @BuiltValueField(wireName: r'timestamp')
   DateTime? get timestamp;
 
   @BuiltValueField(wireName: r'actor_id')
   String? get actorId;
+
+  /// Human-readable reference for the actor user (e.g. USR-0042).
+  @BuiltValueField(wireName: r'actor_display_id')
+  String? get actorDisplayId;
+
+  /// Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous.
+  @BuiltValueField(wireName: r'actor_name')
+  String? get actorName;
 
   @BuiltValueField(wireName: r'ip_address')
   String? get ipAddress;
@@ -84,6 +103,20 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.timestamp != null) {
       yield r'timestamp';
       yield serializers.serialize(
@@ -95,6 +128,20 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
       yield r'actor_id';
       yield serializers.serialize(
         object.actorId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.actorDisplayId != null) {
+      yield r'actor_display_id';
+      yield serializers.serialize(
+        object.actorDisplayId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.actorName != null) {
+      yield r'actor_name';
+      yield serializers.serialize(
+        object.actorName,
         specifiedType: const FullType(String),
       );
     }
@@ -177,6 +224,20 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
           ) as String;
           result.id = valueDes;
           break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
+          break;
         case r'timestamp':
           final valueDes = serializers.deserialize(
             value,
@@ -190,6 +251,20 @@ class _$AuditLogSerializer implements PrimitiveSerializer<AuditLog> {
             specifiedType: const FullType(String),
           ) as String;
           result.actorId = valueDes;
+          break;
+        case r'actor_display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.actorDisplayId = valueDes;
+          break;
+        case r'actor_name':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.actorName = valueDes;
           break;
         case r'ip_address':
           final valueDes = serializers.deserialize(

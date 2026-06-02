@@ -84,6 +84,8 @@ class _$KycEntry extends KycEntry {
   @override
   final String? driverId;
   @override
+  final String? driverDisplayId;
+  @override
   final String? driverName;
   @override
   final DateTime? submittedAt;
@@ -98,6 +100,7 @@ class _$KycEntry extends KycEntry {
   _$KycEntry._({
     this.id,
     this.driverId,
+    this.driverDisplayId,
     this.driverName,
     this.submittedAt,
     this.docs,
@@ -116,6 +119,7 @@ class _$KycEntry extends KycEntry {
     return other is KycEntry &&
         id == other.id &&
         driverId == other.driverId &&
+        driverDisplayId == other.driverDisplayId &&
         driverName == other.driverName &&
         submittedAt == other.submittedAt &&
         docs == other.docs &&
@@ -127,6 +131,7 @@ class _$KycEntry extends KycEntry {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, driverId.hashCode);
+    _$hash = $jc(_$hash, driverDisplayId.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, submittedAt.hashCode);
     _$hash = $jc(_$hash, docs.hashCode);
@@ -140,6 +145,7 @@ class _$KycEntry extends KycEntry {
     return (newBuiltValueToStringHelper(r'KycEntry')
           ..add('id', id)
           ..add('driverId', driverId)
+          ..add('driverDisplayId', driverDisplayId)
           ..add('driverName', driverName)
           ..add('submittedAt', submittedAt)
           ..add('docs', docs)
@@ -158,6 +164,11 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
   String? _driverId;
   String? get driverId => _$this._driverId;
   set driverId(String? driverId) => _$this._driverId = driverId;
+
+  String? _driverDisplayId;
+  String? get driverDisplayId => _$this._driverDisplayId;
+  set driverDisplayId(String? driverDisplayId) =>
+      _$this._driverDisplayId = driverDisplayId;
 
   String? _driverName;
   String? get driverName => _$this._driverName;
@@ -185,6 +196,7 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
     if ($v != null) {
       _id = $v.id;
       _driverId = $v.driverId;
+      _driverDisplayId = $v.driverDisplayId;
       _driverName = $v.driverName;
       _submittedAt = $v.submittedAt;
       _docs = $v.docs?.toBuilder();
@@ -215,6 +227,7 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
           _$KycEntry._(
             id: id,
             driverId: driverId,
+            driverDisplayId: driverDisplayId,
             driverName: driverName,
             submittedAt: submittedAt,
             docs: _docs?.build(),

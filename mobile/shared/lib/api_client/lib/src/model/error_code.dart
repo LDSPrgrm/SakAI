@@ -130,6 +130,18 @@ class ErrorCode extends EnumClass {
   /// Machine-readable error code. Flutter clients should branch on this, not on `message`. 
   @BuiltValueEnumConst(wireName: r'DRIVER_TOO_FAR_FROM_DESTINATION')
   static const ErrorCode DRIVER_TOO_FAR_FROM_DESTINATION = _$DRIVER_TOO_FAR_FROM_DESTINATION;
+  /// Machine-readable error code. Flutter clients should branch on this, not on `message`. 
+  @BuiltValueEnumConst(wireName: r'PROMO_INVALID')
+  static const ErrorCode PROMO_INVALID = _$PROMO_INVALID;
+  /// Machine-readable error code. Flutter clients should branch on this, not on `message`. 
+  @BuiltValueEnumConst(wireName: r'PROMO_EXPIRED')
+  static const ErrorCode PROMO_EXPIRED = _$PROMO_EXPIRED;
+  /// Machine-readable error code. Flutter clients should branch on this, not on `message`. 
+  @BuiltValueEnumConst(wireName: r'PROMO_NOT_FOUND')
+  static const ErrorCode PROMO_NOT_FOUND = _$PROMO_NOT_FOUND;
+  /// Machine-readable error code. Flutter clients should branch on this, not on `message`. 
+  @BuiltValueEnumConst(wireName: r'PROMO_MIN_AMOUNT_NOT_MET')
+  static const ErrorCode PROMO_MIN_AMOUNT_NOT_MET = _$PROMO_MIN_AMOUNT_NOT_MET;
 
   static Serializer<ErrorCode> get serializer => _$errorCodeSerializer;
 
@@ -138,4 +150,12 @@ class ErrorCode extends EnumClass {
   static BuiltSet<ErrorCode> get values => _$values;
   static ErrorCode valueOf(String name) => _$valueOf(name);
 }
+
+/// Optionally, enum_class can generate a mixin to go with your enum for use
+/// with Angular. It exposes your enum constants as getters. So, if you mix it
+/// in to your Dart component class, the values become available to the
+/// corresponding Angular template.
+///
+/// Trigger mixin generation by writing a line like this one next to your enum.
+abstract class ErrorCodeMixin = Object with _$ErrorCodeMixin;
 

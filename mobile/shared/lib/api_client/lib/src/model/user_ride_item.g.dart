@@ -95,7 +95,7 @@ class _$UserRideItem extends UserRideItem {
   @override
   final double? fare;
   @override
-  final double estimatedFare;
+  final double? estimatedFare;
   @override
   final DriverSummary? driver;
   @override
@@ -114,7 +114,7 @@ class _$UserRideItem extends UserRideItem {
     required this.originAddress,
     required this.destinationAddress,
     this.fare,
-    required this.estimatedFare,
+    this.estimatedFare,
     this.driver,
     required this.paymentMethod,
     required this.createdAt,
@@ -287,11 +287,7 @@ class UserRideItemBuilder
               'destinationAddress',
             ),
             fare: fare,
-            estimatedFare: BuiltValueNullFieldError.checkNotNull(
-              estimatedFare,
-              r'UserRideItem',
-              'estimatedFare',
-            ),
+            estimatedFare: estimatedFare,
             driver: _driver?.build(),
             paymentMethod: BuiltValueNullFieldError.checkNotNull(
               paymentMethod,

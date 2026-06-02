@@ -220,6 +220,10 @@ class _$AdminRideItem extends AdminRideItem {
   @override
   final String id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final RideStatus status;
   @override
   final UserProfile passenger;
@@ -268,6 +272,8 @@ class _$AdminRideItem extends AdminRideItem {
     this.totalFare,
     this.driverName,
     required this.id,
+    this.seq,
+    this.displayId,
     required this.status,
     required this.passenger,
     this.driver,
@@ -304,6 +310,8 @@ class _$AdminRideItem extends AdminRideItem {
         totalFare == other.totalFare &&
         driverName == other.driverName &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         status == other.status &&
         passenger == other.passenger &&
         driver == other.driver &&
@@ -333,6 +341,8 @@ class _$AdminRideItem extends AdminRideItem {
     _$hash = $jc(_$hash, totalFare.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, passenger.hashCode);
     _$hash = $jc(_$hash, driver.hashCode);
@@ -364,6 +374,8 @@ class _$AdminRideItem extends AdminRideItem {
           ..add('totalFare', totalFare)
           ..add('driverName', driverName)
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('status', status)
           ..add('passenger', passenger)
           ..add('driver', driver)
@@ -411,6 +423,14 @@ class AdminRideItemBuilder
   String? _id;
   String? get id => _$this._id;
   set id(covariant String? id) => _$this._id = id;
+
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(covariant int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(covariant String? displayId) => _$this._displayId = displayId;
 
   RideStatus? _status;
   RideStatus? get status => _$this._status;
@@ -517,6 +537,8 @@ class AdminRideItemBuilder
       _totalFare = $v.totalFare;
       _driverName = $v.driverName;
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _status = $v.status;
       _passenger = $v.passenger;
       _driver = $v.driver?.toBuilder();
@@ -569,6 +591,8 @@ class AdminRideItemBuilder
               r'AdminRideItem',
               'id',
             ),
+            seq: seq,
+            displayId: displayId,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'AdminRideItem',

@@ -59,6 +59,7 @@ import 'package:sakai_api_client/src/model/e_wallet_details.dart';
 import 'package:sakai_api_client/src/model/earnings_item.dart';
 import 'package:sakai_api_client/src/model/error_code.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
+import 'package:sakai_api_client/src/model/fare_breakdown.dart';
 import 'package:sakai_api_client/src/model/fare_config.dart';
 import 'package:sakai_api_client/src/model/fare_simulation_request.dart';
 import 'package:sakai_api_client/src/model/fare_simulation_response.dart';
@@ -85,6 +86,7 @@ import 'package:sakai_api_client/src/model/kyc_entry.dart';
 import 'package:sakai_api_client/src/model/lgu_partnership.dart';
 import 'package:sakai_api_client/src/model/lgu_partnership_input.dart';
 import 'package:sakai_api_client/src/model/lat_lng.dart';
+import 'package:sakai_api_client/src/model/list_assignee_candidates200_response_inner.dart';
 import 'package:sakai_api_client/src/model/location_update_request.dart';
 import 'package:sakai_api_client/src/model/login_request.dart';
 import 'package:sakai_api_client/src/model/logout_request.dart';
@@ -142,14 +144,22 @@ import 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 import 'package:sakai_api_client/src/model/vehicle_info.dart';
 import 'package:sakai_api_client/src/model/vehicle_input.dart';
 import 'package:sakai_api_client/src/model/ws_envelope.dart';
+import 'package:sakai_api_client/src/model/ws_envelope_payload.dart';
+import 'package:sakai_api_client/src/model/ws_event_conn_welcome.dart';
 import 'package:sakai_api_client/src/model/ws_event_driver_location_updated.dart';
+import 'package:sakai_api_client/src/model/ws_event_incident_assigned.dart';
+import 'package:sakai_api_client/src/model/ws_event_incident_resolved.dart';
 import 'package:sakai_api_client/src/model/ws_event_no_drivers_available.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_accepted.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_cancelled.dart';
+import 'package:sakai_api_client/src/model/ws_event_ride_completed.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_declined.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_offer_expired.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_requested.dart';
+import 'package:sakai_api_client/src/model/ws_event_ride_sos_triggered.dart';
+import 'package:sakai_api_client/src/model/ws_event_ride_state_sync.dart';
 import 'package:sakai_api_client/src/model/ws_event_ride_status_changed.dart';
+import 'package:sakai_api_client/src/model/ws_event_type.dart';
 
 part 'serializers.g.dart';
 
@@ -200,6 +210,7 @@ part 'serializers.g.dart';
   EarningsItem,
   ErrorCode,
   ErrorResponse,
+  FareBreakdown,
   FareConfig,
   FareSimulationRequest,
   FareSimulationResponse,
@@ -226,6 +237,7 @@ part 'serializers.g.dart';
   LGUPartnership,
   LGUPartnershipInput,
   LatLng,
+  ListAssigneeCandidates200ResponseInner,
   LocationUpdateRequest,
   LoginRequest,
   LogoutRequest,
@@ -283,14 +295,22 @@ part 'serializers.g.dart';
   VehicleInfo,
   VehicleInput,
   WsEnvelope,
+  WsEnvelopePayload,
+  WsEventConnWelcome,
   WsEventDriverLocationUpdated,
+  WsEventIncidentAssigned,
+  WsEventIncidentResolved,
   WsEventNoDriversAvailable,
   WsEventRideAccepted,
   WsEventRideCancelled,
+  WsEventRideCompleted,
   WsEventRideDeclined,
   WsEventRideOfferExpired,
   WsEventRideRequested,
+  WsEventRideSOSTriggered,
+  WsEventRideStateSync,
   WsEventRideStatusChanged,
+  WsEventType,
 ])
 Serializers serializers = (_$serializers.toBuilder()
       ..addBuilderFactory(
@@ -312,6 +332,10 @@ Serializers serializers = (_$serializers.toBuilder()
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(AlertEvent)]),
         () => ListBuilder<AlertEvent>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(ListAssigneeCandidates200ResponseInner)]),
+        () => ListBuilder<ListAssigneeCandidates200ResponseInner>(),
       )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(NotificationTemplate)]),

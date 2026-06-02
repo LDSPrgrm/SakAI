@@ -20,7 +20,6 @@ import 'package:sakai_api_client/src/model/admin_ride_list_response.dart';
 import 'package:sakai_api_client/src/model/admin_update_feature_flag_request.dart';
 import 'package:sakai_api_client/src/model/admin_update_kyc_status_request.dart';
 import 'package:sakai_api_client/src/model/admin_update_notification_template_request.dart';
-import 'package:sakai_api_client/src/model/admin_user.dart';
 import 'package:sakai_api_client/src/model/admin_user_list_response.dart';
 import 'package:sakai_api_client/src/model/alert_event.dart';
 import 'package:sakai_api_client/src/model/alert_rule.dart';
@@ -51,6 +50,7 @@ import 'package:sakai_api_client/src/model/kyc_batch_request.dart';
 import 'package:sakai_api_client/src/model/kyc_entry.dart';
 import 'package:sakai_api_client/src/model/lgu_partnership.dart';
 import 'package:sakai_api_client/src/model/lgu_partnership_input.dart';
+import 'package:sakai_api_client/src/model/list_assignee_candidates200_response_inner.dart';
 import 'package:sakai_api_client/src/model/metric_response.dart';
 import 'package:sakai_api_client/src/model/notification_template.dart';
 import 'package:sakai_api_client/src/model/payment_gateway_config.dart';
@@ -2126,7 +2126,7 @@ class AdminApi {
   }
 
   /// Get infrastructure performance metrics
-  /// Aggregated p50/p95 request latency, WebSocket connection count, and DB query p99 latency used by the System Health page. Values are derived from the perf-timing middleware and health-probe goroutine â€” no more hardcoded SystemHealth.tsx constants. 
+  /// Aggregated p50/p95 request latency, WebSocket connection count, and DB query p99 latency used by the System Health page. Values are derived from the perf-timing middleware and health-probe goroutine — no more hardcoded SystemHealth.tsx constants. 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -2432,85 +2432,6 @@ class AdminApi {
     }
 
     return Response<LGUPartnership>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// Get the authenticated admin&#39;s own profile
-  /// Returns the current admin&#39;s profile including role_id, role_name, and status. Call on admin app cold-start to re-hydrate session state. 
-  ///
-  /// Parameters:
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [AdminUser] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<AdminUser>> adminGetMe({ 
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/admin/users/me';
-    final _options = Options(
-      method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[
-          {
-            'type': 'http',
-            'scheme': 'bearer',
-            'name': 'BearerAuth',
-          },
-        ],
-        ...?extra,
-      },
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    AdminUser? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null ? null : _serializers.deserialize(
-        rawResponse,
-        specifiedType: const FullType(AdminUser),
-      ) as AdminUser;
-
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<AdminUser>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -4415,7 +4336,7 @@ class AdminApi {
     );
   }
 
-  /// List service areas (admin â€” includes inactive)
+  /// List service areas (admin — includes inactive)
   /// Returns every configured service area, including inactive ones, for admin management views. Unlike the public list, this endpoint does not filter by &#x60;active&#x60; status. 
   ///
   /// Parameters:
@@ -6309,6 +6230,85 @@ class AdminApi {
     );
 
     return _response;
+  }
+
+  /// List candidate assignees for incident reassignment
+  /// Slim list of admin/support users that may be assigned an incident. Narrower than &#x60;/admin/users&#x60; (no creation metadata, no password flags) so the route can be exposed to operations and support callers without leaking sensitive admin-account fields. 
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [BuiltList<ListAssigneeCandidates200ResponseInner>] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<BuiltList<ListAssigneeCandidates200ResponseInner>>> listAssigneeCandidates({ 
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/admin/support-staff';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BuiltList<ListAssigneeCandidates200ResponseInner>? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(BuiltList, [FullType(ListAssigneeCandidates200ResponseInner)]),
+      ) as BuiltList<ListAssigneeCandidates200ResponseInner>;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BuiltList<ListAssigneeCandidates200ResponseInner>>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
   }
 
 }

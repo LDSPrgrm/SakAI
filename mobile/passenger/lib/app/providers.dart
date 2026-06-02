@@ -78,18 +78,18 @@ final wsConnectionProvider = Provider<WsConnectionManager>((ref) {
 /// Manages WebSocket connection lifecycle based on auth state.
 class WsConnectionManager {
   final Ref _ref;
-  bool _isConnected = false;
 
   WsConnectionManager(this._ref);
 
   /// Connect WebSocket when authenticated.
   Future<void> connectIfAuthenticated() async {
     final client = _ref.read(wsClientProvider);
+    if (client.isConnected) return;
+
     final tokenStorage = _ref.read(tokenStorageProvider);
     final accessToken = await tokenStorage.getAccessToken();
 
-    if (accessToken != null && accessToken.isNotEmpty && !_isConnected) {
-      _isConnected = true;
+    if (accessToken != null && accessToken.isNotEmpty) {
       await client.connect(
         baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
         accessToken: accessToken,
@@ -99,15 +99,12 @@ class WsConnectionManager {
 
   /// Disconnect WebSocket on logout.
   Future<void> disconnect() async {
-    if (_isConnected) {
-      final client = _ref.read(wsClientProvider);
-      await client.disconnect();
-      _isConnected = false;
-    }
+    final client = _ref.read(wsClientProvider);
+    await client.disconnect();
   }
 
   /// Check if currently connected.
-  bool get isConnected => _isConnected;
+  bool get isConnected => _ref.read(wsClientProvider).isConnected;
 }
 
 enum AuthStatus { unknown, authenticated, unauthenticated }

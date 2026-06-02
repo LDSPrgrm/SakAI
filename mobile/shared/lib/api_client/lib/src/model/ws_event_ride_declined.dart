@@ -7,7 +7,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_declined.g.dart';
 
-/// **Event:** `ride.declined` **Direction:** server â†’ passenger Sent when the assigned driver explicitly declines. Passenger app should show a \"finding another driver\" state. 
+/// **Event:** `ride.declined` **Direction:** server → passenger Sent when the assigned driver explicitly declines. Passenger app should show a \"finding another driver\" state. 
 ///
 /// Properties:
 /// * [rideId] 

@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_ride_requested.g.dart';
 
-/// **Event:** `ride.requested` **Direction:** server â†’ driver Sent when the matching engine assigns a ride offer to the driver. The driver must accept or decline before `expires_at`. If no response is received by `expires_at`, the offer is withdrawn and `ride.offer_expired` is sent to the driver, and re-matching begins. 
+/// **Event:** `ride.requested` **Direction:** server → driver Sent when the matching engine assigns a ride offer to the driver. The driver must accept or decline before `expires_at`. If no response is received by `expires_at`, the offer is withdrawn and `ride.offer_expired` is sent to the driver, and re-matching begins. 
 ///
 /// Properties:
 /// * [rideId] 

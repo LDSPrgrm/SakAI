@@ -27,6 +27,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
   late final DriverHomeNotifier _notifier;
   GoogleMapController? _mapController;
   LatLng _currentLatLng = const LatLng(14.5995, 120.9842);
+  
+  // Custom Visual State
+  bool _isMapExpanded = false;
+  bool _isDarkMode = true;
 
   @override
   void initState() {
@@ -150,7 +154,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             context,
           ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
         }
-        notifier.clearError();
+          notifier.clearError();
       }
       // Animate camera to follow driver's new position
       if (previous?.currentLatLng != next.currentLatLng &&
@@ -186,387 +190,503 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             ),
     );
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          mapWidget,
+    // Render Full-Screen Map Mode if expanded
+    if (_isMapExpanded) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            mapWidget,
 
-          // Top bar
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: tokens.spaceMd,
-                vertical: tokens.spaceSm,
+            // Floating Top Bar Overlay in Map Mode
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.spaceMd,
+                  vertical: tokens.spaceSm,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => setState(() => _isMapExpanded = false),
+                      ),
+                    ),
+                    // SakAI logo pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: const Color(0xFF334155),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.bolt, color: Color(0xFF00DC82), size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'SakAI',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                      child: IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            // GPS warning banner
+            if (state.online && !state.gpsAvailable)
+              Positioned(
+                top: 70,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(color: const Color(0xFFEF4444), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.signal_wifi_off,
+                        color: Color(0xFFEF4444),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Waiting for GPS signal…',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFFEF4444),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Active ride banner
+            if (state.activeRide != null)
+              Positioned(
+                top: state.online && !state.gpsAvailable ? 130 : 70,
+                left: 16,
+                right: 16,
+                child: _buildActiveRideCard(context, state, scheme, tokens),
+              ),
+
+            // Re-center on current GPS location
+            Positioned(
+              right: 16,
+              bottom: 100,
+              child: FloatingActionButton.small(
+                heroTag: 'centerLocationExpanded',
+                onPressed: () {
+                  if (_mapController != null) {
+                    _mapController!.animateCamera(
+                      CameraUpdate.newLatLngZoom(currentLatLng, 15),
+                    );
+                  }
+                },
+                backgroundColor: const Color(0xFF1E293B),
+                child: const Icon(Icons.my_location, color: Color(0xFF00DC82)),
+              ),
+            ),
+
+            // Bottom Navigation Bar overlay
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildCustomBottomNavBar(context, tokens),
+            ),
+          ],
+        ),
+        drawer: _buildCohesiveDrawer(context, state, scheme),
+      );
+    }
+
+    // Default console mode/dashboard mode (Mockup 2 layout)
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Bar: Menu, SakAI branding, notification + theme toggle
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Menu button
                   Builder(
                     builder: (context) => CircleAvatar(
-                      backgroundColor: scheme.surface.withValues(alpha: 0.9),
+                      backgroundColor: const Color(0xFF1E293B),
                       child: IconButton(
-                        icon: Icon(Icons.menu, color: scheme.onSurface),
+                        icon: const Icon(Icons.menu, color: Colors.white),
                         onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
                   ),
-                  // Online indicator
-                  AnimatedSwitcher(
-                    duration: tokens.durationStandard,
-                    child: SakaiStatusBadge(
-                      key: ValueKey(state.online),
-                      status: state.online
-                          ? SakaiStatus.success
-                          : SakaiStatus.neutral,
-                      label: state.online ? 'Available' : 'Unavailable',
-                      icon: Icons.circle,
+                  // SakAI logo + Driver Console label
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: const Color(0xFF334155),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bolt, color: Color(0xFF00DC82), size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'SakAI',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Driver',
+                          style: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Notification + theme toggle buttons
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.notifications_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      CircleAvatar(
+                        backgroundColor: const Color(0xFF1E293B),
+                        child: IconButton(
+                          icon: Icon(
+                            _isDarkMode ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+                            color: _isDarkMode ? const Color(0xFF00DC82) : Colors.amber,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isDarkMode = !_isDarkMode;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  _isDarkMode ? 'Premium Dark Mode Active' : 'Light Mode Active',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Main Scrollable Console
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Greeting Header
+                    _buildGreetingHeader(context, state.online, scheme, tokens),
+
+                    // Interactive Live Map Preview Card
+                    _buildMapPreviewCard(context, currentLatLng, markers, scheme, tokens, mapWidget),
+
+                    // GPS Signal Warnings
+                    if (state.online && !state.gpsAvailable)
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.signal_wifi_off, color: Color(0xFFEF4444), size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Waiting for GPS signal…',
+                                style: TextStyle(
+                                  color: const Color(0xFFEF4444),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Active Ride Card
+                    if (state.activeRide != null)
+                      _buildActiveRideCard(context, state, scheme, tokens),
+
+                    // Live Dispatch Active Switch Card (Broadcasting Switch)
+                    _buildLiveDispatchCard(context, state.online, state.loading, notifier, scheme, tokens),
+
+                    // Stats Row (Gross Cash, Completed Rides, Shift Hours)
+                    _buildStatsRow(scheme, tokens),
+
+                    // Weekly Revenue Custom Bar Chart
+                    _buildWeeklyRevenueChart(scheme, tokens),
+
+                    // Fatigue Check Card
+                    _buildFatigueCheckCard(scheme, tokens),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bottom Custom Tab bar Navigation
+            _buildCustomBottomNavBar(context, tokens),
+          ],
+        ),
+      ),
+      drawer: _buildCohesiveDrawer(context, state, scheme),
+    );
+  }
+
+
+  // Greeting Header
+  Widget _buildGreetingHeader(BuildContext context, bool online, ColorScheme scheme, SakaiDesignTokens tokens) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: online ? const Color(0xFF00DC82) : const Color(0xFF64748B),
+                width: 2.5,
+              ),
+              boxShadow: online
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF00DC82).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      )
+                    ]
+                  : [],
+            ),
+            child: ClipOval(
+              child: Image.network(
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+                width: 44,
+                height: 44,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 44,
+                    height: 44,
+                    color: const Color(0xFF334155),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back,',
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Alex Thompson',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Interactive Live Map Card
+  Widget _buildMapPreviewCard(
+    BuildContext context,
+    LatLng currentLatLng,
+    Set<Marker> markers,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+    Widget mapWidget,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 180,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Stack(
+          children: [
+            mapWidget,
+            
+            // Map controls overlay
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      if (_mapController != null) {
+                        _mapController!.animateCamera(
+                          CameraUpdate.newLatLngZoom(currentLatLng, 15),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF334155), width: 1),
+                      ),
+                      child: const Icon(Icons.my_location, color: Color(0xFF00DC82), size: 18),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      setState(() {
+                        _isMapExpanded = true;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF334155), width: 1),
+                      ),
+                      child: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          // GPS warning banner
-          if (state.online && !state.gpsAvailable)
+            // Top overlay badge
             Positioned(
-              top: 70,
-              left: 16,
-              right: 16,
+              left: 12,
+              top: 12,
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: SakaiSemanticColors.of(
-                    context,
-                  ).warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5), width: 1),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    Icon(
-                      Icons.signal_wifi_off,
-                      color: SakaiSemanticColors.of(context).warning,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Waiting for GPS signal…',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: SakaiSemanticColors.of(context).warning,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Active ride banner
-          if (state.activeRide != null)
-            Positioned(
-              top: state.online && !state.gpsAvailable ? 130 : 70,
-              left: 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: () {
-                  if (context.mounted && state.activeRide != null) {
-                    context.go(Routes.rideActive, extra: state.activeRide);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(tokens.radiusMd),
-                    boxShadow: tokens.elevationMd,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.directions_car,
-                            color: scheme.onPrimaryContainer,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Active Ride',
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                    color: scheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: scheme.onPrimaryContainer,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Passenger: ${state.activeRide!.passenger.name}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: scheme.onPrimaryContainer.withValues(
-                              alpha: 0.7,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              state.activeRide!.originAddress ??
-                                  'Pickup location',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: scheme.onPrimaryContainer.withValues(
-                                      alpha: 0.7,
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: tokens.spaceXs),
-                      SakaiStatusBadge(
-                        status: _statusBadgeFor(state.activeRide!.status),
-                        label: _formatRideStatus(state.activeRide!.status),
-                        dense: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // Bottom card — online/offline toggle
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                boxShadow: tokens.elevationLg,
-              ),
-              padding: EdgeInsets.all(tokens.spaceLg),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                    Icon(Icons.map_rounded, color: Color(0xFF00DC82), size: 12),
+                    SizedBox(width: 6),
                     Text(
-                      state.activeRide != null
-                          ? 'You have an active ride'
-                          : (state.online
-                                ? 'You are online — waiting for rides'
-                                : 'Go online to start accepting rides'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      'Interactive Map',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    if (state.activeRide != null) ...[
-                      SakaiPrimaryButton(
-                        label: 'Resume Active Ride',
-                        icon: Icons.directions_car,
-                        onPressed: () {
-                          if (context.mounted && state.activeRide != null) {
-                            context.go(
-                              Routes.rideActive,
-                              extra: state.activeRide,
-                            );
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    SakaiPrimaryButton(
-                      label: state.loading
-                          ? (state.online ? 'Going offline…' : 'Going online…')
-                          : (state.online ? 'End shift' : 'Start shift'),
-                      icon: state.online
-                          ? Icons.stop_circle
-                          : Icons.play_circle_outline,
-                      onPressed: state.loading
-                          ? null
-                          : () async {
-                              await HapticFeedback.mediumImpact();
-                              await notifier.toggleStatus();
-                            },
-                    ),
-                    const SizedBox(height: 12),
-                    SakaiSecondaryButton(
-                      label: 'View earnings',
-                      icon: Icons.payments_outlined,
-                      onPressed: () => context.push(Routes.earnings),
-                    ),
-                    const SizedBox(height: 12),
-                    SakaiSecondaryButton(
-                      label: 'Manage documents',
-                      icon: Icons.description_outlined,
-                      onPressed: () => context.push(Routes.documents),
-                    ),
-                    const SizedBox(height: 8),
                   ],
                 ),
               ),
-            ),
-          ),
-
-          // Re-center on current GPS location
-          Positioned(
-            right: 16,
-            bottom: 280,
-            child: FloatingActionButton.small(
-              heroTag: 'centerLocation',
-              onPressed: () {
-                if (_mapController != null) {
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLngZoom(currentLatLng, 15),
-                  );
-                }
-              },
-              backgroundColor: scheme.surface.withValues(alpha: 0.9),
-              child: Icon(Icons.my_location, color: scheme.onSurface),
-            ),
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: scheme.primary),
-              child: Text(
-                'SakAI Driver\nMenu',
-                style: TextStyle(color: scheme.onPrimary, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              selected: true,
-              onTap: () => Navigator.pop(context),
-            ),
-            if (state.activeRide != null)
-              ListTile(
-                leading: Icon(Icons.directions_car, color: scheme.primary),
-                title: Text(
-                  'Active Ride',
-                  style: TextStyle(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (context.mounted && state.activeRide != null) {
-                    context.go(Routes.rideActive, extra: state.activeRide);
-                  }
-                },
-              ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.payments_outlined),
-              title: const Text('Earnings'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.earnings);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: const Text('My Documents'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.documents);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('Trip history'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.tripHistory);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.profile);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.settings);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications_none),
-              title: const Text('Notifications'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.notifications);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help_outline),
-              title: const Text('Support'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.support);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Log Out'),
-              onTap: () async {
-                final tokenStorage = ref.read(tokenStorageProvider);
-                final refreshToken = await tokenStorage.getRefreshToken();
-                if (refreshToken != null && refreshToken.isNotEmpty) {
-                  try {
-                    await ref
-                        .read(authRepositoryProvider)
-                        .logout(refreshToken: refreshToken);
-                  } catch (_) {
-                    // Best effort: local session must still be cleared.
-                  }
-                }
-                await ref.read(wsConnectionProvider).disconnect();
-                await tokenStorage.clear();
-                ref
-                    .read(authStateProvider.notifier)
-                    .markUnauthenticated(forceLogin: true);
-              },
             ),
           ],
         ),
@@ -574,25 +694,870 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     );
   }
 
-  SakaiStatus _statusBadgeFor(RideStatus status) {
-    switch (status) {
-      case RideStatus.requested:
-        return SakaiStatus.pending;
-      case RideStatus.accepted:
-      case RideStatus.arrived:
-        return SakaiStatus.info;
-      case RideStatus.inProgress:
-        return SakaiStatus.success;
-      case RideStatus.completed:
-        return SakaiStatus.neutral;
-      case RideStatus.cancelled:
-        return SakaiStatus.danger;
+  // Active Ride Custom Card
+  Widget _buildActiveRideCard(
+    BuildContext context,
+    DriverHomeState state,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    final activeRide = state.activeRide;
+    if (activeRide == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF00DC82).withValues(alpha: 0.15),
+            const Color(0xFF1E293B),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF00DC82).withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF00DC82).withValues(alpha: 0.1),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.local_taxi_rounded,
+                    color: Color(0xFF00DC82),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'ACTIVE TRIP',
+                    style: TextStyle(
+                      color: Color(0xFF00DC82),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00DC82).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _formatRideStatus(activeRide.status).toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF00DC82),
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            activeRide.passenger.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.location_on_rounded, color: Color(0xFFEF4444), size: 14),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  activeRide.originAddress ?? 'Pickup address',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (context.mounted) {
+                  context.go(Routes.rideActive, extra: activeRide);
+                }
+              },
+              icon: const Icon(Icons.navigation_rounded, color: Colors.black, size: 18),
+              label: const Text(
+                'Resume Navigation',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00DC82),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Live Dispatch Card
+  Widget _buildLiveDispatchCard(
+    BuildContext context,
+    bool online,
+    bool loading,
+    DriverHomeNotifier notifier,
+    ColorScheme scheme,
+    SakaiDesignTokens tokens,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: online 
+              ? const Color(0xFF00DC82).withValues(alpha: 0.3) 
+              : const Color(0xFF334155),
+          width: 1,
+        ),
+        boxShadow: online
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF00DC82).withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _buildLivePulseDot(online),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: online 
+                            ? const Color(0xFF00DC82).withValues(alpha: 0.15) 
+                            : const Color(0xFF475569).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        online ? 'ACTIVE' : 'INACTIVE',
+                        style: TextStyle(
+                          color: online ? const Color(0xFF00DC82) : const Color(0xFF94A3B8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Live Dispatch',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  online 
+                      ? 'Broadcasting location & matching with nearby commuters'
+                      : 'Go online to receive and accept ride offers',
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          loading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00DC82)),
+                  ),
+                )
+              : Transform.scale(
+                  scale: 0.9,
+                  child: Switch(
+                    value: online,
+                    activeThumbColor: const Color(0xFF00DC82),
+                    activeTrackColor: const Color(0xFF00DC82).withValues(alpha: 0.3),
+                    inactiveThumbColor: const Color(0xFF64748B),
+                    inactiveTrackColor: const Color(0xFF334155),
+                    onChanged: (val) async {
+                      await HapticFeedback.mediumImpact();
+                      notifier.toggleStatus();
+                    },
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLivePulseDot(bool active) {
+    if (!active) {
+      return Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: Color(0xFF64748B),
+          shape: BoxShape.circle,
+        ),
+      );
     }
-    return SakaiStatus.neutral;
+    return const PulsingIndicatorDot();
+  }
+
+  // Stats Row (Gross Cash, Completed Rides, Shift Hours)
+  Widget _buildStatsRow(ColorScheme scheme, SakaiDesignTokens tokens) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              label: 'GROSS CASH',
+              value: '₱184.50',
+              icon: Icons.payments_rounded,
+              valueColor: const Color(0xFF00DC82),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              label: 'COMPLETED',
+              value: '12 Rides',
+              icon: Icons.check_circle_rounded,
+              valueColor: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              label: 'SHIFT HOURS',
+              value: '6.4 hrs',
+              icon: Icons.schedule_rounded,
+              valueColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color valueColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Icon(icon, color: const Color(0xFF64748B), size: 16),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Weekly Revenue custom chart
+  Widget _buildWeeklyRevenueChart(ColorScheme scheme, SakaiDesignTokens tokens) {
+    final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final values = [120.0, 150.0, 95.0, 210.0, 180.0, 310.0, 140.0];
+    const double maxVal = 350.0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'WEEKLY REVENUE',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text(
+                        '₱1,205.50',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.arrow_upward_rounded, color: Color(0xFF00DC82), size: 12),
+                            SizedBox(width: 2),
+                            Text(
+                              '+18%',
+                              style: TextStyle(
+                                color: Color(0xFF00DC82),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const Icon(Icons.bar_chart_rounded, color: Color(0xFF64748B), size: 22),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 140,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(days.length, (idx) {
+                final isSat = idx == 5; // Saturday is index 5
+                final heightPct = values[idx] / maxVal;
+                return Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (isSat)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00DC82),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00DC82).withValues(alpha: 0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            '₱310',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 22),
+                      
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Revenue for ${days[idx]}: ₱${values[idx].toStringAsFixed(2)}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 90 * heightPct,
+                          width: 14,
+                          decoration: BoxDecoration(
+                            color: isSat ? const Color(0xFF00DC82) : const Color(0xFF475569),
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: isSat
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF00DC82).withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    )
+                                  ]
+                                : [],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        days[idx],
+                        style: TextStyle(
+                          color: isSat ? const Color(0xFF00DC82) : const Color(0xFF64748B),
+                          fontSize: 11,
+                          fontWeight: isSat ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Fatigue Alert
+  Widget _buildFatigueCheckCard(ColorScheme scheme, SakaiDesignTokens tokens) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00DC82).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: Color(0xFF00DC82),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Safety Fatigue Check',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'To maintain safety regulations, we recommend a 15-minute break in the next 1h 45m.',
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Custom Bottom Navigation Bar
+  Widget _buildCustomBottomNavBar(BuildContext context, SakaiDesignTokens tokens) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildBottomNavItem(
+            icon: Icons.dashboard_rounded,
+            label: 'Console',
+            isActive: true,
+            tokens: tokens,
+            onTap: () {},
+          ),
+          _buildBottomNavItem(
+            icon: Icons.payments_rounded,
+            label: 'Earnings',
+            isActive: false,
+            tokens: tokens,
+            onTap: () => context.push(Routes.earnings),
+          ),
+          _buildBottomNavItem(
+            icon: Icons.description_rounded,
+            label: 'Documents',
+            isActive: false,
+            tokens: tokens,
+            onTap: () => context.push(Routes.documents),
+          ),
+          _buildBottomNavItem(
+            icon: Icons.settings_rounded,
+            label: 'Settings',
+            isActive: false,
+            tokens: tokens,
+            onTap: () => context.push(Routes.settings),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required SakaiDesignTokens tokens,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF00DC82).withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isActive ? const Color(0xFF00DC82) : const Color(0xFF94A3B8),
+              size: 22,
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF00DC82),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Beautiful Dark Mode Cohesive Drawer
+  Widget _buildCohesiveDrawer(BuildContext context, DriverHomeState state, ColorScheme scheme) {
+    return Drawer(
+      backgroundColor: const Color(0xFF0F172A),
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E293B),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFF334155), width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF00DC82), width: 2),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 26,
+                    backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Alex Thompson',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'GoRide Navigator',
+                        style: TextStyle(
+                          color: Color(0xFF00DC82),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildDrawerTile(
+                  icon: Icons.dashboard_rounded,
+                  title: 'Console Dashboard',
+                  selected: true,
+                  onTap: () => Navigator.pop(context),
+                ),
+                if (state.activeRide != null)
+                  _buildDrawerTile(
+                    icon: Icons.directions_car,
+                    title: 'Active Ride',
+                    textColor: const Color(0xFF00DC82),
+                    iconColor: const Color(0xFF00DC82),
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (context.mounted && state.activeRide != null) {
+                        context.go(Routes.rideActive, extra: state.activeRide);
+                      }
+                    },
+                  ),
+                const Divider(color: Color(0xFF334155)),
+                _buildDrawerTile(
+                  icon: Icons.payments_rounded,
+                  title: 'Earnings',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.earnings);
+                  },
+                ),
+                _buildDrawerTile(
+                  icon: Icons.description_rounded,
+                  title: 'My Documents',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.documents);
+                  },
+                ),
+                _buildDrawerTile(
+                  icon: Icons.history_rounded,
+                  title: 'Trip History',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.tripHistory);
+                  },
+                ),
+                const Divider(color: Color(0xFF334155)),
+                _buildDrawerTile(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Profile',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.profile);
+                  },
+                ),
+                _buildDrawerTile(
+                  icon: Icons.settings_rounded,
+                  title: 'Settings',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.settings);
+                  },
+                ),
+                _buildDrawerTile(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Notifications',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.notifications);
+                  },
+                ),
+                _buildDrawerTile(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Support',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(Routes.support);
+                  },
+                ),
+                const Divider(color: Color(0xFF334155)),
+                _buildDrawerTile(
+                  icon: Icons.logout_rounded,
+                  title: 'Log Out',
+                  iconColor: const Color(0xFFEF4444),
+                  textColor: const Color(0xFFEF4444),
+                  onTap: () async {
+                    final tokenStorage = ref.read(tokenStorageProvider);
+                    final refreshToken = await tokenStorage.getRefreshToken();
+                    if (refreshToken != null && refreshToken.isNotEmpty) {
+                      try {
+                        await ref
+                            .read(authRepositoryProvider)
+                            .logout(refreshToken: refreshToken);
+                      } catch (_) {
+                        // Best effort: local session must still be cleared.
+                      }
+                    }
+                    await ref.read(wsConnectionProvider).disconnect();
+                    await tokenStorage.clear();
+                    ref
+                        .read(authStateProvider.notifier)
+                        .markUnauthenticated(forceLogin: true);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerTile({
+    required IconData icon,
+    required String title,
+    bool selected = false,
+    Color? iconColor,
+    Color? textColor,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: selected 
+            ? const Color(0xFF00DC82) 
+            : (iconColor ?? const Color(0xFF94A3B8)),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: selected 
+              ? const Color(0xFF00DC82) 
+              : (textColor ?? Colors.white),
+          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 14,
+        ),
+      ),
+      selected: selected,
+      selectedTileColor: const Color(0xFF00DC82).withValues(alpha: 0.1),
+      onTap: onTap,
+    );
   }
 
   String _formatRideStatus(RideStatus status) {
     switch (status) {
+      case RideStatus.created:
+        return 'Created';
       case RideStatus.requested:
         return 'Requested';
       case RideStatus.accepted:
@@ -601,11 +1566,77 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         return 'Arrived at Pickup';
       case RideStatus.inProgress:
         return 'In Progress';
+      case RideStatus.paymentPending:
+        return 'Payment Pending';
       case RideStatus.completed:
         return 'Completed';
       case RideStatus.cancelled:
         return 'Cancelled';
     }
     return status.toString().split('.').last;
+  }
+}
+
+// -------------------------------------------------------------
+// Pulsing Indicator Dot Stateful Widget for Premium Live Status
+// -------------------------------------------------------------
+class PulsingIndicatorDot extends StatefulWidget {
+  const PulsingIndicatorDot({super.key});
+
+  @override
+  State<PulsingIndicatorDot> createState() => _PulsingIndicatorDotState();
+}
+
+class _PulsingIndicatorDotState extends State<PulsingIndicatorDot> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+    
+    _pulseAnimation = Tween<double>(begin: 4.0, end: 12.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: _pulseAnimation.value * 2,
+              height: _pulseAnimation.value * 2,
+              decoration: BoxDecoration(
+                color: const Color(0xFF00DC82).withValues(alpha: (1.0 - _pulseController.value) * 0.5),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Color(0xFF00DC82),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
