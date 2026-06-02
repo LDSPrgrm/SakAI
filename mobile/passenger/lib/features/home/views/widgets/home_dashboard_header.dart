@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sakai_shared/sakai_shared.dart';
-
 import '../../../../app/routes.dart';
 import '../../../notifications/view_models/notifications_notifier.dart';
 import '../../../profile/view_models/profile_view_model.dart';
@@ -21,7 +19,6 @@ class HomeDashboardHeader extends ConsumerWidget {
     final profile = ref.watch(profileNotifierProvider).profile;
     final unread = ref.watch(notificationsNotifierProvider).unreadCount;
     final firstName = profile?.name.split(' ').first ?? 'there';
-    final padding = MediaQuery.of(context).padding;
 
     return Container(
       decoration: const BoxDecoration(

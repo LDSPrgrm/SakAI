@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver, ServiceArea;
 
 import '../../models/nearby_driver.dart';
 import '../../repositories/directions_service.dart';
@@ -132,7 +131,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       zoomControlsEnabled: false,
       compassEnabled: false,
       mapToolbarEnabled: false,
-      padding: const EdgeInsets.only(bottom: 340), // room for bottom sheet
+      padding: const EdgeInsets.only(top: 80, bottom: 340), // room for top bar and bottom sheet
     );
   }
 
@@ -145,9 +144,27 @@ class _BookingMapState extends ConsumerState<BookingMap> {
   ) {
     final allPoints = routePoints.isNotEmpty ? routePoints : [pickup, dest];
     final bounds = boundsFromPoints(allPoints);
-    _controller?.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 80),
-    );
+    
+    void attemptAnimate() {
+      if (_controller == null || !mounted) return;
+      try {
+        _controller!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds, 80),
+        );
+      } catch (_) {
+        // Fallback: wait a short duration if map was not fully laid out/loaded yet
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (_controller == null || !mounted) return;
+          try {
+            _controller!.animateCamera(
+              CameraUpdate.newLatLngBounds(bounds, 80),
+            );
+          } catch (_) {}
+        });
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => attemptAnimate());
   }
 
   // ── Markers ────────────────────────────────────────────────────────────────

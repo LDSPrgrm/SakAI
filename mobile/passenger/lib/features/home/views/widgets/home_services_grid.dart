@@ -17,7 +17,6 @@ class HomeServicesGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final items = _buildItems(context);
 
     return Padding(

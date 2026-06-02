@@ -122,11 +122,25 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         break;
     }
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      extendBody: true,
-      body: body,
-      bottomNavigationBar: _buildBottomNav(scheme),
+    final homeState = ref.watch(homeNotifierProvider);
+    final isBookingActive = _currentIndex == 0 &&
+        (homeState.status == HomeStatus.destinationSet ||
+            homeState.status == HomeStatus.requesting);
+
+    return PopScope(
+      canPop: !isBookingActive,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (isBookingActive) {
+          ref.read(homeNotifierProvider.notifier).clearDestination();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        extendBody: true,
+        body: body,
+        bottomNavigationBar: _buildBottomNav(scheme),
+      ),
     );
   }
 
@@ -228,13 +242,22 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         // Bottom layer: GoogleMap route & drivers
         const BookingMap(),
 
-        // Floating back button overlay in top-left
-        SafeArea(
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 12),
-              child: _buildFloatingBackButton(scheme),
+        // Premium compact top bar
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            color: scheme.surface,
+            child: SafeArea(
+              bottom: false,
+              child: BookingTopBar(
+                scheme: scheme,
+                onBack: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(homeNotifierProvider.notifier).clearDestination();
+                },
+              ),
             ),
           ),
         ),
@@ -297,38 +320,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildFloatingBackButton(ColorScheme scheme) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        ref.read(homeNotifierProvider.notifier).clearDestination();
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Icon(
-          Icons.arrow_back,
-          color: scheme.onSurface,
-          size: 20,
-        ),
-      ),
     );
   }
 
@@ -645,9 +636,15 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _BookingTopBar extends StatelessWidget {
-  const _BookingTopBar({required this.scheme});
+class BookingTopBar extends StatelessWidget {
+  const BookingTopBar({
+    super.key,
+    required this.scheme,
+    required this.onBack,
+  });
+
   final ColorScheme scheme;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -664,13 +661,19 @@ class _BookingTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 8),
+          IconButton(
+            key: const Key('booking_back_button'),
+            onPressed: onBack,
+            icon: Icon(Icons.arrow_back, color: scheme.onSurface),
+            tooltip: 'Back',
+          ),
+          const SizedBox(width: 4),
           Container(
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: const Color(0xFF00C472),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
             child: const Text(
@@ -678,20 +681,73 @@ class _BookingTopBar extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 18,
+                fontSize: 16,
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Book a ride',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface,
-                letterSpacing: -0.3,
-              ),
+          const SizedBox(width: 8),
+          Text(
+            'SakAI',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            key: const Key('booking_help_button'),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showHelpDialog(context);
+            },
+            icon: Icon(Icons.help_outline, color: scheme.onSurfaceVariant),
+            tooltip: 'Help',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const Key('booking_help_dialog'),
+        title: Row(
+          children: [
+            Icon(Icons.help_outline, color: const Color(0xFF00C472)),
+            const SizedBox(width: 8),
+            const Text('Booking Help'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'How to book a ride:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('1. Set your pickup and destination locations.'),
+            Text('2. Select your preferred transit class (e.g., GoEco, GoPremium).'),
+            Text('3. Review the estimated fare and click "Confirm Booking".'),
+            SizedBox(height: 12),
+            Text(
+              'SakAI offers reliable transportation powered by dynamic routing.',
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('booking_help_dialog_close'),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Got it',
+              style: TextStyle(color: Color(0xFF00C472), fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -900,34 +956,6 @@ class _SectionDivider extends StatelessWidget {
     return Container(
       height: 8,
       color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-    );
-  }
-}
-
-class _ComingSoonTab extends StatelessWidget {
-  const _ComingSoonTab({required this.label, required this.scheme});
-  final String label;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.construction_rounded,
-              size: 48, color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
-          const SizedBox(height: 12),
-          Text(
-            '$label — Coming Soon',
-            style: TextStyle(
-              color: scheme.onSurfaceVariant,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

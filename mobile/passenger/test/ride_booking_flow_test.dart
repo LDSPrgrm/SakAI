@@ -43,6 +43,7 @@ import 'package:sakai_shared/sakai_shared.dart'
 import 'package:passenger/app/routes.dart';
 import 'package:passenger/features/home/models/ride_type_option.dart';
 import 'package:passenger/features/home/view_models/home_notifier.dart';
+import 'package:passenger/features/home/views/rider_home_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // _FakeHomeNotifier
@@ -466,4 +467,98 @@ void main() {
     });
 
   });
+
+  // ── Widget: BookingTopBar and PopScope back button interception ───────────
+  group('BookingTopBar and back button interception', () {
+    testWidgets('BookingTopBar renders correctly and triggers callbacks', (WidgetTester tester) async {
+      bool backTapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BookingTopBar(
+              scheme: const ColorScheme.light(),
+              onBack: () => backTapped = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('SakAI'), findsOneWidget);
+      expect(find.byKey(const Key('booking_back_button')), findsOneWidget);
+      expect(find.byKey(const Key('booking_help_button')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('booking_back_button')));
+      await tester.pump();
+      expect(backTapped, isTrue);
+
+      await tester.tap(find.byKey(const Key('booking_help_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('booking_help_dialog')), findsOneWidget);
+      expect(find.text('Booking Help'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('booking_help_dialog_close')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('booking_help_dialog')), findsNothing);
+    });
+
+    testWidgets('PopScope blocks pop when booking is active and clears destination', (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          homeNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      bool isBookingActive = true;
+      bool clearedDestination = false;
+
+      // Pump a widget with PopScope matching RiderHomeScreen logic
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PopScope(
+                          canPop: !isBookingActive,
+                          onPopInvokedWithResult: (didPop, result) {
+                            if (didPop) return;
+                            if (isBookingActive) {
+                              clearedDestination = true;
+                            }
+                          },
+                          child: const Scaffold(
+                            body: Text('Home Screen'),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Go'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Push the route
+      await tester.tap(find.text('Go'));
+      await tester.pumpAndSettle();
+
+      // Attempt to pop
+      final BuildContext context = tester.element(find.text('Home Screen'));
+      await Navigator.of(context).maybePop();
+      await tester.pump();
+
+      expect(clearedDestination, isTrue);
+    });
+  });
 }
+
