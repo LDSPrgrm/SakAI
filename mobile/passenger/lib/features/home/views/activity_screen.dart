@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,12 +23,6 @@ extension _StatusX on _RideStatus {
         _RideStatus.ongoing   => sem.success,
         _RideStatus.completed => sem.accentBlue,
         _RideStatus.cancelled => sem.danger,
-      };
-
-  Color tint(SakaiSemanticColors sem) => switch (this) {
-        _RideStatus.ongoing   => sem.successSubtle,
-        _RideStatus.completed => sem.accentBlue.withValues(alpha: 0.12),
-        _RideStatus.cancelled => sem.dangerSubtle,
       };
 
   IconData get icon => switch (this) {
@@ -96,7 +89,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 padding: EdgeInsets.symmetric(horizontal: t.spaceMd),
                 sliver: SliverList.builder(
                   itemCount: 4,
-                  itemBuilder: (_, __) => Padding(
+                  itemBuilder: (context, index) => Padding(
                     padding: EdgeInsets.only(bottom: t.spaceSm),
                     child: SakaiSkeleton.card(height: 130),
                   ),
@@ -754,7 +747,7 @@ class _PulseDotState extends State<_PulseDot>
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
         animation: _ctrl,
-        builder: (_, __) => Transform.scale(
+        builder: (context, child) => Transform.scale(
           scale: _scale.value,
           child: Opacity(
             opacity: _opacity.value,
