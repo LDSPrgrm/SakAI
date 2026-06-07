@@ -131,7 +131,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       zoomControlsEnabled: false,
       compassEnabled: false,
       mapToolbarEnabled: false,
-      padding: const EdgeInsets.only(top: 80, bottom: 340), // room for top bar and bottom sheet
+      padding: const EdgeInsets.only(top: 80, bottom: 440), // room for top bar and bottom sheet
     );
   }
 
@@ -149,7 +149,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       if (_controller == null || !mounted) return;
       try {
         _controller!.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 80),
+          CameraUpdate.newLatLngBounds(bounds, 100),
         );
       } catch (_) {
         // Fallback: wait a short duration if map was not fully laid out/loaded yet
@@ -157,7 +157,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
           if (_controller == null || !mounted) return;
           try {
             _controller!.animateCamera(
-              CameraUpdate.newLatLngBounds(bounds, 80),
+              CameraUpdate.newLatLngBounds(bounds, 100),
             );
           } catch (_) {}
         });

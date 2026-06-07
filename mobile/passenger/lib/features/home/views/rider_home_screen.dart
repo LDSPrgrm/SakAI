@@ -239,10 +239,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
     return Stack(
       children: [
-        // Bottom layer: GoogleMap route & drivers
+        // Full-screen map — always visible behind the panel
         const BookingMap(),
 
-        // Premium compact top bar
+        // Top bar
         Positioned(
           top: 0,
           left: 0,
@@ -262,62 +262,18 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           ),
         ),
 
-        // DraggableScrollableSheet as the bottom panel
-        DraggableScrollableSheet(
-          initialChildSize: 0.48,
-          minChildSize: 0.35,
-          maxChildSize: 0.75,
-          snap: true,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                physics: const ClampingScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: tokens.spaceLg,
-                  vertical: tokens.spaceMd,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Drag indicator handle
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 48,
-                        height: 5,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: scheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    _buildTimelineCard(scheme, tokens),
-                    SizedBox(height: tokens.spaceLg),
-                    _buildRideTypeCards(scheme, tokens),
-                    SizedBox(height: tokens.spaceLg),
-                    _buildConfirmButton(scheme),
-                    SizedBox(height: tokens.spaceMd),
-                  ],
-                ),
-              ),
-            );
-          },
+        // Fixed bottom panel — no dragging required
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _BottomBookingPanel(
+            scheme: scheme,
+            tokens: tokens,
+            timelineCard: _buildTimelineCard(scheme, tokens),
+            rideTypeCards: _buildRideTypeCards(scheme, tokens),
+            confirmButton: _buildConfirmButton(scheme),
+          ),
         ),
       ],
     );
@@ -416,7 +372,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Select Transit Class',
+          'Choose ride type',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 12),
@@ -732,7 +688,7 @@ class BookingTopBar extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text('1. Set your pickup and destination locations.'),
-            Text('2. Select your preferred transit class (e.g., GoEco, GoPremium).'),
+            Text('2. Select your ride type: Tricycle, Motorcycle, or Car.'),
             Text('3. Review the estimated fare and click "Confirm Booking".'),
             SizedBox(height: 12),
             Text(
@@ -825,122 +781,144 @@ class _TransitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, desc, iconData) = switch (option.type) {
-      VehicleType.tricycle => ('GoEco', 'Budget Local', Icons.electric_rickshaw),
-      VehicleType.car => ('GoPremium', 'Premium Sedan', Icons.directions_car),
-      VehicleType.motorcycle => ('GoVan', 'Spacious Ride', Icons.airport_shuttle),
+      VehicleType.tricycle => ('Tricycle', 'Budget • 3 wheels', Icons.electric_rickshaw),
+      VehicleType.motorcycle => ('Motorcycle', 'Fast • 2 wheels', Icons.two_wheeler),
+      VehicleType.car => ('Car', 'Comfort • 4 wheels', Icons.directions_car),
     };
 
+    final available = option.isAvailable;
+    final count = option.availableDrivers;
+
+    // Border: green when selected, amber when unavailable (still visible), default otherwise
     final borderColor = selected
         ? const Color(0xFF00DC82)
-        : scheme.outlineVariant.withValues(alpha: 0.6);
+        : !available
+            ? scheme.error.withValues(alpha: 0.4)
+            : scheme.outlineVariant.withValues(alpha: 0.6);
+
     final bgColor = selected
         ? const Color(0xFF00DC82).withValues(alpha: 0.08)
-        : scheme.surface;
+        : !available
+            ? scheme.errorContainer.withValues(alpha: 0.08)
+            : scheme.surface;
+
+    // Driver count badge
+    final badgeColor = available ? const Color(0xFF00DC82) : scheme.error;
+    final badgeBg = available
+        ? const Color(0xFF00DC82).withValues(alpha: 0.15)
+        : scheme.errorContainer.withValues(alpha: 0.6);
+    final badgeText = available ? '$count active' : 'No drivers';
+
+    // Bottom-right label
+    final driverLabel = available
+        ? '$count driver${count == 1 ? '' : 's'}'
+        : 'Unavailable';
 
     return GestureDetector(
-      onTap: option.isAvailable ? onTap : null,
-      child: Opacity(
-        opacity: option.isAvailable ? 1.0 : 0.45,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          width: 140,
-          margin: const EdgeInsets.only(right: 12, bottom: 4, top: 4),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: borderColor,
-              width: selected ? 2.0 : 1.0,
-            ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00DC82).withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    )
-                  ]
-                : [],
+      onTap: available ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: 140,
+        margin: const EdgeInsets.only(right: 12, bottom: 4, top: 4),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: borderColor,
+            width: selected ? 2.0 : 1.0,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(
-                    iconData,
-                    color: selected
-                        ? const Color(0xFF00DC82)
-                        : scheme.onSurfaceVariant,
-                    size: 28,
-                  ),
-                  if (option.isAvailable)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00DC82).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Color(0xFF00DC82),
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  )
+                ]
+              : [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon + availability badge row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(
+                  iconData,
                   color: selected
                       ? const Color(0xFF00DC82)
-                      : scheme.onSurface,
+                      : available
+                          ? scheme.onSurfaceVariant
+                          : scheme.error.withValues(alpha: 0.6),
+                  size: 28,
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                desc,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '₱${option.estimatedFare.toStringAsFixed(0)}',
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badgeText,
                     style: TextStyle(
+                      color: badgeColor,
+                      fontSize: 8,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      color: selected
-                          ? const Color(0xFF00DC82)
-                          : scheme.onSurface,
                     ),
                   ),
-                  Text(
-                    option.isAvailable
-                        ? '${option.availableDrivers} min'
-                        : 'N/A',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                color: selected
+                    ? const Color(0xFF00DC82)
+                    : available
+                        ? scheme.onSurface
+                        : scheme.onSurface.withValues(alpha: 0.45),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              desc,
+              style: TextStyle(
+                fontSize: 10,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  available ? '₱${option.estimatedFare.toStringAsFixed(0)}' : '—',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: selected
+                        ? const Color(0xFF00DC82)
+                        : available
+                            ? scheme.onSurface
+                            : scheme.onSurface.withValues(alpha: 0.35),
+                  ),
+                ),
+                Text(
+                  driverLabel,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: available ? scheme.onSurfaceVariant : scheme.error,
+                    fontWeight: available ? FontWeight.normal : FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -990,4 +968,95 @@ class _DottedLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fixed bottom booking panel — no dragging needed
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BottomBookingPanel extends StatelessWidget {
+  const _BottomBookingPanel({
+    required this.scheme,
+    required this.tokens,
+    required this.timelineCard,
+    required this.rideTypeCards,
+    required this.confirmButton,
+  });
+
+  final ColorScheme scheme;
+  final SakaiDesignTokens tokens;
+  final Widget timelineCard;
+  final Widget rideTypeCards;
+  final Widget confirmButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 24,
+            spreadRadius: 2,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Drag handle (visual only — panel is fixed)
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // ── Scrollable content area (timeline + ride type cards)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                timelineCard,
+                SizedBox(height: tokens.spaceMd),
+                rideTypeCards,
+                SizedBox(height: tokens.spaceSm),
+              ],
+            ),
+          ),
+
+          // ── Sticky divider
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+
+          // ── Sticky confirm button — always visible, never scrolled away
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spaceLg,
+                tokens.spaceMd,
+                tokens.spaceLg,
+                tokens.spaceMd,
+              ),
+              child: confirmButton,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

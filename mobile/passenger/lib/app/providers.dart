@@ -20,6 +20,7 @@ import '../features/receipt/repositories/receipt_repository_impl.dart';
 import '../features/support/repositories/sos_repository_impl.dart';
 import '../features/active_ride/models/active_ride_state.dart';
 import '../features/active_ride/view_models/active_ride_notifier.dart';
+import '../features/home/repositories/geocoding_service.dart';
 export '../features/active_ride/view_models/active_ride_notifier.dart'
     show ActiveRideController;
 
@@ -161,6 +162,11 @@ final rideCompleteRepositoryProvider = Provider<RideCompleteRepository>((ref) {
 /// Ride history repository - domain boundary over the generated API client.
 final rideHistoryRepositoryProvider = Provider<RideHistoryRepository>((ref) {
   return RideHistoryRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Geocoding service provider.
+final geocodingServiceProvider = Provider<GeocodingService>((ref) {
+  return GeocodingService();
 });
 
 /// Cancelled ride repository - domain boundary over the generated API client.

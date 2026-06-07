@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver, ServiceArea;
 
+import '../../ride_history/models/ride_history_item.dart';
+import '../../ride_history/view_models/ride_history_list_view_model.dart';
+import '../../../app/providers.dart';
 import '../repositories/geocoding_service.dart';
 import 'destination_sheet.dart'; // for LocationSearchMode enum
 
@@ -101,7 +105,6 @@ class _LocationPickerScreenState
     with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
-  final _geocodingService = GeocodingService();
 
   List<String> _autocompleteResults = [];
   bool _isSearching = false;
@@ -124,6 +127,11 @@ class _LocationPickerScreenState
     _searchFocus.addListener(_onFocusChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
+
+      final historyState = ref.read(rideHistoryListNotifierProvider);
+      if (historyState.status == RideHistoryStatus.initial) {
+        ref.read(rideHistoryListNotifierProvider.notifier).loadHistory();
+      }
     });
   }
 
@@ -153,7 +161,7 @@ class _LocationPickerScreenState
     setState(() => _isSearching = true);
     _debounce = Timer(const Duration(milliseconds: 380), () async {
       setState(() => _isLoading = true);
-      final results = await _geocodingService.getSuggestions(value);
+      final results = await ref.read(geocodingServiceProvider).getSuggestions(value);
       if (mounted) {
         setState(() {
           _autocompleteResults = results;
@@ -166,7 +174,7 @@ class _LocationPickerScreenState
   Future<void> _confirmAddress(String address) async {
     setState(() => _isLoading = true);
     try {
-      final loc = await _geocodingService.geocode(address);
+      final loc = await ref.read(geocodingServiceProvider).geocode(address);
       if (mounted) Navigator.of(context).pop(loc);
     } catch (e) {
       if (mounted) {
@@ -177,17 +185,18 @@ class _LocationPickerScreenState
   }
 
   Future<void> _confirmSuggested(SuggestedTransitPoint point) async {
+    final fullAddress = point.address.isEmpty ? point.name : '${point.name}, ${point.address}';
     if (point.lat != null && point.lng != null) {
       Navigator.of(context).pop(
         RideLocation(
           lat: point.lat!,
           lng: point.lng!,
-          address: '${point.name}, ${point.address}',
+          address: fullAddress,
         ),
       );
       return;
     }
-    await _confirmAddress('${point.name}, ${point.address}');
+    await _confirmAddress(fullAddress);
   }
 
   void _openMapPinPicker() {
@@ -341,6 +350,55 @@ class _LocationPickerScreenState
   }
 
   Widget _buildDefaultList(ColorScheme scheme) {
+    final historyState = ref.watch(rideHistoryListNotifierProvider);
+    final List<SuggestedTransitPoint> suggestions;
+    final String headerTitle;
+
+    final isPickup = widget.mode == LocationSearchMode.pickup;
+    final recentItems = historyState.items;
+
+    if (recentItems.isNotEmpty) {
+      final uniqueAddresses = <String>{};
+      final recentPoints = <SuggestedTransitPoint>[];
+
+      for (final item in recentItems) {
+        final addressStr = isPickup ? item.originAddress : item.destinationAddress;
+        if (addressStr.trim().isEmpty) continue;
+        if (uniqueAddresses.add(addressStr)) {
+          final commaIdx = addressStr.indexOf(',');
+          final String name;
+          final String address;
+          if (commaIdx != -1) {
+            name = addressStr.substring(0, commaIdx).trim();
+            address = addressStr.substring(commaIdx + 1).trim();
+          } else {
+            name = addressStr.trim();
+            address = '';
+          }
+
+          recentPoints.add(SuggestedTransitPoint(
+            name: name,
+            subtitle: isPickup ? 'Recent Pickup' : 'Recent Destination',
+            address: address,
+            type: TransitPointType.other,
+          ));
+
+          if (recentPoints.length >= 6) break;
+        }
+      }
+
+      if (recentPoints.isNotEmpty) {
+        headerTitle = isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS';
+        suggestions = recentPoints;
+      } else {
+        headerTitle = 'SUGGESTED TRANSIT POINTS';
+        suggestions = _kDefaultSuggestions;
+      }
+    } else {
+      headerTitle = 'SUGGESTED TRANSIT POINTS';
+      suggestions = _kDefaultSuggestions;
+    }
+
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 32),
       children: [
@@ -351,7 +409,7 @@ class _LocationPickerScreenState
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
           child: Text(
-            'SUGGESTED TRANSIT POINTS',
+            headerTitle,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -360,7 +418,7 @@ class _LocationPickerScreenState
             ),
           ),
         ),
-        ..._kDefaultSuggestions.map((point) => _buildSuggestedTile(point, scheme)),
+        ...suggestions.map((point) => _buildSuggestedTile(point, scheme)),
       ],
     );
   }
@@ -454,7 +512,9 @@ class _LocationPickerScreenState
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${point.subtitle} · ${point.address}',
+                    point.address.isEmpty
+                        ? point.subtitle
+                        : '${point.subtitle} · ${point.address}',
                     style: TextStyle(
                       fontSize: 12,
                       color: scheme.onSurfaceVariant,
@@ -604,12 +664,62 @@ class _MapPinPickerScreen extends StatefulWidget {
 
 class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
   static const _defaultPosition = LatLng(14.5995, 120.9842); // Manila fallback
-  // ignore: unused_field   // retained for future camera animations (my-location centering)
   GoogleMapController? _mapController;
   LatLng _pinnedLocation = _defaultPosition;
   String? _resolvedAddress;
   bool _resolving = false;
+  bool _locating = false;
+  // True while the very first location fetch is running — no pin shown yet.
+  bool _initializing = true;
   final _geocodingService = GeocodingService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInitialLocation();
+  }
+
+  /// Silently resolves current location on open. If permission is denied or
+  /// location fails, simply stays on the Manila fallback with no error shown.
+  Future<void> _fetchInitialLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        // Permission unavailable — fall back to Manila.
+        if (mounted) setState(() => _initializing = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      if (!mounted) return;
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      setState(() {
+        _pinnedLocation = latLng;
+        _initializing = false;
+      });
+      // Animate camera — works whether map is ready or not (controller may
+      // already be set if the map rendered before GPS resolved).
+      await _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: latLng, zoom: 16),
+        ),
+      );
+      _resolveAddress(latLng);
+    } catch (_) {
+      // Timeout or any other error — fall back to Manila silently.
+      if (mounted) setState(() => _initializing = false);
+    }
+  }
 
   Future<void> _resolveAddress(LatLng latLng) async {
     setState(() => _resolving = true);
@@ -639,6 +749,56 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
     _resolveAddress(position);
   }
 
+  Future<void> _goToCurrentLocation() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      // Check / request permission without throwing.
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission denied. Enable it in Settings.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      await _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: latLng, zoom: 16),
+        ),
+      );
+      _onMapTap(latLng);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not get current location. Try again.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -653,19 +813,32 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
               target: _defaultPosition,
               zoom: 14,
             ),
-            onMapCreated: (c) => _mapController = c,
-            onTap: _onMapTap,
-            markers: {
-              Marker(
-                markerId: const MarkerId('pin'),
-                position: _pinnedLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueGreen,
-                ),
-              ),
+            onMapCreated: (c) {
+              _mapController = c;
+              // If GPS resolved before the map rendered, animate now.
+              if (!_initializing) {
+                c.animateCamera(
+                  CameraUpdate.newCameraPosition(
+                    CameraPosition(target: _pinnedLocation, zoom: 16),
+                  ),
+                );
+              }
             },
+            onTap: _onMapTap,
+            // Don't show the marker until we have a real location.
+            markers: _initializing
+                ? const {}
+                : {
+                    Marker(
+                      markerId: const MarkerId('pin'),
+                      position: _pinnedLocation,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueGreen,
+                      ),
+                    ),
+                  },
             myLocationEnabled: true,
-            myLocationButtonEnabled: false,
+            myLocationButtonEnabled: false, // we supply our own styled button
             zoomControlsEnabled: false,
           ),
 
@@ -706,6 +879,16 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+
+          // Current Location Button — right side, below top bar
+          Positioned(
+            right: 16,
+            bottom: 220,
+            child: _CurrentLocationButton(
+              loading: _locating,
+              onTap: _goToCurrentLocation,
             ),
           ),
 
@@ -874,6 +1057,60 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
           ],
         ),
         child: child,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Current Location Button widget
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CurrentLocationButton extends StatelessWidget {
+  const _CurrentLocationButton({
+    required this.loading,
+    required this.onTap,
+  });
+
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: const Color(0xFF00DC82).withValues(alpha: 0.4),
+            width: 1.5,
+          ),
+        ),
+        child: loading
+            ? Padding(
+                padding: const EdgeInsets.all(13),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: const Color(0xFF00DC82),
+                ),
+              )
+            : const Icon(
+                Icons.my_location_rounded,
+                color: Color(0xFF00DC82),
+                size: 22,
+              ),
       ),
     );
   }
