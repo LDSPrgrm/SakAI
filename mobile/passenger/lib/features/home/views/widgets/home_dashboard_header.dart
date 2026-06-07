@@ -6,6 +6,7 @@ import '../../../../app/routes.dart';
 import '../../../notifications/view_models/notifications_notifier.dart';
 import '../../../profile/view_models/profile_view_model.dart';
 import '../../view_models/home_notifier.dart';
+import '../../models/location_search_mode.dart';
 import '../location_picker_screen.dart';
 import '../destination_sheet.dart';
 

@@ -9,13 +9,16 @@ final recentLocationsNotifierProvider =
   RecentLocationsNotifier.new,
 );
 
-class RecentLocationsNotifier extends FamilyNotifier<List<RideLocation>, LocationSearchMode> {
+class RecentLocationsNotifier extends Notifier<List<RideLocation>> {
+  RecentLocationsNotifier(this.arg);
+  final LocationSearchMode arg;
+
   String get _key => arg == LocationSearchMode.pickup
       ? 'recent_pickup_locations'
       : 'recent_destination_locations';
 
   @override
-  List<RideLocation> build(LocationSearchMode arg) {
+  List<RideLocation> build() {
     final prefs = ref.watch(sharedPreferencesProvider);
     final list = prefs.getStringList(_key);
     if (list == null) return [];
@@ -67,3 +70,4 @@ class RecentLocationsNotifier extends FamilyNotifier<List<RideLocation>, Locatio
     await prefs.setStringList(_key, stringList);
   }
 }
+

@@ -14,6 +14,7 @@ import 'profile_screen.dart';
 import '../../wallet/views/wallet_screen.dart';
 import '../../inbox/views/inbox_screen.dart';
 import '../models/ride_type_option.dart';
+import '../models/location_search_mode.dart';
 import '../view_models/home_notifier.dart';
 import 'widgets/booking_map.dart';
 import 'widgets/home_dashboard_header.dart';

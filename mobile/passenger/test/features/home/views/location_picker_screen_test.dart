@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:passenger/app/providers.dart';
 import 'package:passenger/features/home/repositories/geocoding_service.dart';
+import 'package:passenger/features/home/models/location_search_mode.dart';
 import 'package:passenger/features/home/views/destination_sheet.dart';
 import 'package:passenger/features/home/views/location_picker_screen.dart';
 import 'package:passenger/features/ride_history/models/ride_history_item.dart';

@@ -9,8 +9,10 @@ import 'package:sakai_shared/sakai_shared.dart'
 
 import '../../ride_history/view_models/ride_history_list_view_model.dart';
 import '../../../app/providers.dart';
+import '../models/location_search_mode.dart';
 import '../repositories/geocoding_service.dart';
-import 'destination_sheet.dart'; // for LocationSearchMode enum
+import '../view_models/recent_locations_notifier.dart';
+import 'destination_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data models for suggested transit points
@@ -174,7 +176,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
     setState(() => _isLoading = true);
     try {
       final loc = await ref.read(geocodingServiceProvider).geocode(address);
-      if (mounted) Navigator.of(context).pop(loc);
+      if (mounted) {
+        ref
+            .read(recentLocationsNotifierProvider(widget.mode).notifier)
+            .addLocation(loc);
+        Navigator.of(context).pop(loc);
+      }
     } catch (e) {
       if (mounted) {
         SakaiSnackBar.error(context, 'Could not resolve address. Try again.');
@@ -188,9 +195,11 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         ? point.name
         : '${point.name}, ${point.address}';
     if (point.lat != null && point.lng != null) {
-      Navigator.of(context).pop(
-        RideLocation(lat: point.lat!, lng: point.lng!, address: fullAddress),
-      );
+      final loc = RideLocation(lat: point.lat!, lng: point.lng!, address: fullAddress);
+      ref
+          .read(recentLocationsNotifierProvider(widget.mode).notifier)
+          .addLocation(loc);
+      Navigator.of(context).pop(loc);
       return;
     }
     await _confirmAddress(fullAddress);
@@ -204,7 +213,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
           ),
         )
         .then((loc) {
-          if (loc != null && mounted) Navigator.of(context).pop(loc);
+          if (loc != null && mounted) {
+            ref
+                .read(recentLocationsNotifierProvider(widget.mode).notifier)
+                .addLocation(loc);
+            Navigator.of(context).pop(loc);
+          }
         });
   }
 
@@ -241,7 +255,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
           .read(geocodingServiceProvider)
           .reverseGeocode(pos.latitude, pos.longitude);
 
-      if (mounted) Navigator.of(context).pop(loc);
+      if (mounted) {
+        ref
+            .read(recentLocationsNotifierProvider(widget.mode).notifier)
+            .addLocation(loc);
+        Navigator.of(context).pop(loc);
+      }
     } catch (_) {
       if (mounted) {
         SakaiSnackBar.error(
@@ -402,83 +421,134 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
   }
 
   Widget _buildDefaultList(ColorScheme scheme) {
-    final historyState = ref.watch(rideHistoryListNotifierProvider);
-    final List<SuggestedTransitPoint> suggestions;
+    final recentLocations = ref.watch(recentLocationsNotifierProvider(widget.mode));
     final String headerTitle;
-
     final isPickup = widget.mode == LocationSearchMode.pickup;
-    final recentItems = historyState.items;
 
-    if (recentItems.isNotEmpty) {
-      final uniqueAddresses = <String>{};
-      final recentPoints = <SuggestedTransitPoint>[];
-
-      for (final item in recentItems) {
-        final addressStr = isPickup
-            ? item.originAddress
-            : item.destinationAddress;
-        if (addressStr.trim().isEmpty) continue;
-        if (uniqueAddresses.add(addressStr)) {
-          final commaIdx = addressStr.indexOf(',');
-          final String name;
-          final String address;
-          if (commaIdx != -1) {
-            name = addressStr.substring(0, commaIdx).trim();
-            address = addressStr.substring(commaIdx + 1).trim();
-          } else {
-            name = addressStr.trim();
-            address = '';
-          }
-
-          recentPoints.add(
-            SuggestedTransitPoint(
-              name: name,
-              subtitle: isPickup ? 'Recent Pickup' : 'Recent Destination',
-              address: address,
-              type: TransitPointType.other,
-            ),
-          );
-
-          if (recentPoints.length >= 6) break;
-        }
-      }
-
-      if (recentPoints.isNotEmpty) {
-        headerTitle = isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS';
-        suggestions = recentPoints;
-      } else {
-        headerTitle = 'SUGGESTED TRANSIT POINTS';
-        suggestions = _kDefaultSuggestions;
-      }
-    } else {
-      headerTitle = 'SUGGESTED TRANSIT POINTS';
-      suggestions = _kDefaultSuggestions;
-    }
-
-    return ListView(
-      padding: const EdgeInsets.only(top: 8, bottom: 32),
-      children: [
-        // ── Current Location (pickup only) ────────────────────────
-        if (widget.mode == LocationSearchMode.pickup) ...
-          [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
-        // ── Pin on Map ────────────────────────────────────────────
-        _buildPinOnMapTile(scheme),
-        const SizedBox(height: 8),
-        // ── Suggested Transit Points ──────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-          child: Text(
-            headerTitle,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+    if (recentLocations.isNotEmpty) {
+      headerTitle = isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS';
+      final listToDisplay = recentLocations.take(6).toList();
+      return ListView(
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        children: [
+          // ── Current Location (pickup only) ────────────────────────
+          if (widget.mode == LocationSearchMode.pickup) ...
+            [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
+          // ── Pin on Map ────────────────────────────────────────────
+          _buildPinOnMapTile(scheme),
+          const SizedBox(height: 8),
+          // ── Suggested Transit Points ──────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Text(
+              headerTitle,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
             ),
           ),
+          ...listToDisplay.map((loc) => _buildRecentLocationTile(loc, scheme)),
+        ],
+      );
+    } else {
+      headerTitle = 'SUGGESTED TRANSIT POINTS';
+      return ListView(
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        children: [
+          // ── Current Location (pickup only) ────────────────────────
+          if (widget.mode == LocationSearchMode.pickup) ...
+            [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
+          // ── Pin on Map ────────────────────────────────────────────
+          _buildPinOnMapTile(scheme),
+          const SizedBox(height: 8),
+          // ── Suggested Transit Points ──────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Text(
+              headerTitle,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          ..._kDefaultSuggestions.map((point) => _buildSuggestedTile(point, scheme)),
+        ],
+      );
+    }
+  }
+
+  Widget _buildRecentLocationTile(RideLocation loc, ColorScheme scheme) {
+    final commaIdx = loc.address.indexOf(',');
+    final String name;
+    final String address;
+    if (commaIdx != -1) {
+      name = loc.address.substring(0, commaIdx).trim();
+      address = loc.address.substring(commaIdx + 1).trim();
+    } else {
+      name = loc.address.trim();
+      address = '';
+    }
+
+    final isPickup = widget.mode == LocationSearchMode.pickup;
+    final subtitle = isPickup ? 'Recent Pickup' : 'Recent Destination';
+
+    return InkWell(
+      onTap: () {
+        ref
+            .read(recentLocationsNotifierProvider(widget.mode).notifier)
+            .addLocation(loc);
+        Navigator.of(context).pop(loc);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            _buildTypeIcon(TransitPointType.other, scheme),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    address.isEmpty ? subtitle : '$subtitle · $address',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+              onPressed: () {
+                ref
+                    .read(recentLocationsNotifierProvider(widget.mode).notifier)
+                    .removeLocation(loc);
+              },
+            ),
+          ],
         ),
-        ...suggestions.map((point) => _buildSuggestedTile(point, scheme)),
-      ],
+      ),
     );
   }
 
