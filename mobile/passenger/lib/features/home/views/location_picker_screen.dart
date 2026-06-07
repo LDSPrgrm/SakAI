@@ -12,7 +12,6 @@ import '../../../app/providers.dart';
 import '../models/location_search_mode.dart';
 import '../repositories/geocoding_service.dart';
 import '../view_models/recent_locations_notifier.dart';
-import 'destination_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data models for suggested transit points

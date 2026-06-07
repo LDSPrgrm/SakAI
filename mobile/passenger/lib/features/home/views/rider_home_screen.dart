@@ -9,7 +9,6 @@ import '../../../app/providers.dart';
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
 import 'location_picker_screen.dart';
-import 'destination_sheet.dart';
 import 'profile_screen.dart';
 import '../../wallet/views/wallet_screen.dart';
 import '../../inbox/views/inbox_screen.dart';

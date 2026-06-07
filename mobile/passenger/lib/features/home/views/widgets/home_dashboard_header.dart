@@ -8,7 +8,6 @@ import '../../../profile/view_models/profile_view_model.dart';
 import '../../view_models/home_notifier.dart';
 import '../../models/location_search_mode.dart';
 import '../location_picker_screen.dart';
-import '../destination_sheet.dart';
 
 /// Premium Grab-style green header with branding, greeting, notifications,
 /// and the "Where to?" search bar that triggers the location picker.
