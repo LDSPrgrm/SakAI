@@ -9,6 +9,7 @@ import 'package:passenger/features/ride_history/models/ride_history_item.dart';
 import 'package:passenger/features/ride_history/view_models/ride_history_list_view_model.dart';
 import 'package:sakai_shared/sakai_shared.dart'
     hide LatLng, NearbyDriver, ServiceArea;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeRideHistoryNotifier extends RideHistoryListNotifier {
   _FakeRideHistoryNotifier(this._state);
@@ -58,8 +59,12 @@ RideHistoryItem _item(int i, {String? origin, String? destination}) =>
     );
 
 void main() {
-  setUp(() {
+  late SharedPreferences prefs;
+
+  setUp(() async {
     SakaiAnimatedBackdrop.debugDisableAnimations = true;
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
   });
 
   tearDown(() {
@@ -76,6 +81,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -105,6 +111,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -137,6 +144,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -180,6 +188,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -235,6 +244,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -282,6 +292,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -344,6 +355,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],
@@ -400,6 +412,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
             rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
             geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
           ],

@@ -13,70 +13,7 @@ import '../models/location_search_mode.dart';
 import '../repositories/geocoding_service.dart';
 import '../view_models/recent_locations_notifier.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data models for suggested transit points
-// ─────────────────────────────────────────────────────────────────────────────
 
-enum TransitPointType { work, home, shopping, transit, park, airport, other }
-
-class SuggestedTransitPoint {
-  const SuggestedTransitPoint({
-    required this.name,
-    required this.subtitle,
-    required this.address,
-    required this.type,
-    this.lat,
-    this.lng,
-  });
-
-  final String name;
-  final String subtitle;
-  final String address;
-  final TransitPointType type;
-  final double? lat;
-  final double? lng;
-}
-
-// Static curated suggestions — in a real app these would come from the user's
-// saved places, popular destinations in the service area, etc.
-const _kDefaultSuggestions = <SuggestedTransitPoint>[
-  SuggestedTransitPoint(
-    name: 'Central Business District Office',
-    subtitle: 'Work Depot',
-    address: '120 Pine St',
-    type: TransitPointType.work,
-  ),
-  SuggestedTransitPoint(
-    name: 'Metro Residences Sector 4',
-    subtitle: 'Home',
-    address: '240 Oak Road',
-    type: TransitPointType.home,
-  ),
-  SuggestedTransitPoint(
-    name: 'Downtown Shopping Plaza',
-    subtitle: 'Shopping Mall',
-    address: '453 Boulevard',
-    type: TransitPointType.shopping,
-  ),
-  SuggestedTransitPoint(
-    name: 'Central Train Station Depot',
-    subtitle: 'Transit Station',
-    address: 'Rail Express',
-    type: TransitPointType.transit,
-  ),
-  SuggestedTransitPoint(
-    name: 'Greenwood Park Eco Sanctuary',
-    subtitle: 'Scenic Park',
-    address: 'Sunset Highway',
-    type: TransitPointType.park,
-  ),
-  SuggestedTransitPoint(
-    name: 'International Airport Terminal 2',
-    subtitle: 'Airport',
-    address: 'Airport Expressway',
-    type: TransitPointType.airport,
-  ),
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Location Picker Screen
@@ -189,20 +126,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
     }
   }
 
-  Future<void> _confirmSuggested(SuggestedTransitPoint point) async {
-    final fullAddress = point.address.isEmpty
-        ? point.name
-        : '${point.name}, ${point.address}';
-    if (point.lat != null && point.lng != null) {
-      final loc = RideLocation(lat: point.lat!, lng: point.lng!, address: fullAddress);
-      ref
-          .read(recentLocationsNotifierProvider(widget.mode).notifier)
-          .addLocation(loc);
-      Navigator.of(context).pop(loc);
-      return;
-    }
-    await _confirmAddress(fullAddress);
-  }
+
 
   void _openMapPinPicker() {
     Navigator.of(context)
@@ -421,26 +345,25 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
 
   Widget _buildDefaultList(ColorScheme scheme) {
     final recentLocations = ref.watch(recentLocationsNotifierProvider(widget.mode));
-    final String headerTitle;
     final isPickup = widget.mode == LocationSearchMode.pickup;
 
-    if (recentLocations.isNotEmpty) {
-      headerTitle = isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS';
-      final listToDisplay = recentLocations.take(6).toList();
-      return ListView(
-        padding: const EdgeInsets.only(top: 8, bottom: 32),
-        children: [
-          // ── Current Location (pickup only) ────────────────────────
-          if (widget.mode == LocationSearchMode.pickup) ...
-            [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
-          // ── Pin on Map ────────────────────────────────────────────
-          _buildPinOnMapTile(scheme),
+    return ListView(
+      padding: const EdgeInsets.only(top: 8, bottom: 32),
+      children: [
+        // ── Current Location (pickup only) ────────────────────────
+        if (isPickup) ...[
+          _buildCurrentLocationTile(scheme),
+          const SizedBox(height: 4),
+        ],
+        // ── Pin on Map ────────────────────────────────────────────
+        _buildPinOnMapTile(scheme),
+
+        if (recentLocations.isNotEmpty) ...[
           const SizedBox(height: 8),
-          // ── Suggested Transit Points ──────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
             child: Text(
-              headerTitle,
+              isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -449,37 +372,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
               ),
             ),
           ),
-          ...listToDisplay.map((loc) => _buildRecentLocationTile(loc, scheme)),
+          ...recentLocations
+              .take(6)
+              .map((loc) => _buildRecentLocationTile(loc, scheme)),
         ],
-      );
-    } else {
-      headerTitle = 'SUGGESTED TRANSIT POINTS';
-      return ListView(
-        padding: const EdgeInsets.only(top: 8, bottom: 32),
-        children: [
-          // ── Current Location (pickup only) ────────────────────────
-          if (widget.mode == LocationSearchMode.pickup) ...
-            [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
-          // ── Pin on Map ────────────────────────────────────────────
-          _buildPinOnMapTile(scheme),
-          const SizedBox(height: 8),
-          // ── Suggested Transit Points ──────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-            child: Text(
-              headerTitle,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-          ..._kDefaultSuggestions.map((point) => _buildSuggestedTile(point, scheme)),
-        ],
-      );
-    }
+      ],
+    );
   }
 
   Widget _buildRecentLocationTile(RideLocation loc, ColorScheme scheme) {
@@ -496,6 +394,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
 
     final isPickup = widget.mode == LocationSearchMode.pickup;
     final subtitle = isPickup ? 'Recent Pickup' : 'Recent Destination';
+    final iconColor = scheme.onSurfaceVariant;
 
     return InkWell(
       onTap: () {
@@ -508,7 +407,19 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [
-            _buildTypeIcon(TransitPointType.other, scheme),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.history_rounded,
+                size: 20,
+                color: iconColor,
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -528,6 +439,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                     style: TextStyle(
                       fontSize: 12,
                       color: scheme.onSurfaceVariant,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -695,96 +607,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
     );
   }
 
-  Widget _buildSuggestedTile(SuggestedTransitPoint point, ColorScheme scheme) {
-    return InkWell(
-      onTap: () => _confirmSuggested(point),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            _buildTypeIcon(point.type, scheme),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    point.name,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    point.address.isEmpty
-                        ? point.subtitle
-                        : '${point.subtitle} · ${point.address}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildTypeIcon(TransitPointType type, ColorScheme scheme) {
-    final IconData iconData;
-    final Color color;
-
-    switch (type) {
-      case TransitPointType.work:
-        iconData = Icons.work_outline_rounded;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.home:
-        iconData = Icons.home_outlined;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.shopping:
-        iconData = Icons.local_mall_outlined;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.transit:
-        iconData = Icons.train_outlined;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.park:
-        iconData = Icons.park_outlined;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.airport:
-        iconData = Icons.flight_takeoff_rounded;
-        color = const Color(0xFF00DC82);
-        break;
-      case TransitPointType.other:
-        iconData = Icons.place_outlined;
-        color = scheme.onSurfaceVariant;
-        break;
-    }
-
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(iconData, size: 20, color: color),
-    );
-  }
 
   Widget _buildAutocompleteList(ColorScheme scheme) {
     if (_autocompleteResults.isEmpty && !_isLoading) {
