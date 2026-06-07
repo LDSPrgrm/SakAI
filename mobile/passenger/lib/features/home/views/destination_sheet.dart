@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
-
+import '../models/location_search_mode.dart';
 import '../repositories/geocoding_service.dart';
 import '../view_models/destination_sheet_view_model.dart';
-
-enum LocationSearchMode { pickup, destination }
 
 /// Bottom sheet that lets the rider type a destination address.
 ///
