@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +9,46 @@ import '../../../app/routes.dart';
 import '../../ride_history/models/ride_history_item.dart';
 import '../../ride_history/view_models/ride_history_list_view_model.dart';
 
+// ─── Status ───────────────────────────────────────────────────────────────────
+
+enum _RideStatus { ongoing, completed, cancelled }
+
+_RideStatus _statusOf(RideHistoryItem item) {
+  if (item.isCompleted) return _RideStatus.completed;
+  if (item.isCancelled) return _RideStatus.cancelled;
+  return _RideStatus.ongoing;
+}
+
+extension _StatusX on _RideStatus {
+  Color accent(SakaiSemanticColors sem) => switch (this) {
+        _RideStatus.ongoing   => sem.success,
+        _RideStatus.completed => sem.accentBlue,
+        _RideStatus.cancelled => sem.danger,
+      };
+
+  Color tint(SakaiSemanticColors sem) => switch (this) {
+        _RideStatus.ongoing   => sem.successSubtle,
+        _RideStatus.completed => sem.accentBlue.withValues(alpha: 0.12),
+        _RideStatus.cancelled => sem.dangerSubtle,
+      };
+
+  IconData get icon => switch (this) {
+        _RideStatus.ongoing   => Icons.radio_button_checked_rounded,
+        _RideStatus.completed => Icons.check_circle_rounded,
+        _RideStatus.cancelled => Icons.cancel_rounded,
+      };
+
+  String get label => switch (this) {
+        _RideStatus.ongoing   => 'In Progress',
+        _RideStatus.completed => 'Completed',
+        _RideStatus.cancelled => 'Cancelled',
+      };
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key, this.isStandalone = false});
-
   final bool isStandalone;
 
   @override
@@ -32,615 +69,707 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(rideHistoryListNotifierProvider);
-    final tokens = SakaiDesignTokens.of(context);
-    final theme = Theme.of(context);
+    final t = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
       appBar: SakaiAppBar(
-        backgroundColor: Colors.transparent,
-        title: widget.isStandalone
-            ? Text(
-                'Activity',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+        title: const Text('Activity'),
+        showBack: widget.isStandalone,
+        bottom: _SegmentedFilterControl(
+          activeFilter: state.activeFilter,
+          onSelect: (v) => ref
+              .read(rideHistoryListNotifierProvider.notifier)
+              .setFilter(v),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: t.spaceMd)),
+
+            if (state.status == RideHistoryStatus.loading &&
+                state.items.isEmpty)
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: t.spaceMd),
+                sliver: SliverList.builder(
+                  itemCount: 4,
+                  itemBuilder: (_, __) => Padding(
+                    padding: EdgeInsets.only(bottom: t.spaceSm),
+                    child: SakaiSkeleton.card(height: 130),
+                  ),
                 ),
               )
-            : null,
-        showBack: widget.isStandalone,
-      ),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: SakaiAnimatedBackdrop()),
-          RefreshIndicator(
-            onRefresh: () =>
-                ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(context, state, tokens),
-                  _buildFilterBar(context, state, tokens, theme),
-                  Expanded(
-                    child: _buildBody(context, state, tokens),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+            else if (state.status == RideHistoryStatus.error &&
+                state.items.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: SakaiEmptyState(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'Could not load activity',
+                  message: state.error ?? 'Something went wrong.',
+                  primaryLabel: 'Retry',
+                  onPrimary: () => ref
+                      .read(rideHistoryListNotifierProvider.notifier)
+                      .loadHistory(),
+                ),
+              )
+            else if (state.status == RideHistoryStatus.empty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: SakaiEmptyState(
+                  icon: Icons.directions_car_filled_rounded,
+                  title: 'No trips yet',
+                  message:
+                      'Your ride history will appear here once you complete a trip.',
+                  primaryLabel: 'Book your first ride',
+                  onPrimary: () =>
+                      SakaiSnackBar.info(context, 'Switch to Book tab!'),
+                ),
+              )
+            else
+              _ActivityList(state: state),
+
+            SliverToBoxAdapter(child: SizedBox(height: 80 + t.spaceLg)),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildHeader(
-    BuildContext context,
-    RideHistoryListState state,
-    SakaiDesignTokens tokens,
-  ) {
+// ─── Segmented Filter Control ──────────────────────────────────────────────────
+
+class _SegmentedFilterControl extends StatelessWidget implements PreferredSizeWidget {
+  const _SegmentedFilterControl({
+    required this.activeFilter,
+    required this.onSelect,
+  });
+
+  final String? activeFilter;
+  final ValueChanged<String?> onSelect;
+
+  static const _filters = [
+    (label: 'All', value: null),
+    (label: 'Active', value: 'ongoing'),
+    (label: 'Completed', value: 'completed'),
+    (label: 'Cancelled', value: 'cancelled'),
+  ];
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final totalRides = state.items.length;
+    final t = SakaiDesignTokens.of(context);
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(tokens.spaceLg, tokens.spaceMd, tokens.spaceLg, tokens.spaceMd),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ride History',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: scheme.onSurface,
+    final selectedIndex = _filters.indexWhere((f) => f.value == activeFilter);
+    final index = selectedIndex == -1 ? 0 : selectedIndex;
+
+    // Calculate alignment x coordinate from -1.0 to 1.0
+    final double alignX = -1.0 + (index * 2.0 / (_filters.length - 1));
+
+    return Container(
+      width: double.infinity,
+      height: 56,
+      color: scheme.surface,
+      padding: EdgeInsets.symmetric(horizontal: t.spaceMd, vertical: t.spaceSm),
+      child: Container(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(t.radiusFull),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Stack(
+          children: [
+            // Sliding thumb background indicator
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment(alignX, 0.0),
+              child: FractionallySizedBox(
+                widthFactor: 1 / _filters.length,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
+                    borderRadius: BorderRadius.circular(t.radiusFull),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${state.activeFilter == null ? 'All' : state.activeFilter!.toUpperCase()} • $totalRides rides',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
             ),
-            child: Icon(Icons.history_rounded, color: scheme.primary),
-          ),
-        ],
+            // Segment labels
+            Row(
+              children: List.generate(_filters.length, (i) {
+                final f = _filters[i];
+                final isSelected = i == index;
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onSelect(f.value),
+                    child: Center(
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        child: Text(f.label),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildFilterBar(
-    BuildContext context,
-    RideHistoryListState state,
-    SakaiDesignTokens tokens,
-    ThemeData theme,
-  ) {
-    final filters = [
-      {'label': 'All', 'value': null},
-      {'label': 'Ongoing', 'value': 'ongoing'},
-      {'label': 'Completed', 'value': 'completed'},
-      {'label': 'Cancelled', 'value': 'cancelled'},
-    ];
+// ─── List ─────────────────────────────────────────────────────────────────────
 
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-        itemCount: filters.length,
-        separatorBuilder: (_, __) => SizedBox(width: tokens.spaceSm),
-        itemBuilder: (context, index) {
-          final filter = filters[index];
-          final isSelected = state.activeFilter == filter['value'];
-          return _FilterPill(
-            label: filter['label'] as String,
-            isSelected: isSelected,
-            onTap: () {
-              ref
-                  .read(rideHistoryListNotifierProvider.notifier)
-                  .setFilter(filter['value'] as String?);
-            },
+class _ActivityList extends ConsumerWidget {
+  const _ActivityList({required this.state});
+  final RideHistoryListState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = SakaiDesignTokens.of(context);
+
+    // Group by date label
+    final Map<String, List<RideHistoryItem>> grouped = {};
+    for (final item in state.items) {
+      final key = _dateLabel(item.createdAt.toLocal());
+      grouped.putIfAbsent(key, () => []).add(item);
+    }
+
+    final sections = grouped.entries.toList();
+
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: t.spaceMd),
+      sliver: SliverList.builder(
+        itemCount: sections.length + (state.hasMore ? 1 : 0),
+        itemBuilder: (context, i) {
+          if (i == sections.length) {
+            if (!state.isLoadingMore) {
+              Future.microtask(
+                () => ref
+                    .read(rideHistoryListNotifierProvider.notifier)
+                    .loadMore(),
+              );
+            }
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          }
+
+          final entry = sections[i];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DateLabel(label: entry.key),
+              ...entry.value.map(
+                (item) => _RideCard(item: item),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    RideHistoryListState state,
-    SakaiDesignTokens tokens,
-  ) {
-    if (state.status == RideHistoryStatus.loading && state.items.isEmpty) {
-      return ListView.builder(
-        padding: EdgeInsets.all(tokens.spaceLg),
-        itemCount: 5,
-        itemBuilder: (context, index) => Padding(
-          padding: EdgeInsets.only(bottom: tokens.spaceMd),
-          child: SakaiSkeleton.card(height: 100),
-        ),
-      );
+  static String _dateLabel(DateTime dt) {
+    final today = DateTime.now();
+    final d     = DateTime(dt.year, dt.month, dt.day);
+    final now   = DateTime(today.year, today.month, today.day);
+    if (d == now) return 'Today';
+    if (d == now.subtract(const Duration(days: 1))) return 'Yesterday';
+    if (now.difference(d).inDays < 7) {
+      return DateFormat('EEEE').format(dt); // "Monday"
     }
+    return DateFormat('MMM d').format(dt);  // "Jun 3"
+  }
+}
 
-    if (state.status == RideHistoryStatus.empty) {
-      final scheme = Theme.of(context).colorScheme;
-      return Center(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.history_rounded,
-                  size: 64,
-                  color: scheme.outline,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'No past activity yet',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your completed trips will appear here.',
-                style: TextStyle(color: scheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              SakaiPrimaryButton(
-                label: 'Book your first ride',
-                onPressed: () {
-                  SakaiSnackBar.info(context, 'Switch to Book tab to start!');
-                },
+// ─── Date label ───────────────────────────────────────────────────────────────
+
+class _DateLabel extends StatelessWidget {
+  const _DateLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t      = SakaiDesignTokens.of(context);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: t.spaceMd),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(t.radiusFull),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.4),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    if (state.status == RideHistoryStatus.error && state.items.isEmpty) {
-      final scheme = Theme.of(context).colorScheme;
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                size: 48,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                state.error ?? 'Failed to load activity',
-                style: TextStyle(color: scheme.onSurface),
-              ),
-              const SizedBox(height: 16),
-              SakaiPrimaryButton(
-                label: 'Retry',
-                onPressed: () => ref
-                    .read(rideHistoryListNotifierProvider.notifier)
-                    .loadHistory(),
-              ),
-            ],
+          child: Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+              letterSpacing: 1.0,
+            ),
           ),
         ),
-      );
-    }
-
-    final Map<String, List<RideHistoryItem>> groupedItems = {};
-    for (final item in state.items) {
-      final date = DateFormat.yMMMd().format(item.createdAt.toLocal());
-      groupedItems.putIfAbsent(date, () => []).add(item);
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: tokens.spaceLg,
-        vertical: tokens.spaceMd,
       ),
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: groupedItems.keys.length + (state.hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == groupedItems.keys.length) {
-          if (!state.isLoadingMore) {
-            Future.microtask(
-              () =>
-                  ref.read(rideHistoryListNotifierProvider.notifier).loadMore(),
-            );
-          }
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        }
-
-        final date = groupedItems.keys.elementAt(index);
-        final items = groupedItems[date]!;
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: tokens.spaceMd, bottom: tokens.spaceSm),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
-                ),
-                child: Text(
-                  date.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-            ...items.map((item) => _ActivityItemCard(item: item)),
-          ],
-        );
-      },
     );
   }
 }
 
-class _FilterPill extends StatelessWidget {
-  const _FilterPill({
+// ─── Ride card ────────────────────────────────────────────────────────────────
+
+class _RideCard extends StatelessWidget {
+  const _RideCard({required this.item});
+  final RideHistoryItem item;
+
+  static IconData _payIcon(String m) {
+    final s = m.toLowerCase();
+    if (s.contains('cash'))  return Icons.payments_rounded;
+    if (s.contains('card'))  return Icons.credit_card_rounded;
+    if (s.contains('gcash')) return Icons.account_balance_wallet_rounded;
+    return Icons.paid_rounded;
+  }
+
+  static String _payLabel(String m) {
+    final s = m.toLowerCase();
+    if (s.contains('cash'))  return 'Cash';
+    if (s.contains('card'))  return 'Card';
+    if (s.contains('gcash')) return 'GCash';
+    return m;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme       = Theme.of(context);
+    final scheme      = theme.colorScheme;
+    final sem         = SakaiSemanticColors.of(context);
+    final t           = SakaiDesignTokens.of(context);
+    final status      = _statusOf(item);
+    final accent      = status.accent(sem);
+    final isOngoing   = status == _RideStatus.ongoing;
+    final isCancelled = status == _RideStatus.cancelled;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: t.spaceSm),
+      child: SakaiSurfaceCard(
+        padding: EdgeInsets.zero,
+        onTap: () => context.push('${Routes.rideHistory}/${item.id}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Accent Line
+            Container(
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [accent, accent.withValues(alpha: 0.3)],
+                ),
+              ),
+            ),
+
+            // Header Row (Status & Time)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: t.spaceMd, vertical: t.spaceSm),
+              child: Row(
+                children: [
+                  if (isOngoing)
+                    _PulseDot(color: accent)
+                  else
+                    Icon(status.icon, size: 14, color: accent),
+                  const SizedBox(width: 8),
+                  Text(
+                    status.label.toUpperCase(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Time Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(t.radiusFull),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.access_time_filled_rounded,
+                          size: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('h:mm a').format(item.createdAt.toLocal()),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1, thickness: 1),
+
+            // Route details & Fare details
+            Padding(
+              padding: EdgeInsets.all(t.spaceMd),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _RouteTimeline(
+                      item: item,
+                      accent: accent,
+                      isCancelled: isCancelled,
+                      scheme: scheme,
+                      theme: theme,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Fare Display
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        isOngoing ? 'EST. FARE' : 'FINAL FARE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.displayFare,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: isCancelled
+                              ? scheme.onSurfaceVariant.withValues(alpha: 0.5)
+                              : scheme.onSurface,
+                          decoration: isCancelled ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1, thickness: 1),
+
+            // Footer: Chips and chevron
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: t.spaceMd, vertical: t.spaceSm),
+              child: Row(
+                children: [
+                  if (item.driverName != null) ...[
+                    _Chip(
+                      icon: Icons.person_rounded,
+                      label: item.driverName!,
+                      scheme: scheme,
+                      t: t,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  _Chip(
+                    icon: _payIcon(item.paymentMethod),
+                    label: _payLabel(item.paymentMethod),
+                    scheme: scheme,
+                    t: t,
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Route timeline ───────────────────────────────────────────────────────────
+
+class _RouteTimeline extends StatelessWidget {
+  const _RouteTimeline({
+    required this.item,
+    required this.accent,
+    required this.isCancelled,
+    required this.scheme,
+    required this.theme,
+  });
+
+  final RideHistoryItem item;
+  final Color accent;
+  final bool isCancelled;
+  final ColorScheme scheme;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Dots and connecting vertical line
+        Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Column(
+            children: [
+              // Pickup dot: Green outer circle with inner white core
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFF00C853),
+                ),
+              ),
+              // Connecting line
+              Container(
+                width: 1.5,
+                height: 28,
+                color: scheme.outlineVariant.withValues(alpha: 0.6),
+              ),
+              // Dropoff dot: Status color
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Addresses
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _AddressRow(
+                label: 'PICKUP',
+                address: item.originAddress,
+                muted: false,
+                cancelled: false,
+                scheme: scheme,
+                theme: theme,
+              ),
+              const SizedBox(height: 14),
+              _AddressRow(
+                label: 'DROP-OFF',
+                address: item.destinationAddress,
+                muted: false,
+                cancelled: isCancelled,
+                scheme: scheme,
+                theme: theme,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Address row ──────────────────────────────────────────────────────────────
+
+class _AddressRow extends StatelessWidget {
+  const _AddressRow({
     required this.label,
-    required this.isSelected,
-    required this.onTap,
+    required this.address,
+    required this.muted,
+    required this.cancelled,
+    required this.scheme,
+    required this.theme,
   });
 
   final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final String address;
+  final bool muted;
+  final bool cancelled;
+  final ColorScheme scheme;
+  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final tokens = SakaiDesignTokens.of(context);
-
-    return SakaiTactile(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.spaceMd,
-          vertical: tokens.spaceXs,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? scheme.primary
-              : scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(tokens.radiusFull),
-          border: isSelected
-              ? null
-              : Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.2),
-                ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+            color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
           ),
         ),
+        const SizedBox(height: 2),
+        Text(
+          address,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            height: 1.2,
+            color: muted ? scheme.onSurfaceVariant : scheme.onSurface,
+            decoration: cancelled ? TextDecoration.lineThrough : null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Footer chip ──────────────────────────────────────────────────────────────
+
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.icon,
+    required this.label,
+    required this.scheme,
+    required this.t,
+  });
+
+  final IconData icon;
+  final String label;
+  final ColorScheme scheme;
+  final SakaiDesignTokens t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(t.radiusFull),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.25),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ActivityItemCard extends StatelessWidget {
-  const _ActivityItemCard({required this.item});
+// ─── Pulsing dot ──────────────────────────────────────────────────────────────
 
-  final RideHistoryItem item;
+class _PulseDot extends StatefulWidget {
+  const _PulseDot({required this.color});
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final tokens = SakaiDesignTokens.of(context);
-    final semantic = SakaiSemanticColors.of(context);
-    final dateFormat = DateFormat('h:mm a');
+  State<_PulseDot> createState() => _PulseDotState();
+}
 
-    final isCompleted = item.status == RideStatus.completed;
-    final isCancelled = item.status == RideStatus.cancelled;
-    final isOngoing = !isCompleted && !isCancelled;
+class _PulseDotState extends State<_PulseDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double>   _scale, _opacity;
 
-    final double cardOpacity = isCancelled ? 0.72 : 1.0;
-    final double borderWidth = isOngoing ? 1.6 : (isCancelled ? 0.8 : 1.0);
-    final Color borderColor = isOngoing
-        ? scheme.primary.withValues(alpha: 0.75)
-        : (isCancelled
-              ? scheme.outlineVariant.withValues(alpha: 0.18)
-              : scheme.outlineVariant.withValues(alpha: 0.35));
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _scale   = Tween(begin: 0.75, end: 1.25).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _opacity = Tween(begin: 0.55, end: 1.0).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
 
-    final List<Color> cardGradient = isOngoing
-        ? [
-            scheme.primaryContainer.withValues(alpha: 0.15),
-            scheme.surface.withValues(alpha: 0.8),
-          ]
-        : (isCancelled
-              ? [
-                  scheme.surface.withValues(alpha: 0.5),
-                  scheme.surface.withValues(alpha: 0.4),
-                ]
-              : [
-                  scheme.surface.withValues(alpha: 0.9),
-                  scheme.surface.withValues(alpha: 0.7),
-                ]);
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
-    final List<BoxShadow> cardShadow = isOngoing
-        ? [
-            BoxShadow(
-              color: scheme.primary.withValues(alpha: 0.12),
-              blurRadius: 14,
-              spreadRadius: 1.5,
-              offset: const Offset(0, 4),
-            ),
-          ]
-        : (isCancelled
-              ? const []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]);
-
-    final Color timelineConnectorColor = isOngoing
-        ? scheme.primary.withValues(alpha: 0.8)
-        : (isCancelled
-              ? theme.dividerColor.withValues(alpha: 0.15)
-              : theme.dividerColor.withValues(alpha: 0.3));
-    final double timelineConnectorWidth = isOngoing ? 2.2 : 1.5;
-
-    final Color destinationPinColor = isCancelled
-        ? semantic.neutral.withValues(alpha: 0.5)
-        : semantic.danger;
-
-    final Color fareBgColor = isOngoing
-        ? scheme.primaryContainer.withValues(alpha: 0.12)
-        : (isCancelled
-              ? scheme.errorContainer.withValues(alpha: 0.08)
-              : semantic.success.withValues(alpha: 0.12));
-    final Color fareTextColor = isOngoing
-        ? scheme.primary
-        : (isCancelled
-              ? scheme.error.withValues(alpha: 0.7)
-              : semantic.success);
-    final String fareText = isOngoing
-        ? '${item.displayFare} (Est.)'
-        : item.displayFare;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: tokens.spaceMd),
-      child: Opacity(
-        opacity: cardOpacity,
-        child: SakaiTactile(
-          onTap: () => context.push('${Routes.rideHistory}/${item.id}'),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens.radiusLg),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                padding: EdgeInsets.all(tokens.spaceMd),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: cardGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(tokens.radiusLg),
-                  border: Border.all(color: borderColor, width: borderWidth),
-                  boxShadow: cardShadow,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.schedule_rounded,
-                              size: 16,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              dateFormat.format(item.createdAt.toLocal()),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SakaiStatusBadge(
-                          status: _statusFor(item.status),
-                          label: item.statusLabel,
-                          dense: true,
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(
-                        height: 1,
-                        thickness: 0.8,
-                        color: scheme.outlineVariant.withValues(
-                          alpha: isCancelled ? 0.15 : 0.3,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          children: [
-                            const SizedBox(height: 6),
-                            Icon(
-                              Icons.circle,
-                              size: 8,
-                              color: isCancelled
-                                  ? semantic.success.withValues(alpha: 0.5)
-                                  : semantic.success,
-                            ),
-                            Container(
-                              width: timelineConnectorWidth,
-                              height: 28,
-                              color: timelineConnectorColor,
-                            ),
-                            Icon(
-                              Icons.location_on_rounded,
-                              size: 12,
-                              color: destinationPinColor,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.originAddress,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: scheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Text(
-                                item.destinationAddress,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: scheme.onSurface,
-                                  decoration: isCancelled
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(
-                        height: 1,
-                        thickness: 0.8,
-                        color: scheme.outlineVariant.withValues(
-                          alpha: isCancelled ? 0.15 : 0.3,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: fareBgColor,
-                            borderRadius: BorderRadius.circular(
-                              tokens.radiusSm,
-                            ),
-                          ),
-                          child: Text(
-                            fareText,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              color: fareTextColor,
-                            ),
-                          ),
-                        ),
-                        if (item.driverName != null)
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: scheme.surfaceContainerHighest
-                                      .withValues(
-                                        alpha: 0.5,
-                                      ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  size: 12,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                item.driverName!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) => Transform.scale(
+          scale: _scale.value,
+          child: Opacity(
+            opacity: _opacity.value,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: widget.color, shape: BoxShape.circle,
+                boxShadow: [BoxShadow(
+                  color: widget.color.withValues(alpha: 0.55),
+                  blurRadius: 5, spreadRadius: 1,
+                )],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  SakaiStatus _statusFor(RideStatus s) {
-    if (s == RideStatus.completed) return SakaiStatus.success;
-    if (s == RideStatus.cancelled) return SakaiStatus.danger;
-    return SakaiStatus.info;
-  }
+      );
 }

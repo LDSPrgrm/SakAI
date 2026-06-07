@@ -18,10 +18,10 @@ import '../features/cancelled_ride/repositories/cancelled_ride_repository_impl.d
 import '../features/receipt/repositories/receipt_repository.dart';
 import '../features/receipt/repositories/receipt_repository_impl.dart';
 import '../features/support/repositories/sos_repository_impl.dart';
-import '../features/active_ride/models/active_ride_state.dart';
-import '../features/active_ride/view_models/active_ride_notifier.dart';
+import 'package:passenger/features/active_ride/models/active_ride_state.dart';
+import 'package:passenger/features/active_ride/view_models/active_ride_notifier.dart';
 import '../features/home/repositories/geocoding_service.dart';
-export '../features/active_ride/view_models/active_ride_notifier.dart'
+export 'package:passenger/features/active_ride/view_models/active_ride_notifier.dart'
     show ActiveRideController;
 
 /// Shared HTTP client - single instance per app lifetime.

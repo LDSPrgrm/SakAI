@@ -9,7 +9,7 @@ import '../../../app/e2e_mode_stub.dart'
     if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
-import '../models/active_ride_state.dart';
+import 'package:passenger/features/active_ride/models/active_ride_state.dart';
 
 /// Active ride screen showing real-time driver tracking.
 ///

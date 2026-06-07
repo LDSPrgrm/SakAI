@@ -105,6 +105,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
   List<String> _autocompleteResults = [];
   bool _isSearching = false;
   bool _isLoading = false;
+  bool _isLocating = false;
   Timer? _debounce;
 
   late final AnimationController _animCtrl;
@@ -205,6 +206,52 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         .then((loc) {
           if (loc != null && mounted) Navigator.of(context).pop(loc);
         });
+  }
+
+  Future<void> _useCurrentLocation() async {
+    if (_isLocating) return;
+    setState(() => _isLocating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) {
+          SakaiSnackBar.error(
+            context,
+            'Location permission denied. Enable it in Settings.',
+          );
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      if (!mounted) return;
+
+      // Reverse-geocode to a human-readable address.
+      final loc = await ref
+          .read(geocodingServiceProvider)
+          .reverseGeocode(pos.latitude, pos.longitude);
+
+      if (mounted) Navigator.of(context).pop(loc);
+    } catch (_) {
+      if (mounted) {
+        SakaiSnackBar.error(
+          context,
+          'Could not get your current location. Try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
+    }
   }
 
   // ─── UI ───────────────────────────────────────────────────────────────────
@@ -411,6 +458,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 32),
       children: [
+        // ── Current Location (pickup only) ────────────────────────
+        if (widget.mode == LocationSearchMode.pickup) ...
+          [_buildCurrentLocationTile(scheme), const SizedBox(height: 4)],
         // ── Pin on Map ────────────────────────────────────────────
         _buildPinOnMapTile(scheme),
         const SizedBox(height: 8),
@@ -429,6 +479,84 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         ),
         ...suggestions.map((point) => _buildSuggestedTile(point, scheme)),
       ],
+    );
+  }
+
+  Widget _buildCurrentLocationTile(ColorScheme scheme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: InkWell(
+        onTap: _isLocating ? null : _useCurrentLocation,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00DC82).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFF00DC82).withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00DC82).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: _isLocating
+                    ? Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: const Color(0xFF00DC82),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.my_location_rounded,
+                        color: Color(0xFF00DC82),
+                        size: 22,
+                      ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Use Current Location',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _isLocating
+                          ? 'Getting your location…'
+                          : 'Set pickup to your current GPS position',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!_isLocating)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF00DC82),
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
