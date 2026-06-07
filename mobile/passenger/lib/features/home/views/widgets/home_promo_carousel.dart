@@ -50,7 +50,6 @@ class _HomePromoCarouselState extends ConsumerState<HomePromoCarousel> {
       return _EmptyPromoTeaser();
     }
 
-
     return Column(
       children: [
         SizedBox(
@@ -339,7 +338,10 @@ class _EmptyPromoTeaser extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: scheme.primary,
                               borderRadius: BorderRadius.circular(20),
@@ -347,7 +349,11 @@ class _EmptyPromoTeaser extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.confirmation_number_rounded, color: Colors.white, size: 11),
+                                const Icon(
+                                  Icons.confirmation_number_rounded,
+                                  color: Colors.white,
+                                  size: 11,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Enter Code',
@@ -376,4 +382,3 @@ class _EmptyPromoTeaser extends StatelessWidget {
     );
   }
 }
-

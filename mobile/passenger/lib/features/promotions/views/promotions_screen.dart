@@ -37,7 +37,9 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
   Future<void> _applyPromo() async {
     final code = _promoCodeController.text.trim();
     if (code.isEmpty) return;
-    final success = await ref.read(promotionsNotifierProvider.notifier).validatePromo(code);
+    final success = await ref
+        .read(promotionsNotifierProvider.notifier)
+        .validatePromo(code);
     if (success && mounted) {
       _promoCodeController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,12 +48,17 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
             children: [
               Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
               SizedBox(width: 10),
-              Text('Promo code applied!', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'Promo code applied!',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -78,7 +85,9 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                 backgroundColor: scheme.primary,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () { if (context.canPop()) context.pop(); },
+                  onPressed: () {
+                    if (context.canPop()) context.pop();
+                  },
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
@@ -97,9 +106,11 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                       children: [
                         // Decorative blurred circles
                         Positioned(
-                          top: -30, right: -30,
+                          top: -30,
+                          right: -30,
                           child: Container(
-                            width: 160, height: 160,
+                            width: 160,
+                            height: 160,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.white.withValues(alpha: 0.07),
@@ -107,9 +118,11 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                           ),
                         ),
                         Positioned(
-                          bottom: 10, left: -20,
+                          bottom: 10,
+                          left: -20,
                           child: Container(
-                            width: 100, height: 100,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.white.withValues(alpha: 0.05),
@@ -127,10 +140,16 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.15),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Icon(Icons.local_offer_rounded, color: Colors.white, size: 22),
+                                    child: const Icon(
+                                      Icons.local_offer_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   const Text(
@@ -164,7 +183,9 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
 
               SliverToBoxAdapter(
                 child: RefreshIndicator(
-                  onRefresh: () => ref.read(promotionsNotifierProvider.notifier).fetchPromotions(),
+                  onRefresh: () => ref
+                      .read(promotionsNotifierProvider.notifier)
+                      .fetchPromotions(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -182,18 +203,26 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    scheme.primaryContainer.withValues(alpha: 0.5),
-                                    scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                                    scheme.primaryContainer.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    scheme.surfaceContainerHighest.withValues(
+                                      alpha: 0.4,
+                                    ),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(tokens.radiusLg),
+                                borderRadius: BorderRadius.circular(
+                                  tokens.radiusLg,
+                                ),
                                 border: Border.all(
                                   color: scheme.primary.withValues(alpha: 0.25),
                                   width: 1.2,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: scheme.primary.withValues(alpha: 0.08),
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.08,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6),
                                   ),
@@ -204,20 +233,26 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.confirmation_number_rounded, size: 18, color: scheme.primary),
+                                      Icon(
+                                        Icons.confirmation_number_rounded,
+                                        size: 18,
+                                        color: scheme.primary,
+                                      ),
                                       const SizedBox(width: 8),
                                       Text(
                                         'Have a promo code?',
-                                        style: theme.textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: scheme.onSurface,
-                                        ),
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              color: scheme.onSurface,
+                                            ),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: tokens.spaceSm),
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: SakaiTextField(
@@ -230,28 +265,43 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                       SakaiPrimaryButton(
                                         label: 'Apply',
                                         expand: false,
-                                        onPressed: state.isLoading ? null : _applyPromo,
+                                        onPressed: state.isLoading
+                                            ? null
+                                            : _applyPromo,
                                       ),
                                     ],
                                   ),
-                                  if (state.errorMessage != null && state.promotions.isEmpty) ...[
+                                  if (state.errorMessage != null &&
+                                      state.promotions.isEmpty) ...[
                                     SizedBox(height: tokens.spaceSm),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: scheme.errorContainer.withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                        color: scheme.errorContainer.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          tokens.radiusSm,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.error_outline_rounded, size: 14, color: scheme.error),
+                                          Icon(
+                                            Icons.error_outline_rounded,
+                                            size: 14,
+                                            color: scheme.error,
+                                          ),
                                           const SizedBox(width: 6),
                                           Text(
                                             state.errorMessage!,
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              color: scheme.error,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: scheme.error,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -266,7 +316,9 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
 
                       // ── Section Label ─────────────────────────────────────
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.spaceLg,
+                        ),
                         child: Row(
                           children: [
                             Text(
@@ -279,7 +331,10 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                             const SizedBox(width: 8),
                             if (state.promotions.isNotEmpty)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: scheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(20),
@@ -300,16 +355,25 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
 
                       // ── Empty State ────────────────────────────────────────
                       if (state.promotions.isEmpty && !state.isLoading)
-                        _EmptyPromotionsState(tokens: tokens, theme: theme, scheme: scheme),
+                        _EmptyPromotionsState(
+                          tokens: tokens,
+                          theme: theme,
+                          scheme: scheme,
+                        ),
 
                       // ── Promo Cards ────────────────────────────────────────
                       if (state.promotions.isNotEmpty)
-                        ...state.promotions.map((promo) => Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            tokens.spaceLg, 0, tokens.spaceLg, tokens.spaceMd,
+                        ...state.promotions.map(
+                          (promo) => Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              tokens.spaceLg,
+                              0,
+                              tokens.spaceLg,
+                              tokens.spaceMd,
+                            ),
+                            child: _PromoCard(promo: promo),
                           ),
-                          child: _PromoCard(promo: promo),
-                        )),
+                        ),
 
                       SizedBox(height: tokens.spaceXl),
                     ],
@@ -349,7 +413,10 @@ class _EmptyPromotionsState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg, vertical: tokens.spaceLg),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceLg,
+        vertical: tokens.spaceLg,
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(tokens.radiusLg),
         child: BackdropFilter(
@@ -370,25 +437,31 @@ class _EmptyPromotionsState extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Container(
-                      width: 100, height: 100,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: scheme.primary.withValues(alpha: 0.06),
                       ),
                     ),
                     Container(
-                      width: 72, height: 72,
+                      width: 72,
+                      height: 72,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: scheme.primary.withValues(alpha: 0.1),
                       ),
                     ),
                     Container(
-                      width: 52, height: 52,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [scheme.primary.withValues(alpha: 0.8), scheme.primary],
+                          colors: [
+                            scheme.primary.withValues(alpha: 0.8),
+                            scheme.primary,
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -400,7 +473,11 @@ class _EmptyPromotionsState extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.local_offer_rounded, color: Colors.white, size: 26),
+                      child: const Icon(
+                        Icons.local_offer_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                     ),
                   ],
                 ),
@@ -428,9 +505,24 @@ class _EmptyPromotionsState extends StatelessWidget {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    _TipBadge(icon: Icons.percent_rounded, label: 'Ride discounts', scheme: scheme, theme: theme),
-                    _TipBadge(icon: Icons.card_giftcard_rounded, label: 'Free rides', scheme: scheme, theme: theme),
-                    _TipBadge(icon: Icons.star_rounded, label: 'Loyalty rewards', scheme: scheme, theme: theme),
+                    _TipBadge(
+                      icon: Icons.percent_rounded,
+                      label: 'Ride discounts',
+                      scheme: scheme,
+                      theme: theme,
+                    ),
+                    _TipBadge(
+                      icon: Icons.card_giftcard_rounded,
+                      label: 'Free rides',
+                      scheme: scheme,
+                      theme: theme,
+                    ),
+                    _TipBadge(
+                      icon: Icons.star_rounded,
+                      label: 'Loyalty rewards',
+                      scheme: scheme,
+                      theme: theme,
+                    ),
                   ],
                 ),
               ],
@@ -443,7 +535,12 @@ class _EmptyPromotionsState extends StatelessWidget {
 }
 
 class _TipBadge extends StatelessWidget {
-  const _TipBadge({required this.icon, required this.label, required this.scheme, required this.theme});
+  const _TipBadge({
+    required this.icon,
+    required this.label,
+    required this.scheme,
+    required this.theme,
+  });
   final IconData icon;
   final String label;
   final ColorScheme scheme;
@@ -485,7 +582,9 @@ class _PromoCard extends StatelessWidget {
   String _discountLabel() {
     if (promo.discountType == api.PromotionDiscountTypeEnum.percentage) {
       final pct = promo.discountValue.toStringAsFixed(0);
-      final cap = promo.maxDiscount != null ? ' (up to ₱${promo.maxDiscount!.toStringAsFixed(0)})' : '';
+      final cap = promo.maxDiscount != null
+          ? ' (up to ₱${promo.maxDiscount!.toStringAsFixed(0)})'
+          : '';
       return '$pct% OFF$cap';
     }
     return '₱${promo.discountValue.toStringAsFixed(0)} OFF';
@@ -497,7 +596,8 @@ class _PromoCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     final tokens = SakaiDesignTokens.of(context);
     final expiry = DateFormat('MMM d, yyyy').format(promo.expiresAt.toLocal());
-    final isExpiringSoon = promo.expiresAt.difference(DateTime.now()).inDays <= 3;
+    final isExpiringSoon =
+        promo.expiresAt.difference(DateTime.now()).inDays <= 3;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(tokens.radiusLg),
@@ -544,7 +644,11 @@ class _PromoCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.local_offer_rounded, color: Colors.white, size: 18),
+                      child: const Icon(
+                        Icons.local_offer_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -552,7 +656,9 @@ class _PromoCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            promo.title?.isNotEmpty == true ? promo.title! : promo.code,
+                            promo.title?.isNotEmpty == true
+                                ? promo.title!
+                                : promo.code,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
@@ -572,7 +678,10 @@ class _PromoCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -609,7 +718,11 @@ class _PromoCard extends StatelessWidget {
                     Row(
                       children: [
                         if (promo.minRideAmount != null) ...[
-                          Icon(Icons.info_outline_rounded, size: 13, color: scheme.onSurfaceVariant),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 13,
+                            color: scheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Min. fare ₱${promo.minRideAmount!.toStringAsFixed(0)}',
@@ -622,22 +735,33 @@ class _PromoCard extends StatelessWidget {
                         Icon(
                           Icons.schedule_rounded,
                           size: 13,
-                          color: isExpiringSoon ? scheme.error : scheme.onSurfaceVariant,
+                          color: isExpiringSoon
+                              ? scheme.error
+                              : scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Expires $expiry',
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: isExpiringSoon ? scheme.error : scheme.onSurfaceVariant,
-                            fontWeight: isExpiringSoon ? FontWeight.w700 : FontWeight.normal,
+                            color: isExpiringSoon
+                                ? scheme.error
+                                : scheme.onSurfaceVariant,
+                            fontWeight: isExpiringSoon
+                                ? FontWeight.w700
+                                : FontWeight.normal,
                           ),
                         ),
                         if (isExpiringSoon) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
-                              color: scheme.errorContainer.withValues(alpha: 0.6),
+                              color: scheme.errorContainer.withValues(
+                                alpha: 0.6,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(

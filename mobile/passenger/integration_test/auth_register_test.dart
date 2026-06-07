@@ -11,8 +11,9 @@ void main() {
     await TestHarness.ensureDotenv();
   });
 
-  testWidgets('register: switch from login, submit form, land on home',
-      (tester) async {
+  testWidgets('register: switch from login, submit form, land on home', (
+    tester,
+  ) async {
     final harness = TestHarness();
     await tester.binding.setSurfaceSize(const Size(800, 1200));
     await tester.pumpWidget(harness.buildApp());
@@ -24,10 +25,7 @@ void main() {
 
     expect(find.byKey(const Key('register_name')), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const Key('register_name')),
-      'New Rider',
-    );
+    await tester.enterText(find.byKey(const Key('register_name')), 'New Rider');
     await tester.enterText(
       find.byKey(const Key('register_email')),
       'new.rider@example.com',
@@ -50,8 +48,9 @@ void main() {
     );
   });
 
-  testWidgets('register: failure surfaces error and stays on register form',
-      (tester) async {
+  testWidgets('register: failure surfaces error and stays on register form', (
+    tester,
+  ) async {
     final harness = TestHarness();
     harness.authRepository.failNextRegister = true;
 
@@ -62,10 +61,7 @@ void main() {
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('register_name')),
-      'Dup Rider',
-    );
+    await tester.enterText(find.byKey(const Key('register_name')), 'Dup Rider');
     await tester.enterText(
       find.byKey(const Key('register_email')),
       'dup@example.com',

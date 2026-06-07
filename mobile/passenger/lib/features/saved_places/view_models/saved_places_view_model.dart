@@ -40,7 +40,8 @@ class SavedPlacesNotifier extends Notifier<SavedPlacesState> {
   @override
   SavedPlacesState build() => const SavedPlacesState();
 
-  SavedPlacesRepository get _repository => ref.read(savedPlacesRepositoryProvider);
+  SavedPlacesRepository get _repository =>
+      ref.read(savedPlacesRepositoryProvider);
 
   Future<void> loadSavedPlaces() async {
     state = state.copyWith(status: SavedPlacesStatus.loading);
@@ -76,8 +77,9 @@ class SavedPlacesNotifier extends Notifier<SavedPlacesState> {
         longitude: longitude,
         type: type,
       );
-      
-      final updatedList = List<SavedPlace>.from(state.savedPlaces)..add(newPlace);
+
+      final updatedList = List<SavedPlace>.from(state.savedPlaces)
+        ..add(newPlace);
       state = state.copyWith(
         status: SavedPlacesStatus.loaded,
         savedPlaces: updatedList,
@@ -97,8 +99,10 @@ class SavedPlacesNotifier extends Notifier<SavedPlacesState> {
     try {
       state = state.copyWith(status: SavedPlacesStatus.loading);
       await _repository.deleteSavedPlace(placeId);
-      
-      final updatedList = state.savedPlaces.where((place) => place.id != placeId).toList();
+
+      final updatedList = state.savedPlaces
+          .where((place) => place.id != placeId)
+          .toList();
       state = state.copyWith(
         status: SavedPlacesStatus.loaded,
         savedPlaces: updatedList,
@@ -115,6 +119,7 @@ class SavedPlacesNotifier extends Notifier<SavedPlacesState> {
   }
 }
 
-final savedPlacesNotifierProvider = NotifierProvider<SavedPlacesNotifier, SavedPlacesState>(
-  SavedPlacesNotifier.new,
-);
+final savedPlacesNotifierProvider =
+    NotifierProvider<SavedPlacesNotifier, SavedPlacesState>(
+      SavedPlacesNotifier.new,
+    );

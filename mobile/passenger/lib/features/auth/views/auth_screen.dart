@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,15 +44,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       ),
     );
 
-    _formSlide = Tween<Offset>(
-      begin: const Offset(0.0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _staggerController,
-        curve: const Interval(0.4, 0.85, curve: Curves.easeOutCubic),
-      ),
-    );
+    _formSlide = Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _staggerController,
+            curve: const Interval(0.4, 0.85, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _staggerController.forward();
   }
@@ -96,9 +92,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       body: Stack(
         children: [
           // Dynamic Orbital Organic Blobs Background
-          const Positioned.fill(
-            child: SakaiAnimatedBackdrop(),
-          ),
+          const Positioned.fill(child: SakaiAnimatedBackdrop()),
           LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
@@ -129,7 +123,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                             child: Container(
                               decoration: BoxDecoration(
                                 color: scheme.surface,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(40),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.05),
@@ -142,13 +138,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 top: false,
                                 child: Padding(
                                   padding: EdgeInsets.fromLTRB(
-                                      tokens.spaceLg, tokens.spaceXl, tokens.spaceLg, tokens.spaceLg),
-                                      child: AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 400),
-                                        switchInCurve: Curves.easeOutCubic,
-                                        switchOutCurve: Curves.easeInCubic,
-                                        transitionBuilder:
-                                            (Widget child, Animation<double> animation) {
+                                    tokens.spaceLg,
+                                    tokens.spaceXl,
+                                    tokens.spaceLg,
+                                    tokens.spaceLg,
+                                  ),
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 400),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder:
+                                        (
+                                          Widget child,
+                                          Animation<double> animation,
+                                        ) {
                                           return FadeTransition(
                                             opacity: animation,
                                             child: SlideTransition(
@@ -160,18 +163,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                             ),
                                           );
                                         },
-                                        child: _mode == AuthMode.login
-                                            ? LoginForm(
-                                                key: const ValueKey('login_form'),
-                                                onRegisterTap: _toggleMode,
-                                              )
-                                            : RegisterForm(
-                                                key: const ValueKey('register_form'),
-                                                onLoginTap: _toggleMode,
-                                              ),
-                                      ),
-                                    ),
+                                    child: _mode == AuthMode.login
+                                        ? LoginForm(
+                                            key: const ValueKey('login_form'),
+                                            onRegisterTap: _toggleMode,
+                                          )
+                                        : RegisterForm(
+                                            key: const ValueKey(
+                                              'register_form',
+                                            ),
+                                            onLoginTap: _toggleMode,
+                                          ),
                                   ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

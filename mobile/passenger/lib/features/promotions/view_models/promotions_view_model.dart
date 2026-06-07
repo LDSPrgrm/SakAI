@@ -48,7 +48,8 @@ class PromotionsNotifier extends Notifier<PromotionsState> {
   @override
   PromotionsState build() => const PromotionsState();
 
-  PromotionsRepository get _repository => ref.read(promotionsRepositoryProvider);
+  PromotionsRepository get _repository =>
+      ref.read(promotionsRepositoryProvider);
 
   /// Fetches available promotions.
   Future<void> fetchPromotions() async {
@@ -56,7 +57,10 @@ class PromotionsNotifier extends Notifier<PromotionsState> {
 
     try {
       final promotions = await _repository.getPromotions();
-      state = PromotionsState(status: PromotionsStatus.loaded, promotions: promotions);
+      state = PromotionsState(
+        status: PromotionsStatus.loaded,
+        promotions: promotions,
+      );
     } catch (e) {
       debugPrint('[PromotionsNotifier] Error fetching promotions: $e');
       state = PromotionsState(
@@ -68,10 +72,16 @@ class PromotionsNotifier extends Notifier<PromotionsState> {
 
   /// Validates a promo code.
   Future<bool> validatePromo(String code, {double? rideFare}) async {
-    state = state.copyWith(status: PromotionsStatus.loading, errorMessage: null);
+    state = state.copyWith(
+      status: PromotionsStatus.loading,
+      errorMessage: null,
+    );
 
     try {
-      final promo = await _repository.validatePromoCode(code, rideFare: rideFare);
+      final promo = await _repository.validatePromoCode(
+        code,
+        rideFare: rideFare,
+      );
       state = state.copyWith(
         status: PromotionsStatus.loaded,
         validatedPromotion: promo,
@@ -89,12 +99,16 @@ class PromotionsNotifier extends Notifier<PromotionsState> {
 
   void clearError() {
     if (state.errorMessage != null) {
-      state = state.copyWith(errorMessage: null, status: PromotionsStatus.initial);
+      state = state.copyWith(
+        errorMessage: null,
+        status: PromotionsStatus.initial,
+      );
     }
   }
 }
 
 /// Riverpod provider for the PromotionsNotifier.
-final promotionsNotifierProvider = NotifierProvider<PromotionsNotifier, PromotionsState>(
-  PromotionsNotifier.new,
-);
+final promotionsNotifierProvider =
+    NotifierProvider<PromotionsNotifier, PromotionsState>(
+      PromotionsNotifier.new,
+    );

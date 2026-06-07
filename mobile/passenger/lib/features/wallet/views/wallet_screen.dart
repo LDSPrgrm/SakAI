@@ -113,8 +113,9 @@ class WalletScreen extends ConsumerWidget {
               SakaiTextField(
                 controller: controller,
                 label: 'Amount ($currency)',
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               SizedBox(height: t.spaceMd),
               SakaiPrimaryButton(

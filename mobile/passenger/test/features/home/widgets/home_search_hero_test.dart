@@ -19,9 +19,7 @@ void main() {
     var tapCount = 0;
     await tester.pumpWidget(
       ProviderScope(
-        child: themedScaffold(
-          child: HomeSearchHero(onTap: () => tapCount++),
-        ),
+        child: themedScaffold(child: HomeSearchHero(onTap: () => tapCount++)),
       ),
     );
 

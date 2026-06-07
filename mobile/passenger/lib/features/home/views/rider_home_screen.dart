@@ -123,7 +123,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     }
 
     final homeState = ref.watch(homeNotifierProvider);
-    final isBookingActive = _currentIndex == 0 &&
+    final isBookingActive =
+        _currentIndex == 0 &&
         (homeState.status == HomeStatus.destinationSet ||
             homeState.status == HomeStatus.requesting);
 
@@ -148,8 +149,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
   Widget _buildHomeBody(ColorScheme scheme) {
     final status = ref.watch(homeNotifierProvider).status;
-    final isActive = status == HomeStatus.destinationSet ||
-        status == HomeStatus.requesting;
+    final isActive =
+        status == HomeStatus.destinationSet || status == HomeStatus.requesting;
 
     if (isActive) {
       return _buildBookingFlow(scheme);
@@ -166,14 +167,15 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       physics: const BouncingScrollPhysics(),
       slivers: [
         // Green header (non-scrolling pinned effect via SliverToBoxAdapter)
-        SliverToBoxAdapter(
-          child: const HomeDashboardHeader(),
-        ),
+        SliverToBoxAdapter(child: const HomeDashboardHeader()),
 
         // Services Grid
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(top: tokens.spaceLg, bottom: tokens.spaceMd),
+            padding: EdgeInsets.only(
+              top: tokens.spaceLg,
+              bottom: tokens.spaceMd,
+            ),
             child: HomeServicesGrid(
               onTransportTap: () => _openLocationSearch(),
             ),
@@ -321,30 +323,52 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _AddressField(
-                  label: 'PICKUP',
-                  text: pickup?.address ?? 'Tap to set pickup',
-                  active: pickup != null,
-                  onTap: () => _openLocationSearch(isPickup: true),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AddressField(
+                        label: 'PICKUP',
+                        text: pickup?.address ?? 'Tap to set pickup',
+                        active: pickup != null,
+                        onTap: () => _openLocationSearch(isPickup: true),
+                      ),
+                    ),
+                    if (pickup != null)
+                      IconButton(
+                        onPressed: () => ref
+                            .read(homeNotifierProvider.notifier)
+                            .clearPickup(),
+                        icon: const Icon(Icons.close, size: 18),
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
                 ),
                 Divider(
                   height: 16,
                   color: scheme.outlineVariant.withValues(alpha: 0.5),
                 ),
-                _AddressField(
-                  label: 'DESTINATION',
-                  text: destination?.address ?? 'Select destination',
-                  active: destination != null,
-                  onTap: () => _openLocationSearch(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AddressField(
+                        label: 'DESTINATION',
+                        text: destination?.address ?? 'Select destination',
+                        active: destination != null,
+                        onTap: () => _openLocationSearch(),
+                      ),
+                    ),
+                    if (destination != null)
+                      IconButton(
+                        onPressed: () => ref
+                            .read(homeNotifierProvider.notifier)
+                            .clearDestination(),
+                        icon: const Icon(Icons.close, size: 18),
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
                 ),
               ],
             ),
-          ),
-          IconButton(
-            onPressed: () =>
-                ref.read(homeNotifierProvider.notifier).clearDestination(),
-            icon: const Icon(Icons.close, size: 18),
-            color: scheme.onSurfaceVariant,
           ),
         ],
       ),
@@ -381,12 +405,14 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           physics: const BouncingScrollPhysics(),
           child: Row(
             children: options
-                .map((opt) => _TransitCard(
-                      option: opt,
-                      selected: selectedType == opt.type,
-                      scheme: scheme,
-                      onTap: () => notifier.setSelectedRideType(opt.type),
-                    ))
+                .map(
+                  (opt) => _TransitCard(
+                    option: opt,
+                    selected: selectedType == opt.type,
+                    scheme: scheme,
+                    onTap: () => notifier.setSelectedRideType(opt.type),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -468,8 +494,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
   bool _canRequestRide() {
     final state = ref.watch(homeNotifierProvider);
-    return state.canRequest ||
-        (state.destination != null && state.rideTypeOptions.isNotEmpty);
+    return state.pickup != null &&
+        (state.canRequest ||
+            (state.destination != null && state.rideTypeOptions.isNotEmpty));
   }
 
   void _handleRequestRide() {
@@ -482,8 +509,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             null,
             (prev, opt) =>
                 prev == null || opt.availableDrivers > prev.availableDrivers
-                    ? opt
-                    : prev,
+                ? opt
+                : prev,
           );
       if (best != null) notifier.setSelectedRideType(best.type);
     }
@@ -515,11 +542,46 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _NavItem(0, Icons.explore_rounded, 'Home', _currentIndex, _onNavTap, scheme),
-            _NavItem(1, Icons.receipt_long_rounded, 'Activity', _currentIndex, _onNavTap, scheme),
-            _NavItem(2, Icons.account_balance_wallet_rounded, 'Payment', _currentIndex, _onNavTap, scheme),
-            _NavItem(3, Icons.chat_bubble_rounded, 'Inbox', _currentIndex, _onNavTap, scheme),
-            _NavItem(4, Icons.person_rounded, 'Account', _currentIndex, _onNavTap, scheme),
+            _NavItem(
+              0,
+              Icons.explore_rounded,
+              'Home',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              1,
+              Icons.receipt_long_rounded,
+              'Activity',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              2,
+              Icons.account_balance_wallet_rounded,
+              'Payment',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              3,
+              Icons.chat_bubble_rounded,
+              'Inbox',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              4,
+              Icons.person_rounded,
+              'Account',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
           ],
         ),
       ),
@@ -572,8 +634,7 @@ class _NavItem extends StatelessWidget {
               scale: selected ? 1.15 : 1.0,
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutBack,
-              child: Icon(icon,
-                  color: selected ? active : inactive, size: 22),
+              child: Icon(icon, color: selected ? active : inactive, size: 22),
             ),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
@@ -593,11 +654,7 @@ class _NavItem extends StatelessWidget {
 }
 
 class BookingTopBar extends StatelessWidget {
-  const BookingTopBar({
-    super.key,
-    required this.scheme,
-    required this.onBack,
-  });
+  const BookingTopBar({super.key, required this.scheme, required this.onBack});
 
   final ColorScheme scheme;
   final VoidCallback onBack;
@@ -703,7 +760,10 @@ class BookingTopBar extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text(
               'Got it',
-              style: TextStyle(color: Color(0xFF00C472), fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Color(0xFF00C472),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -753,9 +813,7 @@ class _AddressField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                color: active
-                    ? scheme.onSurface
-                    : const Color(0xFF00DC82),
+                color: active ? scheme.onSurface : const Color(0xFF00DC82),
               ),
             ),
           ],
@@ -781,8 +839,16 @@ class _TransitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, desc, iconData) = switch (option.type) {
-      VehicleType.tricycle => ('Tricycle', 'Budget • 3 wheels', Icons.electric_rickshaw),
-      VehicleType.motorcycle => ('Motorcycle', 'Fast • 2 wheels', Icons.two_wheeler),
+      VehicleType.tricycle => (
+        'Tricycle',
+        'Budget • 3 wheels',
+        Icons.electric_rickshaw,
+      ),
+      VehicleType.motorcycle => (
+        'Motorcycle',
+        'Fast • 2 wheels',
+        Icons.two_wheeler,
+      ),
       VehicleType.car => ('Car', 'Comfort • 4 wheels', Icons.directions_car),
     };
 
@@ -793,14 +859,14 @@ class _TransitCard extends StatelessWidget {
     final borderColor = selected
         ? const Color(0xFF00DC82)
         : !available
-            ? scheme.error.withValues(alpha: 0.4)
-            : scheme.outlineVariant.withValues(alpha: 0.6);
+        ? scheme.error.withValues(alpha: 0.4)
+        : scheme.outlineVariant.withValues(alpha: 0.6);
 
     final bgColor = selected
         ? const Color(0xFF00DC82).withValues(alpha: 0.08)
         : !available
-            ? scheme.errorContainer.withValues(alpha: 0.08)
-            : scheme.surface;
+        ? scheme.errorContainer.withValues(alpha: 0.08)
+        : scheme.surface;
 
     // Driver count badge
     final badgeColor = available ? const Color(0xFF00DC82) : scheme.error;
@@ -824,17 +890,14 @@ class _TransitCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: borderColor,
-            width: selected ? 2.0 : 1.0,
-          ),
+          border: Border.all(color: borderColor, width: selected ? 2.0 : 1.0),
           boxShadow: selected
               ? [
                   BoxShadow(
                     color: const Color(0xFF00DC82).withValues(alpha: 0.15),
                     blurRadius: 10,
                     spreadRadius: 1,
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -850,12 +913,15 @@ class _TransitCard extends StatelessWidget {
                   color: selected
                       ? const Color(0xFF00DC82)
                       : available
-                          ? scheme.onSurfaceVariant
-                          : scheme.error.withValues(alpha: 0.6),
+                      ? scheme.onSurfaceVariant
+                      : scheme.error.withValues(alpha: 0.6),
                   size: 28,
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeBg,
                     borderRadius: BorderRadius.circular(6),
@@ -880,32 +946,31 @@ class _TransitCard extends StatelessWidget {
                 color: selected
                     ? const Color(0xFF00DC82)
                     : available
-                        ? scheme.onSurface
-                        : scheme.onSurface.withValues(alpha: 0.45),
+                    ? scheme.onSurface
+                    : scheme.onSurface.withValues(alpha: 0.45),
               ),
             ),
             const SizedBox(height: 2),
             Text(
               desc,
-              style: TextStyle(
-                fontSize: 10,
-                color: scheme.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  available ? '₱${option.estimatedFare.toStringAsFixed(0)}' : '—',
+                  available
+                      ? '₱${option.estimatedFare.toStringAsFixed(0)}'
+                      : '—',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
                     color: selected
                         ? const Color(0xFF00DC82)
                         : available
-                            ? scheme.onSurface
-                            : scheme.onSurface.withValues(alpha: 0.35),
+                        ? scheme.onSurface
+                        : scheme.onSurface.withValues(alpha: 0.35),
                   ),
                 ),
                 Text(

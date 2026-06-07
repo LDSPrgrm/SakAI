@@ -174,7 +174,11 @@ class _SearchBar extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 16),
-            const Icon(Icons.search_rounded, color: Color(0xFF00C472), size: 22),
+            const Icon(
+              Icons.search_rounded,
+              color: Color(0xFF00C472),
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

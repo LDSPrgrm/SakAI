@@ -151,7 +151,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               onChanged: (_) {
                 ref.read(loginNotifierProvider.notifier).clearError();
                 if (_errors.containsKey('password')) {
-                  setState(() => _errors = Map.from(_errors)..remove('password'));
+                  setState(
+                    () => _errors = Map.from(_errors)..remove('password'),
+                  );
                 }
               },
               suffixIcon: IconButton(
@@ -224,7 +226,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             SizedBox(height: tokens.spaceXl),
             Row(
               children: [
-                Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+                Expanded(
+                  child: Divider(
+                    color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: tokens.spaceMd),
                   child: Text(
@@ -235,7 +241,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                     ),
                   ),
                 ),
-                Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+                Expanded(
+                  child: Divider(
+                    color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
               ],
             ),
             SizedBox(height: tokens.spaceLg),
@@ -243,13 +253,20 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: Icon(Icons.g_mobiledata_rounded, size: 28, color: scheme.onSurface),
-                    label: Text('Google', style: TextStyle(color: scheme.onSurface)),
+                    icon: Icon(
+                      Icons.g_mobiledata_rounded,
+                      size: 28,
+                      color: scheme.onSurface,
+                    ),
+                    label: Text(
+                      'Google',
+                      style: TextStyle(color: scheme.onSurface),
+                    ),
                     onPressed: loginState.busy
                         ? null
                         : () => ref
-                            .read(loginNotifierProvider.notifier)
-                            .signInWithGoogle(),
+                              .read(loginNotifierProvider.notifier)
+                              .signInWithGoogle(),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),
                       side: BorderSide(color: scheme.outlineVariant),
@@ -260,8 +277,15 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 SizedBox(width: tokens.spaceMd),
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: Icon(Icons.apple_rounded, size: 22, color: scheme.onSurface),
-                    label: Text('Apple', style: TextStyle(color: scheme.onSurface)),
+                    icon: Icon(
+                      Icons.apple_rounded,
+                      size: 22,
+                      color: scheme.onSurface,
+                    ),
+                    label: Text(
+                      'Apple',
+                      style: TextStyle(color: scheme.onSurface),
+                    ),
                     onPressed: loginState.busy ? null : () {},
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),

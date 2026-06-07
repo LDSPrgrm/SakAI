@@ -25,7 +25,9 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
 
   @override
   Future<void> submitRating(String rideId, int stars, String? feedback) async {
-    debugPrint('[P-Rating] Submitting rating: rideId=$rideId, stars=$stars, feedback=$feedback');
+    debugPrint(
+      '[P-Rating] Submitting rating: rideId=$rideId, stars=$stars, feedback=$feedback',
+    );
     try {
       final request = SubmitRatingRequest(
         (SubmitRatingRequestBuilder b) => b
@@ -90,7 +92,9 @@ class RideCompleteRepositoryImpl implements RideCompleteRepository {
                   specifiedType: const FullType(ErrorResponse),
                 )
                 as ErrorResponse;
-        debugPrint('[P-Rating] Server Error: code=${err.code.name}, message=${err.message}');
+        debugPrint(
+          '[P-Rating] Server Error: code=${err.code.name}, message=${err.message}',
+        );
         return RatingException(
           machineCode: err.code.name,
           userMessage: _friendlyMessage(err.code),

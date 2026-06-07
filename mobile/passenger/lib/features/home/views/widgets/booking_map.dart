@@ -9,15 +9,16 @@ import '../../view_models/home_notifier.dart';
 /// Async provider that fetches and caches the route polyline.
 /// Keyed by (pickupLat, pickupLng, destLat, destLng) so it
 /// only re-fetches when coordinates actually change.
-final routePolylineProvider = FutureProvider.family<List<LatLng>, _RouteKey>(
-  (ref, key) async {
-    final service = DirectionsService();
-    return service.getRoutePolyline(
-      origin: LatLng(key.pickupLat, key.pickupLng),
-      destination: LatLng(key.destLat, key.destLng),
-    );
-  },
-);
+final routePolylineProvider = FutureProvider.family<List<LatLng>, _RouteKey>((
+  ref,
+  key,
+) async {
+  final service = DirectionsService();
+  return service.getRoutePolyline(
+    origin: LatLng(key.pickupLat, key.pickupLng),
+    destination: LatLng(key.destLat, key.destLng),
+  );
+});
 
 /// Immutable key for the route polyline provider.
 class _RouteKey {
@@ -42,8 +43,7 @@ class _RouteKey {
       other.destLng == destLng;
 
   @override
-  int get hashCode =>
-      Object.hash(pickupLat, pickupLng, destLat, destLng);
+  int get hashCode => Object.hash(pickupLat, pickupLng, destLat, destLng);
 }
 
 /// Full-screen GoogleMap used only during the booking flow.
@@ -108,7 +108,11 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       _animateCameraToFitRoute(routePoints, pickupLatLng, destLatLng);
     }
 
-    final markers = _buildMarkers(pickupLatLng, destLatLng, homeState.nearbyDrivers);
+    final markers = _buildMarkers(
+      pickupLatLng,
+      destLatLng,
+      homeState.nearbyDrivers,
+    );
     final polylines = _buildPolylines(routePoints);
 
     return GoogleMap(
@@ -131,7 +135,10 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       zoomControlsEnabled: false,
       compassEnabled: false,
       mapToolbarEnabled: false,
-      padding: const EdgeInsets.only(top: 80, bottom: 440), // room for top bar and bottom sheet
+      padding: const EdgeInsets.only(
+        top: 80,
+        bottom: 440,
+      ), // room for top bar and bottom sheet
     );
   }
 
@@ -144,13 +151,11 @@ class _BookingMapState extends ConsumerState<BookingMap> {
   ) {
     final allPoints = routePoints.isNotEmpty ? routePoints : [pickup, dest];
     final bounds = boundsFromPoints(allPoints);
-    
+
     void attemptAnimate() {
       if (_controller == null || !mounted) return;
       try {
-        _controller!.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 100),
-        );
+        _controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
       } catch (_) {
         // Fallback: wait a short duration if map was not fully laid out/loaded yet
         Future.delayed(const Duration(milliseconds: 150), () {
@@ -199,9 +204,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
         Marker(
           markerId: MarkerId('driver_${driver.id}'),
           position: driver.location,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueCyan,
-          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
           anchor: const Offset(0.5, 0.5),
           zIndex: 1,
           flat: true,

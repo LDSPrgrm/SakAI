@@ -23,15 +23,13 @@ class HomeSearchHero extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(tokens.radiusFull),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.search_rounded,
-                size: 22,
-                color: scheme.primary,
-              ),
+              Icon(Icons.search_rounded, size: 22, color: scheme.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

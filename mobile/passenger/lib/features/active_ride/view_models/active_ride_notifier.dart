@@ -99,7 +99,9 @@ class ActiveRideController {
       if (response == null) {
         throw Exception('No ride data found');
       }
-      debugPrint('[P-ActiveRide] _loadRide succeeded, status=${response.status}');
+      debugPrint(
+        '[P-ActiveRide] _loadRide succeeded, status=${response.status}',
+      );
 
       _setupWebSocketListener();
       _setupE2EPolling();
@@ -144,7 +146,9 @@ class ActiveRideController {
           (rideStatus == RideState.completed ||
               rideStatus == RideState.cancelled)) {
         _terminated = true;
-        debugPrint('[P-ActiveRide] _refetchRide: terminal=$rideStatus, firing callback');
+        debugPrint(
+          '[P-ActiveRide] _refetchRide: terminal=$rideStatus, firing callback',
+        );
         if (rideStatus == RideState.completed) {
           onCompleted?.call(rideId);
         } else {
@@ -161,9 +165,7 @@ class ActiveRideController {
     _e2ePollTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_terminated) return;
       try {
-        final apiResponse = await _client.getRidesApi().rideGet(
-          rideId: rideId,
-        );
+        final apiResponse = await _client.getRidesApi().rideGet(rideId: rideId);
         final response = apiResponse.data;
         if (response == null) return;
         final rideStatus = RideState.fromString(response.status.name);
@@ -199,41 +201,57 @@ class ActiveRideController {
     final dispatcher = WsDispatcher(_wsClient);
     _dispatcher = dispatcher;
 
-    _wsDisposers.add(dispatcher.on<WsEventRideAccepted>(
-      WsEventType.rideAccepted,
-      (e) => _applyRideAccepted(e.driver),
-    ));
-    _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
-      WsEventType.rideStatusChanged,
-      (e) => _applyStatusChange(e.status.toString()),
-    ));
-    _wsDisposers.add(dispatcher.on<DriverLocationFast>(
-      WsEventType.driverLocationUpdated,
-      (e) => _applyDriverLocation(e.lat, e.lng),
-    ));
-    _wsDisposers.add(dispatcher.on<WsEventRideCancelled>(
-      WsEventType.rideCancelled,
-      (_) => _handleRideCancelled(),
-    ));
+    _wsDisposers.add(
+      dispatcher.on<WsEventRideAccepted>(
+        WsEventType.rideAccepted,
+        (e) => _applyRideAccepted(e.driver),
+      ),
+    );
+    _wsDisposers.add(
+      dispatcher.on<WsEventRideStatusChanged>(
+        WsEventType.rideStatusChanged,
+        (e) => _applyStatusChange(e.status.toString()),
+      ),
+    );
+    _wsDisposers.add(
+      dispatcher.on<DriverLocationFast>(
+        WsEventType.driverLocationUpdated,
+        (e) => _applyDriverLocation(e.lat, e.lng),
+      ),
+    );
+    _wsDisposers.add(
+      dispatcher.on<WsEventRideCancelled>(
+        WsEventType.rideCancelled,
+        (_) => _handleRideCancelled(),
+      ),
+    );
     // P6 SOS lifecycle. Payloads arrive as BuiltMap<String, Object?>
     // because the built_value codegen has not yet regenerated for the
     // incident.* schemas (see WsDispatcher._deserialize).
-    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
-      WsEventType.rideSosTriggered,
-      (p) => _applySosTrigger(p),
-    ));
-    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
-      WsEventType.incidentAssigned,
-      (p) => _applyIncidentAssigned(p),
-    ));
-    _wsDisposers.add(dispatcher.on<BuiltMap<String, Object?>>(
-      WsEventType.incidentResolved,
-      (_) => _applyIncidentResolved(),
-    ));
+    _wsDisposers.add(
+      dispatcher.on<BuiltMap<String, Object?>>(
+        WsEventType.rideSosTriggered,
+        (p) => _applySosTrigger(p),
+      ),
+    );
+    _wsDisposers.add(
+      dispatcher.on<BuiltMap<String, Object?>>(
+        WsEventType.incidentAssigned,
+        (p) => _applyIncidentAssigned(p),
+      ),
+    );
+    _wsDisposers.add(
+      dispatcher.on<BuiltMap<String, Object?>>(
+        WsEventType.incidentResolved,
+        (_) => _applyIncidentResolved(),
+      ),
+    );
   }
 
   void _applySosTrigger(BuiltMap<String, Object?> payload) {
-    debugPrint('[P-ActiveRide] WS rideSosTriggered: incidentId=${payload["incident_id"]}, triggeredBy=${payload["triggered_by"]}');
+    debugPrint(
+      '[P-ActiveRide] WS rideSosTriggered: incidentId=${payload["incident_id"]}, triggeredBy=${payload["triggered_by"]}',
+    );
     final current = _state.value;
     if (current == null) return;
     final incidentId = payload['incident_id'] as String?;
@@ -252,7 +270,9 @@ class ActiveRideController {
   }
 
   void _applyIncidentAssigned(BuiltMap<String, Object?> payload) {
-    debugPrint('[P-ActiveRide] WS incidentAssigned: assignee=${payload["assignee_name"]}');
+    debugPrint(
+      '[P-ActiveRide] WS incidentAssigned: assignee=${payload["assignee_name"]}',
+    );
     final current = _state.value;
     if (current == null) return;
     final assigneeName = payload['assignee_name'] as String?;
@@ -266,9 +286,7 @@ class ActiveRideController {
     debugPrint('[P-ActiveRide] WS incidentResolved');
     final current = _state.value;
     if (current == null) return;
-    _state = AsyncValue.data(
-      current.copyWith(sos: current.sos.withResolved()),
-    );
+    _state = AsyncValue.data(current.copyWith(sos: current.sos.withResolved()));
     _stateController.add(_state);
   }
 
@@ -294,13 +312,17 @@ class ActiveRideController {
   void _applyRideAccepted(DriverSummary driver) {
     debugPrint('[P-ActiveRide] WS rideAccepted: driver=${driver.name}');
     final vehicle = driver.vehicle;
-    final vehicleStr = vehicle != null ? '${vehicle.make} ${vehicle.model}' : null;
+    final vehicleStr = vehicle != null
+        ? '${vehicle.make} ${vehicle.model}'
+        : null;
     enrichDriverInfo(name: driver.name, vehicle: vehicleStr);
   }
 
   void _applyStatusChange(String rawStatus) {
     final rideStatus = RideState.fromString(rawStatus);
-    debugPrint('[P-ActiveRide] WS rideStatusChanged: $rideStatus (raw=$rawStatus)');
+    debugPrint(
+      '[P-ActiveRide] WS rideStatusChanged: $rideStatus (raw=$rawStatus)',
+    );
     final current = _state.value;
     if (current == null) return;
 
@@ -314,7 +336,9 @@ class ActiveRideController {
         (rideStatus == RideState.completed ||
             rideStatus == RideState.cancelled)) {
       _terminated = true;
-      debugPrint('[P-ActiveRide] Terminal status=$rideStatus — firing callback');
+      debugPrint(
+        '[P-ActiveRide] Terminal status=$rideStatus — firing callback',
+      );
       if (rideStatus == RideState.completed) {
         onCompleted?.call(rideId);
       } else {
@@ -417,9 +441,7 @@ class ActiveRideController {
         if (current == null) return;
 
         _state = AsyncValue.data(
-          current.copyWith(
-            driverLocation: gmaps.LatLng(lat, lng),
-          ),
+          current.copyWith(driverLocation: gmaps.LatLng(lat, lng)),
         );
         _stateController.add(_state);
         return;
@@ -452,7 +474,9 @@ class ActiveRideController {
   }
 
   void _handleRideCancelled() {
-    debugPrint('[P-ActiveRide] WS rideCancelled: rideId=$rideId, _terminated=$_terminated');
+    debugPrint(
+      '[P-ActiveRide] WS rideCancelled: rideId=$rideId, _terminated=$_terminated',
+    );
     final current = _state.value;
     if (current == null || _terminated) return;
 

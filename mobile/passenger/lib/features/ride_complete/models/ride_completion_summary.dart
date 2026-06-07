@@ -29,9 +29,7 @@ class RideCompletionSummary {
   final DateTime completedAt;
 
   /// Maps a generated RideResponse to a domain RideCompletionSummary.
-  factory RideCompletionSummary.fromRideResponse(
-    RideResponse ride,
-  ) {
+  factory RideCompletionSummary.fromRideResponse(RideResponse ride) {
     final now = DateTime.now();
     final duration = now.difference(ride.createdAt).inMinutes;
 

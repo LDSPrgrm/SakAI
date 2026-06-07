@@ -31,11 +31,10 @@ class ProfileScreen extends ConsumerWidget {
       body: Stack(
         children: [
           // Dynamic Orbital Organic Blobs Background
-          const Positioned.fill(
-            child: SakaiAnimatedBackdrop(),
-          ),
+          const Positioned.fill(child: SakaiAnimatedBackdrop()),
           RefreshIndicator(
-            onRefresh: () => ref.read(profileNotifierProvider.notifier).refresh(),
+            onRefresh: () =>
+                ref.read(profileNotifierProvider.notifier).refresh(),
             child: _buildContent(context, state, ref),
           ),
         ],
@@ -203,7 +202,10 @@ class _ProfileContent extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [scheme.primary, scheme.primary.withValues(alpha: 0.7)],
+                          colors: [
+                            scheme.primary,
+                            scheme.primary.withValues(alpha: 0.7),
+                          ],
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -257,7 +259,7 @@ class _ProfileContent extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                
+
                 // Phone
                 if (profile.phone != null && profile.phone!.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -299,12 +301,18 @@ class _ProfileContent extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.star_rounded, size: 16, color: Color(0xFFFFB300)),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 16,
+                          color: Color(0xFFFFB300),
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Rider Rating',
                           style: TextStyle(
-                            color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.8,
+                            ),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -323,83 +331,71 @@ class _ProfileContent extends StatelessWidget {
 
         // Section: Payment Methods
         _buildSectionHeader(context, 'Payment Methods'),
-        _buildGroupedCard(
-          context,
-          scheme,
-          [
-            _buildStandardTile(
-              context,
-              Icons.account_balance_wallet_rounded,
-              'Payment Methods',
-              onTap: () => context.push(Routes.paymentMethods),
-            ),
-          ],
-        ),
+        _buildGroupedCard(context, scheme, [
+          _buildStandardTile(
+            context,
+            Icons.account_balance_wallet_rounded,
+            'Payment Methods',
+            onTap: () => context.push(Routes.paymentMethods),
+          ),
+        ]),
 
         // Section: Safety
         _buildSectionHeader(context, 'Safety'),
-        _buildGroupedCard(
-          context,
-          scheme,
-          [
-            _buildStandardTile(
-              context,
-              Icons.emergency_share_rounded,
-              'Emergency Contacts',
-              onTap: () => context.push(Routes.settingsEmergencyContacts),
-            ),
-            _buildDivider(scheme),
-            _buildStandardTile(
-              context,
-              Icons.notifications_active_rounded,
-              'Notifications',
-              onTap: () => context.push(Routes.settingsNotifications),
-            ),
-          ],
-        ),
+        _buildGroupedCard(context, scheme, [
+          _buildStandardTile(
+            context,
+            Icons.emergency_share_rounded,
+            'Emergency Contacts',
+            onTap: () => context.push(Routes.settingsEmergencyContacts),
+          ),
+          _buildDivider(scheme),
+          _buildStandardTile(
+            context,
+            Icons.notifications_active_rounded,
+            'Notifications',
+            onTap: () => context.push(Routes.settingsNotifications),
+          ),
+        ]),
 
         // Section: General Settings
         _buildSectionHeader(context, 'General'),
-        _buildGroupedCard(
-          context,
-          scheme,
-          [
-            _buildStandardTile(
-              context,
-              Icons.language_rounded,
-              'Language',
-              onTap: () => context.push(Routes.settingsLanguage),
-            ),
-            _buildDivider(scheme),
-            _buildStandardTile(
-              context,
-              Icons.settings_suggest_rounded,
-              'Settings',
-              onTap: () => context.push(Routes.settings),
-            ),
-            _buildDivider(scheme),
-            _buildStandardTile(
-              context,
-              Icons.description_rounded,
-              'Terms of Service',
-              onTap: () => context.push(Routes.settingsTerms),
-            ),
-            _buildDivider(scheme),
-            _buildStandardTile(
-              context,
-              Icons.shield_rounded,
-              'Privacy Policy',
-              onTap: () => context.push(Routes.settingsPrivacy),
-            ),
-            _buildDivider(scheme),
-            _buildStandardTile(
-              context,
-              Icons.help_center_rounded,
-              'Help Center',
-              onTap: () => context.push(Routes.settingsHelp),
-            ),
-          ],
-        ),
+        _buildGroupedCard(context, scheme, [
+          _buildStandardTile(
+            context,
+            Icons.language_rounded,
+            'Language',
+            onTap: () => context.push(Routes.settingsLanguage),
+          ),
+          _buildDivider(scheme),
+          _buildStandardTile(
+            context,
+            Icons.settings_suggest_rounded,
+            'Settings',
+            onTap: () => context.push(Routes.settings),
+          ),
+          _buildDivider(scheme),
+          _buildStandardTile(
+            context,
+            Icons.description_rounded,
+            'Terms of Service',
+            onTap: () => context.push(Routes.settingsTerms),
+          ),
+          _buildDivider(scheme),
+          _buildStandardTile(
+            context,
+            Icons.shield_rounded,
+            'Privacy Policy',
+            onTap: () => context.push(Routes.settingsPrivacy),
+          ),
+          _buildDivider(scheme),
+          _buildStandardTile(
+            context,
+            Icons.help_center_rounded,
+            'Help Center',
+            onTap: () => context.push(Routes.settingsHelp),
+          ),
+        ]),
 
         // Footer / Logout
         Padding(
@@ -408,10 +404,7 @@ class _ProfileContent extends StatelessWidget {
             onPressed: onSignOut,
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFFF4E4E),
-              side: const BorderSide(
-                color: Color(0x33FF4E4E),
-                width: 1.2,
-              ),
+              side: const BorderSide(color: Color(0x33FF4E4E), width: 1.2),
               backgroundColor: const Color(0x0FFF4E4E),
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
@@ -451,7 +444,9 @@ class _ProfileContent extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           fontSize: 11,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.2,
@@ -460,7 +455,11 @@ class _ProfileContent extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupedCard(BuildContext context, ColorScheme scheme, List<Widget> children) {
+  Widget _buildGroupedCard(
+    BuildContext context,
+    ColorScheme scheme,
+    List<Widget> children,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -473,9 +472,7 @@ class _ProfileContent extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
@@ -511,11 +508,7 @@ class _ProfileContent extends StatelessWidget {
                   color: scheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  icon,
-                  color: scheme.primary,
-                  size: 20,
-                ),
+                child: Icon(icon, color: scheme.primary, size: 20),
               ),
               const SizedBox(width: 16),
               Expanded(

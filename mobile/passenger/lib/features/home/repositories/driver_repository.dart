@@ -45,7 +45,9 @@ class DriverRepository {
       }
       return result;
     } on DioException catch (e) {
-      debugPrint('[DriverRepository] DioException: ${e.response?.statusCode} ${e.message}');
+      debugPrint(
+        '[DriverRepository] DioException: ${e.response?.statusCode} ${e.message}',
+      );
       return {};
     } catch (e, st) {
       debugPrint('[DriverRepository] Unexpected error: $e\n$st');

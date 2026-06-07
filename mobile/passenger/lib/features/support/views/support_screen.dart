@@ -22,19 +22,23 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
   final List<Map<String, String>> _faqs = [
     {
       'question': 'How do I request a ride?',
-      'answer': 'Open the app and tap the "Where to?" search bar. Enter your destination, confirm your pickup location, select your ride type, and tap "Request Ride".'
+      'answer':
+          'Open the app and tap the "Where to?" search bar. Enter your destination, confirm your pickup location, select your ride type, and tap "Request Ride".',
     },
     {
       'question': 'How does pricing work?',
-      'answer': 'Pricing is calculated based on distance, estimated time, and current demand. You will see an estimated fare before confirming your ride.'
+      'answer':
+          'Pricing is calculated based on distance, estimated time, and current demand. You will see an estimated fare before confirming your ride.',
     },
     {
       'question': 'What payment methods are accepted?',
-      'answer': 'We accept credit/debit cards, digital wallets, and cash where applicable. You can manage this in Settings > Payment Methods.'
+      'answer':
+          'We accept credit/debit cards, digital wallets, and cash where applicable. You can manage this in Settings > Payment Methods.',
     },
     {
       'question': 'How do I cancel a ride?',
-      'answer': 'While waiting for a driver, tap "Cancel" on the waiting screen. Cancellation fees may apply if the driver is already en route.'
+      'answer':
+          'While waiting for a driver, tap "Cancel" on the waiting screen. Cancellation fees may apply if the driver is already en route.',
     },
   ];
 
@@ -56,17 +60,20 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
     final tokens = SakaiDesignTokens.of(context);
     final vm = ref.watch(supportViewModelProvider);
 
-    ref.listen<SupportState>(
-      supportViewModelProvider.select((v) => v.state),
-      (previous, next) {
-        if (next.status == SupportStatus.success && next.submitted) {
-          SakaiSnackBar.success(context, 'Support ticket submitted successfully!');
-          vm.resetState();
-        } else if (next.status == SupportStatus.error && next.error != null) {
-          SakaiSnackBar.error(context, next.error!);
-        }
-      },
-    );
+    ref.listen<SupportState>(supportViewModelProvider.select((v) => v.state), (
+      previous,
+      next,
+    ) {
+      if (next.status == SupportStatus.success && next.submitted) {
+        SakaiSnackBar.success(
+          context,
+          'Support ticket submitted successfully!',
+        );
+        vm.resetState();
+      } else if (next.status == SupportStatus.error && next.error != null) {
+        SakaiSnackBar.error(context, next.error!);
+      }
+    });
 
     return SakaiScreenScaffold(
       title: 'Support & Help',
@@ -117,7 +124,11 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
             children: [
               Row(
                 children: [
-                  Icon(Icons.help_outline, color: theme.colorScheme.primary, size: 20),
+                  Icon(
+                    Icons.help_outline,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
                   SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: Text(
@@ -149,7 +160,11 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
     );
   }
 
-  Widget _buildContactTab(SakaiDesignTokens tokens, ThemeData theme, SupportViewModel vm) {
+  Widget _buildContactTab(
+    SakaiDesignTokens tokens,
+    ThemeData theme,
+    SupportViewModel vm,
+  ) {
     final state = vm.state;
     final isSubmitting = state.status == SupportStatus.submitting;
 
@@ -209,20 +224,30 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
     );
   }
 
-  Widget _buildEmergencySos(SakaiDesignTokens tokens, ThemeData theme, SupportViewModel vm) {
+  Widget _buildEmergencySos(
+    SakaiDesignTokens tokens,
+    ThemeData theme,
+    SupportViewModel vm,
+  ) {
     return Container(
       padding: EdgeInsets.all(tokens.spaceMd),
       decoration: BoxDecoration(
         color: theme.colorScheme.errorContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(tokens.radiusMd),
-        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error, size: 24),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: theme.colorScheme.error,
+                size: 24,
+              ),
               SizedBox(width: tokens.spaceSm),
               Text(
                 'Emergency SOS',
@@ -357,7 +382,9 @@ class _PrivacyOptInRow extends StatelessWidget {
           Icon(
             optedIn ? Icons.check_circle : Icons.do_not_disturb_on_outlined,
             size: 16,
-            color: optedIn ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+            color: optedIn
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
           Expanded(

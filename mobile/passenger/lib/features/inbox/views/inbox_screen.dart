@@ -12,7 +12,8 @@ class InboxScreen extends StatelessWidget {
     final messages = [
       _InboxMessage(
         title: '🥮 Celebrate Mid-Autumn Festival!',
-        body: 'Enjoy 25% off all rides back home from Sep 15 to Sep 18. Use code MIDAUTUMN25.',
+        body:
+            'Enjoy 25% off all rides back home from Sep 15 to Sep 18. Use code MIDAUTUMN25.',
         time: '2 hours ago',
         isUnread: true,
         icon: Icons.celebration_rounded,
@@ -20,7 +21,8 @@ class InboxScreen extends StatelessWidget {
       ),
       _InboxMessage(
         title: 'Ride Receipt - Trip #8492',
-        body: 'Your trip with Driver Juan is complete. Total fare was ₱120.00. Thank you for riding with SakAI!',
+        body:
+            'Your trip with Driver Juan is complete. Total fare was ₱120.00. Thank you for riding with SakAI!',
         time: 'Yesterday',
         isUnread: false,
         icon: Icons.receipt_long_rounded,
@@ -28,7 +30,8 @@ class InboxScreen extends StatelessWidget {
       ),
       _InboxMessage(
         title: 'Safety Update',
-        body: 'We have updated our terms of service to enhance ride-sharing safety protocols. Learn more here.',
+        body:
+            'We have updated our terms of service to enhance ride-sharing safety protocols. Learn more here.',
         time: '3 days ago',
         isUnread: false,
         icon: Icons.security_rounded,
@@ -83,8 +86,9 @@ class InboxScreen extends StatelessWidget {
                             child: Text(
                               msg.title,
                               style: TextStyle(
-                                fontWeight:
-                                    msg.isUnread ? FontWeight.bold : FontWeight.w600,
+                                fontWeight: msg.isUnread
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
                                 fontSize: 15,
                               ),
                             ),

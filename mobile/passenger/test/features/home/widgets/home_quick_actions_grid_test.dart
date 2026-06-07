@@ -20,9 +20,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      ProviderScope(
-        child: routedScaffold(child: const HomeQuickActionsGrid()),
-      ),
+      ProviderScope(child: routedScaffold(child: const HomeQuickActionsGrid())),
     );
     await tester.pumpAndSettle();
 
@@ -32,31 +30,30 @@ void main() {
     expect(find.text('Ride History'), findsOneWidget);
   });
 
-  testWidgets(
-    'tap Schedule Ride navigates to /coming-soon with feature name',
-    (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: routedScaffold(
-            child: const HomeQuickActionsGrid(),
-            extraRoutes: [
-              GoRoute(
-                path: Routes.comingSoon,
-                builder: (_, state) {
-                  final feature = state.extra as String? ?? 'unknown';
-                  return Scaffold(body: Text('CS:$feature'));
-                },
-              ),
-            ],
-          ),
+  testWidgets('tap Schedule Ride navigates to /coming-soon with feature name', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: routedScaffold(
+          child: const HomeQuickActionsGrid(),
+          extraRoutes: [
+            GoRoute(
+              path: Routes.comingSoon,
+              builder: (_, state) {
+                final feature = state.extra as String? ?? 'unknown';
+                return Scaffold(body: Text('CS:$feature'));
+              },
+            ),
+          ],
         ),
-      );
-      await tester.pumpAndSettle();
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('home_qa_schedule_ride')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home_qa_schedule_ride')));
+    await tester.pumpAndSettle();
 
-      expect(find.text('CS:Schedule Ride'), findsOneWidget);
-    },
-  );
+    expect(find.text('CS:Schedule Ride'), findsOneWidget);
+  });
 }

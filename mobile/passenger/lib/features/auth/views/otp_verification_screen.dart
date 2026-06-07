@@ -56,10 +56,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Verify your number',
-                style: theme.textTheme.headlineMedium,
-              ),
+              Text('Verify your number', style: theme.textTheme.headlineMedium),
               SizedBox(height: t.spaceSm),
               Text(
                 'Enter the 6-digit code we sent to ${widget.destination}.',
@@ -91,10 +88,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               SizedBox(height: t.spaceMd),
               Center(
                 child: TextButton(
-                  onPressed:
-                      state.busy || state.resendCooldownSeconds > 0
-                          ? null
-                          : () => notifier.sendCode(widget.destination),
+                  onPressed: state.busy || state.resendCooldownSeconds > 0
+                      ? null
+                      : () => notifier.sendCode(widget.destination),
                   child: Text(
                     state.resendCooldownSeconds > 0
                         ? 'Resend in ${state.resendCooldownSeconds}s'

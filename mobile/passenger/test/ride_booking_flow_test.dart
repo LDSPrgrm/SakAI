@@ -185,10 +185,7 @@ class _BookingHarnessState extends ConsumerState<_BookingHarness> {
             key: const Key('ride_type_count'),
           ),
           if (homeState.errorMessage != null)
-            Text(
-              homeState.errorMessage!,
-              key: const Key('error_label'),
-            ),
+            Text(homeState.errorMessage!, key: const Key('error_label')),
         ],
       ),
     );
@@ -225,8 +222,9 @@ GoRouter _buildTestRouter() {
 /// Reads the [_FakeHomeNotifier] from the harness widget's [ProviderContainer].
 _FakeHomeNotifier _notifierFrom(WidgetTester tester) {
   return ProviderScope.containerOf(
-    tester.element(find.byType(_BookingHarness)),
-  ).read(homeNotifierProvider.notifier) as _FakeHomeNotifier;
+        tester.element(find.byType(_BookingHarness)),
+      ).read(homeNotifierProvider.notifier)
+      as _FakeHomeNotifier;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -261,8 +259,7 @@ void main() {
     });
 
     // 2 ─────────────────────────────────────────────────────────────────────
-    test(
-        'setDestination → status is destinationSet and '
+    test('setDestination → status is destinationSet and '
         'ride type options are populated', () async {
       const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest Ave');
       await notifier.setDestination(dest);
@@ -295,13 +292,16 @@ void main() {
     });
 
     // 5 ─────────────────────────────────────────────────────────────────────
-    test('canRequest is true when destination + vehicle type are set', () async {
-      const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
-      await notifier.setDestination(dest);
-      notifier.setSelectedRideType(VehicleType.car);
+    test(
+      'canRequest is true when destination + vehicle type are set',
+      () async {
+        const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
+        await notifier.setDestination(dest);
+        notifier.setSelectedRideType(VehicleType.car);
 
-      expect(container.read(homeNotifierProvider).canRequest, isTrue);
-    });
+        expect(container.read(homeNotifierProvider).canRequest, isTrue);
+      },
+    );
 
     // 6 ─────────────────────────────────────────────────────────────────────
     test('requestRide (success) sets createdRide with correct id', () async {
@@ -314,22 +314,25 @@ void main() {
       expect(ride, isNotNull);
       expect(ride!.id, isNotEmpty);
       expect(container.read(homeNotifierProvider).createdRide?.id, ride.id);
-      expect(container.read(homeNotifierProvider).status,
-          isNot(HomeStatus.requesting));
+      expect(
+        container.read(homeNotifierProvider).status,
+        isNot(HomeStatus.requesting),
+      );
     });
 
     // 7 ─────────────────────────────────────────────────────────────────────
-    test(
-        'requestRide (failure) sets errorMessage and '
+    test('requestRide (failure) sets errorMessage and '
         'clears requesting status', () async {
       final failContainer = ProviderContainer(
         overrides: [
-          homeNotifierProvider
-              .overrideWith(() => _FakeHomeNotifier(failOnRequest: true)),
+          homeNotifierProvider.overrideWith(
+            () => _FakeHomeNotifier(failOnRequest: true),
+          ),
         ],
       );
-      final failNotifier = failContainer.read(homeNotifierProvider.notifier)
-          as _FakeHomeNotifier;
+      final failNotifier =
+          failContainer.read(homeNotifierProvider.notifier)
+              as _FakeHomeNotifier;
 
       const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
       await failNotifier.setDestination(dest);
@@ -347,27 +350,32 @@ void main() {
     });
 
     // 8 ─────────────────────────────────────────────────────────────────────
-    test('clearDestination resets to idle and clears all derived state',
-        () async {
-      const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
-      await notifier.setDestination(dest);
-      notifier.setSelectedRideType(VehicleType.car);
-      notifier.clearDestination();
+    test(
+      'clearDestination resets to idle and clears all derived state',
+      () async {
+        const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
+        await notifier.setDestination(dest);
+        notifier.setSelectedRideType(VehicleType.car);
+        notifier.clearDestination();
 
-      final s = container.read(homeNotifierProvider);
-      expect(s.status, HomeStatus.idle);
-      expect(s.destination, isNull);
-      expect(s.rideTypeOptions, isEmpty);
-      expect(s.selectedRideType, isNull);
-    });
+        final s = container.read(homeNotifierProvider);
+        expect(s.status, HomeStatus.idle);
+        expect(s.destination, isNull);
+        expect(s.rideTypeOptions, isEmpty);
+        expect(s.selectedRideType, isNull);
+      },
+    );
 
     // 9 ─────────────────────────────────────────────────────────────────────
-    test('requestRide returns null early when destination is missing', () async {
-      final ride = await notifier.requestRide();
-      expect(ride, isNull);
-      // Status must remain idle (no partial state mutation).
-      expect(container.read(homeNotifierProvider).status, HomeStatus.idle);
-    });
+    test(
+      'requestRide returns null early when destination is missing',
+      () async {
+        final ride = await notifier.requestRide();
+        expect(ride, isNull);
+        // Status must remain idle (no partial state mutation).
+        expect(container.read(homeNotifierProvider).status, HomeStatus.idle);
+      },
+    );
   });
 
   // ── Widget: navigation flow ────────────────────────────────────────────────
@@ -422,55 +430,57 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('status_label'))).data,
         HomeStatus.destinationSet.name,
       );
-      final countText =
-          tester.widget<Text>(find.byKey(const Key('ride_type_count'))).data;
+      final countText = tester
+          .widget<Text>(find.byKey(const Key('ride_type_count')))
+          .data;
       expect(int.parse(countText!), greaterThanOrEqualTo(1));
     });
 
     // W-3 ───────────────────────────────────────────────────────────────────
-    testWidgets('requestRide success → GoRouter pushes /ride/waiting with rideId',
-        (
-      WidgetTester tester,
-    ) async {
-      await pumpHarness(tester);
-      final notifier = _notifierFrom(tester);
+    testWidgets(
+      'requestRide success → GoRouter pushes /ride/waiting with rideId',
+      (WidgetTester tester) async {
+        await pumpHarness(tester);
+        final notifier = _notifierFrom(tester);
 
-      const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
-      await notifier.setDestination(dest);
-      notifier.setSelectedRideType(VehicleType.motorcycle);
-      await tester.pump();
+        const dest = RideLocation(lat: 14.61, lng: 120.99, address: 'Dest');
+        await notifier.setDestination(dest);
+        notifier.setSelectedRideType(VehicleType.motorcycle);
+        await tester.pump();
 
-      // Start the request
-      final requestFuture = notifier.requestRide();
-      await tester.pump();
+        // Start the request
+        final requestFuture = notifier.requestRide();
+        await tester.pump();
 
-      expect(
-        tester.widget<Text>(find.byKey(const Key('status_label'))).data,
-        HomeStatus.requesting.name,
-      );
+        expect(
+          tester.widget<Text>(find.byKey(const Key('status_label'))).data,
+          HomeStatus.requesting.name,
+        );
 
-      // Advance clock to allow the 10ms delay in _FakeHomeNotifier to complete
-      await tester.pump(const Duration(milliseconds: 10));
-      await requestFuture;
+        // Advance clock to allow the 10ms delay in _FakeHomeNotifier to complete
+        await tester.pump(const Duration(milliseconds: 10));
+        await requestFuture;
 
-      // Now verify navigation triggered by state change
-      await tester.pump();
-      // Wait for any potential navigation/animations
-      await tester.pumpAndSettle();
+        // Now verify navigation triggered by state change
+        await tester.pump();
+        // Wait for any potential navigation/animations
+        await tester.pumpAndSettle();
 
-      // Waiting screen should be visible.
-      expect(find.byKey(const Key('waiting_screen')), findsOneWidget);
-      expect(
-        tester.widget<Text>(find.byKey(const Key('waiting_screen'))).data,
-        contains('fake-ride-001'),
-      );
-    });
-
+        // Waiting screen should be visible.
+        expect(find.byKey(const Key('waiting_screen')), findsOneWidget);
+        expect(
+          tester.widget<Text>(find.byKey(const Key('waiting_screen'))).data,
+          contains('fake-ride-001'),
+        );
+      },
+    );
   });
 
   // ── Widget: BookingTopBar and PopScope back button interception ───────────
   group('BookingTopBar and back button interception', () {
-    testWidgets('BookingTopBar renders correctly and triggers callbacks', (WidgetTester tester) async {
+    testWidgets('BookingTopBar renders correctly and triggers callbacks', (
+      WidgetTester tester,
+    ) async {
       bool backTapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -502,63 +512,63 @@ void main() {
       expect(find.byKey(const Key('booking_help_dialog')), findsNothing);
     });
 
-    testWidgets('PopScope blocks pop when booking is active and clears destination', (WidgetTester tester) async {
-      final container = ProviderContainer(
-        overrides: [
-          homeNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
-        ],
-      );
-      addTearDown(container.dispose);
+    testWidgets(
+      'PopScope blocks pop when booking is active and clears destination',
+      (WidgetTester tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            homeNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      bool isBookingActive = true;
-      bool clearedDestination = false;
+        bool isBookingActive = true;
+        bool clearedDestination = false;
 
-      // Pump a widget with PopScope matching RiderHomeScreen logic
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: MaterialApp(
-            home: Builder(
-              builder: (context) => Scaffold(
-                body: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PopScope(
-                          canPop: !isBookingActive,
-                          onPopInvokedWithResult: (didPop, result) {
-                            if (didPop) return;
-                            if (isBookingActive) {
-                              clearedDestination = true;
-                            }
-                          },
-                          child: const Scaffold(
-                            body: Text('Home Screen'),
+        // Pump a widget with PopScope matching RiderHomeScreen logic
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PopScope(
+                            canPop: !isBookingActive,
+                            onPopInvokedWithResult: (didPop, result) {
+                              if (didPop) return;
+                              if (isBookingActive) {
+                                clearedDestination = true;
+                              }
+                            },
+                            child: const Scaffold(body: Text('Home Screen')),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                  child: const Text('Go'),
+                      );
+                    },
+                    child: const Text('Go'),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Push the route
-      await tester.tap(find.text('Go'));
-      await tester.pumpAndSettle();
+        // Push the route
+        await tester.tap(find.text('Go'));
+        await tester.pumpAndSettle();
 
-      // Attempt to pop
-      final BuildContext context = tester.element(find.text('Home Screen'));
-      await Navigator.of(context).maybePop();
-      await tester.pump();
+        // Attempt to pop
+        final BuildContext context = tester.element(find.text('Home Screen'));
+        await Navigator.of(context).maybePop();
+        await tester.pump();
 
-      expect(clearedDestination, isTrue);
-    });
+        expect(clearedDestination, isTrue);
+      },
+    );
   });
 }
-

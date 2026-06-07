@@ -25,9 +25,7 @@ class EmergencyContactsScreen extends ConsumerWidget {
         ),
       ),
       body: state.contacts.isEmpty
-          ? _EmptyState(
-              onAdd: () => _showAddDialog(context, ref),
-            )
+          ? _EmptyState(onAdd: () => _showAddDialog(context, ref))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -308,7 +306,7 @@ class _ContactFormDialog extends StatefulWidget {
   });
 
   final Future<void> Function(String name, String phone, String relationship)
-      onSave;
+  onSave;
   final String? initialName;
   final String? initialPhone;
   final String? initialRelationship;
@@ -330,8 +328,9 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _phoneController = TextEditingController(text: widget.initialPhone ?? '');
-    _relationshipController =
-        TextEditingController(text: widget.initialRelationship ?? '');
+    _relationshipController = TextEditingController(
+      text: widget.initialRelationship ?? '',
+    );
   }
 
   @override

@@ -10,10 +10,7 @@ import '../../ride_history/models/ride_history_item.dart';
 import '../../ride_history/view_models/ride_history_list_view_model.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
-  const ActivityScreen({
-    super.key,
-    this.isStandalone = false,
-  });
+  const ActivityScreen({super.key, this.isStandalone = false});
 
   final bool isStandalone;
 
@@ -58,13 +55,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              onPressed: () => _showFilterBottomSheet(context, state, tokens, theme),
+              onPressed: () =>
+                  _showFilterBottomSheet(context, state, tokens, theme),
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Icon(
                     Icons.filter_list_rounded,
-                    color: state.activeFilter != null ? scheme.primary : scheme.onSurface,
+                    color: state.activeFilter != null
+                        ? scheme.primary
+                        : scheme.onSurface,
                   ),
                   if (state.activeFilter != null)
                     Positioned(
@@ -93,21 +93,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       body: Stack(
         children: [
           // Dynamic organic blobs backdrop matching the overall premium app theme
-          const Positioned.fill(
-            child: SakaiAnimatedBackdrop(),
-          ),
+          const Positioned.fill(child: SakaiAnimatedBackdrop()),
           RefreshIndicator(
-            onRefresh: () => ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
-            child: SafeArea(
-              child: _buildBody(context, state, tokens),
-            ),
+            onRefresh: () =>
+                ref.read(rideHistoryListNotifierProvider.notifier).refresh(),
+            child: SafeArea(child: _buildBody(context, state, tokens)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, RideHistoryListState state, SakaiDesignTokens tokens) {
+  Widget _buildBody(
+    BuildContext context,
+    RideHistoryListState state,
+    SakaiDesignTokens tokens,
+  ) {
     if (state.status == RideHistoryStatus.loading && state.items.isEmpty) {
       return ListView.builder(
         padding: EdgeInsets.all(tokens.spaceLg),
@@ -175,7 +176,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
               Text(
                 state.error ?? 'Failed to load activity',
@@ -184,7 +189,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               const SizedBox(height: 16),
               SakaiPrimaryButton(
                 label: 'Retry',
-                onPressed: () => ref.read(rideHistoryListNotifierProvider.notifier).loadHistory(),
+                onPressed: () => ref
+                    .read(rideHistoryListNotifierProvider.notifier)
+                    .loadHistory(),
               ),
             ],
           ),
@@ -193,13 +200,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg, vertical: tokens.spaceMd),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceLg,
+        vertical: tokens.spaceMd,
+      ),
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: state.items.length + (state.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == state.items.length) {
           if (!state.isLoadingMore) {
-            Future.microtask(() => ref.read(rideHistoryListNotifierProvider.notifier).loadMore());
+            Future.microtask(
+              () =>
+                  ref.read(rideHistoryListNotifierProvider.notifier).loadMore(),
+            );
           }
           return const Center(
             child: Padding(
@@ -226,9 +239,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     // Count per category from current loaded items
     final allCount = state.items.length;
-    final completedCount = state.items.where((i) => i.status == RideStatus.completed).length;
-    final cancelledCount = state.items.where((i) => i.status == RideStatus.cancelled).length;
-    final ongoingCount = state.items.where((i) => i.status != RideStatus.completed && i.status != RideStatus.cancelled).length;
+    final completedCount = state.items
+        .where((i) => i.status == RideStatus.completed)
+        .length;
+    final cancelledCount = state.items
+        .where((i) => i.status == RideStatus.cancelled)
+        .length;
+    final ongoingCount = state.items
+        .where(
+          (i) =>
+              i.status != RideStatus.completed &&
+              i.status != RideStatus.cancelled,
+        )
+        .length;
 
     showModalBottomSheet(
       context: context,
@@ -242,7 +265,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: scheme.surface.withValues(alpha: 0.92),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border.all(
                   color: scheme.outlineVariant.withValues(alpha: 0.25),
                   width: 1,
@@ -262,7 +287,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           width: 36,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.3,
+                            ),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -275,10 +302,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: scheme.primaryContainer.withValues(alpha: 0.6),
+                              color: scheme.primaryContainer.withValues(
+                                alpha: 0.6,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.tune_rounded, size: 18, color: scheme.primary),
+                            child: Icon(
+                              Icons.tune_rounded,
+                              size: 18,
+                              color: scheme.primary,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Column(
@@ -318,10 +351,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             subtitle: '$allCount rides',
                             icon: Icons.history_rounded,
                             iconColor: scheme.primary,
-                            iconBg: scheme.primaryContainer.withValues(alpha: 0.6),
+                            iconBg: scheme.primaryContainer.withValues(
+                              alpha: 0.6,
+                            ),
                             isSelected: state.activeFilter == null,
                             onTap: () {
-                              ref.read(rideHistoryListNotifierProvider.notifier).setFilter(null);
+                              ref
+                                  .read(
+                                    rideHistoryListNotifierProvider.notifier,
+                                  )
+                                  .setFilter(null);
                               Navigator.pop(ctx);
                             },
                             scheme: scheme,
@@ -333,10 +372,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             subtitle: '$ongoingCount active',
                             icon: Icons.directions_car_rounded,
                             iconColor: scheme.primary,
-                            iconBg: scheme.primaryContainer.withValues(alpha: 0.5),
+                            iconBg: scheme.primaryContainer.withValues(
+                              alpha: 0.5,
+                            ),
                             isSelected: state.activeFilter == 'ongoing',
                             onTap: () {
-                              ref.read(rideHistoryListNotifierProvider.notifier).setFilter('ongoing');
+                              ref
+                                  .read(
+                                    rideHistoryListNotifierProvider.notifier,
+                                  )
+                                  .setFilter('ongoing');
                               Navigator.pop(ctx);
                             },
                             scheme: scheme,
@@ -351,7 +396,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             iconBg: semantic.successSubtle,
                             isSelected: state.activeFilter == 'completed',
                             onTap: () {
-                              ref.read(rideHistoryListNotifierProvider.notifier).setFilter('completed');
+                              ref
+                                  .read(
+                                    rideHistoryListNotifierProvider.notifier,
+                                  )
+                                  .setFilter('completed');
                               Navigator.pop(ctx);
                             },
                             scheme: scheme,
@@ -366,7 +415,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             iconBg: semantic.dangerSubtle,
                             isSelected: state.activeFilter == 'cancelled',
                             onTap: () {
-                              ref.read(rideHistoryListNotifierProvider.notifier).setFilter('cancelled');
+                              ref
+                                  .read(
+                                    rideHistoryListNotifierProvider.notifier,
+                                  )
+                                  .setFilter('cancelled');
                               Navigator.pop(ctx);
                             },
                             scheme: scheme,
@@ -380,14 +433,20 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         const SizedBox(height: 16),
                         SakaiTactile(
                           onTap: () {
-                            ref.read(rideHistoryListNotifierProvider.notifier).setFilter(null);
+                            ref
+                                .read(rideHistoryListNotifierProvider.notifier)
+                                .setFilter(null);
                             Navigator.pop(ctx);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              color: scheme.errorContainer.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(tokens.radiusMd),
+                              color: scheme.errorContainer.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                tokens.radiusMd,
+                              ),
                               border: Border.all(
                                 color: scheme.error.withValues(alpha: 0.2),
                               ),
@@ -395,7 +454,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.filter_list_off_rounded, size: 16, color: scheme.error),
+                                Icon(
+                                  Icons.filter_list_off_rounded,
+                                  size: 16,
+                                  color: scheme.error,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Clear Filter',
@@ -440,16 +503,20 @@ class _ActivityItemCard extends StatelessWidget {
 
     // Define distinguishable styling variables
     final double cardOpacity = isCancelled ? 0.72 : 1.0;
-    
+
     // Card decoration
     final double borderWidth = isOngoing ? 1.6 : (isCancelled ? 0.8 : 1.0);
-    final Color borderColor = isOngoing 
-        ? scheme.primary.withValues(alpha: 0.75) 
-        : (isCancelled ? scheme.outlineVariant.withValues(alpha: 0.18) : scheme.outlineVariant.withValues(alpha: 0.35));
-    
+    final Color borderColor = isOngoing
+        ? scheme.primary.withValues(alpha: 0.75)
+        : (isCancelled
+              ? scheme.outlineVariant.withValues(alpha: 0.18)
+              : scheme.outlineVariant.withValues(alpha: 0.35));
+
     final Color cardBgColor = isOngoing
         ? scheme.primaryContainer.withValues(alpha: 0.08)
-        : (isCancelled ? scheme.surface.withValues(alpha: 0.45) : scheme.surface.withValues(alpha: 0.65));
+        : (isCancelled
+              ? scheme.surface.withValues(alpha: 0.45)
+              : scheme.surface.withValues(alpha: 0.65));
 
     final List<BoxShadow> cardShadow = isOngoing
         ? [
@@ -461,21 +528,23 @@ class _ActivityItemCard extends StatelessWidget {
             ),
           ]
         : (isCancelled
-            ? const []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ]);
+              ? const []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]);
 
     // Timeline stepper colors
     final Color timelineConnectorColor = isOngoing
         ? scheme.primary.withValues(alpha: 0.8)
-        : (isCancelled ? theme.dividerColor.withValues(alpha: 0.15) : theme.dividerColor.withValues(alpha: 0.3));
+        : (isCancelled
+              ? theme.dividerColor.withValues(alpha: 0.15)
+              : theme.dividerColor.withValues(alpha: 0.3));
     final double timelineConnectorWidth = isOngoing ? 2.2 : 1.5;
-    
+
     final Color destinationPinColor = isCancelled
         ? semantic.neutral.withValues(alpha: 0.5) // destination never reached!
         : semantic.danger;
@@ -483,11 +552,17 @@ class _ActivityItemCard extends StatelessWidget {
     // Fare styling
     final Color fareBgColor = isOngoing
         ? scheme.primaryContainer.withValues(alpha: 0.12)
-        : (isCancelled ? scheme.errorContainer.withValues(alpha: 0.08) : semantic.success.withValues(alpha: 0.12));
+        : (isCancelled
+              ? scheme.errorContainer.withValues(alpha: 0.08)
+              : semantic.success.withValues(alpha: 0.12));
     final Color fareTextColor = isOngoing
         ? scheme.primary
-        : (isCancelled ? scheme.error.withValues(alpha: 0.7) : semantic.success);
-    final String fareText = isOngoing ? '${item.displayFare} (Est.)' : item.displayFare;
+        : (isCancelled
+              ? scheme.error.withValues(alpha: 0.7)
+              : semantic.success);
+    final String fareText = isOngoing
+        ? '${item.displayFare} (Est.)'
+        : item.displayFare;
 
     return Padding(
       padding: EdgeInsets.only(bottom: tokens.spaceMd),
@@ -504,10 +579,7 @@ class _ActivityItemCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cardBgColor,
                   borderRadius: BorderRadius.circular(tokens.radiusLg),
-                  border: Border.all(
-                    color: borderColor,
-                    width: borderWidth,
-                  ),
+                  border: Border.all(color: borderColor, width: borderWidth),
                   boxShadow: cardShadow,
                 ),
                 child: Column(
@@ -522,15 +594,25 @@ class _ActivityItemCard extends StatelessWidget {
                             Icon(
                               Icons.directions_car_rounded,
                               size: 16,
-                              color: isOngoing 
-                                  ? scheme.primary 
-                                  : (isCancelled ? scheme.onSurfaceVariant.withValues(alpha: 0.5) : scheme.primary.withValues(alpha: 0.7)),
+                              color: isOngoing
+                                  ? scheme.primary
+                                  : (isCancelled
+                                        ? scheme.onSurfaceVariant.withValues(
+                                            alpha: 0.5,
+                                          )
+                                        : scheme.primary.withValues(
+                                            alpha: 0.7,
+                                          )),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               dateFormat.format(item.createdAt.toLocal()),
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: isCancelled ? scheme.onSurfaceVariant.withValues(alpha: 0.6) : scheme.onSurfaceVariant,
+                                color: isCancelled
+                                    ? scheme.onSurfaceVariant.withValues(
+                                        alpha: 0.6,
+                                      )
+                                    : scheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -557,10 +639,12 @@ class _ActivityItemCard extends StatelessWidget {
                       child: Divider(
                         height: 1,
                         thickness: 0.8,
-                        color: scheme.outlineVariant.withValues(alpha: isCancelled ? 0.15 : 0.3),
+                        color: scheme.outlineVariant.withValues(
+                          alpha: isCancelled ? 0.15 : 0.3,
+                        ),
                       ),
                     ),
-                    
+
                     // Origin/Destination Connected Timeline
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,8 +655,8 @@ class _ActivityItemCard extends StatelessWidget {
                             Icon(
                               Icons.circle,
                               size: 8,
-                              color: isCancelled 
-                                  ? semantic.success.withValues(alpha: 0.5) 
+                              color: isCancelled
+                                  ? semantic.success.withValues(alpha: 0.5)
                                   : semantic.success,
                             ),
                             Container(
@@ -598,7 +682,9 @@ class _ActivityItemCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: isCancelled ? scheme.onSurface.withValues(alpha: 0.6) : scheme.onSurface,
+                                  color: isCancelled
+                                      ? scheme.onSurface.withValues(alpha: 0.6)
+                                      : scheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 18),
@@ -608,8 +694,12 @@ class _ActivityItemCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: isCancelled ? scheme.onSurface.withValues(alpha: 0.5) : scheme.onSurface,
-                                  decoration: isCancelled ? TextDecoration.lineThrough : null,
+                                  color: isCancelled
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : scheme.onSurface,
+                                  decoration: isCancelled
+                                      ? TextDecoration.lineThrough
+                                      : null,
                                 ),
                               ),
                             ],
@@ -623,7 +713,9 @@ class _ActivityItemCard extends StatelessWidget {
                       child: Divider(
                         height: 1,
                         thickness: 0.8,
-                        color: scheme.outlineVariant.withValues(alpha: isCancelled ? 0.15 : 0.3),
+                        color: scheme.outlineVariant.withValues(
+                          alpha: isCancelled ? 0.15 : 0.3,
+                        ),
                       ),
                     ),
 
@@ -632,10 +724,15 @@ class _ActivityItemCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: fareBgColor,
-                            borderRadius: BorderRadius.circular(tokens.radiusSm),
+                            borderRadius: BorderRadius.circular(
+                              tokens.radiusSm,
+                            ),
                           ),
                           child: Text(
                             fareText,
@@ -651,20 +748,31 @@ class _ActivityItemCard extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: scheme.surfaceContainerHighest.withValues(alpha: isCancelled ? 0.25 : 0.5),
+                                  color: scheme.surfaceContainerHighest
+                                      .withValues(
+                                        alpha: isCancelled ? 0.25 : 0.5,
+                                      ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.person_rounded,
                                   size: 12,
-                                  color: isCancelled ? scheme.onSurfaceVariant.withValues(alpha: 0.5) : scheme.onSurfaceVariant,
+                                  color: isCancelled
+                                      ? scheme.onSurfaceVariant.withValues(
+                                          alpha: 0.5,
+                                        )
+                                      : scheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 item.driverName!,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: isCancelled ? scheme.onSurfaceVariant.withValues(alpha: 0.6) : scheme.onSurfaceVariant,
+                                  color: isCancelled
+                                      ? scheme.onSurfaceVariant.withValues(
+                                          alpha: 0.6,
+                                        )
+                                      : scheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -697,7 +805,8 @@ class _PulsingLiveDot extends StatefulWidget {
   State<_PulsingLiveDot> createState() => _PulsingLiveDotState();
 }
 
-class _PulsingLiveDotState extends State<_PulsingLiveDot> with SingleTickerProviderStateMixin {
+class _PulsingLiveDotState extends State<_PulsingLiveDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -725,7 +834,9 @@ class _PulsingLiveDotState extends State<_PulsingLiveDot> with SingleTickerProvi
           height: 8,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.color.withValues(alpha: 0.4 + (_controller.value * 0.6)),
+            color: widget.color.withValues(
+              alpha: 0.4 + (_controller.value * 0.6),
+            ),
             boxShadow: [
               BoxShadow(
                 color: widget.color.withValues(alpha: 0.4 * _controller.value),
@@ -781,7 +892,9 @@ class _FilterTile extends StatelessWidget {
               : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(tokens.radiusMd),
           border: Border.all(
-            color: isSelected ? iconColor.withValues(alpha: 0.6) : scheme.outlineVariant.withValues(alpha: 0.3),
+            color: isSelected
+                ? iconColor.withValues(alpha: 0.6)
+                : scheme.outlineVariant.withValues(alpha: 0.3),
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
@@ -813,7 +926,9 @@ class _FilterTile extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       color: isSelected ? iconColor : scheme.onSurface,
                     ),
                     maxLines: 1,
@@ -822,7 +937,9 @@ class _FilterTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: isSelected ? iconColor.withValues(alpha: 0.75) : scheme.onSurfaceVariant,
+                      color: isSelected
+                          ? iconColor.withValues(alpha: 0.75)
+                          : scheme.onSurfaceVariant,
                       fontSize: 10,
                     ),
                   ),
@@ -837,4 +954,3 @@ class _FilterTile extends StatelessWidget {
     );
   }
 }
-

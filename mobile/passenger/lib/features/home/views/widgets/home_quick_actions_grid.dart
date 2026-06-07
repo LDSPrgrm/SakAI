@@ -41,12 +41,16 @@ class HomeQuickActionsGrid extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: actions.map((a) => Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: tokens.spaceXs),
-            child: _QuickActionTile(a),
-          ),
-        )).toList(),
+        children: actions
+            .map(
+              (a) => Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceXs),
+                  child: _QuickActionTile(a),
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -92,7 +96,9 @@ class _QuickActionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: scheme.surface,
                 borderRadius: BorderRadius.circular(tokens.radiusLg),
-                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
@@ -108,11 +114,7 @@ class _QuickActionTile extends StatelessWidget {
                   color: scheme.primaryContainer.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  action.icon,
-                  size: 24,
-                  color: scheme.primary,
-                ),
+                child: Icon(action.icon, size: 24, color: scheme.primary),
               ),
             ),
           ),

@@ -57,7 +57,8 @@ class RideHistoryItem {
     if (name == 'accepted') return 'Accepted';
     if (name == 'arrived') return 'Arrived';
     if (name == 'inProgress' || name == 'in_progress') return 'In Progress';
-    if (name == 'paymentPending' || name == 'payment_pending') return 'Payment Pending';
+    if (name == 'paymentPending' || name == 'payment_pending')
+      return 'Payment Pending';
     if (name == 'completed') return 'Completed';
     if (name == 'cancelled') return 'Cancelled';
     return name;

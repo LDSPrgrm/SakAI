@@ -65,7 +65,10 @@ class SupportViewModel extends ChangeNotifier {
   Future<void> submitTicket() async {
     if (!isValid) return;
 
-    _state = _state.copyWith(status: SupportStatus.submitting, clearError: true);
+    _state = _state.copyWith(
+      status: SupportStatus.submitting,
+      clearError: true,
+    );
     notifyListeners();
 
     try {
@@ -84,7 +87,10 @@ class SupportViewModel extends ChangeNotifier {
   }
 
   Future<void> triggerSOS(String rideId, String reason) async {
-    _state = _state.copyWith(status: SupportStatus.submitting, clearError: true);
+    _state = _state.copyWith(
+      status: SupportStatus.submitting,
+      clearError: true,
+    );
     notifyListeners();
 
     try {

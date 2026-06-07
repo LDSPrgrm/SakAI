@@ -1,9 +1,6 @@
 /// Typed domain errors from ride operations.
 class RideException implements Exception {
-  const RideException({
-    required this.userMessage,
-    this.machineCode,
-  });
+  const RideException({required this.userMessage, this.machineCode});
 
   final String userMessage;
 

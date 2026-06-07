@@ -210,7 +210,8 @@ class GeocodingService {
 
       final results = data!['results'] as List;
       final first = results.first as Map<String, dynamic>;
-      final formattedAddress = first['formatted_address'] as String? ?? 'Unknown Location';
+      final formattedAddress =
+          first['formatted_address'] as String? ?? 'Unknown Location';
 
       return RideLocation(lat: lat, lng: lng, address: formattedAddress);
     } on DioException catch (e) {

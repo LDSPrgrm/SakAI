@@ -22,8 +22,11 @@ void main() {
     await _waitForHydration(container);
     final prefs = container.read(sosSafetyPrefsProvider);
 
-    expect(prefs.ambientAudioOptIn, isFalse,
-        reason: 'ambient audio MUST be opt-in only — RFC v2 §20 decision 3');
+    expect(
+      prefs.ambientAudioOptIn,
+      isFalse,
+      reason: 'ambient audio MUST be opt-in only — RFC v2 §20 decision 3',
+    );
     expect(prefs.liveLocationOptIn, isFalse);
     expect(prefs.photoOptIn, isFalse);
     expect(notifier, isNotNull);
@@ -38,25 +41,33 @@ void main() {
     await notifier.setAmbientAudio(true);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getBool('sos_safety_ambient_audio_opt_in'), isTrue,
-        reason: 'toggle must round-trip through prefs');
+    expect(
+      prefs.getBool('sos_safety_ambient_audio_opt_in'),
+      isTrue,
+      reason: 'toggle must round-trip through prefs',
+    );
     expect(container.read(sosSafetyPrefsProvider).ambientAudioOptIn, isTrue);
   });
 
-  test('toggles are independent — flipping one does not flip the others',
-      () async {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    final notifier = container.read(sosSafetyPrefsProvider.notifier);
-    await _waitForHydration(container);
+  test(
+    'toggles are independent — flipping one does not flip the others',
+    () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(sosSafetyPrefsProvider.notifier);
+      await _waitForHydration(container);
 
-    await notifier.setLiveLocation(true);
-    final state = container.read(sosSafetyPrefsProvider);
-    expect(state.liveLocationOptIn, isTrue);
-    expect(state.ambientAudioOptIn, isFalse,
-        reason: 'opt-ins are orthogonal');
-    expect(state.photoOptIn, isFalse);
-  });
+      await notifier.setLiveLocation(true);
+      final state = container.read(sosSafetyPrefsProvider);
+      expect(state.liveLocationOptIn, isTrue);
+      expect(
+        state.ambientAudioOptIn,
+        isFalse,
+        reason: 'opt-ins are orthogonal',
+      );
+      expect(state.photoOptIn, isFalse);
+    },
+  );
 
   test('cold start re-hydrates persisted values', () async {
     SharedPreferences.setMockInitialValues({

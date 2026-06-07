@@ -11,10 +11,7 @@ const String _contactsKey = 'emergency_contacts';
 
 /// State of the emergency contacts.
 class EmergencyContactsState {
-  const EmergencyContactsState({
-    this.contacts = const [],
-    this.errorMessage,
-  });
+  const EmergencyContactsState({this.contacts = const [], this.errorMessage});
 
   final List<EmergencyContactModel> contacts;
   final String? errorMessage;
@@ -33,8 +30,7 @@ class EmergencyContactsState {
 }
 
 /// Notifier for managing emergency contacts.
-class EmergencyContactsNotifier
-    extends Notifier<EmergencyContactsState> {
+class EmergencyContactsNotifier extends Notifier<EmergencyContactsState> {
   @override
   EmergencyContactsState build() {
     _loadContacts();
@@ -54,9 +50,7 @@ class EmergencyContactsNotifier
       }
     } catch (e) {
       debugPrint('[EmergencyContactsNotifier] Error loading contacts: $e');
-      state = state.copyWith(
-        errorMessage: 'Failed to load emergency contacts',
-      );
+      state = state.copyWith(errorMessage: 'Failed to load emergency contacts');
     }
   }
 
@@ -96,8 +90,9 @@ class EmergencyContactsNotifier
 
   /// Removes an emergency contact by ID.
   Future<void> removeContact(String contactId) async {
-    final updatedContacts =
-        state.contacts.where((c) => c.id != contactId).toList();
+    final updatedContacts = state.contacts
+        .where((c) => c.id != contactId)
+        .toList();
     state = state.copyWith(contacts: updatedContacts);
     await _saveContacts();
   }
@@ -111,5 +106,5 @@ class EmergencyContactsNotifier
 /// Riverpod provider for the EmergencyContactsNotifier.
 final emergencyContactsProvider =
     NotifierProvider<EmergencyContactsNotifier, EmergencyContactsState>(
-  EmergencyContactsNotifier.new,
-);
+      EmergencyContactsNotifier.new,
+    );

@@ -47,8 +47,12 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
         child: Stack(
           children: [
             RefreshIndicator(
-              onRefresh: () => ref.read(savedPlacesNotifierProvider.notifier).loadSavedPlaces(),
-              child: state.savedPlaces.isEmpty && state.status == SavedPlacesStatus.loaded
+              onRefresh: () => ref
+                  .read(savedPlacesNotifierProvider.notifier)
+                  .loadSavedPlaces(),
+              child:
+                  state.savedPlaces.isEmpty &&
+                      state.status == SavedPlacesStatus.loaded
                   ? _buildEmptyState()
                   : ListView.builder(
                       padding: EdgeInsets.all(tokens.spaceLg),
@@ -88,7 +92,11 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
     );
   }
 
-  Widget _buildErrorBanner(String message, ThemeData theme, SakaiDesignTokens tokens) {
+  Widget _buildErrorBanner(
+    String message,
+    ThemeData theme,
+    SakaiDesignTokens tokens,
+  ) {
     return Positioned(
       top: 0,
       left: 0,
@@ -138,7 +146,9 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
         ),
         title: Text(
           place.name,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +158,9 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
             const SizedBox(height: 2),
             Text(
               'Lat: ${place.latitude.toStringAsFixed(5)}, Lon: ${place.longitude.toStringAsFixed(5)}',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -159,7 +171,9 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
               context: context,
               builder: (context) => AlertDialog(
                 title: const Text('Delete Saved Place?'),
-                content: Text('Are you sure you want to remove "${place.name}"?'),
+                content: Text(
+                  'Are you sure you want to remove "${place.name}"?',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
@@ -167,14 +181,19 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
                   ),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
                   ),
                 ],
               ),
             );
 
             if (confirmed == true) {
-              await ref.read(savedPlacesNotifierProvider.notifier).deleteSavedPlace(place.id);
+              await ref
+                  .read(savedPlacesNotifierProvider.notifier)
+                  .deleteSavedPlace(place.id);
             }
           },
         ),
@@ -198,7 +217,8 @@ class AddPlaceBottomSheet extends ConsumerStatefulWidget {
   const AddPlaceBottomSheet({super.key});
 
   @override
-  ConsumerState<AddPlaceBottomSheet> createState() => _AddPlaceBottomSheetState();
+  ConsumerState<AddPlaceBottomSheet> createState() =>
+      _AddPlaceBottomSheetState();
 }
 
 class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
@@ -248,7 +268,9 @@ class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
             children: [
               Text(
                 'Add Saved Place',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               SakaiTextField(
@@ -256,10 +278,7 @@ class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
                 hint: 'Place Name (e.g., Grandma\'s House)',
               ),
               const SizedBox(height: 12),
-              SakaiTextField(
-                controller: _addressController,
-                hint: 'Address',
-              ),
+              SakaiTextField(controller: _addressController, hint: 'Address'),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -281,7 +300,9 @@ class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
               const SizedBox(height: 16),
               Text(
                 'Place Type',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -299,7 +320,9 @@ class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
                   if (_nameController.text.trim().isEmpty ||
                       _addressController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all required fields.')),
+                      const SnackBar(
+                        content: Text('Please fill in all required fields.'),
+                      ),
                     );
                     return;
                   }
@@ -345,7 +368,9 @@ class _AddPlaceBottomSheetState extends ConsumerState<AddPlaceBottomSheet> {
       selected: isSelected,
       avatar: Icon(
         icon,
-        color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary,
+        color: isSelected
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.primary,
         size: 18,
       ),
       selectedColor: theme.colorScheme.primary,

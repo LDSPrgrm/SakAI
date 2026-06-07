@@ -52,7 +52,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     }
 
     String? termsError;
-    if (!_agreeToTerms) termsError = 'You must agree to the Terms & Privacy Policy';
+    if (!_agreeToTerms)
+      termsError = 'You must agree to the Terms & Privacy Policy';
 
     setState(() {
       _errors = errors;
@@ -142,7 +143,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.person_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('name')) setState(() => _errors = Map.from(_errors)..remove('name'));
+                if (_errors.containsKey('name'))
+                  setState(() => _errors = Map.from(_errors)..remove('name'));
               },
             ),
             SakaiTextField(
@@ -156,20 +158,25 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.mail_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('email')) setState(() => _errors = Map.from(_errors)..remove('email'));
+                if (_errors.containsKey('email'))
+                  setState(() => _errors = Map.from(_errors)..remove('email'));
               },
             ),
             SakaiTextField(
               key: const Key('register_password'),
               controller: _passwordCtrl,
               label: 'Password',
-              errorText: _errors['password'] ?? registerState.fieldErrors['password'],
+              errorText:
+                  _errors['password'] ?? registerState.fieldErrors['password'],
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('password')) setState(() => _errors = Map.from(_errors)..remove('password'));
+                if (_errors.containsKey('password'))
+                  setState(
+                    () => _errors = Map.from(_errors)..remove('password'),
+                  );
               },
               suffixIcon: IconButton(
                 tooltip: _obscurePassword ? 'Show password' : 'Hide password',
@@ -233,9 +240,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               onTap: registerState.busy ? null : _onRegister,
               child: IgnorePointer(
                 child: SakaiPrimaryButton(
-                  label: registerState.busy
-                      ? 'Creating Account…'
-                      : 'Sign Up',
+                  label: registerState.busy ? 'Creating Account…' : 'Sign Up',
                   icon: Icons.person_add_rounded,
                   onPressed: registerState.busy ? null : () {},
                 ),
@@ -244,7 +249,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             SizedBox(height: tokens.spaceXl),
             Row(
               children: [
-                Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+                Expanded(
+                  child: Divider(
+                    color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: tokens.spaceMd),
                   child: Text(
@@ -255,7 +264,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                   ),
                 ),
-                Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+                Expanded(
+                  child: Divider(
+                    color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
               ],
             ),
             SizedBox(height: tokens.spaceLg),
@@ -263,8 +276,15 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: Icon(Icons.g_mobiledata_rounded, size: 28, color: scheme.onSurface),
-                    label: Text('Google', style: TextStyle(color: scheme.onSurface)),
+                    icon: Icon(
+                      Icons.g_mobiledata_rounded,
+                      size: 28,
+                      color: scheme.onSurface,
+                    ),
+                    label: Text(
+                      'Google',
+                      style: TextStyle(color: scheme.onSurface),
+                    ),
                     onPressed: registerState.busy
                         ? null
                         : () {
@@ -285,8 +305,15 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 SizedBox(width: tokens.spaceMd),
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: Icon(Icons.apple_rounded, size: 22, color: scheme.onSurface),
-                    label: Text('Apple', style: TextStyle(color: scheme.onSurface)),
+                    icon: Icon(
+                      Icons.apple_rounded,
+                      size: 22,
+                      color: scheme.onSurface,
+                    ),
+                    label: Text(
+                      'Apple',
+                      style: TextStyle(color: scheme.onSurface),
+                    ),
                     onPressed: registerState.busy
                         ? null
                         : () {

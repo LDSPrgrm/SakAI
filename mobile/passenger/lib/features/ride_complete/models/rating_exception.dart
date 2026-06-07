@@ -1,9 +1,6 @@
 /// Typed domain errors from rating submission operations.
 class RatingException implements Exception {
-  const RatingException({
-    required this.userMessage,
-    this.machineCode,
-  });
+  const RatingException({required this.userMessage, this.machineCode});
 
   final String userMessage;
 

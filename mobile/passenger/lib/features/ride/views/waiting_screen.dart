@@ -78,7 +78,9 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
         if (!mounted) return;
         if (active == null || active.id != widget.rideId) return;
         if (active.status != RideState.requested) {
-          debugPrint('[WaitingScreen] E2E: ride status changed to ${active.status}, navigating...');
+          debugPrint(
+            '[WaitingScreen] E2E: ride status changed to ${active.status}, navigating...',
+          );
           _e2ePollTimer?.cancel();
           _navigating = true;
           context.go(Routes.rideActive, extra: widget.rideId);
@@ -94,12 +96,14 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     debugPrint(
       '[WaitingScreen] _onVmChanged: cancelled=${_vm.cancelled}, error=${_vm.errorMessage}, navigating=$_navigating, mounted=$mounted',
     );
-    
+
     // Guard: ignore updates if we are already navigating away.
     if (_navigating) return;
 
     if (_vm.cancelled && mounted) {
-      debugPrint('[WaitingScreen] VM signal: ride cancelled, proceeding to cancelled screen');
+      debugPrint(
+        '[WaitingScreen] VM signal: ride cancelled, proceeding to cancelled screen',
+      );
       _goToCancelled();
       return;
     }
@@ -116,7 +120,9 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
   /// the trigger is the HTTP response or the WebSocket `rideCancelled` event.
   void _goToCancelled() {
     if (_navigating || !mounted) {
-      debugPrint('[WaitingScreen] _goToCancelled ignored: navigating=$_navigating, mounted=$mounted');
+      debugPrint(
+        '[WaitingScreen] _goToCancelled ignored: navigating=$_navigating, mounted=$mounted',
+      );
       return;
     }
     _navigating = true;
@@ -145,7 +151,10 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
         debugPrint('[WaitingScreen] rideOfferExpired -> Routes.home');
         _navigating = true;
         if (mounted) {
-          SakaiSnackBar.info(context, 'No drivers available. Please try again.');
+          SakaiSnackBar.info(
+            context,
+            'No drivers available. Please try again.',
+          );
           context.go(Routes.home);
         }
       } else if (event.type == WsEventNames.rideCancelled) {

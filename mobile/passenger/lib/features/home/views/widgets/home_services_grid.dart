@@ -38,80 +38,80 @@ class HomeServicesGrid extends StatelessWidget {
   }
 
   List<_ServiceItem> _buildItems(BuildContext context) => [
-        _ServiceItem(
-          icon: Icons.fastfood_rounded,
-          label: 'Food',
-          color: const Color(0xFFFF6B35),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'Food');
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.shopping_cart_rounded,
-          label: 'Mart',
-          color: const Color(0xFF0284C7),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'Mart');
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.bolt_rounded,
-          label: 'Express',
-          color: const Color(0xFFEAB308),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'Express');
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.directions_car_rounded,
-          label: 'Transport',
-          color: const Color(0xFF00C472),
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onTransportTap();
-          },
-          isHighlighted: true,
-        ),
-        _ServiceItem(
-          icon: Icons.local_mall_rounded,
-          label: 'Shopping',
-          color: const Color(0xFF9333EA),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'Shopping');
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.auto_awesome_rounded,
-          label: 'Offers',
-          color: const Color(0xFFEC4899),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.promotions);
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.card_giftcard_rounded,
-          label: 'Gift Cards',
-          color: const Color(0xFFEF4444),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'Gift Cards');
-          },
-        ),
-        _ServiceItem(
-          icon: Icons.apps_rounded,
-          label: 'More',
-          color: const Color(0xFF6B7280),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push(Routes.comingSoon, extra: 'More');
-          },
-        ),
-      ];
+    _ServiceItem(
+      icon: Icons.fastfood_rounded,
+      label: 'Food',
+      color: const Color(0xFFFF6B35),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'Food');
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.shopping_cart_rounded,
+      label: 'Mart',
+      color: const Color(0xFF0284C7),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'Mart');
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.bolt_rounded,
+      label: 'Express',
+      color: const Color(0xFFEAB308),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'Express');
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.directions_car_rounded,
+      label: 'Transport',
+      color: const Color(0xFF00C472),
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTransportTap();
+      },
+      isHighlighted: true,
+    ),
+    _ServiceItem(
+      icon: Icons.local_mall_rounded,
+      label: 'Shopping',
+      color: const Color(0xFF9333EA),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'Shopping');
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.auto_awesome_rounded,
+      label: 'Offers',
+      color: const Color(0xFFEC4899),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.promotions);
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.card_giftcard_rounded,
+      label: 'Gift Cards',
+      color: const Color(0xFFEF4444),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'Gift Cards');
+      },
+    ),
+    _ServiceItem(
+      icon: Icons.apps_rounded,
+      label: 'More',
+      color: const Color(0xFF6B7280),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(Routes.comingSoon, extra: 'More');
+      },
+    ),
+  ];
 }
 
 class _ServiceItem {
@@ -155,7 +155,10 @@ class _ServiceTile extends StatelessWidget {
                     : scheme.surfaceContainerHighest.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
                 border: item.isHighlighted
-                    ? Border.all(color: item.color.withValues(alpha: 0.4), width: 1.5)
+                    ? Border.all(
+                        color: item.color.withValues(alpha: 0.4),
+                        width: 1.5,
+                      )
                     : null,
               ),
               alignment: Alignment.center,

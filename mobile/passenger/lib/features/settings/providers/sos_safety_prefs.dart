@@ -78,5 +78,5 @@ class SosSafetyPrefsNotifier extends Notifier<SosSafetyPrefs> {
 
 final sosSafetyPrefsProvider =
     NotifierProvider<SosSafetyPrefsNotifier, SosSafetyPrefs>(
-  SosSafetyPrefsNotifier.new,
-);
+      SosSafetyPrefsNotifier.new,
+    );

@@ -12,21 +12,22 @@ void main() {
   });
 
   testWidgets(
-      'session restore: pre-seeded token bypasses login and lands on home',
-      (tester) async {
-    final harness = TestHarness();
-    await harness.tokenStorage.save(
-      accessToken: 'restored-access',
-      refreshToken: 'restored-refresh',
-      expiresAt: DateTime.now().add(const Duration(days: 1)),
-    );
+    'session restore: pre-seeded token bypasses login and lands on home',
+    (tester) async {
+      final harness = TestHarness();
+      await harness.tokenStorage.save(
+        accessToken: 'restored-access',
+        refreshToken: 'restored-refresh',
+        expiresAt: DateTime.now().add(const Duration(days: 1)),
+      );
 
-    await tester.binding.setSurfaceSize(const Size(800, 1200));
-    await tester.pumpWidget(harness.buildApp());
-    await tester.pumpAndSettle();
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      await tester.pumpWidget(harness.buildApp());
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Where to?'), findsOneWidget);
-    // The login form's email field key should never have been pumped.
-    expect(find.byKey(const Key('login_email')), findsNothing);
-  });
+      expect(find.textContaining('Where to?'), findsOneWidget);
+      // The login form's email field key should never have been pumped.
+      expect(find.byKey(const Key('login_email')), findsNothing);
+    },
+  );
 }

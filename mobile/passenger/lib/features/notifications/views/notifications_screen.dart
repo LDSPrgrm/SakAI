@@ -65,8 +65,10 @@ class NotificationsScreen extends ConsumerWidget {
       padding: EdgeInsets.symmetric(vertical: t.spaceSm),
       itemCount: state.items.length,
       separatorBuilder: (_, _) => SizedBox(height: t.spaceXs),
-      itemBuilder: (context, i) =>
-          _Tile(state.items[i], onTap: () => notifier.markRead(state.items[i].id)),
+      itemBuilder: (context, i) => _Tile(
+        state.items[i],
+        onTap: () => notifier.markRead(state.items[i].id),
+      ),
     );
   }
 }

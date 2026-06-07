@@ -81,9 +81,9 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 widget.mode == LocationSearchMode.pickup
                     ? 'Where from?'
                     : 'Where to?',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               SizedBox(height: tokens.spaceMd),
               SakaiTextField(
@@ -106,9 +106,9 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 SizedBox(height: tokens.spaceXs),
                 Text(
                   vm.errorMessage!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.error,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: scheme.error),
                 ),
               ],
               SizedBox(height: tokens.spaceMd),
@@ -116,8 +116,8 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 label: vm.geocoding
                     ? 'Looking up…'
                     : (widget.mode == LocationSearchMode.pickup
-                        ? 'Confirm pickup'
-                        : 'Confirm destination'),
+                          ? 'Confirm pickup'
+                          : 'Confirm destination'),
                 icon: Icons.arrow_forward,
                 onPressed: vm.geocoding ? null : _confirm,
               ),

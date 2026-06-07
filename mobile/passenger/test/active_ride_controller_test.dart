@@ -237,7 +237,11 @@ void main() {
         ),
       );
 
-      await _waitFor(() => states.length >= 2 && states.last.currentStep == ActiveRideStep.arrived);
+      await _waitFor(
+        () =>
+            states.length >= 2 &&
+            states.last.currentStep == ActiveRideStep.arrived,
+      );
       expect(states.last.currentStep, ActiveRideStep.arrived);
 
       await sub.cancel();

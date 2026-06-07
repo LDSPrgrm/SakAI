@@ -29,9 +29,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final state = ref.read(splashProvider);
       state.whenOrNull(
         data: (result) => _handleNavigation(result),
-        error: (err, stack) => _handleNavigation(
-          const SplashResult(SplashState.transientError),
-        ),
+        error: (err, stack) =>
+            _handleNavigation(const SplashResult(SplashState.transientError)),
       );
     });
     // Fail-safe: if the splash provider stalls past 8s (no resolve, no error),
@@ -39,7 +38,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _failsafeTimer = Timer(const Duration(seconds: 8), () {
       if (!mounted || _navigated) return;
       _navigated = true;
-      SakaiSnackBar.info(context, 'Taking longer than expected. Please sign in again.');
+      SakaiSnackBar.info(
+        context,
+        'Taking longer than expected. Please sign in again.',
+      );
       context.go(Routes.login);
     });
   }

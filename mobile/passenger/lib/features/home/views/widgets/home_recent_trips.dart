@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -56,13 +55,23 @@ class _HomeRecentTripsState extends ConsumerState<HomeRecentTrips> {
         child: Container(
           padding: EdgeInsets.all(tokens.spaceLg),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(tokens.radiusLg),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             children: [
-              Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.outline, size: 32),
+              Icon(
+                Icons.history_rounded,
+                color: Theme.of(context).colorScheme.outline,
+                size: 32,
+              ),
               SizedBox(height: tokens.spaceSm),
               Text(
                 'No recent trips yet. Your journey starts here!',
@@ -127,7 +136,11 @@ class _RecentTripCard extends StatelessWidget {
       borderColor = scheme.primary.withValues(alpha: 0.5);
       cardTint = scheme.primaryContainer.withValues(alpha: 0.07);
       shadows = [
-        BoxShadow(color: scheme.primary.withValues(alpha: 0.14), blurRadius: 14, offset: const Offset(0, 4)),
+        BoxShadow(
+          color: scheme.primary.withValues(alpha: 0.14),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
+        ),
       ];
       statusIcon = Icons.directions_car_rounded;
     } else if (isCompleted) {
@@ -136,7 +149,11 @@ class _RecentTripCard extends StatelessWidget {
       borderColor = semantic.success.withValues(alpha: 0.3);
       cardTint = semantic.success.withValues(alpha: 0.04);
       shadows = [
-        BoxShadow(color: semantic.success.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 3)),
+        BoxShadow(
+          color: semantic.success.withValues(alpha: 0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
       ];
       statusIcon = Icons.check_circle_rounded;
     } else {
@@ -152,9 +169,15 @@ class _RecentTripCard extends StatelessWidget {
     return Opacity(
       opacity: isCancelled ? 0.72 : 1.0,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(tokens.spaceLg, 0, tokens.spaceLg, tokens.spaceMd),
+        padding: EdgeInsets.fromLTRB(
+          tokens.spaceLg,
+          0,
+          tokens.spaceLg,
+          tokens.spaceMd,
+        ),
         child: SakaiTactile(
-          onTap: () => context.push(Routes.rideDetail.replaceFirst(':rideId', item.id)),
+          onTap: () =>
+              context.push(Routes.rideDetail.replaceFirst(':rideId', item.id)),
           child: Container(
             padding: EdgeInsets.all(tokens.spaceMd),
             decoration: BoxDecoration(
@@ -162,7 +185,10 @@ class _RecentTripCard extends StatelessWidget {
                   ? Color.alphaBlend(cardTint, scheme.surface)
                   : scheme.surface,
               borderRadius: BorderRadius.circular(tokens.radiusLg),
-              border: Border.all(color: borderColor, width: isOngoing ? 1.5 : 1.0),
+              border: Border.all(
+                color: borderColor,
+                width: isOngoing ? 1.5 : 1.0,
+              ),
               boxShadow: shadows,
             ),
             child: Row(
@@ -182,8 +208,7 @@ class _RecentTripCard extends StatelessWidget {
                       child: Icon(statusIcon, size: 20, color: iconColor),
                     ),
                     // Pulsing dot for ongoing
-                    if (isOngoing)
-                      _SmallPulseDot(color: scheme.primary),
+                    if (isOngoing) _SmallPulseDot(color: scheme.primary),
                   ],
                 ),
 
@@ -201,9 +226,15 @@ class _RecentTripCard extends StatelessWidget {
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
-                          color: isCancelled ? scheme.onSurface.withValues(alpha: 0.55) : scheme.onSurface,
-                          decoration: isCancelled ? TextDecoration.lineThrough : null,
-                          decorationColor: scheme.onSurface.withValues(alpha: 0.4),
+                          color: isCancelled
+                              ? scheme.onSurface.withValues(alpha: 0.55)
+                              : scheme.onSurface,
+                          decoration: isCancelled
+                              ? TextDecoration.lineThrough
+                              : null,
+                          decorationColor: scheme.onSurface.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -212,14 +243,21 @@ class _RecentTripCard extends StatelessWidget {
                           Text(
                             _dateLabel(item.createdAt),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant.withValues(alpha: isCancelled ? 0.6 : 1),
+                              color: scheme.onSurfaceVariant.withValues(
+                                alpha: isCancelled ? 0.6 : 1,
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Text('·',
-                                style: TextStyle(color: scheme.outlineVariant, fontSize: 12)),
+                            child: Text(
+                              '·',
+                              style: TextStyle(
+                                color: scheme.outlineVariant,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                           // Colored status label
                           Text(
@@ -229,8 +267,8 @@ class _RecentTripCard extends StatelessWidget {
                               color: isOngoing
                                   ? scheme.primary
                                   : isCompleted
-                                      ? semantic.success
-                                      : semantic.danger.withValues(alpha: 0.8),
+                                  ? semantic.success
+                                  : semantic.danger.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -252,15 +290,17 @@ class _RecentTripCard extends StatelessWidget {
                         color: isCancelled
                             ? scheme.onSurface.withValues(alpha: 0.4)
                             : isCompleted
-                                ? semantic.success
-                                : scheme.primary,
+                            ? semantic.success
+                            : scheme.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 16,
-                      color: isCancelled ? scheme.outlineVariant : scheme.outline,
+                      color: isCancelled
+                          ? scheme.outlineVariant
+                          : scheme.outline,
                     ),
                   ],
                 ),

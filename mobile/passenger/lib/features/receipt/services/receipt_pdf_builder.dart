@@ -16,10 +16,7 @@ import '../models/ride_receipt.dart';
 /// [RideReceipt] before calling this builder.
 class ReceiptPdfBuilder {
   static Future<Uint8List> build(RideReceipt receipt) async {
-    final doc = pw.Document(
-      title: 'SakAI Ride Receipt',
-      author: 'SakAI',
-    );
+    final doc = pw.Document(title: 'SakAI Ride Receipt', author: 'SakAI');
 
     doc.addPage(
       pw.Page(
@@ -56,14 +53,20 @@ class ReceiptPdfBuilder {
           style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 2),
-        pw.Text('Ride Receipt',
-            style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
+        pw.Text(
+          'Ride Receipt',
+          style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
+        ),
         pw.SizedBox(height: 8),
         if (r.formattedDate != null)
-          pw.Text(r.formattedDate!,
-              style: pw.TextStyle(color: PdfColors.grey600)),
-        pw.Text('Ride ID: ${r.rideId}',
-            style: pw.TextStyle(color: PdfColors.grey600)),
+          pw.Text(
+            r.formattedDate!,
+            style: pw.TextStyle(color: PdfColors.grey600),
+          ),
+        pw.Text(
+          'Ride ID: ${r.rideId}',
+          style: pw.TextStyle(color: PdfColors.grey600),
+        ),
       ],
     );
   }
@@ -72,9 +75,10 @@ class ReceiptPdfBuilder {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
-        pw.Text(title,
-            style:
-                pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.Text(
+          title,
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+        ),
         pw.Divider(thickness: 0.5),
         pw.SizedBox(height: 6),
         body,
@@ -114,12 +118,14 @@ class ReceiptPdfBuilder {
       pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Total',
-              style: pw.TextStyle(
-                  fontSize: 14, fontWeight: pw.FontWeight.bold)),
-          pw.Text(r.totalLabel,
-              style: pw.TextStyle(
-                  fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            'Total',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.Text(
+            r.totalLabel,
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -163,8 +169,11 @@ class ReceiptPdfBuilder {
           pw.SizedBox(width: 12),
           pw.Flexible(
             flex: 3,
-            child:
-                pw.Text(value, textAlign: pw.TextAlign.right, softWrap: true),
+            child: pw.Text(
+              value,
+              textAlign: pw.TextAlign.right,
+              softWrap: true,
+            ),
           ),
         ],
       ),

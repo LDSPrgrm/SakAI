@@ -10,10 +10,10 @@ import 'fakes.dart';
 
 class TestHarness {
   TestHarness({this.seenWelcome = true})
-      : tokenStorage = FakeTokenStorage(),
-        onboardingService = FakeOnboardingService()..seenWelcome = seenWelcome,
-        wsConnection = FakeWsConnectionManager(),
-        rideRepository = FakeRideRepository() {
+    : tokenStorage = FakeTokenStorage(),
+      onboardingService = FakeOnboardingService()..seenWelcome = seenWelcome,
+      wsConnection = FakeWsConnectionManager(),
+      rideRepository = FakeRideRepository() {
     authRepository = FakeAuthRepository(tokenStorage);
   }
 

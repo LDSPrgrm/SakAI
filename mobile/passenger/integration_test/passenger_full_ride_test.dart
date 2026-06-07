@@ -32,8 +32,9 @@ void main() {
   const apiUrl = String.fromEnvironment('E2E_API_URL');
   const seedToken = String.fromEnvironment('E2E_SEED_TOKEN');
 
-  testWidgets('passenger full ride: every WS event applied exactly once',
-      (tester) async {
+  testWidgets('passenger full ride: every WS event applied exactly once', (
+    tester,
+  ) async {
     if (apiUrl.isEmpty || seedToken.isEmpty) {
       markTestSkipped(
         'E2E_API_URL and E2E_SEED_TOKEN required. Backend must run with '
@@ -62,8 +63,11 @@ void main() {
     await tester.pumpWidget(harness.buildApp());
     await tester.pumpAndSettle();
 
-    expect(find.byType(Scaffold), findsWidgets,
-        reason: 'app shell renders against staging with seeded JWT');
+    expect(
+      find.byType(Scaffold),
+      findsWidgets,
+      reason: 'app shell renders against staging with seeded JWT',
+    );
 
     // OUTSTANDING (P9 live execution — blockers, in order):
     //   1. Backend: ship POST /api/e2e/publish-event (sketched in

@@ -26,8 +26,12 @@ class DirectionsService {
     required LatLng destination,
   }) async {
     final apiKey = dotenv.env['MAPS_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_google_maps_api_key_here') {
-      debugPrint('[DirectionsService] MAPS_API_KEY not configured, falling back to straight line');
+    if (apiKey == null ||
+        apiKey.isEmpty ||
+        apiKey == 'your_google_maps_api_key_here') {
+      debugPrint(
+        '[DirectionsService] MAPS_API_KEY not configured, falling back to straight line',
+      );
       return _straightLine(origin, destination);
     }
 
@@ -69,9 +73,7 @@ class DirectionsService {
       }
 
       final points = _decodePolyline(encodedPoints);
-      debugPrint(
-        '[DirectionsService] Route decoded: ${points.length} points',
-      );
+      debugPrint('[DirectionsService] Route decoded: ${points.length} points');
       return points;
     } on DioException catch (e) {
       debugPrint('[DirectionsService] DioException: $e');
@@ -87,8 +89,10 @@ class DirectionsService {
   // ---------------------------------------------------------------------------
 
   /// Straight-line fallback when Directions API is unavailable or not configured.
-  List<LatLng> _straightLine(LatLng origin, LatLng destination) =>
-      [origin, destination];
+  List<LatLng> _straightLine(LatLng origin, LatLng destination) => [
+    origin,
+    destination,
+  ];
 
   // ---------------------------------------------------------------------------
   // Google Polyline Decoder (RFC — no third-party dependency needed)

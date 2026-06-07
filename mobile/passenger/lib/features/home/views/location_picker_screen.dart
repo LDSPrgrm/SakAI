@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver, ServiceArea;
+import 'package:sakai_shared/sakai_shared.dart'
+    hide LatLng, NearbyDriver, ServiceArea;
 
-import '../../ride_history/models/ride_history_item.dart';
 import '../../ride_history/view_models/ride_history_list_view_model.dart';
 import '../../../app/providers.dart';
 import '../repositories/geocoding_service.dart';
@@ -88,10 +88,7 @@ const _kDefaultSuggestions = <SuggestedTransitPoint>[
 ///
 /// Returns a [RideLocation] via [Navigator.pop] or null on cancel.
 class LocationPickerScreen extends ConsumerStatefulWidget {
-  const LocationPickerScreen({
-    super.key,
-    required this.mode,
-  });
+  const LocationPickerScreen({super.key, required this.mode});
 
   final LocationSearchMode mode;
 
@@ -100,8 +97,7 @@ class LocationPickerScreen extends ConsumerStatefulWidget {
       _LocationPickerScreenState();
 }
 
-class _LocationPickerScreenState
-    extends ConsumerState<LocationPickerScreen>
+class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
     with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
@@ -161,7 +157,9 @@ class _LocationPickerScreenState
     setState(() => _isSearching = true);
     _debounce = Timer(const Duration(milliseconds: 380), () async {
       setState(() => _isLoading = true);
-      final results = await ref.read(geocodingServiceProvider).getSuggestions(value);
+      final results = await ref
+          .read(geocodingServiceProvider)
+          .getSuggestions(value);
       if (mounted) {
         setState(() {
           _autocompleteResults = results;
@@ -185,14 +183,12 @@ class _LocationPickerScreenState
   }
 
   Future<void> _confirmSuggested(SuggestedTransitPoint point) async {
-    final fullAddress = point.address.isEmpty ? point.name : '${point.name}, ${point.address}';
+    final fullAddress = point.address.isEmpty
+        ? point.name
+        : '${point.name}, ${point.address}';
     if (point.lat != null && point.lng != null) {
       Navigator.of(context).pop(
-        RideLocation(
-          lat: point.lat!,
-          lng: point.lng!,
-          address: fullAddress,
-        ),
+        RideLocation(lat: point.lat!, lng: point.lng!, address: fullAddress),
       );
       return;
     }
@@ -200,13 +196,15 @@ class _LocationPickerScreenState
   }
 
   void _openMapPinPicker() {
-    Navigator.of(context).push(
-      MaterialPageRoute<RideLocation>(
-        builder: (_) => _MapPinPickerScreen(mode: widget.mode),
-      ),
-    ).then((loc) {
-      if (loc != null && mounted) Navigator.of(context).pop(loc);
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<RideLocation>(
+            builder: (_) => _MapPinPickerScreen(mode: widget.mode),
+          ),
+        )
+        .then((loc) {
+          if (loc != null && mounted) Navigator.of(context).pop(loc);
+        });
   }
 
   // ─── UI ───────────────────────────────────────────────────────────────────
@@ -216,7 +214,7 @@ class _LocationPickerScreenState
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = widget.mode == LocationSearchMode.pickup
-        ? 'Select Pickup Station'
+        ? 'Select Pickup Location'
         : 'Select Destination';
 
     return FadeTransition(
@@ -230,7 +228,9 @@ class _LocationPickerScreenState
             if (_isLoading)
               LinearProgressIndicator(
                 color: const Color(0xFF00DC82),
-                backgroundColor: const Color(0xFF00DC82).withValues(alpha: 0.12),
+                backgroundColor: const Color(
+                  0xFF00DC82,
+                ).withValues(alpha: 0.12),
                 minHeight: 2,
               ),
             Expanded(
@@ -328,8 +328,11 @@ class _LocationPickerScreenState
             ),
             suffixIcon: hasText
                 ? IconButton(
-                    icon: Icon(Icons.close_rounded,
-                        size: 18, color: scheme.onSurfaceVariant),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       _onSearchChanged('');
@@ -341,8 +344,10 @@ class _LocationPickerScreenState
             enabledBorder: InputBorder.none,
             errorBorder: InputBorder.none,
             disabledBorder: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: 14,
+            ),
           ),
         ),
       ),
@@ -362,7 +367,9 @@ class _LocationPickerScreenState
       final recentPoints = <SuggestedTransitPoint>[];
 
       for (final item in recentItems) {
-        final addressStr = isPickup ? item.originAddress : item.destinationAddress;
+        final addressStr = isPickup
+            ? item.originAddress
+            : item.destinationAddress;
         if (addressStr.trim().isEmpty) continue;
         if (uniqueAddresses.add(addressStr)) {
           final commaIdx = addressStr.indexOf(',');
@@ -376,12 +383,14 @@ class _LocationPickerScreenState
             address = '';
           }
 
-          recentPoints.add(SuggestedTransitPoint(
-            name: name,
-            subtitle: isPickup ? 'Recent Pickup' : 'Recent Destination',
-            address: address,
-            type: TransitPointType.other,
-          ));
+          recentPoints.add(
+            SuggestedTransitPoint(
+              name: name,
+              subtitle: isPickup ? 'Recent Pickup' : 'Recent Destination',
+              address: address,
+              type: TransitPointType.other,
+            ),
+          );
 
           if (recentPoints.length >= 6) break;
         }
@@ -586,8 +595,11 @@ class _LocationPickerScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off_rounded,
-                size: 48, color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
+            Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 12),
             Text(
               'No results found',
@@ -724,7 +736,10 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
   Future<void> _resolveAddress(LatLng latLng) async {
     setState(() => _resolving = true);
     try {
-      final loc = await _geocodingService.reverseGeocode(latLng.latitude, latLng.longitude);
+      final loc = await _geocodingService.reverseGeocode(
+        latLng.latitude,
+        latLng.longitude,
+      );
       if (mounted) {
         setState(() {
           _resolvedAddress = loc.address;
@@ -734,7 +749,8 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _resolvedAddress = '${latLng.latitude.toStringAsFixed(5)}, ${latLng.longitude.toStringAsFixed(5)}';
+          _resolvedAddress =
+              '${latLng.latitude.toStringAsFixed(5)}, ${latLng.longitude.toStringAsFixed(5)}';
           _resolving = false;
         });
       }
@@ -763,7 +779,9 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Location permission denied. Enable it in Settings.'),
+              content: Text(
+                'Location permission denied. Enable it in Settings.',
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -861,7 +879,9 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: scheme.surface.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(12),
@@ -923,7 +943,9 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00DC82).withValues(alpha: 0.12),
+                            color: const Color(
+                              0xFF00DC82,
+                            ).withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -975,12 +997,12 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                     GestureDetector(
                       onTap: canConfirm
                           ? () => Navigator.of(context).pop(
-                                RideLocation(
-                                  lat: _pinnedLocation.latitude,
-                                  lng: _pinnedLocation.longitude,
-                                  address: _resolvedAddress!,
-                                ),
-                              )
+                              RideLocation(
+                                lat: _pinnedLocation.latitude,
+                                lng: _pinnedLocation.longitude,
+                                address: _resolvedAddress!,
+                              ),
+                            )
                           : null,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -993,8 +1015,9 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                           boxShadow: canConfirm
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF00DC82)
-                                        .withValues(alpha: 0.3),
+                                    color: const Color(
+                                      0xFF00DC82,
+                                    ).withValues(alpha: 0.3),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -1067,10 +1090,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CurrentLocationButton extends StatelessWidget {
-  const _CurrentLocationButton({
-    required this.loading,
-    required this.onTap,
-  });
+  const _CurrentLocationButton({required this.loading, required this.onTap});
 
   final bool loading;
   final VoidCallback onTap;
@@ -1125,8 +1145,6 @@ Future<RideLocation?> showLocationPicker(
   required LocationSearchMode mode,
 }) {
   return Navigator.of(context).push<RideLocation>(
-    MaterialPageRoute(
-      builder: (_) => LocationPickerScreen(mode: mode),
-    ),
+    MaterialPageRoute(builder: (_) => LocationPickerScreen(mode: mode)),
   );
 }

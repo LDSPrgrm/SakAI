@@ -9,7 +9,8 @@ class DestinationFlowSheet extends ConsumerStatefulWidget {
   const DestinationFlowSheet({super.key});
 
   @override
-  ConsumerState<DestinationFlowSheet> createState() => _DestinationFlowSheetState();
+  ConsumerState<DestinationFlowSheet> createState() =>
+      _DestinationFlowSheetState();
 }
 
 class _DestinationFlowSheetState extends ConsumerState<DestinationFlowSheet> {
@@ -30,7 +31,7 @@ class _DestinationFlowSheetState extends ConsumerState<DestinationFlowSheet> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -57,30 +58,38 @@ class _DestinationFlowSheetState extends ConsumerState<DestinationFlowSheet> {
   }
 
   Widget _buildHandle(ColorScheme scheme) => Container(
-        width: 40,
-        height: 5,
-        decoration: BoxDecoration(
-          color: scheme.outlineVariant,
-          borderRadius: BorderRadius.circular(2.5),
-        ),
-      );
+    width: 40,
+    height: 5,
+    decoration: BoxDecoration(
+      color: scheme.outlineVariant,
+      borderRadius: BorderRadius.circular(2.5),
+    ),
+  );
 
-  Widget _buildInput(String label, TextEditingController controller, ColorScheme scheme, bool isPickup) => TextField(
-        controller: controller,
-        autofocus: !isPickup,
-        decoration: InputDecoration(
-          hintText: label,
-          prefixIcon: Icon(isPickup ? Icons.my_location : Icons.place),
-          filled: true,
-          fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-        ),
-        onTap: () => setState(() => _editingPickup = isPickup),
-        onChanged: (val) {
-          setState(() => _isSearching = val.isNotEmpty);
-          if (val.isNotEmpty) _fetchSuggestions(val);
-        },
-      );
+  Widget _buildInput(
+    String label,
+    TextEditingController controller,
+    ColorScheme scheme,
+    bool isPickup,
+  ) => TextField(
+    controller: controller,
+    autofocus: !isPickup,
+    decoration: InputDecoration(
+      hintText: label,
+      prefixIcon: Icon(isPickup ? Icons.my_location : Icons.place),
+      filled: true,
+      fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: BorderSide.none,
+      ),
+    ),
+    onTap: () => setState(() => _editingPickup = isPickup),
+    onChanged: (val) {
+      setState(() => _isSearching = val.isNotEmpty);
+      if (val.isNotEmpty) _fetchSuggestions(val);
+    },
+  );
 
   void _fetchSuggestions(String query) async {
     final results = await GeocodingService().getSuggestions(query);
@@ -88,26 +97,35 @@ class _DestinationFlowSheetState extends ConsumerState<DestinationFlowSheet> {
   }
 
   Widget _buildSuggestions(ColorScheme scheme) => Expanded(
-        child: ListView.builder(
-          itemCount: _suggestions.length,
-          itemBuilder: (context, i) => ListTile(
-            leading: const Icon(Icons.place),
-            title: Text(_suggestions[i]),
-            onTap: () {
-              if (_editingPickup) {
-                ref.read(homeNotifierProvider.notifier).setPickupFromString(_suggestions[i]);
-              } else {
-                ref.read(homeNotifierProvider.notifier).setDestinationFromString(_suggestions[i]);
-              }
-              Navigator.pop(context);
-            },
-          ),
-        ),
-      );
+    child: ListView.builder(
+      itemCount: _suggestions.length,
+      itemBuilder: (context, i) => ListTile(
+        leading: const Icon(Icons.place),
+        title: Text(_suggestions[i]),
+        onTap: () {
+          if (_editingPickup) {
+            ref
+                .read(homeNotifierProvider.notifier)
+                .setPickupFromString(_suggestions[i]);
+          } else {
+            ref
+                .read(homeNotifierProvider.notifier)
+                .setDestinationFromString(_suggestions[i]);
+          }
+          Navigator.pop(context);
+        },
+      ),
+    ),
+  );
 
-  Widget _buildShortcut(BuildContext context, IconData icon, String label, ColorScheme scheme) => ListTile(
-        leading: Icon(icon, color: scheme.primary),
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        onTap: () => SakaiSnackBar.info(context, 'Selected $label'),
-      );
+  Widget _buildShortcut(
+    BuildContext context,
+    IconData icon,
+    String label,
+    ColorScheme scheme,
+  ) => ListTile(
+    leading: Icon(icon, color: scheme.primary),
+    title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+    onTap: () => SakaiSnackBar.info(context, 'Selected $label'),
+  );
 }

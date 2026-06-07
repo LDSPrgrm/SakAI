@@ -25,25 +25,33 @@ void main() {
   group('PaymentMethodRepositoryImpl.getPaymentMethods', () {
     test('successfully fetches payment methods', () async {
       final now = DateTime.now();
-      final mockApiResponse = PaymentMethodListResponse((b) => b
-        ..data.addAll([
-          PaymentMethodDetails((m) => m
-            ..id = 'pm-1'
-            ..type = PaymentMethodType.card
-            ..isDefault = true
-            ..createdAt = now
-            ..card = CardDetails((c) => c
-              ..brand = 'visa'
-              ..last4 = '1234'
-              ..expiryMonth = 12
-              ..expiryYear = 2026).toBuilder()),
-        ]));
+      final mockApiResponse = PaymentMethodListResponse(
+        (b) => b
+          ..data.addAll([
+            PaymentMethodDetails(
+              (m) => m
+                ..id = 'pm-1'
+                ..type = PaymentMethodType.card
+                ..isDefault = true
+                ..createdAt = now
+                ..card = CardDetails(
+                  (c) => c
+                    ..brand = 'visa'
+                    ..last4 = '1234'
+                    ..expiryMonth = 12
+                    ..expiryYear = 2026,
+                ).toBuilder(),
+            ),
+          ]),
+      );
 
-      when(mockUsersApi.paymentMethodsList()).thenAnswer((_) async => Response(
-            data: mockApiResponse,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.paymentMethodsList()).thenAnswer(
+        (_) async => Response(
+          data: mockApiResponse,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       final methods = await repository.getPaymentMethods();
 
@@ -54,35 +62,50 @@ void main() {
     });
 
     test('returns empty list when response data is null', () async {
-      when(mockUsersApi.paymentMethodsList()).thenAnswer((_) async => Response(
-            data: null,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.paymentMethodsList()).thenAnswer(
+        (_) async => Response(
+          data: null,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       final methods = await repository.getPaymentMethods();
       expect(methods, isEmpty);
     });
 
     test('maps PAYMENT_METHOD_NOT_FOUND error code correctly', () async {
-      final errorResponse = ErrorResponse((b) => b
-        ..code = ErrorCode.PAYMENT_METHOD_NOT_FOUND
-        ..message = 'Not found');
+      final errorResponse = ErrorResponse(
+        (b) => b
+          ..code = ErrorCode.PAYMENT_METHOD_NOT_FOUND
+          ..message = 'Not found',
+      );
 
-      final serializedError = standardSerializers.serializeWith(ErrorResponse.serializer, errorResponse);
+      final serializedError = standardSerializers.serializeWith(
+        ErrorResponse.serializer,
+        errorResponse,
+      );
 
-      when(mockUsersApi.paymentMethodsList()).thenThrow(DioException(
-        requestOptions: RequestOptions(path: ''),
-        response: Response(
-          data: serializedError,
-          statusCode: 404,
+      when(mockUsersApi.paymentMethodsList()).thenThrow(
+        DioException(
           requestOptions: RequestOptions(path: ''),
+          response: Response(
+            data: serializedError,
+            statusCode: 404,
+            requestOptions: RequestOptions(path: ''),
+          ),
         ),
-      ));
+      );
 
       expect(
         () => repository.getPaymentMethods(),
-        throwsA(isA<PaymentMethodNotFoundError>().having((e) => e.message, 'message', 'Not found')),
+        throwsA(
+          isA<PaymentMethodNotFoundError>().having(
+            (e) => e.message,
+            'message',
+            'Not found',
+          ),
+        ),
       );
     });
   });
@@ -90,23 +113,32 @@ void main() {
   group('PaymentMethodRepositoryImpl.addPaymentMethod', () {
     test('successfully adds a card payment method', () async {
       final now = DateTime.now();
-      final mockApiResponse = PaymentMethodDetails((m) => m
-        ..id = 'pm-new'
-        ..type = PaymentMethodType.card
-        ..isDefault = false
-        ..createdAt = now
-        ..card = CardDetails((c) => c
-          ..brand = 'mastercard'
-          ..last4 = '5678'
-          ..expiryMonth = 10
-          ..expiryYear = 2027).toBuilder());
+      final mockApiResponse = PaymentMethodDetails(
+        (m) => m
+          ..id = 'pm-new'
+          ..type = PaymentMethodType.card
+          ..isDefault = false
+          ..createdAt = now
+          ..card = CardDetails(
+            (c) => c
+              ..brand = 'mastercard'
+              ..last4 = '5678'
+              ..expiryMonth = 10
+              ..expiryYear = 2027,
+          ).toBuilder(),
+      );
 
-      when(mockUsersApi.paymentMethodsAdd(addPaymentMethodRequest: anyNamed('addPaymentMethodRequest')))
-          .thenAnswer((_) async => Response(
-                data: mockApiResponse,
-                statusCode: 201,
-                requestOptions: RequestOptions(path: ''),
-              ));
+      when(
+        mockUsersApi.paymentMethodsAdd(
+          addPaymentMethodRequest: anyNamed('addPaymentMethodRequest'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: mockApiResponse,
+          statusCode: 201,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       final method = await repository.addPaymentMethod(
         type: DomainPaymentMethodType.card,
@@ -122,18 +154,23 @@ void main() {
   group('PaymentMethodRepositoryImpl.setAsDefault', () {
     test('successfully sets payment method as default', () async {
       final now = DateTime.now();
-      final mockApiResponse = PaymentMethodDetails((m) => m
-        ..id = 'pm-1'
-        ..type = PaymentMethodType.cash
-        ..isDefault = true
-        ..createdAt = now);
+      final mockApiResponse = PaymentMethodDetails(
+        (m) => m
+          ..id = 'pm-1'
+          ..type = PaymentMethodType.cash
+          ..isDefault = true
+          ..createdAt = now,
+      );
 
-      when(mockUsersApi.paymentMethodsSetDefault(paymentMethodId: 'pm-1'))
-          .thenAnswer((_) async => Response(
-                data: mockApiResponse,
-                statusCode: 200,
-                requestOptions: RequestOptions(path: ''),
-              ));
+      when(
+        mockUsersApi.paymentMethodsSetDefault(paymentMethodId: 'pm-1'),
+      ).thenAnswer(
+        (_) async => Response(
+          data: mockApiResponse,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       final method = await repository.setAsDefault('pm-1');
       expect(method.isDefault, isTrue);

@@ -24,14 +24,13 @@ class HomeLocationChip extends ConsumerWidget {
       label: 'Current location: $label',
       child: Container(
         constraints: const BoxConstraints(maxWidth: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.spaceMd,
-          vertical: 10,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: tokens.spaceMd, vertical: 10),
         decoration: BoxDecoration(
           color: scheme.surface,
           borderRadius: BorderRadius.circular(tokens.radiusFull),
-          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.5),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),

@@ -24,31 +24,37 @@ void main() {
   group('ProfileRepositoryImpl.getProfile', () {
     test('successfully fetches profile and rating', () async {
       final now = DateTime.now();
-      final user = $UserProfile((b) => b
-        ..id = 'u-1'
-        ..email = 'rider@test.com'
-        ..name = 'Test Rider'
-        ..role = UserProfileRoleEnum.passenger
-        ..createdAt = now
+      final user = $UserProfile(
+        (b) => b
+          ..id = 'u-1'
+          ..email = 'rider@test.com'
+          ..name = 'Test Rider'
+          ..role = UserProfileRoleEnum.passenger
+          ..createdAt = now,
       );
 
-      final ratingResponse = UserRatingResponse((b) => b
-        ..userId = 'u-1'
-        ..averageRating = 4.8
-        ..ratingCount = 10
+      final ratingResponse = UserRatingResponse(
+        (b) => b
+          ..userId = 'u-1'
+          ..averageRating = 4.8
+          ..ratingCount = 10,
       );
 
-      when(mockUsersApi.usersGetMe()).thenAnswer((_) async => Response(
-            data: user,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.usersGetMe()).thenAnswer(
+        (_) async => Response(
+          data: user,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
-      when(mockUsersApi.getUserRating(userId: 'u-1')).thenAnswer((_) async => Response(
-            data: ratingResponse,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.getUserRating(userId: 'u-1')).thenAnswer(
+        (_) async => Response(
+          data: ratingResponse,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       final profile = await repository.getProfile();
 
@@ -61,23 +67,26 @@ void main() {
 
     test('returns profile even if rating fetch fails', () async {
       final now = DateTime.now();
-      final user = $UserProfile((b) => b
-        ..id = 'u-1'
-        ..email = 'rider@test.com'
-        ..name = 'Test Rider'
-        ..role = UserProfileRoleEnum.passenger
-        ..createdAt = now
+      final user = $UserProfile(
+        (b) => b
+          ..id = 'u-1'
+          ..email = 'rider@test.com'
+          ..name = 'Test Rider'
+          ..role = UserProfileRoleEnum.passenger
+          ..createdAt = now,
       );
 
-      when(mockUsersApi.usersGetMe()).thenAnswer((_) async => Response(
-            data: user,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.usersGetMe()).thenAnswer(
+        (_) async => Response(
+          data: user,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
-      when(mockUsersApi.getUserRating(userId: 'u-1')).thenThrow(DioException(
-        requestOptions: RequestOptions(path: ''),
-      ));
+      when(
+        mockUsersApi.getUserRating(userId: 'u-1'),
+      ).thenThrow(DioException(requestOptions: RequestOptions(path: '')));
 
       final profile = await repository.getProfile();
 
@@ -86,15 +95,23 @@ void main() {
     });
 
     test('throws ProfileNotFoundError when response data is null', () async {
-      when(mockUsersApi.usersGetMe()).thenAnswer((_) async => Response(
-            data: null,
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          ));
+      when(mockUsersApi.usersGetMe()).thenAnswer(
+        (_) async => Response(
+          data: null,
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
       expect(
         () => repository.getProfile(),
-        throwsA(isA<ProfileNotFoundError>().having((e) => e.message, 'message', 'Profile not found')),
+        throwsA(
+          isA<ProfileNotFoundError>().having(
+            (e) => e.message,
+            'message',
+            'Profile not found',
+          ),
+        ),
       );
     });
   });

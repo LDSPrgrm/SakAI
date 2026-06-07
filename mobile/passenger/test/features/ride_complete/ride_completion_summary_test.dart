@@ -12,10 +12,7 @@ void main() {
       ..createdAt = now,
   );
 
-  RideResponse buildRide({
-    required DateTime now,
-    double? fare,
-  }) {
+  RideResponse buildRide({required DateTime now, double? fare}) {
     return $RideResponse(
       (b) => b
         ..id = 'ride-1'
@@ -23,8 +20,20 @@ void main() {
         ..originAddress = 'Origin'
         ..destinationAddress = 'Dest'
         ..fare = fare
-        ..origin.replace(LatLng((l) => l..lat = 0..lng = 0))
-        ..destination.replace(LatLng((l) => l..lat = 1..lng = 1))
+        ..origin.replace(
+          LatLng(
+            (l) => l
+              ..lat = 0
+              ..lng = 0,
+          ),
+        )
+        ..destination.replace(
+          LatLng(
+            (l) => l
+              ..lat = 1
+              ..lng = 1,
+          ),
+        )
         ..passenger = mockPassenger(now)
         ..createdAt = now
         ..updatedAt = now,

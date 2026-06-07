@@ -151,10 +151,7 @@ class RideCompleteNotifier extends Notifier<RideCompleteState> {
       return true;
     } on RatingException catch (e) {
       state = state.copyWith(
-        rating: state.rating.copyWith(
-          submitting: false,
-          error: e.userMessage,
-        ),
+        rating: state.rating.copyWith(submitting: false, error: e.userMessage),
       );
       return false;
     } catch (_) {

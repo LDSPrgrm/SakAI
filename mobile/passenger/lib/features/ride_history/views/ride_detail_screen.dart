@@ -97,9 +97,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       case RideDetailStatus.error:
         return SakaiErrorState(
           message: state.error ?? 'Failed to load ride details',
-          onRetry: () => ref
-              .read(rideDetailNotifierProvider(widget.rideId))
-              .loadDetail(),
+          onRetry: () =>
+              ref.read(rideDetailNotifierProvider(widget.rideId)).loadDetail(),
         );
 
       case RideDetailStatus.success:
@@ -162,12 +161,17 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface.withOpacity(0.85),
                         borderRadius: BorderRadius.circular(tokens.radiusFull),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+                          color: theme.colorScheme.outlineVariant.withOpacity(
+                            0.3,
+                          ),
                         ),
                       ),
                       child: Row(
@@ -191,7 +195,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     ),
                   ),
                 ),
-              )
+              ),
             ],
           ),
 
@@ -331,7 +335,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 child: Container(
                   padding: EdgeInsets.all(tokens.spaceMd),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withOpacity(0.2),
                     borderRadius: BorderRadius.circular(tokens.radiusLg),
                     border: Border.all(
                       color: theme.colorScheme.outlineVariant.withOpacity(0.3),
@@ -378,7 +383,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             Container(
               padding: EdgeInsets.all(tokens.spaceMd),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(
+                  0.1,
+                ),
                 borderRadius: BorderRadius.circular(tokens.radiusMd),
                 border: Border.all(
                   color: theme.colorScheme.outlineVariant.withOpacity(0.2),
@@ -386,7 +393,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.notes, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.notes,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -420,7 +431,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 children: [
                   Text(
                     'Your Driver',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 10),
@@ -430,8 +443,14 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     children: [
                       CircleAvatar(
                         radius: 26,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                        child: Icon(Icons.person, size: 28, color: theme.colorScheme.primary),
+                        backgroundColor: theme.colorScheme.primary.withOpacity(
+                          0.12,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          size: 28,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                       SizedBox(width: tokens.spaceMd),
                       Expanded(
@@ -440,7 +459,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                           children: [
                             Text(
                               detail.driverName!,
-                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             if (detail.driverVehicle != null) ...[
                               const SizedBox(height: 4),
@@ -477,7 +498,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               children: [
                 Text(
                   'Trip Timeline',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -491,7 +514,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     .map((entry) {
                       final idx = entry.key;
                       final e = entry.value;
-                      final timelineItems = detail.timelineLabels.entries.where((el) => el.value != null).toList();
+                      final timelineItems = detail.timelineLabels.entries
+                          .where((el) => el.value != null)
+                          .toList();
                       final isLast = idx == timelineItems.length - 1;
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -507,7 +532,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: theme.colorScheme.primary.withOpacity(0.4),
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.4),
                                       blurRadius: 4,
                                       spreadRadius: 1,
                                     ),
@@ -518,7 +544,9 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                                 Container(
                                   width: 2,
                                   height: 38,
-                                  color: theme.colorScheme.primary.withOpacity(0.3),
+                                  color: theme.colorScheme.primary.withOpacity(
+                                    0.3,
+                                  ),
                                 ),
                             ],
                           ),
@@ -626,8 +654,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Color _statusColor(RideStatus status, BuildContext context) {
-    if (status == RideStatus.completed) return SakaiSemanticColors.of(context).success;
-    if (status == RideStatus.cancelled) return SakaiSemanticColors.of(context).danger;
+    if (status == RideStatus.completed)
+      return SakaiSemanticColors.of(context).success;
+    if (status == RideStatus.cancelled)
+      return SakaiSemanticColors.of(context).danger;
     return SakaiSemanticColors.of(context).accentBlue;
   }
 
@@ -655,4 +685,3 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 }
-

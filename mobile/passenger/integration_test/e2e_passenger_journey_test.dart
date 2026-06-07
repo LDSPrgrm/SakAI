@@ -24,7 +24,9 @@ void main() {
 
   const apiUrl = String.fromEnvironment('E2E_API_URL');
 
-  testWidgets('passenger journey: request → complete → receipt', (tester) async {
+  testWidgets('passenger journey: request → complete → receipt', (
+    tester,
+  ) async {
     if (apiUrl.isEmpty) {
       markTestSkipped(
         'E2E_API_URL not set. Pass --dart-define E2E_API_URL=https://staging '
@@ -41,8 +43,11 @@ void main() {
     // Detailed step asserts are intentionally TODO — implementation depends on
     // the staging seed contract finalizing. Each step should assert via UI
     // text and provider snapshots; see plan §Phase 5.
-    expect(find.byType(Scaffold), findsWidgets,
-        reason: 'app shell renders against staging');
+    expect(
+      find.byType(Scaffold),
+      findsWidgets,
+      reason: 'app shell renders against staging',
+    );
 
     // TODO(e2e): drive the full journey once the seed endpoint is in place.
   });

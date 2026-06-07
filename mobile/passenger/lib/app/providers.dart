@@ -55,7 +55,9 @@ final walletRepositoryProvider = Provider<WalletRepository>((ref) {
 });
 
 /// Notifications repository — backend endpoints pending; throws BackendUnavailableException.
-final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((
+  ref,
+) {
   return NotificationsRepositoryImpl(ref.watch(apiClientProvider));
 });
 
@@ -233,11 +235,13 @@ final activeRideStateStreamProvider =
 /// consumers — that REST contract still exists but always returns null
 /// (no backend endpoint). Anything that needs to know whether an
 /// incident is open for the active ride should watch this.
-final passengerSosStateProvider =
-    Provider.family<SosUiState, String>((ref, rideId) {
-      final async = ref.watch(activeRideStateStreamProvider(rideId));
-      return async.maybeWhen(
-        data: (state) => state.sos,
-        orElse: () => SosUiState.idle,
-      );
-    });
+final passengerSosStateProvider = Provider.family<SosUiState, String>((
+  ref,
+  rideId,
+) {
+  final async = ref.watch(activeRideStateStreamProvider(rideId));
+  return async.maybeWhen(
+    data: (state) => state.sos,
+    orElse: () => SosUiState.idle,
+  );
+});

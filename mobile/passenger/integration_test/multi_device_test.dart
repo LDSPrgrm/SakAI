@@ -31,8 +31,9 @@ void main() {
   const apiUrl = String.fromEnvironment('E2E_API_URL');
   const seedToken = String.fromEnvironment('E2E_SEED_TOKEN');
 
-  testWidgets('multi-device: event fires once per device, ack from either',
-      (tester) async {
+  testWidgets('multi-device: event fires once per device, ack from either', (
+    tester,
+  ) async {
     if (apiUrl.isEmpty || seedToken.isEmpty) {
       markTestSkipped(
         'E2E_API_URL and E2E_SEED_TOKEN required. Backend must expose the '
@@ -61,13 +62,19 @@ void main() {
 
     await tester.pumpWidget(phone.buildApp());
     await tester.pumpAndSettle();
-    expect(find.byType(Scaffold), findsWidgets,
-        reason: 'phone shell mounts first');
+    expect(
+      find.byType(Scaffold),
+      findsWidgets,
+      reason: 'phone shell mounts first',
+    );
 
     await tester.pumpWidget(tablet.buildApp());
     await tester.pumpAndSettle();
-    expect(find.byType(Scaffold), findsWidgets,
-        reason: 'tablet shell mounts second');
+    expect(
+      find.byType(Scaffold),
+      findsWidgets,
+      reason: 'tablet shell mounts second',
+    );
 
     // OUTSTANDING (P9 multi-device live execution):
     //   1. Backend: ship POST /api/e2e/publish-event AND expose

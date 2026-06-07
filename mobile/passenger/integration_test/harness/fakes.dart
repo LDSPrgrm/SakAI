@@ -191,10 +191,8 @@ class FakeHomeNotifier extends HomeNotifier {
   ];
 
   @override
-  HomeState build() => const HomeState(
-        status: HomeStatus.idle,
-        pickup: _fakePickup,
-      );
+  HomeState build() =>
+      const HomeState(status: HomeStatus.idle, pickup: _fakePickup);
 
   @override
   Future<void> initLocation() async {

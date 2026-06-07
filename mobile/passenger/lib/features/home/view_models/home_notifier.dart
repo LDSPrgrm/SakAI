@@ -382,6 +382,16 @@ class HomeNotifier extends Notifier<HomeState> {
     );
   }
 
+  void clearPickup() {
+    debugPrint('[P-Home] clearPickup');
+    state = state.copyWith(
+      clearPickup: true,
+      status: state.destination != null
+          ? HomeStatus.destinationSet
+          : HomeStatus.idle,
+    );
+  }
+
   void clearDestination() {
     debugPrint('[P-Home] clearDestination');
     _stopNearbyDriverPolling();

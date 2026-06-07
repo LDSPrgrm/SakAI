@@ -43,7 +43,8 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
     return const NotificationsState(loading: true);
   }
 
-  NotificationsRepository get _repo => ref.read(notificationsRepositoryProvider);
+  NotificationsRepository get _repo =>
+      ref.read(notificationsRepositoryProvider);
 
   Future<void> load() async {
     state = state.copyWith(loading: true, errorMessage: null);

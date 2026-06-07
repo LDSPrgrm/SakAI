@@ -22,7 +22,10 @@ Widget routedScaffold({
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => Scaffold(body: child)),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => Scaffold(body: child),
+      ),
       ...extraRoutes,
     ],
   );

@@ -71,8 +71,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
 
   Future<void> _onShareReceiptPdf() async {
     try {
-      final receipt =
-          ref.read(receiptNotifierProvider).receipt;
+      final receipt = ref.read(receiptNotifierProvider).receipt;
       if (receipt == null) return;
       final bytes = await ReceiptPdfBuilder.build(receipt);
       final tempDir = await getTemporaryDirectory();
@@ -446,7 +445,9 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: receipt.paymentStatus == 'completed'
-                        ? SakaiSemanticColors.of(context).success.withValues(alpha: 0.1)
+                        ? SakaiSemanticColors.of(
+                            context,
+                          ).success.withValues(alpha: 0.1)
                         : theme.colorScheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(tokens.radiusSm),
                   ),

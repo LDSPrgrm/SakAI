@@ -26,13 +26,15 @@ class SosLocationPusher {
     required Dio dio,
     Duration interval = const Duration(seconds: 5),
     Future<Position> Function()? positionProvider,
-  })  : _dio = dio,
-        _interval = interval,
-        _positionProvider = positionProvider ??
-            (() => Geolocator.getCurrentPosition(
-                  locationSettings:
-                      const LocationSettings(accuracy: LocationAccuracy.high),
-                ));
+  }) : _dio = dio,
+       _interval = interval,
+       _positionProvider =
+           positionProvider ??
+           (() => Geolocator.getCurrentPosition(
+             locationSettings: const LocationSettings(
+               accuracy: LocationAccuracy.high,
+             ),
+           ));
 
   final Dio _dio;
   final Duration _interval;
@@ -76,7 +78,9 @@ class SosLocationPusher {
         '/api/incidents/$_incidentId/location',
         data: {'lat': pos.latitude, 'lng': pos.longitude},
         options: Options(
-          headers: _bearer == null ? null : {'Authorization': 'Bearer $_bearer'},
+          headers: _bearer == null
+              ? null
+              : {'Authorization': 'Bearer $_bearer'},
           // Short timeout so a stalled push doesn't starve the next tick.
           sendTimeout: const Duration(seconds: 4),
           receiveTimeout: const Duration(seconds: 4),

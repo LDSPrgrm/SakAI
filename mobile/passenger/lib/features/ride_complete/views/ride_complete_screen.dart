@@ -551,10 +551,7 @@ class _RatingSelectorSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.star_rate_rounded,
-                color: warning,
-              ),
+              Icon(Icons.star_rate_rounded, color: warning),
               SizedBox(width: tokens.spaceSm),
               Text(
                 'Rate Your Driver',
