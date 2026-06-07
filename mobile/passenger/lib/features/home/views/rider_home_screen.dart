@@ -18,7 +18,6 @@ import '../view_models/home_notifier.dart';
 import 'widgets/booking_map.dart';
 import 'widgets/home_dashboard_header.dart';
 import 'widgets/home_promo_carousel.dart';
-import 'widgets/home_recent_trips.dart';
 import 'widgets/home_services_grid.dart';
 import 'widgets/home_wallet_cards.dart';
 
@@ -177,7 +176,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               bottom: tokens.spaceMd,
             ),
             child: HomeServicesGrid(
-              onTransportTap: () => _openLocationSearch(),
+              onTransportTap: () => _initiateTransportFlow(),
             ),
           ),
         ),
@@ -213,20 +212,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           ),
         ),
 
-        // Recent trips
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SakaiSectionHeader(
-                title: 'Recent trips',
-                trailingLabel: 'See all',
-                onTrailingTap: () => context.push(Routes.rideHistory),
-              ),
-              const HomeRecentTrips(),
-            ],
-          ),
-        ),
 
         // Bottom padding for floating nav bar
         const SliverToBoxAdapter(child: SizedBox(height: 120)),
@@ -478,17 +463,38 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  Future<void> _initiateTransportFlow() async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    await notifier.initLocation();
+
+    // 1. Pickup
+    final pickup = await showLocationPicker(context, mode: LocationSearchMode.pickup);
+    if (pickup == null || !mounted) return;
+    notifier.setPickup(pickup);
+
+    // 2. Destination
+    final destination = await showLocationPicker(context, mode: LocationSearchMode.destination);
+    if (destination == null || !mounted) return;
+    
+    notifier.setDestination(destination);
+    setState(() {});
+  }
+
   Future<void> _openLocationSearch({bool isPickup = false}) async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    await notifier.initLocation();
+
     final mode = isPickup
         ? LocationSearchMode.pickup
         : LocationSearchMode.destination;
     final result = await showLocationPicker(context, mode: mode);
     if (result == null || !mounted) return;
-    final notifier = ref.read(homeNotifierProvider.notifier);
+    
     if (isPickup) {
       notifier.setPickup(result);
     } else {
       notifier.setDestination(result);
+      setState(() {});
     }
   }
 
@@ -561,21 +567,13 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
             _NavItem(
               2,
               Icons.account_balance_wallet_rounded,
-              'Payment',
+              'Wallet',
               _currentIndex,
               _onNavTap,
               scheme,
             ),
             _NavItem(
               3,
-              Icons.chat_bubble_rounded,
-              'Inbox',
-              _currentIndex,
-              _onNavTap,
-              scheme,
-            ),
-            _NavItem(
-              4,
               Icons.person_rounded,
               'Account',
               _currentIndex,

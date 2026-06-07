@@ -11,14 +11,31 @@ import '../destination_sheet.dart';
 
 /// Premium Grab-style green header with branding, greeting, notifications,
 /// and the "Where to?" search bar that triggers the location picker.
-class HomeDashboardHeader extends ConsumerWidget {
+class HomeDashboardHeader extends ConsumerStatefulWidget {
   const HomeDashboardHeader({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(profileNotifierProvider).profile;
+  ConsumerState<HomeDashboardHeader> createState() => _HomeDashboardHeaderState();
+}
+
+class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final notifier = ref.read(profileNotifierProvider.notifier);
+      if (ref.read(profileNotifierProvider).status == ProfileStatus.initial) {
+        notifier.loadProfile();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(profileNotifierProvider);
+    final profile = state.profile;
     final unread = ref.watch(notificationsNotifierProvider).unreadCount;
-    final firstName = profile?.name.split(' ').first ?? 'there';
+    final firstName = profile?.name.split(' ').first;
 
     return Container(
       decoration: const BoxDecoration(
@@ -39,11 +56,19 @@ class HomeDashboardHeader extends ConsumerWidget {
               Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.25),
+                      border: Border.all(color: Colors.amber, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amber.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -51,11 +76,11 @@ class HomeDashboardHeader extends ConsumerWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                        fontSize: 14,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,16 +93,17 @@ class HomeDashboardHeader extends ConsumerWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          firstName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
+                        if (firstName != null)
+                          Text(
+                            firstName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       ],
                     ),
                   ),

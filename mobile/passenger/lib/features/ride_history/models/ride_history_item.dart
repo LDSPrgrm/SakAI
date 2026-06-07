@@ -47,8 +47,11 @@ class RideHistoryItem {
 
   String get displayFare {
     final amount = fare ?? estimatedFare;
-    return '\$${amount.toStringAsFixed(2)}';
+    return 'PHP ${amount.toStringAsFixed(2)}';
   }
+
+
+
 
   String get statusLabel {
     final name = status.name;
