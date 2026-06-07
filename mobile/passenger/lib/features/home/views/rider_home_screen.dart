@@ -133,7 +133,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (isBookingActive) {
-          ref.read(homeNotifierProvider.notifier).clearDestination();
+          ref.read(homeNotifierProvider.notifier).clearDestination(exit: true);
         }
       },
       child: Scaffold(
@@ -257,7 +257,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 scheme: scheme,
                 onBack: () {
                   HapticFeedback.lightImpact();
-                  ref.read(homeNotifierProvider.notifier).clearDestination();
+                  ref.read(homeNotifierProvider.notifier).clearDestination(exit: true);
                 },
               ),
             ),

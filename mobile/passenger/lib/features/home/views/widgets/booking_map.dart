@@ -82,30 +82,37 @@ class _BookingMapState extends ConsumerState<BookingMap> {
     final pickup = homeState.pickup;
     final destination = homeState.destination;
 
-    if (pickup == null || destination == null) {
+    if (pickup == null) {
       return const SizedBox.shrink();
     }
 
     final pickupLatLng = LatLng(pickup.lat, pickup.lng);
-    final destLatLng = LatLng(destination.lat, destination.lng);
-    final routeKey = _RouteKey(
-      pickupLat: pickup.lat,
-      pickupLng: pickup.lng,
-      destLat: destination.lat,
-      destLng: destination.lng,
-    );
+    final destLatLng = destination != null ? LatLng(destination.lat, destination.lng) : null;
+    final routeKey = destination != null
+        ? _RouteKey(
+            pickupLat: pickup.lat,
+            pickupLng: pickup.lng,
+            destLat: destination.lat,
+            destLng: destination.lng,
+          )
+        : null;
 
-    final routeAsync = ref.watch(routePolylineProvider(routeKey));
+    final routeAsync = routeKey != null ? ref.watch(routePolylineProvider(routeKey)) : null;
 
-    final routePoints = routeAsync.maybeWhen(
-      data: (pts) => pts,
-      orElse: () => [pickupLatLng, destLatLng],
-    );
+    final routePoints = routeAsync?.maybeWhen(
+          data: (pts) => pts,
+          orElse: () => destLatLng != null ? [pickupLatLng, destLatLng] : <LatLng>[],
+        ) ??
+        const <LatLng>[];
 
-    // Animate camera whenever route key changes (new destination selected).
+    // Animate camera whenever route key changes (new destination selected or cleared).
     if (_controller != null && routeKey != _lastKey) {
       _lastKey = routeKey;
-      _animateCameraToFitRoute(routePoints, pickupLatLng, destLatLng);
+      if (routeKey != null && destLatLng != null) {
+        _animateCameraToFitRoute(routePoints, pickupLatLng, destLatLng);
+      } else {
+        _controller!.animateCamera(CameraUpdate.newLatLngZoom(pickupLatLng, 15));
+      }
     }
 
     final markers = _buildMarkers(
@@ -117,16 +124,22 @@ class _BookingMapState extends ConsumerState<BookingMap> {
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(
-        target: LatLng(
-          (pickup.lat + destination.lat) / 2,
-          (pickup.lng + destination.lng) / 2,
-        ),
-        zoom: 13,
+        target: destination != null
+            ? LatLng(
+                (pickup.lat + destination.lat) / 2,
+                (pickup.lng + destination.lng) / 2,
+              )
+            : pickupLatLng,
+        zoom: destination != null ? 13 : 15,
       ),
       onMapCreated: (controller) {
         _controller = controller;
         _lastKey = routeKey;
-        _animateCameraToFitRoute(routePoints, pickupLatLng, destLatLng);
+        if (routeKey != null && destLatLng != null) {
+          _animateCameraToFitRoute(routePoints, pickupLatLng, destLatLng);
+        } else {
+          _controller!.animateCamera(CameraUpdate.newLatLngZoom(pickupLatLng, 15));
+        }
       },
       markers: markers,
       polylines: polylines,
@@ -176,7 +189,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
 
   Set<Marker> _buildMarkers(
     LatLng pickup,
-    LatLng dest,
+    LatLng? dest,
     List<NearbyDriver> drivers,
   ) {
     final markers = <Marker>{
@@ -188,15 +201,20 @@ class _BookingMapState extends ConsumerState<BookingMap> {
         infoWindow: const InfoWindow(title: 'Pickup'),
         zIndex: 2,
       ),
-      // Destination — red pin (default)
-      Marker(
-        markerId: const MarkerId('destination'),
-        position: dest,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: const InfoWindow(title: 'Destination'),
-        zIndex: 2,
-      ),
     };
+
+    if (dest != null) {
+      // Destination — red pin (default)
+      markers.add(
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: dest,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: const InfoWindow(title: 'Destination'),
+          zIndex: 2,
+        ),
+      );
+    }
 
     // Nearby driver markers — subtle cyan dots
     for (final driver in drivers) {

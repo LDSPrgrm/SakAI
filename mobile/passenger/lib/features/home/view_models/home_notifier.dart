@@ -392,16 +392,27 @@ class HomeNotifier extends Notifier<HomeState> {
     );
   }
 
-  void clearDestination() {
-    debugPrint('[P-Home] clearDestination');
-    _stopNearbyDriverPolling();
-    state = state.copyWith(
-      status: HomeStatus.idle,
-      clearDestination: true,
-      clearSelectedRideType: true,
-      nearbyDrivers: [],
-      rideTypeOptions: [],
-    );
+  void clearDestination({bool exit = false}) {
+    debugPrint('[P-Home] clearDestination (exit: $exit)');
+    if (exit) {
+      _stopNearbyDriverPolling();
+      state = state.copyWith(
+        status: HomeStatus.idle,
+        clearDestination: true,
+        clearSelectedRideType: true,
+        nearbyDrivers: [],
+        rideTypeOptions: [],
+      );
+    } else {
+      state = state.copyWith(
+        clearDestination: true,
+        clearSelectedRideType: true,
+        status: state.pickup != null
+            ? HomeStatus.destinationSet
+            : HomeStatus.idle,
+        rideTypeOptions: [],
+      );
+    }
   }
 
   /// Sets the selected ride type.
