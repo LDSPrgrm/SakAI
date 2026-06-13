@@ -366,19 +366,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Authenticated static-file serving for driver KYC docs + future uploads.
 		if d.FilesRoot != "" {
 			files := handler.NewFilesHandler(d.FilesRoot)
-			authed.GET("/files/*filepath", func(c *gin.Context) {
-				// Drivers may only read their own prefix (enforced in canReadKey).
-				if domain.UserRole(c.GetString("role")) == domain.RoleDriver {
-					files.Serve(c)
-					return
-				}
-				// Admin-tier roles must hold kyc_verification:read (M1).
-				requirePerm("kyc_verification", "read")(c)
-				if c.IsAborted() {
-					return
-				}
-				files.Serve(c)
-			})
+			authed.GET("/files/*filepath", handler.FilesRouteHandler(files, requirePerm))
 		}
 	}
 

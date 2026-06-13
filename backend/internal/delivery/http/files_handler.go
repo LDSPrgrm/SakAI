@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/sakai/backend/internal/delivery/http/middleware"
 	"github.com/sakai/backend/internal/domain"
 )
 
@@ -31,6 +32,24 @@ func NewFilesHandler(root string) *FilesHandler {
 		abs = root
 	}
 	return &FilesHandler{Root: abs}
+}
+
+// FilesRouteHandler gates /files/*filepath. Drivers pass straight to Serve
+// (canReadKey enforces the owns-prefix rule); every other authenticated role
+// must clear kyc_verification:read first (M1). Shared by router.New and tests
+// so both exercise one definition (no drift).
+func FilesRouteHandler(files *FilesHandler, requirePerm middleware.PermissionGuardFactory) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if domain.UserRole(c.GetString("role")) == domain.RoleDriver {
+			files.Serve(c)
+			return
+		}
+		requirePerm("kyc_verification", "read")(c)
+		if c.IsAborted() {
+			return
+		}
+		files.Serve(c)
+	}
 }
 
 // Serve handles GET /files/*filepath. Gin captures the wildcard with a leading

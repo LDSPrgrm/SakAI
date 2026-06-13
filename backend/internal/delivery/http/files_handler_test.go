@@ -3,6 +3,8 @@ package handler_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +18,12 @@ import (
 	"github.com/sakai/backend/internal/domain/mocks"
 )
 
-// mountFiles builds the /files/*filepath route exactly as router.go does (see
-// the wrapper in router.New): a DRIVER goes straight to files.Serve (which
-// enforces the owns-prefix rule in canReadKey), while any admin-tier role must
-// first clear requirePerm("kyc_verification","read") before Serve runs. The
-// production router and this test share the same wrapper logic so the test
-// proves the real authorization path (M1).
+// mountFiles builds the /files/*filepath route by calling the SAME shared
+// handler.FilesRouteHandler that router.New uses, so the test exercises the
+// exact production authorization path (M1) with no duplicated wrapper that
+// could silently drift: a DRIVER goes straight to files.Serve (which enforces
+// the owns-prefix rule in canReadKey), while any admin-tier role must first
+// clear requirePerm("kyc_verification","read") before Serve runs.
 func mountFiles(role domain.UserRole, userID uuid.UUID, requirePerm middleware.PermissionGuardFactory, filesRoot string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -31,17 +33,7 @@ func mountFiles(role domain.UserRole, userID uuid.UUID, requirePerm middleware.P
 		c.Next()
 	})
 	files := handler.NewFilesHandler(filesRoot)
-	r.GET("/files/*filepath", func(c *gin.Context) {
-		if domain.UserRole(c.GetString("role")) == domain.RoleDriver {
-			files.Serve(c)
-			return
-		}
-		requirePerm("kyc_verification", "read")(c)
-		if c.IsAborted() {
-			return
-		}
-		files.Serve(c)
-	})
+	r.GET("/files/*filepath", handler.FilesRouteHandler(files, requirePerm))
 	return r
 }
 
@@ -69,8 +61,9 @@ func TestFiles_AdminWithoutKycPerm_Forbidden(t *testing.T) {
 }
 
 // An admin-tier role that DOES hold kyc_verification:read must clear the route
-// guard. With an empty temp dir the subsequent Serve 404s on the missing file;
-// the point is that the perm gate did NOT 403 (it let the request through).
+// guard AND have Serve deliver the file. We seed the target under the files
+// root so a 200 proves both that the perm gate let the request through (not a
+// 403) and that Serve resolved and served the real file (not a 404).
 func TestFiles_AdminWithKycPerm_Allowed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -87,9 +80,22 @@ func TestFiles_AdminWithKycPerm_Allowed(t *testing.T) {
 			{PermissionKey: "kyc_verification", Read: true},
 		}}, nil)
 
-	r := mountFiles(domain.RoleOperations, userID, requirePerm, t.TempDir())
+	// Serve maps URL /files/documents/x/license/a.jpg to
+	// <FilesRoot>/documents/x/license/a.jpg (strip /files prefix + leading
+	// slash, join under root). Seed that exact path so the gate-passing read
+	// returns a real 200.
+	dir := t.TempDir()
+	target := filepath.Join(dir, "documents", "x", "license", "a.jpg")
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	r := mountFiles(domain.RoleOperations, userID, requirePerm, dir)
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/files/documents/x/license/a.jpg", nil)
 	r.ServeHTTP(w, req)
-	assert.NotEqual(t, http.StatusForbidden, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
