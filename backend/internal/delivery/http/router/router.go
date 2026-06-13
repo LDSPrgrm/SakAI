@@ -66,9 +66,19 @@ type Deps struct {
 	AppVersion string
 }
 
+// configureTrustedProxies disables X-Forwarded-For trust so ClientIP() resolves
+// to the real RemoteAddr. If the service runs behind a known proxy/LB, replace
+// nil with that proxy's CIDRs (see SECURITY_REMEDIATION_RUNBOOK.md).
+func configureTrustedProxies(r *gin.Engine) error {
+	return r.SetTrustedProxies(nil)
+}
+
 // New builds and returns the configured Gin engine.
 func New(jwtSecret string, d Deps) *gin.Engine {
 	r := gin.New()
+	if err := configureTrustedProxies(r); err != nil {
+		panic(err)
+	}
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
