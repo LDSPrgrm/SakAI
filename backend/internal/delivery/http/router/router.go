@@ -135,8 +135,8 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Rate-limited: brute-force and credential-stuffing protection (10 rpm / IP).
 		auth.POST("/register", middleware.RateLimit, d.Auth.Register)
 		auth.POST("/login", middleware.RateLimit, d.Auth.Login)
-		auth.POST("/refresh", d.Auth.Refresh)
-		auth.POST("/logout", d.Auth.Logout)
+		auth.POST("/refresh", middleware.RateLimit, d.Auth.Refresh)
+		auth.POST("/logout", middleware.RateLimit, d.Auth.Logout)
 	}
 
 	// ── Authenticated routes ──────────────────────────────────────────────────
