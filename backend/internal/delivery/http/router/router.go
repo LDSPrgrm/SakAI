@@ -56,6 +56,9 @@ type Deps struct {
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
 	PerfSampler middleware.PerfSampler
+	// AllowedOrigins is the explicit CORS allowlist. Only these origins are
+	// echoed in Access-Control-Allow-Origin. Sourced from ALLOWED_ORIGINS env.
+	AllowedOrigins []string
 	// FilesRoot is the absolute directory that backs authenticated
 	// GET /files/* responses. Empty disables the route.
 	FilesRoot string
@@ -83,7 +86,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	r.Use(gin.Logger())
 
 	// Apply Global Security Middlewares
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORS(d.AllowedOrigins))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
 	// CorrID must run before any handler that publishes WS events so the

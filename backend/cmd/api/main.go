@@ -186,6 +186,7 @@ func main() {
 		WS:             ws.NewHandler(hub),
 		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo, dispatcher),
 		PerfSampler:    systemRepo,
+		AllowedOrigins: cfg.AllowedOrigins,
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
 		RoleUC:         roleUC,

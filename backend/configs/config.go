@@ -4,6 +4,7 @@ package configs
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -40,6 +41,11 @@ type Config struct {
 
 	// Regional
 	Currency string
+
+	// CORS — comma-separated list of allowed browser origins for CORS / WS.
+	// Reflects ONLY these origins in Access-Control-Allow-Origin.
+	// Empty means no origin is allowed (correct for non-browser API consumers).
+	AllowedOrigins []string
 
 	// E2E (integration test harness). When true, the /api/e2e/* routes are
 	// mounted; they let the staging integration tests seed deterministic
@@ -79,6 +85,7 @@ func Load() *Config {
 		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
 		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/api/files"),
 		Currency:                getEnv("CURRENCY", "USD"),
+		AllowedOrigins:          splitAndTrim(getEnv("ALLOWED_ORIGINS", "")),
 		E2EEnabled:              getEnv("E2E_ENABLED", "false") == "true",
 		E2ESeedToken:            getEnv("E2E_SEED_TOKEN", ""),
 	}
@@ -105,6 +112,22 @@ func validateJWTSecret(secret, appEnv string) {
 	if weak[secret] || len(secret) < 32 {
 		panic("JWT_SECRET must be a strong (>=32 char, non-default) secret in non-development environments")
 	}
+}
+
+// splitAndTrim splits a comma-separated string and trims whitespace from each
+// element, skipping empty entries. Returns nil for an empty input string.
+func splitAndTrim(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := parts[:0]
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 func getEnv(key, fallback string) string {
