@@ -151,6 +151,7 @@ func main() {
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
+	ws.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	// In a real clustered setup, workerCtx is cancelled on shutdown causing Run to gracefully exit.
 	workerCtx, workerCancel := context.WithCancel(context.Background())
