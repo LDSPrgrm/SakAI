@@ -38,19 +38,26 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 	}
 }
 
-// extractToken gets the JWT from Authorization header or query parameter (for WebSocket).
+// isWSUpgrade reports whether the request path is the WebSocket upgrade endpoint.
+// Query-parameter tokens are only permitted on this path (M4).
+func isWSUpgrade(path string) bool {
+	return strings.HasSuffix(path, "/ws")
+}
+
+// extractToken gets the JWT from Authorization header or, exclusively for the
+// WebSocket upgrade path, a query parameter.
 func extractToken(c *gin.Context) string {
-	// First try Authorization header.
+	// First try Authorization header (all routes).
 	header := c.GetHeader("Authorization")
 	if strings.HasPrefix(header, "Bearer ") {
 		return strings.TrimPrefix(header, "Bearer ")
 	}
-	// Fallback to query parameter (used by WebSocket connections).
-	if t := c.Query("token"); t != "" {
-		if strings.HasPrefix(t, "Bearer ") {
+	// Fallback to query parameter — ONLY for the WebSocket upgrade (M4).
+	// Query strings leak into access logs, proxy logs, history and Referer.
+	if isWSUpgrade(c.Request.URL.Path) {
+		if t := c.Query("token"); t != "" {
 			return strings.TrimPrefix(t, "Bearer ")
 		}
-		return t
 	}
 	return ""
 }
