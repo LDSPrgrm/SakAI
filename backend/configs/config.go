@@ -73,7 +73,7 @@ func Load() *Config {
 	cfg := &Config{
 		Port:                    getEnv("PORT", "8080"),
 		AppVersion:              getEnv("APP_VERSION", "1.0.0"),
-		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=disable"),
+		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=require"),
 		MigrationsDir:           getEnv("MIGRATIONS_DIR", "../migrations"),
 		RedisURL:                getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		JWTSecret:               getEnv("JWT_SECRET", "change-me-in-production"),
