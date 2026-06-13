@@ -83,13 +83,28 @@ func Load() *Config {
 		E2ESeedToken:            getEnv("E2E_SEED_TOKEN", ""),
 	}
 
-	// Security: refuse to start with the default JWT secret outside of local dev.
-	// A leaked or guessable secret allows any client to forge valid JWTs.
-	if cfg.JWTSecret == "change-me-in-production" && getEnv("APP_ENV", "development") != "development" {
-		panic("JWT_SECRET must be set to a strong secret value in non-development environments")
-	}
+	// Security: fail closed on weak/default JWT secrets outside local dev.
+	// Note the empty-string default for APP_ENV: an unset APP_ENV must NOT
+	// silence the guard (that was the original bypass).
+	validateJWTSecret(cfg.JWTSecret, getEnv("APP_ENV", ""))
 
 	return cfg
+}
+
+// validateJWTSecret fails closed: in any non-development environment it panics
+// when the secret is a known weak/default value or shorter than 32 chars.
+// An unset APP_ENV (empty string) is treated as non-development.
+func validateJWTSecret(secret, appEnv string) {
+	if appEnv == "development" {
+		return
+	}
+	weak := map[string]bool{
+		"change-me-in-production":                           true,
+		"change-me-in-production-use-a-long-random-string": true,
+	}
+	if weak[secret] || len(secret) < 32 {
+		panic("JWT_SECRET must be a strong (>=32 char, non-default) secret in non-development environments")
+	}
 }
 
 func getEnv(key, fallback string) string {
