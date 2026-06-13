@@ -39,7 +39,6 @@ func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, stat
 
 func (uc *driverUseCase) UpdateLocation(ctx context.Context, driverID uuid.UUID, loc domain.DriverLocation) error {
 	// Location updates are accepted only when driver is online.
-	log.Printf("[DRIVER_UC] UpdateLocation: driverID=%s, loc=(%.5f, %.5f)", driverID, loc.Lat, loc.Lng)
 	driver, err := uc.driverRepo.GetByUserID(ctx, driverID)
 	if err != nil {
 		log.Printf("[DRIVER_UC] GetByUserID error: %v", err)

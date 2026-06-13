@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -109,8 +108,6 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		ORDER BY ST_Distance(location, ST_SetSRID(ST_MakePoint($2, $1), 4326))
 		LIMIT 1`
 
-	log.Printf("[DRIVER_REPO] FindNearbyOnline: origin=(%.5f, %.5f), radius=%.0fm", origin.Lat, origin.Lng, radiusMeters)
-
 	rows, err := r.db.Query(ctx, q, origin.Lat, origin.Lng, radiusMeters)
 	if err != nil {
 		return nil, err
@@ -126,10 +123,6 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		}
 		d.Location = &domain.DriverLocation{LatLng: domain.LatLng{Lat: lat, Lng: lng}}
 		drivers = append(drivers, d)
-		log.Printf("[DRIVER_REPO] Found driver: userID=%s, loc=(%.5f, %.5f)", d.UserID, lat, lng)
-	}
-	if len(drivers) == 0 {
-		log.Printf("[DRIVER_REPO] No online drivers found near (%.5f, %.5f)", origin.Lat, origin.Lng)
 	}
 	return drivers, rows.Err()
 }
@@ -199,6 +192,5 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		}
 		results = append(results, nd)
 	}
-	log.Printf("[DRIVER_REPO] FindNearbyOnlineByType: lat=%.5f lng=%.5f radius=%.0f type=%s → found %d drivers", lat, lng, radiusM, rideType, len(results))
 	return results, rows.Err()
 }
