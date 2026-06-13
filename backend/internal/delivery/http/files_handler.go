@@ -93,7 +93,10 @@ func canReadKey(role any, userID uuid.UUID, key string) bool {
 		return false
 	default:
 		// superadmin / operations / finance / support — KYC review flows need
-		// read access to driver docs.
+		// read access to driver docs. Authorization for these admin-tier roles
+		// is enforced at the route via requirePerm("kyc_verification","read")
+		// (M1), so by the time we reach here the perm gate has already passed.
+		// We therefore allow the read; the route guard is the source of truth.
 		return true
 	}
 }
