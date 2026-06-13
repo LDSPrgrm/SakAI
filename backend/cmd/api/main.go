@@ -163,7 +163,7 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo).WithSosPrefsRepo(postgres.NewSosPrefsRepo(pool)),
 		Admin:          handler.NewAdminHandler(adminUC, auditUC, dispatcher, rideRepo),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),

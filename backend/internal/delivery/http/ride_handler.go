@@ -27,6 +27,7 @@ type RideHandler struct {
 	driverRepo      domain.DriverRepository
 	paymentRepo     domain.RidePaymentRepository
 	incidentRepo    domain.IncidentRepository
+	sosPrefsRepo    domain.SosPrefsRepository
 	upsert          ws.Dispatcher
 }
 
@@ -40,6 +41,14 @@ func NewRideHandler(uc domain.RideUseCase, userRideUC usecase.UserRideUseCase, u
 // don't exercise SOS location streaming) don't have to change shape.
 func (h *RideHandler) WithIncidentRepo(repo domain.IncidentRepository) *RideHandler {
 	h.incidentRepo = repo
+	return h
+}
+
+// WithSosPrefsRepo wires the SOS opt-in store used to enforce live-location
+// consent on the incident-location endpoint. Optional — when nil the endpoint
+// rejects pings (fail closed).
+func (h *RideHandler) WithSosPrefsRepo(repo domain.SosPrefsRepository) *RideHandler {
+	h.sosPrefsRepo = repo
 	return h
 }
 
@@ -586,6 +595,22 @@ func (h *RideHandler) AppendIncidentLocation(c *gin.Context) {
 	userID := c.MustGet("userID").(uuid.UUID)
 	if userID != incident.RiderID && userID != incident.DriverID {
 		c.JSON(http.StatusForbidden, gin.H{"code": "NOT_PARTICIPANT", "message": "only ride participants may stream incident location"})
+		return
+	}
+
+	// Privacy: enforce live-location opt-in server-side (SOS). Opt-in defaults
+	// to false; an opted-out participant cannot stream coordinates.
+	if h.sosPrefsRepo == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "FEATURE_DISABLED", "message": "live-location opt-in store not configured"})
+		return
+	}
+	optIn, err := h.sosPrefsRepo.GetLiveLocationOptIn(ctx, userID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	if !optIn {
+		c.JSON(http.StatusForbidden, gin.H{"code": "LIVE_LOCATION_OPT_OUT", "message": "live location sharing is disabled for this user"})
 		return
 	}
 
