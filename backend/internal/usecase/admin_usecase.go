@@ -85,6 +85,11 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 		}
 	}
 
+	// Superadmin must never be provisioned through the admin API (H2).
+	if role == domain.RoleSuperadmin {
+		return nil, errors.New("superadmin provisioning is out-of-band only")
+	}
+
 	// 2. Check if email exists
 	if _, err := uc.userRepo.GetByEmail(ctx, email); !errors.Is(err, domain.ErrNotFound) {
 		if err == nil {
