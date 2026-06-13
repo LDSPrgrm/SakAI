@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -63,8 +64,14 @@ func (uc *PaymentProcessingUsecase) ChargeRide(ctx context.Context, passengerID 
 	if ride.PassengerID != passengerID {
 		return domain.ErrForbidden
 	}
-	// Idempotency: if a payment already exists, do not charge again (M2).
-	if existing, err := uc.paymentRepo.GetByRideID(ctx, rideID); err == nil && existing != nil {
+	// Idempotency (M2): if a payment already exists, do not charge again.
+	// Fail closed — an unexpected lookup error must NOT fall through to a
+	// second charge (double-charge risk on crash-recovery).
+	existing, err := uc.paymentRepo.GetByRideID(ctx, rideID)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return fmt.Errorf("checking existing payment: %w", err)
+	}
+	if existing != nil {
 		return nil
 	}
 
