@@ -46,6 +46,9 @@ func TestPaymentProcessingUsecase_ChargeRide_Success(t *testing.T) {
 		EstimatedFare: &rideAmount,
 	}, nil)
 
+	// Idempotency check: no prior payment exists for this ride.
+	paymentRepo.EXPECT().GetByRideID(gomock.Any(), rideID).Return(nil, domain.ErrNotFound)
+
 	// Stripe client expects the charge call
 	stripeClient.EXPECT().ChargePaymentMethod(gomock.Any(), paymentMethodID, rideAmount, "USD", idemKey).Return(&domain.StripeChargeResult{
 		Success:  true,
@@ -108,6 +111,9 @@ func TestPaymentProcessingUsecase_ChargeRide_Failure(t *testing.T) {
 		EstimatedFare: &rideAmount,
 	}, nil)
 
+	// Idempotency check: no prior payment exists for this ride.
+	paymentRepo.EXPECT().GetByRideID(gomock.Any(), rideID).Return(nil, domain.ErrNotFound)
+
 	stripeClient.EXPECT().ChargePaymentMethod(gomock.Any(), paymentMethodID, rideAmount, "USD", idemKey).Return(&domain.StripeChargeResult{
 		Success:       false,
 		FailureReason: failureReason,
@@ -154,5 +160,61 @@ func TestPaymentProcessingUsecase_ChargeRide_RideNotFound(t *testing.T) {
 	err := uc.ChargeRide(context.Background(), passengerID, rideID, paymentMethodID, idemKey)
 	if err == nil {
 		t.Fatal("expected error for missing ride, got nil")
+	}
+}
+
+func TestChargeRide_RejectsForeignPassenger(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	owner := uuid.New()
+	attacker := uuid.New()
+	rideID := uuid.New()
+	fare := 250.0
+
+	paymentRepo := mocks.NewMockRidePaymentRepository(ctrl)
+	stripeClient := mocks.NewMockStripeClient(ctrl)
+	rideRepo := mocks.NewMockRideRepository(ctrl)
+	userRepo := mocks.NewMockUserRepository(ctrl)
+	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
+	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, &mockTxManager{})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), rideID).Return(&domain.Ride{
+		ID: rideID, PassengerID: owner, EstimatedFare: &fare,
+	}, nil)
+	// Must NOT charge a foreign passenger's ride.
+	stripeClient.EXPECT().ChargePaymentMethod(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	err := uc.ChargeRide(context.Background(), attacker, rideID, "pm_x", "idem-x")
+	if err != domain.ErrForbidden {
+		t.Fatalf("got %v; want ErrForbidden", err)
+	}
+}
+
+func TestChargeRide_ShortCircuitsWhenAlreadyPaid(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	passenger := uuid.New()
+	rideID := uuid.New()
+	fare := 250.0
+
+	paymentRepo := mocks.NewMockRidePaymentRepository(ctrl)
+	stripeClient := mocks.NewMockStripeClient(ctrl)
+	rideRepo := mocks.NewMockRideRepository(ctrl)
+	userRepo := mocks.NewMockUserRepository(ctrl)
+	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
+	uc := usecase.NewPaymentProcessingUsecase(paymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, &mockTxManager{})
+
+	rideRepo.EXPECT().GetByID(gomock.Any(), rideID).Return(&domain.Ride{
+		ID: rideID, PassengerID: passenger, EstimatedFare: &fare,
+	}, nil)
+	paymentRepo.EXPECT().GetByRideID(gomock.Any(), rideID).
+		Return(&domain.Payment{ID: uuid.New(), RideID: rideID}, nil)
+	// Already paid → no second charge.
+	stripeClient.EXPECT().ChargePaymentMethod(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	if err := uc.ChargeRide(context.Background(), passenger, rideID, "pm_x", "idem-x"); err != nil {
+		t.Fatalf("expected idempotent no-op, got %v", err)
 	}
 }

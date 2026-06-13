@@ -59,6 +59,15 @@ func (uc *PaymentProcessingUsecase) ChargeRide(ctx context.Context, passengerID 
 		return err
 	}
 
+	// Ownership: only the ride's passenger may pay for it (M2).
+	if ride.PassengerID != passengerID {
+		return domain.ErrForbidden
+	}
+	// Idempotency: if a payment already exists, do not charge again (M2).
+	if existing, err := uc.paymentRepo.GetByRideID(ctx, rideID); err == nil && existing != nil {
+		return nil
+	}
+
 	// Determine charge amount.
 	amount := ride.EstimatedFare
 	if ride.ActualFare != nil && *ride.ActualFare > 0 {
