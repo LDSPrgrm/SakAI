@@ -323,6 +323,22 @@ func TestDeactivateAdmin_Success(t *testing.T) {
 	}
 }
 
+func TestResetUserPassword_RejectsSuperadminTarget(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	actor := uuid.New()
+	target := uuid.New()
+	m.user.EXPECT().GetByID(gomock.Any(), target).
+		Return(adminFixture(target, domain.RoleSuperadmin), nil)
+
+	err := uc.ResetUserPassword(context.Background(), actor, target, "newpassword123")
+	if err == nil {
+		t.Fatal("expected reset of a superadmin password to be rejected")
+	}
+}
+
 func TestResetUserPassword_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

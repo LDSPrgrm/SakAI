@@ -273,6 +273,12 @@ func (uc *adminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID
 		return err
 	}
 
+	// A lower-privileged admin must not be able to reset a superadmin's
+	// password and then log in as superadmin (H3).
+	if target.Role == domain.RoleSuperadmin {
+		return errors.New("cannot reset a superadmin password here")
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
