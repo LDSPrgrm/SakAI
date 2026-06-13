@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -543,14 +545,36 @@ func (uc *auditUseCase) ExportLogs(ctx context.Context, query domain.AuditQuery)
 	if err != nil {
 		return nil, err
 	}
-	var buf []byte
-	header := "id,timestamp,actor_id,actor_name,action,resource_type,resource_id,reason\n"
-	buf = append(buf, []byte(header)...)
+
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	_ = w.Write([]string{"id", "timestamp", "actor_id", "actor_name", "action", "resource_type", "resource_id", "reason"})
 	for _, e := range logs {
-		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s\n",
-			e.ID, e.Timestamp.Format(time.RFC3339),
-			e.ActorID, e.ActorName, e.Action, e.ResourceType, e.ResourceID, e.Reason)
-		buf = append(buf, []byte(row)...)
+		_ = w.Write([]string{
+			e.ID.String(),
+			e.Timestamp.Format(time.RFC3339),
+			e.ActorID.String(),
+			escapeAuditCell(e.ActorName),
+			e.Action,
+			e.ResourceType,
+			e.ResourceID,
+			escapeAuditCell(e.Reason),
+		})
 	}
-	return buf, nil
+	w.Flush()
+	return buf.Bytes(), nil
+}
+
+// escapeAuditCell neutralizes spreadsheet formula injection: a leading
+// = + - @ would be interpreted as a formula in Excel/Sheets, so we prefix
+// such cells with a single quote to force plain-text rendering.
+func escapeAuditCell(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@':
+		return "'" + s
+	}
+	return s
 }
