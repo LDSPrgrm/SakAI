@@ -558,9 +558,11 @@ func (h *RideHandler) TriggerSOS(c *gin.Context) {
 //   - Driver app: same flow gated on a driver-side liveLocation toggle (not
 //     yet built — driver settings screen would need to mirror the passenger
 //     SOS & Safety screen for parity).
-//   - Both apps must NEVER push before opt-in; the privacy invariant is
-//     enforced UI-side, not server-side, so a bug in the toggle gate would
-//     leak coordinates.
+//   - Both apps should still avoid pushing before opt-in, but the privacy
+//     invariant is now ALSO enforced server-side below: this endpoint reads
+//     sos_safety_prefs.live_location_opt_in (default false, fail closed) and
+//     rejects pings from an opted-out participant, so a client-side toggle bug
+//     can no longer leak coordinates.
 func (h *RideHandler) AppendIncidentLocation(c *gin.Context) {
 	if h.incidentRepo == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"code": "FEATURE_DISABLED", "message": "incident location streaming not configured"})
