@@ -3,7 +3,6 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -18,12 +17,7 @@ import (
 func Auth(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
-		log.Printf("[DEBUG-AUTH] URL path: %s", c.Request.URL.Path)
-		log.Printf("[DEBUG-AUTH] Header Auth: %s", c.GetHeader("Authorization"))
-		log.Printf("[DEBUG-AUTH] Query token: %s", c.Query("token"))
-		log.Printf("[DEBUG-AUTH] Extracted token length: %d", len(tokenStr))
 		if tokenStr == "" {
-			log.Printf("[DEBUG-AUTH] Aborted: Token is empty")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "missing or malformed Authorization header",
@@ -32,7 +26,6 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		}
 		claims, err := pkgjwt.ValidateAccessToken(tokenStr, jwtSecret)
 		if err != nil {
-			log.Printf("[DEBUG-AUTH] ValidateAccessToken failed: %v", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "invalid or expired access token",
@@ -41,7 +34,6 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		}
 		c.Set("userID", claims.UserID)
 		c.Set("role", string(claims.Role))
-		log.Printf("[auth] userID=%s role=%s", claims.UserID.String(), string(claims.Role))
 		c.Next()
 	}
 }
@@ -72,7 +64,6 @@ func RequireRole(roles ...domain.UserRole) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		role := domain.UserRole(c.MustGet("role").(string))
-		log.Printf("[auth] role check user_role=%s allowed=%v", role, roles)
 		if _, ok := allowed[role]; !ok {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"code":    "FORBIDDEN",
