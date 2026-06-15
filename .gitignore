@@ -7,3 +7,7 @@ QWEN.md
 # Manual scratch / auth captures
 token.json
 test_date.dart
+
+# Secrets — never commit env files
+.env
+**/.env

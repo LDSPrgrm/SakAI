@@ -107,7 +107,7 @@ func (r *reportRepo) ExportReport(ctx context.Context, reportType string, from, 
 	for _, row := range data {
 		rec := make([]string, len(headers))
 		for i, h := range headers {
-			rec[i] = fmt.Sprintf("%v", row[h])
+			rec[i] = escapeCSVCell(fmt.Sprintf("%v", row[h]))
 		}
 		if err := w.Write(rec); err != nil {
 			return nil, err
@@ -115,6 +115,19 @@ func (r *reportRepo) ExportReport(ctx context.Context, reportType string, from, 
 	}
 	w.Flush()
 	return buf.Bytes(), nil
+}
+
+// escapeCSVCell neutralizes spreadsheet formula injection: a leading
+// = + - @ would execute in Excel/Sheets, so prefix such cells with a quote.
+func escapeCSVCell(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@':
+		return "'" + s
+	}
+	return s
 }
 
 // --- queries -----------------------------------------------------------------

@@ -255,6 +255,35 @@ func TestUpdateAdminStatus_EmailUnchanged_NoCollisionCheck(t *testing.T) {
 	}
 }
 
+func TestCreateAdmin_RejectsSuperadminByEnum(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, _ := newAdminUC(ctrl)
+
+	_, err := uc.CreateAdmin(context.Background(), uuid.New(),
+		"Evil", "evil@sakai.ph", "password123", domain.RoleSuperadmin, nil)
+	if err == nil {
+		t.Fatal("expected superadmin creation to be rejected")
+	}
+}
+
+func TestCreateAdmin_RejectsSuperadminByRoleID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	roleID := uuid.New()
+	m.role.EXPECT().GetRoleByID(gomock.Any(), roleID).Return(&domain.Role{
+		ID: roleID, Name: "super_admin",
+	}, nil)
+
+	_, err := uc.CreateAdmin(context.Background(), uuid.New(),
+		"Evil", "evil@sakai.ph", "password123", domain.RoleAdmin, &roleID)
+	if err == nil {
+		t.Fatal("expected superadmin-by-role_id creation to be rejected")
+	}
+}
+
 func TestCreateAdmin_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -291,6 +320,22 @@ func TestDeactivateAdmin_Success(t *testing.T) {
 	err := uc.DeactivateAdmin(context.Background(), actor, target)
 	if err != nil {
 		t.Fatalf("expected success, got %v", err)
+	}
+}
+
+func TestResetUserPassword_RejectsSuperadminTarget(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	uc, m := newAdminUC(ctrl)
+
+	actor := uuid.New()
+	target := uuid.New()
+	m.user.EXPECT().GetByID(gomock.Any(), target).
+		Return(adminFixture(target, domain.RoleSuperadmin), nil)
+
+	err := uc.ResetUserPassword(context.Background(), actor, target, "newpassword123")
+	if err == nil {
+		t.Fatal("expected reset of a superadmin password to be rejected")
 	}
 }
 

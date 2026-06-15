@@ -151,6 +151,7 @@ func main() {
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
+	ws.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	// In a real clustered setup, workerCtx is cancelled on shutdown causing Run to gracefully exit.
 	workerCtx, workerCancel := context.WithCancel(context.Background())
@@ -163,7 +164,7 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo).WithSosPrefsRepo(postgres.NewSosPrefsRepo(pool)),
 		Admin:          handler.NewAdminHandler(adminUC, auditUC, dispatcher, rideRepo),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),
@@ -186,6 +187,7 @@ func main() {
 		WS:             ws.NewHandler(hub),
 		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo, dispatcher),
 		PerfSampler:    systemRepo,
+		AllowedOrigins: cfg.AllowedOrigins,
 		FilesRoot:      cfg.UploadDir,
 		AuthUC:         authUC,
 		RoleUC:         roleUC,

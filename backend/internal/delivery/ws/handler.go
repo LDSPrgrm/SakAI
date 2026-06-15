@@ -17,12 +17,30 @@ import (
 // first match against the client's Sec-WebSocket-Protocol list. v2-aware
 // clients propose "sakai-ws-v2" first; legacy clients send nothing and the
 // selected subprotocol on the resulting conn is the empty string.
+var allowedWSOrigins = map[string]bool{}
+
+// SetAllowedOrigins configures permitted WebSocket origins (call at startup).
+func SetAllowedOrigins(origins []string) {
+	m := make(map[string]bool, len(origins))
+	for _, o := range origins {
+		m[o] = true
+	}
+	allowedWSOrigins = m
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 4096,
 	Subprotocols:    []string{SubprotocolV2, SubprotocolV1},
-	// In production, restrict CheckOrigin to your app's domains.
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		// Same-origin / non-browser clients send no Origin → allow (auth still
+		// requires a valid ?token=). Cross-site browser origins must be listed.
+		if origin == "" {
+			return true
+		}
+		return allowedWSOrigins[origin]
+	},
 }
 
 // SnapshotProvider builds the current `ride.state_sync` payload for a user.

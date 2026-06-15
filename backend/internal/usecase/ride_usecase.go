@@ -45,7 +45,6 @@ func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, o
 		log.Printf("[RIDE] Error finding drivers: %v", err)
 		return nil, err
 	}
-	log.Printf("[RIDE] Found %d drivers near (%.5f, %.5f) within 5000m for ride_type=%s", len(drivers), origin.Lat, origin.Lng, rideType)
 	if len(drivers) == 0 {
 		return nil, domain.ErrNoDriversAvailable
 	}

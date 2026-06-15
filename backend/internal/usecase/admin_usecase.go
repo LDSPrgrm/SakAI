@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,6 +85,11 @@ func (uc *adminUseCase) CreateAdmin(ctx context.Context, actorID uuid.UUID, name
 			role != domain.RoleOperations && role != domain.RoleFinance && role != domain.RoleSupport {
 			return nil, errors.New("invalid admin role")
 		}
+	}
+
+	// Superadmin must never be provisioned through the admin API (H2).
+	if role == domain.RoleSuperadmin {
+		return nil, errors.New("superadmin provisioning is out-of-band only")
 	}
 
 	// 2. Check if email exists
@@ -266,6 +273,12 @@ func (uc *adminUseCase) ResetUserPassword(ctx context.Context, actorID, targetID
 	target, err := uc.userRepo.GetByID(ctx, targetID)
 	if err != nil {
 		return err
+	}
+
+	// A lower-privileged admin must not be able to reset a superadmin's
+	// password and then log in as superadmin (H3).
+	if target.Role == domain.RoleSuperadmin {
+		return errors.New("cannot reset a superadmin password here")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -532,14 +545,36 @@ func (uc *auditUseCase) ExportLogs(ctx context.Context, query domain.AuditQuery)
 	if err != nil {
 		return nil, err
 	}
-	var buf []byte
-	header := "id,timestamp,actor_id,actor_name,action,resource_type,resource_id,reason\n"
-	buf = append(buf, []byte(header)...)
+
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	_ = w.Write([]string{"id", "timestamp", "actor_id", "actor_name", "action", "resource_type", "resource_id", "reason"})
 	for _, e := range logs {
-		row := fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s\n",
-			e.ID, e.Timestamp.Format(time.RFC3339),
-			e.ActorID, e.ActorName, e.Action, e.ResourceType, e.ResourceID, e.Reason)
-		buf = append(buf, []byte(row)...)
+		_ = w.Write([]string{
+			e.ID.String(),
+			e.Timestamp.Format(time.RFC3339),
+			e.ActorID.String(),
+			escapeAuditCell(e.ActorName),
+			e.Action,
+			e.ResourceType,
+			e.ResourceID,
+			escapeAuditCell(e.Reason),
+		})
 	}
-	return buf, nil
+	w.Flush()
+	return buf.Bytes(), nil
+}
+
+// escapeAuditCell neutralizes spreadsheet formula injection: a leading
+// = + - @ would be interpreted as a formula in Excel/Sheets, so we prefix
+// such cells with a single quote to force plain-text rendering.
+func escapeAuditCell(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@':
+		return "'" + s
+	}
+	return s
 }

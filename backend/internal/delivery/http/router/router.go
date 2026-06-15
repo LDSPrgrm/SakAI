@@ -56,6 +56,9 @@ type Deps struct {
 	// PerfSampler receives per-request timing samples for the System Health
 	// dashboard. May be nil in tests — the middleware no-ops in that case.
 	PerfSampler middleware.PerfSampler
+	// AllowedOrigins is the explicit CORS allowlist. Only these origins are
+	// echoed in Access-Control-Allow-Origin. Sourced from ALLOWED_ORIGINS env.
+	AllowedOrigins []string
 	// FilesRoot is the absolute directory that backs authenticated
 	// GET /files/* responses. Empty disables the route.
 	FilesRoot string
@@ -66,14 +69,24 @@ type Deps struct {
 	AppVersion string
 }
 
+// configureTrustedProxies disables X-Forwarded-For trust so ClientIP() resolves
+// to the real RemoteAddr. If the service runs behind a known proxy/LB, replace
+// nil with that proxy's CIDRs (see SECURITY_REMEDIATION_RUNBOOK.md).
+func configureTrustedProxies(r *gin.Engine) error {
+	return r.SetTrustedProxies(nil)
+}
+
 // New builds and returns the configured Gin engine.
 func New(jwtSecret string, d Deps) *gin.Engine {
 	r := gin.New()
+	if err := configureTrustedProxies(r); err != nil {
+		panic(err)
+	}
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
 	// Apply Global Security Middlewares
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORS(d.AllowedOrigins))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MiB body size limit
 	r.Use(middleware.SecurityHeaders())
 	// CorrID must run before any handler that publishes WS events so the
@@ -122,8 +135,8 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Rate-limited: brute-force and credential-stuffing protection (10 rpm / IP).
 		auth.POST("/register", middleware.RateLimit, d.Auth.Register)
 		auth.POST("/login", middleware.RateLimit, d.Auth.Login)
-		auth.POST("/refresh", d.Auth.Refresh)
-		auth.POST("/logout", d.Auth.Logout)
+		auth.POST("/refresh", middleware.RateLimit, d.Auth.Refresh)
+		auth.POST("/logout", middleware.RateLimit, d.Auth.Logout)
 	}
 
 	// ── Authenticated routes ──────────────────────────────────────────────────
@@ -356,7 +369,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		// Authenticated static-file serving for driver KYC docs + future uploads.
 		if d.FilesRoot != "" {
 			files := handler.NewFilesHandler(d.FilesRoot)
-			authed.GET("/files/*filepath", files.Serve)
+			authed.GET("/files/*filepath", handler.FilesRouteHandler(files, requirePerm))
 		}
 	}
 

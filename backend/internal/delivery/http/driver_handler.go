@@ -50,7 +50,6 @@ func (h *DriverHandler) UpdateLocation(c *gin.Context) {
 		return
 	}
 	driverID := c.MustGet("userID").(uuid.UUID)
-	log.Printf("[DRIVER_HANDLER] UpdateLocation: driverID=%s, loc=(%.5f, %.5f)", driverID, req.Location.Lat, req.Location.Lng)
 	loc := req.ToDomainDriverLocation()
 	if err := h.uc.UpdateLocation(c.Request.Context(), driverID, loc); err != nil {
 		log.Printf("[DRIVER_HANDLER] UpdateLocation error: %v", err)

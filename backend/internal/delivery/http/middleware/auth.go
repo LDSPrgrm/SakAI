@@ -3,7 +3,6 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -18,12 +17,7 @@ import (
 func Auth(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
-		log.Printf("[DEBUG-AUTH] URL path: %s", c.Request.URL.Path)
-		log.Printf("[DEBUG-AUTH] Header Auth: %s", c.GetHeader("Authorization"))
-		log.Printf("[DEBUG-AUTH] Query token: %s", c.Query("token"))
-		log.Printf("[DEBUG-AUTH] Extracted token length: %d", len(tokenStr))
 		if tokenStr == "" {
-			log.Printf("[DEBUG-AUTH] Aborted: Token is empty")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "missing or malformed Authorization header",
@@ -32,7 +26,6 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		}
 		claims, err := pkgjwt.ValidateAccessToken(tokenStr, jwtSecret)
 		if err != nil {
-			log.Printf("[DEBUG-AUTH] ValidateAccessToken failed: %v", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    "TOKEN_INVALID",
 				"message": "invalid or expired access token",
@@ -41,24 +34,30 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		}
 		c.Set("userID", claims.UserID)
 		c.Set("role", string(claims.Role))
-		log.Printf("[auth] userID=%s role=%s", claims.UserID.String(), string(claims.Role))
 		c.Next()
 	}
 }
 
-// extractToken gets the JWT from Authorization header or query parameter (for WebSocket).
+// isWSUpgrade reports whether the request path is the WebSocket upgrade endpoint.
+// Query-parameter tokens are only permitted on this path (M4).
+func isWSUpgrade(path string) bool {
+	return strings.HasSuffix(path, "/ws")
+}
+
+// extractToken gets the JWT from Authorization header or, exclusively for the
+// WebSocket upgrade path, a query parameter.
 func extractToken(c *gin.Context) string {
-	// First try Authorization header.
+	// First try Authorization header (all routes).
 	header := c.GetHeader("Authorization")
 	if strings.HasPrefix(header, "Bearer ") {
 		return strings.TrimPrefix(header, "Bearer ")
 	}
-	// Fallback to query parameter (used by WebSocket connections).
-	if t := c.Query("token"); t != "" {
-		if strings.HasPrefix(t, "Bearer ") {
+	// Fallback to query parameter — ONLY for the WebSocket upgrade (M4).
+	// Query strings leak into access logs, proxy logs, history and Referer.
+	if isWSUpgrade(c.Request.URL.Path) {
+		if t := c.Query("token"); t != "" {
 			return strings.TrimPrefix(t, "Bearer ")
 		}
-		return t
 	}
 	return ""
 }
@@ -72,7 +71,6 @@ func RequireRole(roles ...domain.UserRole) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		role := domain.UserRole(c.MustGet("role").(string))
-		log.Printf("[auth] role check user_role=%s allowed=%v", role, roles)
 		if _, ok := allowed[role]; !ok {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"code":    "FORBIDDEN",

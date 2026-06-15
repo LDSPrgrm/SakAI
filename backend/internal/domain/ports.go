@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,SavedPlaceRepository,PromotionRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,TipUseCase,SavedPlaceUseCase,PromotionUseCase,StripeClient,EarningsRepository
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SosPrefsRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,SavedPlaceRepository,PromotionRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,TipUseCase,SavedPlaceUseCase,PromotionUseCase,StripeClient,EarningsRepository
 
 import (
 	"context"
@@ -339,6 +339,13 @@ type IncidentRepository interface {
 
 	// Create inserts a new incident record.
 	Create(ctx context.Context, incident *Incident) error
+}
+
+// SosPrefsRepository stores per-user SOS live-location opt-in.
+type SosPrefsRepository interface {
+	// GetLiveLocationOptIn returns false (fail closed) when no row exists.
+	GetLiveLocationOptIn(ctx context.Context, userID uuid.UUID) (bool, error)
+	SetLiveLocationOptIn(ctx context.Context, userID uuid.UUID, optIn bool) error
 }
 
 // SystemMetricsRepository aggregates platform-wide KPIs.
