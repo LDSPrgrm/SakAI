@@ -11,7 +11,6 @@ import 'activity_screen.dart';
 import 'location_picker_screen.dart';
 import 'profile_screen.dart';
 import '../../wallet/views/wallet_screen.dart';
-import '../../inbox/views/inbox_screen.dart';
 import '../models/ride_type_option.dart';
 import '../models/location_search_mode.dart';
 import '../view_models/home_notifier.dart';
@@ -110,9 +109,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         body = const WalletScreen();
         break;
       case 3:
-        body = const InboxScreen();
-        break;
-      case 4:
         body = ProfileScreen(onSignOut: _logout);
         break;
       case 0:
