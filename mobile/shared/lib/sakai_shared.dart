@@ -44,6 +44,9 @@ export 'theme/sakai_theme_config.dart';
 // Validators
 export 'validators/sakai_validators.dart';
 
+// Formatters
+export 'format/sakai_currency.dart';
+
 // Widgets
 export 'widgets/async_value_view.dart';
 export 'widgets/coming_soon_state.dart';
