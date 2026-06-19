@@ -14,7 +14,7 @@ class DocumentsScreen extends ConsumerWidget {
     final state = ref.watch(documentViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('My Documents'),
         actions: [
           IconButton(
