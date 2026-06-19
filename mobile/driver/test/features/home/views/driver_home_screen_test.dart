@@ -1,4 +1,6 @@
 import 'package:driver/app/providers.dart';
+import 'package:driver/features/earnings/models/session_earnings.dart';
+import 'package:driver/features/earnings/repositories/earnings_repository.dart';
 import 'package:driver/features/home/views/driver_home_screen.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/features/active_ride/repositories/active_ride_repository.dart';
@@ -38,8 +40,20 @@ class MockActiveRideRepository extends ActiveRideRepository {
   Future<void> cancelRide(String rideId, {String? reasonText}) async {}
 }
 
+/// Avoids a real network call from the earnings notifier's initial load
+/// (the home screen now renders live earnings stats — Task 5).
+class MockEarningsRepository implements EarningsRepository {
+  @override
+  Future<SessionEarnings> getEarnings({
+    DateTime? from,
+    DateTime? to,
+    int page = 1,
+  }) async => const SessionEarnings();
+}
+
 final _mockDriverRepo = MockDriverRepository();
 final _mockActiveRideRepo = MockActiveRideRepository();
+final _mockEarningsRepo = MockEarningsRepository();
 
 void main() {
   testWidgets('DriverHomeScreen renders toggle button', (tester) async {
@@ -50,6 +64,7 @@ void main() {
           apiClientProvider.overrideWithValue(_mockApiClient),
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),
@@ -75,6 +90,7 @@ void main() {
           apiClientProvider.overrideWithValue(_mockApiClient),
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),

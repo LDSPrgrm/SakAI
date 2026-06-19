@@ -12,6 +12,7 @@ import '../../../app/e2e_mode_stub.dart'
     if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
+import '../../earnings/view_models/earnings_notifier.dart';
 import '../view_models/driver_home_notifier.dart';
 
 /// Driver home screen — full-screen Google Map with online/offline toggle,
@@ -954,6 +955,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 
   // Stats Row (Gross Cash, Completed Rides, Shift Hours)
   Widget _buildStatsRow(ColorScheme scheme, SakaiDesignTokens tokens) {
+    final state = ref.watch(earningsNotifierProvider);
+    final e = state.earnings;
+    final gross = state.isLoading ? '—' : SakaiCurrency.format(e.totalEarnings);
+    final rides = state.isLoading ? '—' : '${e.completedRidesCount} Rides';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -961,7 +966,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           Expanded(
             child: _buildStatCard(
               label: 'GROSS CASH',
-              value: '₱184.50',
+              value: gross,
               icon: Icons.payments_rounded,
               valueColor: scheme.primary,
               scheme: scheme,
@@ -971,7 +976,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           Expanded(
             child: _buildStatCard(
               label: 'COMPLETED',
-              value: '12 Rides',
+              value: rides,
               icon: Icons.check_circle_rounded,
               valueColor: scheme.onSurface,
               scheme: scheme,
@@ -981,7 +986,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           Expanded(
             child: _buildStatCard(
               label: 'SHIFT HOURS',
-              value: '6.4 hrs',
+              value: '—',
               icon: Icons.schedule_rounded,
               valueColor: scheme.onSurface,
               scheme: scheme,
