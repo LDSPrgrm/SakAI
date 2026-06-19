@@ -51,9 +51,13 @@ abstract final class SakaiTheme {
     final schemeWithOverrides = brightness == Brightness.dark
         ? scheme.copyWith(
             error: danger,
-            surface: darkSurface,
+            surface: darkBackground,
+            surfaceContainerLowest: darkBackground,
             surfaceContainerLow: darkSurface,
+            surfaceContainer: darkSurface,
+            surfaceContainerHigh: darkSurface,
             surfaceContainerHighest: darkSurface,
+            scrim: darkBackground,
             outlineVariant: darkBorder,
           )
         : scheme.copyWith(error: danger);
