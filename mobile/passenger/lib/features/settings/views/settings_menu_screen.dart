@@ -11,7 +11,7 @@ class SettingsMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

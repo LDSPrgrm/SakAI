@@ -29,7 +29,7 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
     final tokens = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Saved Places'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

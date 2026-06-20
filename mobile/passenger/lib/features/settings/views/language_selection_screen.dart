@@ -120,7 +120,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Language'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

@@ -49,7 +49,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Edit Profile'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
