@@ -137,8 +137,8 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
                             child: Container(
                               width: 10,
                               height: 10,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFF4444),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.error,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -173,6 +173,7 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dest = ref.watch(homeNotifierProvider).destination;
+    final scheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: () async {
@@ -187,7 +188,7 @@ class _SearchBar extends StatelessWidget {
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -200,9 +201,9 @@ class _SearchBar extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 16),
-            const Icon(
+            Icon(
               Icons.search_rounded,
-              color: Color(0xFF00C472),
+              color: scheme.primary,
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -215,14 +216,14 @@ class _SearchBar extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: dest != null ? FontWeight.w600 : FontWeight.w500,
                   color: dest != null
-                      ? const Color(0xFF1A1A1A)
-                      : const Color(0xFF9CA3AF),
+                      ? scheme.onSurface
+                      : scheme.onSurfaceVariant,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.qr_code_scanner_rounded,
-              color: Color(0xFF9CA3AF),
+              color: scheme.onSurfaceVariant,
               size: 20,
             ),
             const SizedBox(width: 16),

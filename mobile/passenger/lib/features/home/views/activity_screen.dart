@@ -564,9 +564,9 @@ class _RouteTimeline extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0xFF00C853),
+                  color: scheme.primary,
                 ),
               ),
               // Connecting line
