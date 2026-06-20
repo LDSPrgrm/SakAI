@@ -583,11 +583,11 @@ class _PromoCard extends StatelessWidget {
     if (promo.discountType == api.PromotionDiscountTypeEnum.percentage) {
       final pct = promo.discountValue.toStringAsFixed(0);
       final cap = promo.maxDiscount != null
-          ? ' (up to ₱${promo.maxDiscount!.toStringAsFixed(0)})'
+          ? ' (up to ${SakaiCurrency.format(promo.maxDiscount!)})'
           : '';
       return '$pct% OFF$cap';
     }
-    return '₱${promo.discountValue.toStringAsFixed(0)} OFF';
+    return '${SakaiCurrency.format(promo.discountValue)} OFF';
   }
 
   @override
@@ -725,7 +725,7 @@ class _PromoCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Min. fare ₱${promo.minRideAmount!.toStringAsFixed(0)}',
+                            'Min. fare ${SakaiCurrency.format(promo.minRideAmount!)}',
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),

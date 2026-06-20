@@ -83,10 +83,10 @@ void main() {
 
   testWidgets('SakaiFareChip + SakaiRideTypeChip render', (tester) async {
     await tester.pumpWidget(_wrap(Column(children: const [
-      SakaiFareChip(amount: r'$12.40', subtitle: 'estimate'),
+      SakaiFareChip(amount: '₱12.40', subtitle: 'estimate'),
       SakaiRideTypeChip(label: 'Standard', icon: Icons.directions_car, selected: true),
     ])));
-    expect(find.text(r'$12.40'), findsOneWidget);
+    expect(find.text('₱12.40'), findsOneWidget);
     expect(find.text('Standard'), findsOneWidget);
   });
 }

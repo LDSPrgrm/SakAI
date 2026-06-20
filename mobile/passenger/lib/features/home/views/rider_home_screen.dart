@@ -955,7 +955,7 @@ class _TransitCard extends StatelessWidget {
               children: [
                 Text(
                   available
-                      ? '₱${option.estimatedFare.toStringAsFixed(0)}'
+                      ? SakaiCurrency.format(option.estimatedFare)
                       : '—',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,

@@ -97,7 +97,7 @@ class EarningsScreen extends ConsumerWidget {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Text(
-                            '\$${earnings.totalEarnings.toStringAsFixed(2)}',
+                            SakaiCurrency.format(earnings.totalEarnings),
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -133,12 +133,12 @@ class EarningsScreen extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               Text(
-                                'Fare: \$${b.fare.toStringAsFixed(2)}',
+                                'Fare: ${SakaiCurrency.format(b.fare)}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               if (b.tip > 0)
                                 Text(
-                                  'Tip: \$${b.tip.toStringAsFixed(2)}',
+                                  'Tip: ${SakaiCurrency.format(b.tip)}',
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: SakaiSemanticColors.of(
@@ -150,7 +150,7 @@ class EarningsScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '\$${b.total.toStringAsFixed(2)}',
+                          SakaiCurrency.format(b.total),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
