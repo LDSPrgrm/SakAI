@@ -18,7 +18,7 @@ class EarningsScreen extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Earnings — Current Shift'),
         actions: [
           TextButton.icon(

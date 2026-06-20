@@ -109,7 +109,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Upload Document'),
       ),
       body: SingleChildScrollView(
