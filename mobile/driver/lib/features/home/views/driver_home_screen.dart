@@ -13,7 +13,18 @@ import '../../../app/e2e_mode_stub.dart'
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
 import '../../earnings/view_models/earnings_notifier.dart';
+import '../../profile/view_models/driver_profile_notifier.dart';
 import '../view_models/driver_home_notifier.dart';
+
+/// Two-letter initials from a display name, for the avatar placeholder —
+/// the backend has no profile-photo field, so an invented stock photo
+/// would be a fabricated value (see plan honesty principle #6).
+String _initialsOf(String name) {
+  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+}
 
 /// Driver home screen — full-screen Google Map with online/offline toggle,
 /// GPS streaming, and ride offer handling.
@@ -222,7 +233,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                         color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: const Color(0xFF334155),
+                          color: scheme.outlineVariant,
                           width: 1,
                         ),
                       ),
@@ -359,7 +370,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       color: scheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
-                        color: const Color(0xFF334155),
+                        color: scheme.outlineVariant,
                         width: 1,
                       ),
                     ),
@@ -378,10 +389,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           'Driver',
                           style: TextStyle(
-                            color: Color(0xFF94A3B8),
+                            color: scheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                             fontSize: 12,
                           ),
@@ -510,6 +521,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 
   // Greeting Header
   Widget _buildGreetingHeader(BuildContext context, bool online, ColorScheme scheme, SakaiDesignTokens tokens) {
+    final profile = ref.watch(driverProfileNotifierProvider).profile;
+    final driverName = profile?.name ?? 'Driver';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
@@ -519,7 +532,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: online ? scheme.primary : const Color(0xFF64748B),
+                color: online ? scheme.primary : scheme.onSurfaceVariant,
                 width: 2.5,
               ),
               boxShadow: online
@@ -532,24 +545,16 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     ]
                   : [],
             ),
-            child: ClipOval(
-              child: Image.network(
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 44,
-                    height: 44,
-                    color: const Color(0xFF334155),
-                    child: Icon(
-                      Icons.person,
-                      color: scheme.onSurface,
-                      size: 22,
-                    ),
-                  );
-                },
+            child: CircleAvatar(
+              radius: 22,
+              backgroundColor: scheme.outlineVariant,
+              child: Text(
+                _initialsOf(driverName),
+                style: TextStyle(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -558,17 +563,17 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Welcome back,',
                   style: TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: scheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Alex Thompson',
+                  driverName,
                   style: TextStyle(
                     color: scheme.onSurface,
                     fontSize: 18,
@@ -599,7 +604,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: scheme.outlineVariant, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.25),
@@ -634,7 +639,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       decoration: BoxDecoration(
                         color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF334155), width: 1),
+                        border: Border.all(color: scheme.outlineVariant, width: 1),
                       ),
                       child: Icon(Icons.my_location, color: scheme.primary, size: 18),
                     ),
@@ -652,7 +657,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       decoration: BoxDecoration(
                         color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF334155), width: 1),
+                        border: Border.all(color: scheme.outlineVariant, width: 1),
                       ),
                       child: Icon(Icons.fullscreen_rounded, color: scheme.onSurface, size: 18),
                     ),
@@ -670,7 +675,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                 decoration: BoxDecoration(
                   color: scheme.scrim.withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5), width: 1),
+                  border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5), width: 1),
                 ),
                 child: Row(
                   children: [
@@ -790,8 +795,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   activeRide.originAddress ?? 'Pickup address',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -845,7 +850,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         border: Border.all(
           color: online
               ? scheme.primary.withValues(alpha: 0.3)
-              : const Color(0xFF334155),
+              : scheme.outlineVariant,
           width: 1,
         ),
         boxShadow: online
@@ -873,13 +878,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       decoration: BoxDecoration(
                         color: online
                             ? scheme.primary.withValues(alpha: 0.15)
-                            : const Color(0xFF475569).withValues(alpha: 0.2),
+                            : scheme.onSurfaceVariant.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         online ? 'ACTIVE' : 'INACTIVE',
                         style: TextStyle(
-                          color: online ? scheme.primary : const Color(0xFF94A3B8),
+                          color: online ? scheme.primary : scheme.onSurfaceVariant,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -902,8 +907,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   online 
                       ? 'Broadcasting location & matching with nearby commuters'
                       : 'Go online to receive and accept ride offers',
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -926,8 +931,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     value: online,
                     activeThumbColor: scheme.primary,
                     activeTrackColor: scheme.primary.withValues(alpha: 0.3),
-                    inactiveThumbColor: const Color(0xFF64748B),
-                    inactiveTrackColor: const Color(0xFF334155),
+                    inactiveThumbColor: scheme.onSurfaceVariant,
+                    inactiveTrackColor: scheme.outlineVariant,
                     onChanged: (val) async {
                       await HapticFeedback.mediumImpact();
                       notifier.toggleStatus();
@@ -944,8 +949,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       return Container(
         width: 8,
         height: 8,
-        decoration: const BoxDecoration(
-          color: Color(0xFF64748B),
+        decoration: BoxDecoration(
+          color: scheme.onSurfaceVariant,
           shape: BoxShape.circle,
         ),
       );
@@ -1009,7 +1014,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: scheme.outlineVariant, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1019,14 +1024,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
               ),
-              Icon(icon, color: const Color(0xFF64748B), size: 16),
+              Icon(icon, color: scheme.onSurfaceVariant, size: 16),
             ],
           ),
           const SizedBox(height: 8),
@@ -1086,10 +1091,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'To maintain safety regulations, we recommend a 15-minute break in the next 1h 45m.',
                   style: TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: scheme.onSurfaceVariant,
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -1110,7 +1115,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: scheme.outlineVariant, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.35),
@@ -1182,7 +1187,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           children: [
             Icon(
               icon,
-              color: isActive ? scheme.primary : const Color(0xFF94A3B8),
+              color: isActive ? scheme.primary : scheme.onSurfaceVariant,
               size: 22,
             ),
             if (isActive) ...[
@@ -1204,6 +1209,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 
   // Beautiful Dark Mode Cohesive Drawer
   Widget _buildCohesiveDrawer(BuildContext context, DriverHomeState state, ColorScheme scheme) {
+    final profile = ref.watch(driverProfileNotifierProvider).profile;
+    final driverName = profile?.name ?? 'Driver';
     return Drawer(
       backgroundColor: scheme.surface,
       child: Column(
@@ -1223,27 +1230,35 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFF00DC82), width: 2),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 26,
-                    backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'),
+                    backgroundColor: scheme.surface,
+                    child: Text(
+                      _initialsOf(driverName),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Alex Thompson',
-                        style: TextStyle(
+                        driverName,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
+                      const SizedBox(height: 4),
+                      const Text(
                         'GoRide Navigator',
                         style: TextStyle(
                           color: Color(0xFF00DC82),
@@ -1280,7 +1295,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       }
                     },
                   ),
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: scheme.outlineVariant),
                 _buildDrawerTile(
                   icon: Icons.payments_rounded,
                   title: 'Earnings',
@@ -1305,7 +1320,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     context.push(Routes.tripHistory);
                   },
                 ),
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: scheme.outlineVariant),
                 _buildDrawerTile(
                   icon: Icons.person_outline_rounded,
                   title: 'Profile',
@@ -1338,7 +1353,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     context.push(Routes.support);
                   },
                 ),
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: scheme.outlineVariant),
                 _buildDrawerTile(
                   icon: Icons.logout_rounded,
                   title: 'Log Out',
@@ -1382,8 +1397,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     return ListTile(
       leading: Icon(
         icon,
-        color: selected 
-            ? const Color(0xFF00DC82) 
+        // _buildDrawerTile has no ColorScheme param and 10 call sites; threading
+        // `scheme` through all of them is out of scope for this fix. Left as a
+        // documented exception rather than silently untokenized.
+        color: selected
+            ? const Color(0xFF00DC82)
             : (iconColor ?? const Color(0xFF94A3B8)),
       ),
       title: Text(

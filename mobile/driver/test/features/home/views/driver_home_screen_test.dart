@@ -4,6 +4,7 @@ import 'package:driver/features/earnings/repositories/earnings_repository.dart';
 import 'package:driver/features/home/views/driver_home_screen.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/features/active_ride/repositories/active_ride_repository.dart';
+import 'package:driver/features/profile/repositories/driver_profile_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,9 +52,33 @@ class MockEarningsRepository implements EarningsRepository {
   }) async => const SessionEarnings();
 }
 
+/// Avoids a real network call from the driver profile notifier's initial
+/// load (the home screen now reads the driver's real name — honesty follow-up).
+class MockDriverProfileRepository implements DriverProfileRepository {
+  @override
+  Future<UserProfile> getProfile() async => $UserProfile(
+    (b) => b
+      ..id = 'drv-1'
+      ..name = 'Test Driver'
+      ..email = 'driver@test.com'
+      ..role = UserProfileRoleEnum.driver
+      ..createdAt = DateTime(2026, 1, 1),
+  );
+  @override
+  Future<void> updateProfile({String? name}) async {}
+  @override
+  Future<void> updateVehicle({
+    required String make,
+    required String model,
+    required String color,
+    required String plate,
+  }) async {}
+}
+
 final _mockDriverRepo = MockDriverRepository();
 final _mockActiveRideRepo = MockActiveRideRepository();
 final _mockEarningsRepo = MockEarningsRepository();
+final _mockDriverProfileRepo = MockDriverProfileRepository();
 
 void main() {
   testWidgets('DriverHomeScreen renders toggle button', (tester) async {
@@ -65,6 +90,7 @@ void main() {
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
           earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
+          driverProfileRepositoryProvider.overrideWithValue(_mockDriverProfileRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),
@@ -91,6 +117,7 @@ void main() {
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
           earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
+          driverProfileRepositoryProvider.overrideWithValue(_mockDriverProfileRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),
@@ -121,6 +148,7 @@ void main() {
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
           earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
+          driverProfileRepositoryProvider.overrideWithValue(_mockDriverProfileRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.dark(_themeConfig),
