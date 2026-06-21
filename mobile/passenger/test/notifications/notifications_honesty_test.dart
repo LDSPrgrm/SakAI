@@ -49,6 +49,12 @@ void main() {
     expect(find.byType(ComingSoonState), findsOneWidget);
     expect(find.textContaining('Mid-Autumn'), findsNothing);
     expect(find.textContaining('₱120.00'), findsNothing);
+
+    // Task 15 — the real themed SakaiAppBar renders (which composes exactly
+    // one underlying Material AppBar internally) — never a second, bare
+    // AppBar constructed standalone alongside it.
+    expect(find.byType(SakaiAppBar), findsOneWidget);
+    expect(find.byType(AppBar), findsOneWidget);
   });
 
   testWidgets('loading shows spinner, not mock messages', (tester) async {

@@ -102,4 +102,39 @@ void main() {
     // Initially offline, no GPS warning
     expect(find.text('Waiting for GPS signal…'), findsNothing);
   });
+
+  // Task 15 — structural smoke coverage for the driver Console (home) under
+  // ThemeMode.dark, the app's forced theme (Task 3). Pixel goldens are not
+  // used: see mobile/shared's 8 pre-existing environment-only golden
+  // failures (Task 3 stash A/B). This asserts the screen pumps without
+  // throwing under dark and that the console's custom header (not a bare
+  // default-themed AppBar — the screen has no Scaffold.appBar at all) shows
+  // its key content.
+  testWidgets('DriverHomeScreen pumps under dark theme (Console)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          wsClientProvider.overrideWithValue(WsClient()),
+          apiClientProvider.overrideWithValue(_mockApiClient),
+          driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
+          activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
+        ],
+        child: MaterialApp(
+          theme: SakaiTheme.dark(_themeConfig),
+          home: DriverHomeScreen(),
+        ),
+      ),
+    );
+
+    // Console renders its real content under dark, not a default Material
+    // light AppBar (the screen builds its own header Row — no Scaffold
+    // appBar at all, so a bare AppBar can never leak through here).
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.text('GROSS CASH'), findsOneWidget);
+    expect(find.text('Live Dispatch'), findsOneWidget);
+    expect(find.text('SakAI'), findsOneWidget);
+  });
 }
