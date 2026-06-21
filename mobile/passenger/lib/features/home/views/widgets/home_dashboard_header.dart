@@ -108,42 +108,48 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
                     ),
                   ),
                   // Notification Bell
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      context.push(Routes.notifications);
-                    },
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.notifications_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        if (unread > 0)
-                          Positioned(
-                            right: 2,
-                            top: 2,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.error,
-                                shape: BoxShape.circle,
-                              ),
+                  Semantics(
+                    label: unread > 0
+                        ? 'Notifications, $unread unread'
+                        : 'Notifications',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        context.push(Routes.notifications);
+                      },
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.notifications_rounded,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
-                      ],
+                          if (unread > 0)
+                            Positioned(
+                              right: 2,
+                              top: 2,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
