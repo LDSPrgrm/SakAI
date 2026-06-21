@@ -216,10 +216,8 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
             _buildSearchBar(scheme, isDark),
             if (_isLoading)
               LinearProgressIndicator(
-                color: const Color(0xFF00DC82),
-                backgroundColor: const Color(
-                  0xFF00DC82,
-                ).withValues(alpha: 0.12),
+                color: scheme.primary,
+                backgroundColor: scheme.primary.withValues(alpha: 0.12),
                 minHeight: 2,
               ),
             Expanded(
@@ -279,14 +277,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: _searchFocus.hasFocus
-                ? const Color(0xFF00DC82)
+                ? scheme.primary
                 : scheme.outlineVariant.withValues(alpha: 0.5),
             width: _searchFocus.hasFocus ? 1.5 : 1,
           ),
           boxShadow: _searchFocus.hasFocus
               ? [
                   BoxShadow(
-                    color: const Color(0xFF00DC82).withValues(alpha: 0.12),
+                    color: scheme.primary.withValues(alpha: 0.12),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -311,7 +309,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
             prefixIcon: Icon(
               Icons.search_rounded,
               color: _searchFocus.hasFocus
-                  ? const Color(0xFF00DC82)
+                  ? scheme.primary
                   : scheme.onSurfaceVariant,
               size: 22,
             ),
@@ -472,10 +470,10 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFF00DC82).withValues(alpha: 0.12),
+            color: scheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: const Color(0xFF00DC82).withValues(alpha: 0.5),
+              color: scheme.primary.withValues(alpha: 0.5),
               width: 1.5,
             ),
           ),
@@ -485,7 +483,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00DC82).withValues(alpha: 0.2),
+                  color: scheme.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: _isLocating
@@ -493,12 +491,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                         padding: const EdgeInsets.all(10),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: const Color(0xFF00DC82),
+                          color: scheme.primary,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.my_location_rounded,
-                        color: Color(0xFF00DC82),
+                        color: scheme.primary,
                         size: 22,
                       ),
               ),
@@ -529,9 +527,9 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                 ),
               ),
               if (!_isLocating)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: Color(0xFF00DC82),
+                  color: scheme.primary,
                   size: 20,
                 ),
             ],
@@ -550,10 +548,10 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFF00DC82).withValues(alpha: 0.08),
+            color: scheme.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: const Color(0xFF00DC82).withValues(alpha: 0.3),
+              color: scheme.primary.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -562,12 +560,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+                  color: scheme.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.pin_drop_rounded,
-                  color: Color(0xFF00DC82),
+                  color: scheme.primary,
                   size: 22,
                 ),
               ),
@@ -597,7 +595,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: const Color(0xFF00DC82),
+                color: scheme.primary,
                 size: 20,
               ),
             ],
@@ -963,14 +961,12 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF00DC82,
-                            ).withValues(alpha: 0.12),
+                            color: scheme.primary.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.pin_drop_rounded,
-                            color: Color(0xFF00DC82),
+                            color: scheme.primary,
                             size: 18,
                           ),
                         ),
@@ -984,7 +980,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                                       height: 14,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: const Color(0xFF00DC82),
+                                        color: scheme.primary,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1029,15 +1025,13 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         decoration: BoxDecoration(
                           color: canConfirm
-                              ? const Color(0xFF00DC82)
+                              ? scheme.primary
                               : scheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(14),
                           boxShadow: canConfirm
                               ? [
                                   BoxShadow(
-                                    color: const Color(
-                                      0xFF00DC82,
-                                    ).withValues(alpha: 0.3),
+                                    color: scheme.primary.withValues(alpha: 0.3),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -1134,7 +1128,7 @@ class _CurrentLocationButton extends StatelessWidget {
             ),
           ],
           border: Border.all(
-            color: const Color(0xFF00DC82).withValues(alpha: 0.4),
+            color: scheme.primary.withValues(alpha: 0.4),
             width: 1.5,
           ),
         ),
@@ -1143,12 +1137,12 @@ class _CurrentLocationButton extends StatelessWidget {
                 padding: const EdgeInsets.all(13),
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: const Color(0xFF00DC82),
+                  color: scheme.primary,
                 ),
               )
-            : const Icon(
+            : Icon(
                 Icons.my_location_rounded,
-                color: Color(0xFF00DC82),
+                color: scheme.primary,
                 size: 22,
               ),
       ),
