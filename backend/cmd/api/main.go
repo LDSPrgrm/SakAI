@@ -174,7 +174,7 @@ func main() {
 		System:         handler.NewSystemHandler(systemUC),
 		Report:         handler.NewReportHandler(reportUC),
 		Metrics:        handler.NewMetricsHandler(metricsUC),
-		Document:       handler.NewDocumentHandler(documentUC, mustUploader(cfg.UploadDir, cfg.UploadPublicBaseURL)),
+		Document:       handler.NewDocumentHandler(documentUC, mustUploader(cfg)),
 		Rating:         handler.NewRatingHandler(ratingUC),
 		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
 		Tip:            handler.NewTipHandler(tipUC),
@@ -257,12 +257,33 @@ func e2eHandlerIfEnabled(
 	return handler.NewE2EHandler(userRepo, driverRepo, rideRepo, dispatcher, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.E2ESeedToken)
 }
 
-// mustUploader builds the storage backend used for driver documents. Empty
-// config falls back to ./uploads served at /files/*.
-func mustUploader(baseDir, publicBaseURL string) storage.Uploader {
+// mustUploader builds the storage backend used for driver documents.
+// Set STORAGE_PROVIDER=s3 (with matching STORAGE_* vars) for S3-compatible
+// providers (Supabase Storage, Cloudflare R2, AWS S3, etc.).
+// Defaults to local disk — only suitable for development.
+func mustUploader(cfg *configs.Config) storage.Uploader {
+	if cfg.StorageProvider == "s3" {
+		u, err := storage.NewS3Uploader(storage.S3Config{
+			Endpoint:      cfg.StorageEndpoint,
+			Region:        cfg.StorageRegion,
+			AccessKey:     cfg.StorageAccessKey,
+			SecretKey:     cfg.StorageSecretKey,
+			Bucket:        cfg.StorageBucket,
+			PublicBaseURL: cfg.StoragePublicBaseURL,
+		})
+		if err != nil {
+			log.Fatalf("storage: init s3 uploader: %v", err)
+		}
+		log.Printf("storage: using S3 bucket %q via %s", cfg.StorageBucket, cfg.StorageEndpoint)
+		return u
+	}
+
+	// Local fallback — dev only.
+	baseDir := cfg.UploadDir
 	if baseDir == "" {
 		baseDir = "./uploads"
 	}
+	publicBaseURL := cfg.UploadPublicBaseURL
 	if publicBaseURL == "" {
 		publicBaseURL = "/api/files"
 	}

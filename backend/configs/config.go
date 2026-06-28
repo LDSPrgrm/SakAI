@@ -36,8 +36,19 @@ type Config struct {
 	StripeSecretKey string
 
 	// Storage (driver documents)
+	// Set STORAGE_PROVIDER=s3 to use S3-compatible storage (Supabase, R2, etc.)
+	// Leave unset or "local" to use local disk (dev only).
+	StorageProvider     string
 	UploadDir           string
 	UploadPublicBaseURL string
+
+	// S3-compatible storage (used when StorageProvider=s3)
+	StorageEndpoint      string
+	StorageRegion        string
+	StorageAccessKey     string
+	StorageSecretKey     string
+	StorageBucket        string
+	StoragePublicBaseURL string
 
 	// Regional
 	Currency string
@@ -82,8 +93,15 @@ func Load() *Config {
 		WSPingInterval:          getDuration("WS_PING_INTERVAL", 30*time.Second),
 		LocationRateLimitPerMin: getInt("LOCATION_RATE_LIMIT_PER_MIN", 30),
 		StripeSecretKey:         getEnv("STRIPE_SECRET_KEY", ""),
+		StorageProvider:         getEnv("STORAGE_PROVIDER", "local"),
 		UploadDir:               getEnv("UPLOAD_DIR", "./uploads"),
 		UploadPublicBaseURL:     getEnv("UPLOAD_PUBLIC_BASE_URL", "/api/files"),
+		StorageEndpoint:         getEnv("STORAGE_ENDPOINT", ""),
+		StorageRegion:           getEnv("STORAGE_REGION", "us-east-1"),
+		StorageAccessKey:        getEnv("STORAGE_ACCESS_KEY", ""),
+		StorageSecretKey:        getEnv("STORAGE_SECRET_KEY", ""),
+		StorageBucket:           getEnv("STORAGE_BUCKET", ""),
+		StoragePublicBaseURL:    getEnv("STORAGE_PUBLIC_BASE_URL", ""),
 		Currency:                getEnv("CURRENCY", "USD"),
 		AllowedOrigins:          splitAndTrim(getEnv("ALLOWED_ORIGINS", "")),
 		E2EEnabled:              getEnv("E2E_ENABLED", "false") == "true",
