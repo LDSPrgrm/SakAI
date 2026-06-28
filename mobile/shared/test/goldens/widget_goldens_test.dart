@@ -325,4 +325,130 @@ void main() {
       );
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Task 15 — swept-screen structural smoke coverage.
+  //
+  // mobile/shared cannot import mobile/driver or mobile/passenger app code
+  // (apps depend on shared, not the reverse — adding that dependency would
+  // be a layering inversion), so the four swept screens named in the plan
+  // (driver Console, driver My Documents, passenger Notifications
+  // ComingSoon, passenger home cluster) cannot be pumped *whole* from this
+  // package. Real whole-screen smoke tests for those four live in their
+  // owning app packages instead:
+  //   - mobile/driver/test/features/home/views/driver_home_screen_test.dart
+  //     ("DriverHomeScreen pumps under dark theme (Console)")
+  //   - mobile/driver/test/features/documents/views/documents_screen_test.dart
+  //   - mobile/passenger/test/notifications/notifications_honesty_test.dart
+  //     ("backend-unavailable shows Coming soon, not mock messages")
+  //   - mobile/passenger/test/home/home_cluster_smoke_test.dart
+  //
+  // What *is* reachable from mobile/shared is the shared chrome those
+  // screens are built from: `SakaiAppBar` under each theme/brightness combo
+  // those screens actually use, and the shared `ComingSoonState` widget the
+  // passenger Notifications screen renders. These are NOT pixel goldens
+  // (see file header — 8 pre-existing environment-only golden failures);
+  // assertions are structural only.
+  group('Swept-screen chrome smoke (structural, no pixel comparison)', () {
+    testWidgets('driver-themed SakaiAppBar pumps under dark (Console context)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _testSakaiTheme(SakaiThemeConfig.driver(), Brightness.dark),
+          home: Scaffold(
+            appBar: const SakaiAppBar(title: Text('Driver Console')),
+            body: const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(SakaiAppBar), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget); // composed by SakaiAppBar
+      expect(find.text('Driver Console'), findsOneWidget);
+    });
+
+    testWidgets('driver-themed SakaiAppBar pumps under dark (My Documents context)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _testSakaiTheme(SakaiThemeConfig.driver(), Brightness.dark),
+          home: Scaffold(
+            appBar: SakaiAppBar(
+              title: const Text('My Documents'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh documents',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+            body: const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(SakaiAppBar), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget); // composed by SakaiAppBar
+      expect(find.text('My Documents'), findsOneWidget);
+      expect(find.byTooltip('Refresh documents'), findsOneWidget);
+    });
+
+    testWidgets('passenger-themed Notifications ComingSoon pumps under light, '
+        'with the real SakaiAppBar (not a bare AppBar)', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _testSakaiTheme(
+            SakaiThemeConfig.passenger(),
+            Brightness.light,
+          ),
+          home: Scaffold(
+            appBar: const SakaiAppBar(title: Text('Notifications')),
+            body: const ComingSoonState(feature: 'notifications'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(SakaiAppBar), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget); // composed by SakaiAppBar
+      expect(find.byType(ComingSoonState), findsOneWidget);
+      expect(find.textContaining('Mid-Autumn'), findsNothing);
+      expect(find.textContaining('₱120.00'), findsNothing);
+    });
+
+    testWidgets('passenger home-cluster has no Scaffold appBar under light '
+        '(branding lives in HomeDashboardHeader, not a bare AppBar)', (
+      tester,
+    ) async {
+      // The real HomeDashboardHeader lives in mobile/passenger and depends
+      // on app-level providers/routes not reachable here; the contract this
+      // package can prove is the shared shape every screen in this sweep
+      // follows — a Scaffold with no `appBar:` at all renders no AppBar of
+      // any kind, default-themed or otherwise.
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _testSakaiTheme(
+            SakaiThemeConfig.passenger(),
+            Brightness.light,
+          ),
+          home: const Scaffold(
+            body: Center(child: Text('Home dashboard cluster')),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.text('Home dashboard cluster'), findsOneWidget);
+    });
+  });
 }

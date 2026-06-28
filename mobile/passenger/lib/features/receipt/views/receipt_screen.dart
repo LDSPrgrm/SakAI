@@ -101,7 +101,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Ride Receipt'),
         leading: IconButton(
           icon: const Icon(Icons.close),

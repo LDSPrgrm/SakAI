@@ -114,7 +114,7 @@ class _PromoCard extends StatelessWidget {
     if (promotion.discountType == api.PromotionDiscountTypeEnum.percentage) {
       return '${value.toStringAsFixed(0)}% OFF';
     }
-    return '₱${value.toStringAsFixed(0)} OFF';
+    return '${SakaiCurrency.format(value)} OFF';
   }
 
   @override

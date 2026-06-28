@@ -63,7 +63,7 @@ class _EarningsBreakdownScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Earnings breakdown'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),

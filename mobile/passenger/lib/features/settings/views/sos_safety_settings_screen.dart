@@ -37,7 +37,7 @@ class SosSafetySettingsScreen extends ConsumerWidget {
     final notifier = ref.read(sosSafetyPrefsProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('SOS & Safety'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

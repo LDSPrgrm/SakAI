@@ -46,8 +46,8 @@ class RideHistoryItem {
   bool get isCancelled => status == RideStatus.cancelled;
 
   String get displayFare {
-    final amount = fare ?? estimatedFare;
-    return 'PHP ${amount.toStringAsFixed(2)}';
+    if (fare != null) return SakaiCurrency.format(fare!);
+    return isCompleted ? SakaiCurrency.formatFare(null) : SakaiCurrency.format(estimatedFare);
   }
 
 

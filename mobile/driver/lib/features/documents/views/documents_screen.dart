@@ -14,11 +14,12 @@ class DocumentsScreen extends ConsumerWidget {
     final state = ref.watch(documentViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('My Documents'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh documents',
             onPressed: () => ref.read(documentViewModelProvider.notifier).fetchDocuments(),
           ),
         ],
@@ -45,13 +46,17 @@ class DocumentsScreen extends ConsumerWidget {
               onPrimary: () => context.push(Routes.uploadDocument),
             );
           }
-          return ListView.builder(
-            padding: EdgeInsets.all(tokens.spaceMd),
-            itemCount: state.documents.length,
-            itemBuilder: (context, index) {
-              final doc = state.documents[index];
-              return _DocumentCard(document: doc);
-            },
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.read(documentViewModelProvider.notifier).fetchDocuments(),
+            child: ListView.builder(
+              padding: EdgeInsets.all(tokens.spaceMd),
+              itemCount: state.documents.length,
+              itemBuilder: (context, index) {
+                final doc = state.documents[index];
+                return _DocumentCard(document: doc);
+              },
+            ),
           );
         },
       ),

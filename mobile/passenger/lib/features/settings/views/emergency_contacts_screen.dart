@@ -17,7 +17,7 @@ class EmergencyContactsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Emergency Contacts'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

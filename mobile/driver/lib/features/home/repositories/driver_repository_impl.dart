@@ -117,6 +117,6 @@ class DriverRepositoryImpl implements DriverRepository {
         e.type == DioExceptionType.connectionTimeout) {
       return Exception('No connection. Check network or server URL.');
     }
-    return Exception(e.message ?? 'Something went wrong. Try again.');
+    return Exception(e.message ?? 'Could not reach the server. Try again.');
   }
 }

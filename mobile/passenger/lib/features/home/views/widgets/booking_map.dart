@@ -78,6 +78,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final homeState = ref.watch(homeNotifierProvider);
     final pickup = homeState.pickup;
     final destination = homeState.destination;
@@ -120,7 +121,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
       destLatLng,
       homeState.nearbyDrivers,
     );
-    final polylines = _buildPolylines(routePoints);
+    final polylines = _buildPolylines(routePoints, scheme);
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(
@@ -235,13 +236,13 @@ class _BookingMapState extends ConsumerState<BookingMap> {
 
   // ── Polylines ──────────────────────────────────────────────────────────────
 
-  Set<Polyline> _buildPolylines(List<LatLng> points) {
+  Set<Polyline> _buildPolylines(List<LatLng> points, ColorScheme scheme) {
     if (points.length < 2) return {};
     return {
       Polyline(
         polylineId: const PolylineId('route'),
         points: points,
-        color: const Color(0xFF00DC82),
+        color: scheme.primary,
         width: 5,
         startCap: Cap.roundCap,
         endCap: Cap.roundCap,

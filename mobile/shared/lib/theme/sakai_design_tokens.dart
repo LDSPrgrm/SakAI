@@ -50,6 +50,31 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     this.touchTargetMin = 48,
   });
 
+  /// Fixed categorical accent palette for service/category tiles (e.g. the
+  /// passenger home services grid). These are brand-level category accents,
+  /// not theme roles — they stay constant across light/dark brightness so
+  /// each service category keeps a recognizable identity color.
+  static const Color serviceFood = Color(0xFFFF6B35);
+  static const Color serviceMart = Color(0xFF0284C7);
+  static const Color serviceExpress = Color(0xFFEAB308);
+  static const Color serviceShopping = Color(0xFF9333EA);
+  static const Color serviceOffers = Color(0xFFEC4899);
+  static const Color serviceGiftCards = Color(0xFFEF4444);
+  static const Color serviceMore = Color(0xFF6B7280);
+
+  /// Wallet/loyalty card gradient accents (home dashboard "My Wallet"
+  /// section). Brand-level card identities, not theme roles — held fixed
+  /// across brightness like [serviceFood] etc.
+  static const Color walletPayGradientStart = Color(0xFF00C472);
+  static const Color walletPayGradientEnd = Color(0xFF009958);
+  static const Color walletPointsGradientStart = Color(0xFF7C3AED);
+  static const Color walletPointsGradientEnd = Color(0xFF5B21B6);
+
+  /// Booking "Confirm" CTA gradient — brand accent, held fixed across
+  /// brightness like the other gradient tokens above.
+  static const Color confirmCtaGradientStart = Color(0xFF00DC82);
+  static const Color confirmCtaGradientEnd = Color(0xFF00B066);
+
   static const SakaiDesignTokens defaults = SakaiDesignTokens(
     spaceXs: 4,
     spaceSm: 8,

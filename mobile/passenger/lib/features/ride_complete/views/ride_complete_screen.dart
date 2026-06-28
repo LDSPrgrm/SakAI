@@ -247,7 +247,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         _SummaryRow(
                           icon: Icons.attach_money,
                           label: 'Base Fare',
-                          value: '\$${summary.baseFare.toStringAsFixed(2)}',
+                          value: SakaiCurrency.format(summary.baseFare),
                           bold: true,
                         ),
                         if (state.selectedTip != null) ...[
@@ -255,8 +255,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                           _SummaryRow(
                             icon: Icons.card_giftcard,
                             label: 'Tip',
-                            value:
-                                '\$${state.selectedTip!.amount.toStringAsFixed(2)}',
+                            value: SakaiCurrency.format(
+                              state.selectedTip!.amount,
+                            ),
                             valueColor: theme.colorScheme.primary,
                           ),
                         ],
@@ -265,7 +266,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         _SummaryRow(
                           icon: Icons.payments,
                           label: 'Total',
-                          value: '\$${state.finalTotal.toStringAsFixed(2)}',
+                          value: SakaiCurrency.format(state.finalTotal),
                           bold: true,
                           valueColor: theme.colorScheme.primary,
                           valueSize: 20,
@@ -496,7 +497,7 @@ class _TipSelectorSection extends StatelessWidget {
               for (final preset in presets)
                 ChoiceChip(
                   label: Text(
-                    '${preset.label}\n\$${preset.amount.toStringAsFixed(2)}',
+                    '${preset.label}\n${SakaiCurrency.format(preset.amount)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 13),
                   ),

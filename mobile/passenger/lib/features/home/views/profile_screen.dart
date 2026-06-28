@@ -164,6 +164,7 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final sem = SakaiSemanticColors.of(context);
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -282,10 +283,10 @@ class _ProfileContent extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFB300).withValues(alpha: 0.1),
+                      color: sem.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
-                        color: const Color(0xFFFFB300).withValues(alpha: 0.4),
+                        color: sem.warning.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
@@ -294,17 +295,17 @@ class _ProfileContent extends StatelessWidget {
                       children: [
                         Text(
                           profile.rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Color(0xFFFFB300),
+                          style: TextStyle(
+                            color: sem.warning,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(
+                        Icon(
                           Icons.star_rounded,
                           size: 16,
-                          color: Color(0xFFFFB300),
+                          color: sem.warning,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -403,15 +404,18 @@ class _ProfileContent extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onSignOut,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF4E4E),
-              side: const BorderSide(color: Color(0x33FF4E4E), width: 1.2),
-              backgroundColor: const Color(0x0FFF4E4E),
+              foregroundColor: scheme.error,
+              side: BorderSide(
+                color: scheme.error.withValues(alpha: 0.2),
+                width: 1.2,
+              ),
+              backgroundColor: scheme.error.withValues(alpha: 0.06),
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFFFF4E4E)),
+            icon: Icon(Icons.logout_rounded, color: scheme.error),
             label: const Text(
               'Log Out',
               style: TextStyle(

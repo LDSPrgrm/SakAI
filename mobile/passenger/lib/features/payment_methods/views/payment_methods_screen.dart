@@ -33,7 +33,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Payment Methods'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

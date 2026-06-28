@@ -149,7 +149,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen>
     final statusLabel = _statusLabel(state.currentStep);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Active Ride'),
         actions: [
           IconButton(

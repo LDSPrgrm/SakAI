@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// Terms of Service screen displaying legal content in a WebView.
@@ -41,7 +42,7 @@ class _TermsScreenState extends State<TermsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Terms of Service'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

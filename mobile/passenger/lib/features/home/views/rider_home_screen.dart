@@ -11,7 +11,6 @@ import 'activity_screen.dart';
 import 'location_picker_screen.dart';
 import 'profile_screen.dart';
 import '../../wallet/views/wallet_screen.dart';
-import '../../inbox/views/inbox_screen.dart';
 import '../models/ride_type_option.dart';
 import '../models/location_search_mode.dart';
 import '../view_models/home_notifier.dart';
@@ -110,9 +109,6 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         body = const WalletScreen();
         break;
       case 3:
-        body = const InboxScreen();
-        break;
-      case 4:
         body = ProfileScreen(onSignOut: _logout);
         break;
       case 0:
@@ -289,7 +285,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF00DC82), width: 3),
+                  border: Border.all(color: scheme.primary, width: 3),
                   color: scheme.surface,
                 ),
               ),
@@ -299,7 +295,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 painter: _DottedLinePainter(color: scheme.outlineVariant),
               ),
               const SizedBox(height: 4),
-              const Icon(Icons.place, size: 16, color: Color(0xFFEA4335)),
+              Icon(Icons.place, size: 16, color: scheme.error),
             ],
           ),
           const SizedBox(width: 16),
@@ -421,7 +417,10 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
         decoration: BoxDecoration(
           gradient: canBook
               ? const LinearGradient(
-                  colors: [Color(0xFF00DC82), Color(0xFF00B066)],
+                  colors: [
+                    SakaiDesignTokens.confirmCtaGradientStart,
+                    SakaiDesignTokens.confirmCtaGradientEnd,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -431,7 +430,8 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           boxShadow: canBook
               ? [
                   BoxShadow(
-                    color: const Color(0xFF00DC82).withValues(alpha: 0.35),
+                    color: SakaiDesignTokens.confirmCtaGradientStart
+                        .withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -616,7 +616,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = currentIndex == index;
-    const active = Color(0xFF00DC82);
+    final active = scheme.primary;
     final inactive = scheme.onSurface.withValues(alpha: 0.4);
 
     return GestureDetector(
@@ -683,7 +683,7 @@ class BookingTopBar extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF00C472),
+              color: scheme.primary,
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
@@ -728,7 +728,7 @@ class BookingTopBar extends StatelessWidget {
         key: const Key('booking_help_dialog'),
         title: Row(
           children: [
-            Icon(Icons.help_outline, color: const Color(0xFF00C472)),
+            Icon(Icons.help_outline, color: scheme.primary),
             const SizedBox(width: 8),
             const Text('Booking Help'),
           ],
@@ -756,10 +756,10 @@ class BookingTopBar extends StatelessWidget {
           TextButton(
             key: const Key('booking_help_dialog_close'),
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Got it',
               style: TextStyle(
-                color: Color(0xFF00C472),
+                color: scheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -811,7 +811,7 @@ class _AddressField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                color: active ? scheme.onSurface : const Color(0xFF00DC82),
+                color: active ? scheme.onSurface : scheme.primary,
               ),
             ),
           ],
@@ -855,21 +855,21 @@ class _TransitCard extends StatelessWidget {
 
     // Border: green when selected, amber when unavailable (still visible), default otherwise
     final borderColor = selected
-        ? const Color(0xFF00DC82)
+        ? scheme.primary
         : !available
         ? scheme.error.withValues(alpha: 0.4)
         : scheme.outlineVariant.withValues(alpha: 0.6);
 
     final bgColor = selected
-        ? const Color(0xFF00DC82).withValues(alpha: 0.08)
+        ? scheme.primary.withValues(alpha: 0.08)
         : !available
         ? scheme.errorContainer.withValues(alpha: 0.08)
         : scheme.surface;
 
     // Driver count badge
-    final badgeColor = available ? const Color(0xFF00DC82) : scheme.error;
+    final badgeColor = available ? scheme.primary : scheme.error;
     final badgeBg = available
-        ? const Color(0xFF00DC82).withValues(alpha: 0.15)
+        ? scheme.primary.withValues(alpha: 0.15)
         : scheme.errorContainer.withValues(alpha: 0.6);
     final badgeText = available ? '$count active' : 'No drivers';
 
@@ -892,7 +892,7 @@ class _TransitCard extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+                    color: scheme.primary.withValues(alpha: 0.15),
                     blurRadius: 10,
                     spreadRadius: 1,
                   ),
@@ -909,7 +909,7 @@ class _TransitCard extends StatelessWidget {
                 Icon(
                   iconData,
                   color: selected
-                      ? const Color(0xFF00DC82)
+                      ? scheme.primary
                       : available
                       ? scheme.onSurfaceVariant
                       : scheme.error.withValues(alpha: 0.6),
@@ -942,7 +942,7 @@ class _TransitCard extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
                 color: selected
-                    ? const Color(0xFF00DC82)
+                    ? scheme.primary
                     : available
                     ? scheme.onSurface
                     : scheme.onSurface.withValues(alpha: 0.45),
@@ -959,13 +959,13 @@ class _TransitCard extends StatelessWidget {
               children: [
                 Text(
                   available
-                      ? '₱${option.estimatedFare.toStringAsFixed(0)}'
+                      ? SakaiCurrency.format(option.estimatedFare)
                       : '—',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
                     color: selected
-                        ? const Color(0xFF00DC82)
+                        ? scheme.primary
                         : available
                         ? scheme.onSurface
                         : scheme.onSurface.withValues(alpha: 0.35),

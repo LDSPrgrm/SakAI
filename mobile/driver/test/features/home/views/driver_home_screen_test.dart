@@ -1,4 +1,6 @@
 import 'package:driver/app/providers.dart';
+import 'package:driver/features/earnings/models/session_earnings.dart';
+import 'package:driver/features/earnings/repositories/earnings_repository.dart';
 import 'package:driver/features/home/views/driver_home_screen.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/features/active_ride/repositories/active_ride_repository.dart';
@@ -38,8 +40,20 @@ class MockActiveRideRepository extends ActiveRideRepository {
   Future<void> cancelRide(String rideId, {String? reasonText}) async {}
 }
 
+/// Avoids a real network call from the earnings notifier's initial load
+/// (the home screen now renders live earnings stats — Task 5).
+class MockEarningsRepository implements EarningsRepository {
+  @override
+  Future<SessionEarnings> getEarnings({
+    DateTime? from,
+    DateTime? to,
+    int page = 1,
+  }) async => const SessionEarnings();
+}
+
 final _mockDriverRepo = MockDriverRepository();
 final _mockActiveRideRepo = MockActiveRideRepository();
+final _mockEarningsRepo = MockEarningsRepository();
 
 void main() {
   testWidgets('DriverHomeScreen renders toggle button', (tester) async {
@@ -50,6 +64,7 @@ void main() {
           apiClientProvider.overrideWithValue(_mockApiClient),
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),
@@ -75,6 +90,7 @@ void main() {
           apiClientProvider.overrideWithValue(_mockApiClient),
           driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
           activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
         ],
         child: MaterialApp(
           theme: SakaiTheme.light(_themeConfig),
@@ -85,5 +101,40 @@ void main() {
 
     // Initially offline, no GPS warning
     expect(find.text('Waiting for GPS signal…'), findsNothing);
+  });
+
+  // Task 15 — structural smoke coverage for the driver Console (home) under
+  // ThemeMode.dark, the app's forced theme (Task 3). Pixel goldens are not
+  // used: see mobile/shared's 8 pre-existing environment-only golden
+  // failures (Task 3 stash A/B). This asserts the screen pumps without
+  // throwing under dark and that the console's custom header (not a bare
+  // default-themed AppBar — the screen has no Scaffold.appBar at all) shows
+  // its key content.
+  testWidgets('DriverHomeScreen pumps under dark theme (Console)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          wsClientProvider.overrideWithValue(WsClient()),
+          apiClientProvider.overrideWithValue(_mockApiClient),
+          driverRepositoryProvider.overrideWithValue(_mockDriverRepo),
+          activeRideRepositoryProvider.overrideWithValue(_mockActiveRideRepo),
+          earningsRepositoryProvider.overrideWithValue(_mockEarningsRepo),
+        ],
+        child: MaterialApp(
+          theme: SakaiTheme.dark(_themeConfig),
+          home: DriverHomeScreen(),
+        ),
+      ),
+    );
+
+    // Console renders its real content under dark, not a default Material
+    // light AppBar (the screen builds its own header Row — no Scaffold
+    // appBar at all, so a bare AppBar can never leak through here).
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.text('GROSS CASH'), findsOneWidget);
+    expect(find.text('Live Dispatch'), findsOneWidget);
+    expect(find.text('SakAI'), findsOneWidget);
   });
 }

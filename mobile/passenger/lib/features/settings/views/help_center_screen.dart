@@ -80,7 +80,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Help Center'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

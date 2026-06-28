@@ -16,7 +16,7 @@ class NotificationsScreen extends ConsumerWidget {
     final t = SakaiDesignTokens.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Notifications'),
         actions: [
           if (state.unreadCount > 0)

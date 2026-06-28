@@ -41,7 +41,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.fastfood_rounded,
       label: 'Food',
-      color: const Color(0xFFFF6B35),
+      color: SakaiDesignTokens.serviceFood,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'Food');
@@ -50,7 +50,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.shopping_cart_rounded,
       label: 'Mart',
-      color: const Color(0xFF0284C7),
+      color: SakaiDesignTokens.serviceMart,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'Mart');
@@ -59,7 +59,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.bolt_rounded,
       label: 'Express',
-      color: const Color(0xFFEAB308),
+      color: SakaiDesignTokens.serviceExpress,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'Express');
@@ -68,7 +68,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.directions_car_rounded,
       label: 'Transport',
-      color: const Color(0xFF00C472),
+      color: Theme.of(context).colorScheme.primary,
       onTap: () {
         HapticFeedback.mediumImpact();
         onTransportTap();
@@ -78,7 +78,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.local_mall_rounded,
       label: 'Shopping',
-      color: const Color(0xFF9333EA),
+      color: SakaiDesignTokens.serviceShopping,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'Shopping');
@@ -87,7 +87,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.auto_awesome_rounded,
       label: 'Offers',
-      color: const Color(0xFFEC4899),
+      color: SakaiDesignTokens.serviceOffers,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.promotions);
@@ -96,7 +96,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.card_giftcard_rounded,
       label: 'Gift Cards',
-      color: const Color(0xFFEF4444),
+      color: SakaiDesignTokens.serviceGiftCards,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'Gift Cards');
@@ -105,7 +105,7 @@ class HomeServicesGrid extends StatelessWidget {
     _ServiceItem(
       icon: Icons.apps_rounded,
       label: 'More',
-      color: const Color(0xFF6B7280),
+      color: SakaiDesignTokens.serviceMore,
       onTap: () {
         HapticFeedback.lightImpact();
         context.push(Routes.comingSoon, extra: 'More');

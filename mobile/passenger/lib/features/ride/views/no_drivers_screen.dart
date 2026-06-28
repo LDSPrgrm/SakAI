@@ -11,7 +11,7 @@ class NoDriversScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: const SakaiAppBar(),
       body: SakaiEmptyState(
         icon: Icons.directions_car_filled_outlined,
         title: 'No drivers available',

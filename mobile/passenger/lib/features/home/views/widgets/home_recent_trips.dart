@@ -284,7 +284,7 @@ class _RecentTripCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₱${fareValue.toStringAsFixed(0)}',
+                      SakaiCurrency.format(fareValue),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: isCancelled

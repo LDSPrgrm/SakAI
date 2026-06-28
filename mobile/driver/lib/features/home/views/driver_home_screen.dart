@@ -12,6 +12,7 @@ import '../../../app/e2e_mode_stub.dart'
     if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/router.dart';
+import '../../earnings/view_models/earnings_notifier.dart';
 import '../view_models/driver_home_notifier.dart';
 
 /// Driver home screen — full-screen Google Map with online/offline toggle,
@@ -208,9 +209,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CircleAvatar(
-                      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                      backgroundColor: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        icon: Icon(Icons.arrow_back, color: scheme.onSurface),
                         onPressed: () => setState(() => _isMapExpanded = false),
                       ),
                     ),
@@ -218,22 +219,22 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
                           color: const Color(0xFF334155),
                           width: 1,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.bolt, color: Color(0xFF00DC82), size: 16),
-                          SizedBox(width: 6),
+                          Icon(Icons.bolt, color: scheme.primary, size: 16),
+                          const SizedBox(width: 6),
                           Text(
                             'SakAI',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: scheme.onSurface,
                               fontWeight: FontWeight.w900,
                               fontSize: 14,
                               letterSpacing: -0.3,
@@ -243,9 +244,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       ),
                     ),
                     CircleAvatar(
-                      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                      backgroundColor: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                       child: IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
+                        icon: Icon(Icons.menu, color: scheme.onSurface),
                         onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
@@ -311,8 +312,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     );
                   }
                 },
-                backgroundColor: const Color(0xFF1E293B),
-                child: const Icon(Icons.my_location, color: Color(0xFF00DC82)),
+                backgroundColor: scheme.surfaceContainerHigh,
+                child: Icon(Icons.my_location, color: scheme.primary),
               ),
             ),
 
@@ -321,7 +322,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               bottom: 0,
               left: 0,
               right: 0,
-              child: _buildCustomBottomNavBar(context, tokens),
+              child: _buildCustomBottomNavBar(context, scheme, tokens),
             ),
           ],
         ),
@@ -331,7 +332,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 
     // Default console mode/dashboard mode (Mockup 2 layout)
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: scheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -344,9 +345,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   // Menu button
                   Builder(
                     builder: (context) => CircleAvatar(
-                      backgroundColor: const Color(0xFF1E293B),
+                      backgroundColor: scheme.surfaceContainerHigh,
                       child: IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
+                        icon: Icon(Icons.menu, color: scheme.onSurface),
                         onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
@@ -355,29 +356,29 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: scheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
                         color: const Color(0xFF334155),
                         width: 1,
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.bolt, color: Color(0xFF00DC82), size: 16),
-                        SizedBox(width: 6),
+                        Icon(Icons.bolt, color: scheme.primary, size: 16),
+                        const SizedBox(width: 6),
                         Text(
                           'SakAI',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: scheme.onSurface,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                             letterSpacing: -0.3,
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'Driver',
                           style: TextStyle(
                             color: Color(0xFF94A3B8),
@@ -393,13 +394,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: scheme.surfaceContainerHigh,
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.notifications_rounded,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                             size: 20,
                           ),
                           onPressed: () {},
@@ -407,11 +408,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                       ),
                       const SizedBox(width: 6),
                       CircleAvatar(
-                        backgroundColor: const Color(0xFF1E293B),
+                        backgroundColor: scheme.surfaceContainerHigh,
                         child: IconButton(
                           icon: Icon(
                             _isDarkMode ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                            color: _isDarkMode ? const Color(0xFF00DC82) : Colors.amber,
+                            color: _isDarkMode ? scheme.primary : Colors.amber,
                             size: 20,
                           ),
                           onPressed: () {
@@ -488,8 +489,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     // Stats Row (Gross Cash, Completed Rides, Shift Hours)
                     _buildStatsRow(scheme, tokens),
 
-                    // Weekly Revenue Custom Bar Chart
-                    _buildWeeklyRevenueChart(scheme, tokens),
+                    // Weekly earnings trends: pending an analytics endpoint (follow-on spec).
 
                     // Fatigue Check Card
                     _buildFatigueCheckCard(scheme, tokens),
@@ -499,7 +499,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             ),
 
             // Bottom Custom Tab bar Navigation
-            _buildCustomBottomNavBar(context, tokens),
+            _buildCustomBottomNavBar(context, scheme, tokens),
           ],
         ),
       ),
@@ -519,13 +519,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: online ? const Color(0xFF00DC82) : const Color(0xFF64748B),
+                color: online ? scheme.primary : const Color(0xFF64748B),
                 width: 2.5,
               ),
               boxShadow: online
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF00DC82).withValues(alpha: 0.3),
+                        color: scheme.primary.withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 1,
                       )
@@ -543,9 +543,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     width: 44,
                     height: 44,
                     color: const Color(0xFF334155),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                       size: 22,
                     ),
                   );
@@ -554,11 +554,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Welcome back,',
                   style: TextStyle(
                     color: Color(0xFF94A3B8),
@@ -566,11 +566,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Alex Thompson',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: scheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.3,
@@ -597,7 +597,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       height: 180,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF334155), width: 1),
         boxShadow: [
@@ -632,11 +632,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFF334155), width: 1),
                       ),
-                      child: const Icon(Icons.my_location, color: Color(0xFF00DC82), size: 18),
+                      child: Icon(Icons.my_location, color: scheme.primary, size: 18),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -650,11 +650,11 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                        color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFF334155), width: 1),
                       ),
-                      child: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
+                      child: Icon(Icons.fullscreen_rounded, color: scheme.onSurface, size: 18),
                     ),
                   ),
                 ],
@@ -668,18 +668,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.75),
+                  color: scheme.scrim.withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.5), width: 1),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.map_rounded, color: Color(0xFF00DC82), size: 12),
-                    SizedBox(width: 6),
+                    Icon(Icons.map_rounded, color: scheme.primary, size: 12),
+                    const SizedBox(width: 6),
                     Text(
                       'Interactive Map',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: scheme.onSurface,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -710,20 +710,20 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF00DC82).withValues(alpha: 0.15),
-            const Color(0xFF1E293B),
+            scheme.primary.withValues(alpha: 0.15),
+            scheme.surfaceContainerHigh,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00DC82).withValues(alpha: 0.4),
+          color: scheme.primary.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00DC82).withValues(alpha: 0.1),
+            color: scheme.primary.withValues(alpha: 0.1),
             blurRadius: 12,
             spreadRadius: 2,
           ),
@@ -737,16 +737,16 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.local_taxi_rounded,
-                    color: Color(0xFF00DC82),
+                    color: scheme.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'ACTIVE TRIP',
                     style: TextStyle(
-                      color: Color(0xFF00DC82),
+                      color: scheme.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 0.5,
@@ -757,13 +757,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00DC82).withValues(alpha: 0.2),
+                  color: scheme.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   _formatRideStatus(activeRide.status).toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0xFF00DC82),
+                  style: TextStyle(
+                    color: scheme.primary,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
@@ -774,8 +774,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           const SizedBox(height: 12),
           Text(
             activeRide.passenger.name,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: scheme.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -813,7 +813,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                 style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00DC82),
+                backgroundColor: scheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -840,18 +840,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: online 
-              ? const Color(0xFF00DC82).withValues(alpha: 0.3) 
+          color: online
+              ? scheme.primary.withValues(alpha: 0.3)
               : const Color(0xFF334155),
           width: 1,
         ),
         boxShadow: online
             ? [
                 BoxShadow(
-                  color: const Color(0xFF00DC82).withValues(alpha: 0.05),
+                  color: scheme.primary.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -866,20 +866,20 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               children: [
                 Row(
                   children: [
-                    _buildLivePulseDot(online),
+                    _buildLivePulseDot(online, scheme),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: online 
-                            ? const Color(0xFF00DC82).withValues(alpha: 0.15) 
+                        color: online
+                            ? scheme.primary.withValues(alpha: 0.15)
                             : const Color(0xFF475569).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         online ? 'ACTIVE' : 'INACTIVE',
                         style: TextStyle(
-                          color: online ? const Color(0xFF00DC82) : const Color(0xFF94A3B8),
+                          color: online ? scheme.primary : const Color(0xFF94A3B8),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -889,10 +889,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Live Dispatch',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: scheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -912,20 +912,20 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           ),
           const SizedBox(width: 12),
           loading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00DC82)),
+                    valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
                   ),
                 )
               : Transform.scale(
                   scale: 0.9,
                   child: Switch(
                     value: online,
-                    activeThumbColor: const Color(0xFF00DC82),
-                    activeTrackColor: const Color(0xFF00DC82).withValues(alpha: 0.3),
+                    activeThumbColor: scheme.primary,
+                    activeTrackColor: scheme.primary.withValues(alpha: 0.3),
                     inactiveThumbColor: const Color(0xFF64748B),
                     inactiveTrackColor: const Color(0xFF334155),
                     onChanged: (val) async {
@@ -939,7 +939,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     );
   }
 
-  Widget _buildLivePulseDot(bool active) {
+  Widget _buildLivePulseDot(bool active, ColorScheme scheme) {
     if (!active) {
       return Container(
         width: 8,
@@ -950,11 +950,15 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         ),
       );
     }
-    return const PulsingIndicatorDot();
+    return PulsingIndicatorDot(color: scheme.primary);
   }
 
   // Stats Row (Gross Cash, Completed Rides, Shift Hours)
   Widget _buildStatsRow(ColorScheme scheme, SakaiDesignTokens tokens) {
+    final state = ref.watch(earningsNotifierProvider);
+    final e = state.earnings;
+    final gross = state.isLoading ? '—' : SakaiCurrency.format(e.totalEarnings);
+    final rides = state.isLoading ? '—' : '${e.completedRidesCount} Rides';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -962,27 +966,30 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           Expanded(
             child: _buildStatCard(
               label: 'GROSS CASH',
-              value: '₱184.50',
+              value: gross,
               icon: Icons.payments_rounded,
-              valueColor: const Color(0xFF00DC82),
+              valueColor: scheme.primary,
+              scheme: scheme,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
               label: 'COMPLETED',
-              value: '12 Rides',
+              value: rides,
               icon: Icons.check_circle_rounded,
-              valueColor: Colors.white,
+              valueColor: scheme.onSurface,
+              scheme: scheme,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
               label: 'SHIFT HOURS',
-              value: '6.4 hrs',
+              value: '—',
               icon: Icons.schedule_rounded,
-              valueColor: Colors.white,
+              valueColor: scheme.onSurface,
+              scheme: scheme,
             ),
           ),
         ],
@@ -995,11 +1002,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     required String value,
     required IconData icon,
     required Color valueColor,
+    required ColorScheme scheme,
   }) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF334155), width: 1),
       ),
@@ -1036,181 +1044,16 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     );
   }
 
-  // Weekly Revenue custom chart
-  Widget _buildWeeklyRevenueChart(ColorScheme scheme, SakaiDesignTokens tokens) {
-    final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    final values = [120.0, 150.0, 95.0, 210.0, 180.0, 310.0, 140.0];
-    const double maxVal = 350.0;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF334155), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'WEEKLY REVENUE',
-                    style: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text(
-                        '₱1,205.50',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00DC82).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.arrow_upward_rounded, color: Color(0xFF00DC82), size: 12),
-                            SizedBox(width: 2),
-                            Text(
-                              '+18%',
-                              style: TextStyle(
-                                color: Color(0xFF00DC82),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const Icon(Icons.bar_chart_rounded, color: Color(0xFF64748B), size: 22),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 140,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: List.generate(days.length, (idx) {
-                final isSat = idx == 5; // Saturday is index 5
-                final heightPct = values[idx] / maxVal;
-                return Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (isSat)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00DC82),
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF00DC82).withValues(alpha: 0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Text(
-                            '₱310',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                      else
-                        const SizedBox(height: 22),
-                      
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Revenue for ${days[idx]}: ₱${values[idx].toStringAsFixed(2)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          height: 90 * heightPct,
-                          width: 14,
-                          decoration: BoxDecoration(
-                            color: isSat ? const Color(0xFF00DC82) : const Color(0xFF475569),
-                            borderRadius: BorderRadius.circular(4),
-                            boxShadow: isSat
-                                ? [
-                                    BoxShadow(
-                                      color: const Color(0xFF00DC82).withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    )
-                                  ]
-                                : [],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        days[idx],
-                        style: TextStyle(
-                          color: isSat ? const Color(0xFF00DC82) : const Color(0xFF64748B),
-                          fontSize: 11,
-                          fontWeight: isSat ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // Fatigue Alert
   Widget _buildFatigueCheckCard(ColorScheme scheme, SakaiDesignTokens tokens) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00DC82).withValues(alpha: 0.15),
+          color: scheme.primary.withValues(alpha: 0.15),
           width: 1,
         ),
       ),
@@ -1220,30 +1063,30 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF00DC82).withValues(alpha: 0.1),
+              color: scheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shield_outlined,
-              color: Color(0xFF00DC82),
+              color: scheme.primary,
               size: 22,
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Safety Fatigue Check',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: scheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'To maintain safety regulations, we recommend a 15-minute break in the next 1h 45m.',
                   style: TextStyle(
                     color: Color(0xFF94A3B8),
@@ -1260,12 +1103,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
   }
 
   // Custom Bottom Navigation Bar
-  Widget _buildCustomBottomNavBar(BuildContext context, SakaiDesignTokens tokens) {
+  Widget _buildCustomBottomNavBar(BuildContext context, ColorScheme scheme, SakaiDesignTokens tokens) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFF334155), width: 1),
         boxShadow: [
@@ -1283,6 +1126,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             icon: Icons.dashboard_rounded,
             label: 'Console',
             isActive: true,
+            scheme: scheme,
             tokens: tokens,
             onTap: () {},
           ),
@@ -1290,6 +1134,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             icon: Icons.payments_rounded,
             label: 'Earnings',
             isActive: false,
+            scheme: scheme,
             tokens: tokens,
             onTap: () => context.push(Routes.earnings),
           ),
@@ -1297,6 +1142,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             icon: Icons.description_rounded,
             label: 'Documents',
             isActive: false,
+            scheme: scheme,
             tokens: tokens,
             onTap: () => context.push(Routes.documents),
           ),
@@ -1304,6 +1150,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             icon: Icons.settings_rounded,
             label: 'Settings',
             isActive: false,
+            scheme: scheme,
             tokens: tokens,
             onTap: () => context.push(Routes.settings),
           ),
@@ -1316,6 +1163,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     required IconData icon,
     required String label,
     required bool isActive,
+    required ColorScheme scheme,
     required SakaiDesignTokens tokens,
     required VoidCallback onTap,
   }) {
@@ -1326,7 +1174,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF00DC82).withValues(alpha: 0.15) : Colors.transparent,
+          color: isActive ? scheme.primary.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1334,15 +1182,15 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           children: [
             Icon(
               icon,
-              color: isActive ? const Color(0xFF00DC82) : const Color(0xFF94A3B8),
+              color: isActive ? scheme.primary : const Color(0xFF94A3B8),
               size: 22,
             ),
             if (isActive) ...[
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFF00DC82),
+                style: TextStyle(
+                  color: scheme.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -1357,14 +1205,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
   // Beautiful Dark Mode Cohesive Drawer
   Widget _buildCohesiveDrawer(BuildContext context, DriverHomeState state, ColorScheme scheme) {
     return Drawer(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: scheme.surface,
       child: Column(
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E293B),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHigh,
               border: Border(
-                bottom: BorderSide(color: Color(0xFF334155), width: 1),
+                bottom: BorderSide(color: scheme.outlineVariant, width: 1),
               ),
             ),
             child: Row(
@@ -1581,7 +1429,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 // Pulsing Indicator Dot Stateful Widget for Premium Live Status
 // -------------------------------------------------------------
 class PulsingIndicatorDot extends StatefulWidget {
-  const PulsingIndicatorDot({super.key});
+  const PulsingIndicatorDot({super.key, required this.color});
+
+  final Color color;
 
   @override
   State<PulsingIndicatorDot> createState() => _PulsingIndicatorDotState();
@@ -1622,15 +1472,15 @@ class _PulsingIndicatorDotState extends State<PulsingIndicatorDot> with SingleTi
               width: _pulseAnimation.value * 2,
               height: _pulseAnimation.value * 2,
               decoration: BoxDecoration(
-                color: const Color(0xFF00DC82).withValues(alpha: (1.0 - _pulseController.value) * 0.5),
+                color: widget.color.withValues(alpha: (1.0 - _pulseController.value) * 0.5),
                 shape: BoxShape.circle,
               ),
             ),
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: Color(0xFF00DC82),
+              decoration: BoxDecoration(
+                color: widget.color,
                 shape: BoxShape.circle,
               ),
             ),

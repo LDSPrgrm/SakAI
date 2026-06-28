@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 /// Two horizontal wallet cards: "Activate Pay" and "Use Points".
 class HomeWalletCards extends StatelessWidget {
@@ -15,7 +16,10 @@ class HomeWalletCards extends StatelessWidget {
         children: const [
           _WalletCard(
             gradient: LinearGradient(
-              colors: [Color(0xFF00C472), Color(0xFF009958)],
+              colors: [
+                SakaiDesignTokens.walletPayGradientStart,
+                SakaiDesignTokens.walletPayGradientEnd,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -27,7 +31,10 @@ class HomeWalletCards extends StatelessWidget {
           SizedBox(width: 12),
           _WalletCard(
             gradient: LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+              colors: [
+                SakaiDesignTokens.walletPointsGradientStart,
+                SakaiDesignTokens.walletPointsGradientEnd,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
