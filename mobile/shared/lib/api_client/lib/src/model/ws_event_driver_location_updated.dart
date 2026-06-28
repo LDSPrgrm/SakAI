@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 part 'ws_event_driver_location_updated.g.dart';
 
-/// **Event:** `driver.location_updated` **Direction:** server → passenger Pushed on every `PUT /driver/location` call during an active ride. Use to animate the driver pin on the passenger's map in real time. 
+/// **Event:** `driver.location_updated` **Direction:** server → passenger Pushed on every `PUT /driver/location` call during an active ride. Use to animate the driver pin on the passenger's map in real time.  Marked `x-high-frequency: true` — clients may use a hand-tuned fast-path deserializer (lat/lng/heading/ride_id only) instead of the full schema validator on the hot path. 
 ///
 /// Properties:
 /// * [rideId] 

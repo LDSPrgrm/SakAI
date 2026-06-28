@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -18,6 +18,8 @@ part 'admin_ride_item.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. RIDE-000123).
 /// * [status] 
 /// * [passenger] 
 /// * [driver] - Null until a driver is matched and accepts.
@@ -35,6 +37,7 @@ part 'admin_ride_item.g.dart';
 /// * [cancelledBy] - Set only when status is `cancelled`
 /// * [cancellationReason] - Predefined cancellation reason code
 /// * [cancellationReasonText] - Free-text cancellation reason
+/// * [declineCount] - Number of times this ride was declined by drivers
 /// * [createdAt] 
 /// * [updatedAt] 
 /// * [passengerName] 
@@ -57,7 +60,8 @@ abstract class AdminRideItem implements RideResponse, Built<AdminRideItem, Admin
   factory AdminRideItem([void updates(AdminRideItemBuilder b)]) = _$AdminRideItem;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(AdminRideItemBuilder b) => b;
+  static void _defaults(AdminRideItemBuilder b) => b
+      ..declineCount = 0;
 
   @BuiltValueSerializer(custom: true)
   static Serializer<AdminRideItem> get serializer => _$AdminRideItemSerializer();
@@ -117,13 +121,6 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
         specifiedType: const FullType.nullable(String),
       );
     }
-    if (object.cancellationReason != null) {
-      yield r'cancellation_reason';
-      yield serializers.serialize(
-        object.cancellationReason,
-        specifiedType: const FullType.nullable(String),
-      );
-    }
     if (object.originAddress != null) {
       yield r'origin_address';
       yield serializers.serialize(
@@ -160,6 +157,44 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
       object.createdAt,
       specifiedType: const FullType(DateTime),
     );
+    if (object.declineCount != null) {
+      yield r'decline_count';
+      yield serializers.serialize(
+        object.declineCount,
+        specifiedType: const FullType(int),
+      );
+    }
+    yield r'id';
+    yield serializers.serialize(
+      object.id,
+      specifiedType: const FullType(String),
+    );
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.cancellationReasonText != null) {
+      yield r'cancellation_reason_text';
+      yield serializers.serialize(
+        object.cancellationReasonText,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    yield r'updated_at';
+    yield serializers.serialize(
+      object.updatedAt,
+      specifiedType: const FullType(DateTime),
+    );
+    if (object.cancellationReason != null) {
+      yield r'cancellation_reason';
+      yield serializers.serialize(
+        object.cancellationReason,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     if (object.driver != null) {
       yield r'driver';
       yield serializers.serialize(
@@ -193,11 +228,13 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
         specifiedType: const FullType(String),
       );
     }
-    yield r'id';
-    yield serializers.serialize(
-      object.id,
-      specifiedType: const FullType(String),
-    );
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.fareBreakdown != null) {
       yield r'fare_breakdown';
       yield serializers.serialize(
@@ -209,18 +246,6 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
     yield serializers.serialize(
       object.status,
       specifiedType: const FullType(RideStatus),
-    );
-    if (object.cancellationReasonText != null) {
-      yield r'cancellation_reason_text';
-      yield serializers.serialize(
-        object.cancellationReasonText,
-        specifiedType: const FullType.nullable(String),
-      );
-    }
-    yield r'updated_at';
-    yield serializers.serialize(
-      object.updatedAt,
-      specifiedType: const FullType(DateTime),
     );
   }
 
@@ -291,14 +316,6 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
           if (valueDes == null) continue;
           result.notes = valueDes;
           break;
-        case r'cancellation_reason':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(String),
-          ) as String?;
-          if (valueDes == null) continue;
-          result.cancellationReason = valueDes;
-          break;
         case r'origin_address':
           final valueDes = serializers.deserialize(
             value,
@@ -343,6 +360,50 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
           ) as DateTime;
           result.createdAt = valueDes;
           break;
+        case r'decline_count':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.declineCount = valueDes;
+          break;
+        case r'id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.id = valueDes;
+          break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'cancellation_reason_text':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.cancellationReasonText = valueDes;
+          break;
+        case r'updated_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
+          break;
+        case r'cancellation_reason':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.cancellationReason = valueDes;
+          break;
         case r'driver':
           final valueDes = serializers.deserialize(
             value,
@@ -380,12 +441,12 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
           ) as String;
           result.driverName = valueDes;
           break;
-        case r'id':
+        case r'display_id':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
-          result.id = valueDes;
+          result.displayId = valueDes;
           break;
         case r'fare_breakdown':
           final valueDes = serializers.deserialize(
@@ -401,21 +462,6 @@ class _$AdminRideItemSerializer implements PrimitiveSerializer<AdminRideItem> {
             specifiedType: const FullType(RideStatus),
           ) as RideStatus;
           result.status = valueDes;
-          break;
-        case r'cancellation_reason_text':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(String),
-          ) as String?;
-          if (valueDes == null) continue;
-          result.cancellationReasonText = valueDes;
-          break;
-        case r'updated_at':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(DateTime),
-          ) as DateTime;
-          result.updatedAt = valueDes;
           break;
         default:
           unhandled.add(key);

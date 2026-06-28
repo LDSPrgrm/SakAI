@@ -12,15 +12,11 @@ class _$ServiceArea extends ServiceArea {
   @override
   final String name;
   @override
-  final String? description;
+  final String? lguCode;
   @override
-  final bool? isSystem;
+  final SurgeZone boundary;
   @override
-  final BuiltList<RolePermission>? permissions;
-  @override
-  final int? adminCount;
-  @override
-  final String? createdBy;
+  final bool active;
   @override
   final DateTime? createdAt;
   @override
@@ -32,11 +28,9 @@ class _$ServiceArea extends ServiceArea {
   _$ServiceArea._({
     required this.id,
     required this.name,
-    this.description,
-    this.isSystem,
-    this.permissions,
-    this.adminCount,
-    this.createdBy,
+    this.lguCode,
+    required this.boundary,
+    required this.active,
     this.createdAt,
     this.updatedAt,
   }) : super._();
@@ -53,11 +47,9 @@ class _$ServiceArea extends ServiceArea {
     return other is ServiceArea &&
         id == other.id &&
         name == other.name &&
-        description == other.description &&
-        isSystem == other.isSystem &&
-        permissions == other.permissions &&
-        adminCount == other.adminCount &&
-        createdBy == other.createdBy &&
+        lguCode == other.lguCode &&
+        boundary == other.boundary &&
+        active == other.active &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -67,11 +59,9 @@ class _$ServiceArea extends ServiceArea {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
-    _$hash = $jc(_$hash, description.hashCode);
-    _$hash = $jc(_$hash, isSystem.hashCode);
-    _$hash = $jc(_$hash, permissions.hashCode);
-    _$hash = $jc(_$hash, adminCount.hashCode);
-    _$hash = $jc(_$hash, createdBy.hashCode);
+    _$hash = $jc(_$hash, lguCode.hashCode);
+    _$hash = $jc(_$hash, boundary.hashCode);
+    _$hash = $jc(_$hash, active.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -83,11 +73,9 @@ class _$ServiceArea extends ServiceArea {
     return (newBuiltValueToStringHelper(r'ServiceArea')
           ..add('id', id)
           ..add('name', name)
-          ..add('description', description)
-          ..add('isSystem', isSystem)
-          ..add('permissions', permissions)
-          ..add('adminCount', adminCount)
-          ..add('createdBy', createdBy)
+          ..add('lguCode', lguCode)
+          ..add('boundary', boundary)
+          ..add('active', active)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -105,27 +93,17 @@ class ServiceAreaBuilder implements Builder<ServiceArea, ServiceAreaBuilder> {
   String? get name => _$this._name;
   set name(String? name) => _$this._name = name;
 
-  String? _description;
-  String? get description => _$this._description;
-  set description(String? description) => _$this._description = description;
+  String? _lguCode;
+  String? get lguCode => _$this._lguCode;
+  set lguCode(String? lguCode) => _$this._lguCode = lguCode;
 
-  bool? _isSystem;
-  bool? get isSystem => _$this._isSystem;
-  set isSystem(bool? isSystem) => _$this._isSystem = isSystem;
+  SurgeZoneBuilder? _boundary;
+  SurgeZoneBuilder get boundary => _$this._boundary ??= SurgeZoneBuilder();
+  set boundary(SurgeZoneBuilder? boundary) => _$this._boundary = boundary;
 
-  ListBuilder<RolePermission>? _permissions;
-  ListBuilder<RolePermission> get permissions =>
-      _$this._permissions ??= ListBuilder<RolePermission>();
-  set permissions(ListBuilder<RolePermission>? permissions) =>
-      _$this._permissions = permissions;
-
-  int? _adminCount;
-  int? get adminCount => _$this._adminCount;
-  set adminCount(int? adminCount) => _$this._adminCount = adminCount;
-
-  String? _createdBy;
-  String? get createdBy => _$this._createdBy;
-  set createdBy(String? createdBy) => _$this._createdBy = createdBy;
+  bool? _active;
+  bool? get active => _$this._active;
+  set active(bool? active) => _$this._active = active;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -144,11 +122,9 @@ class ServiceAreaBuilder implements Builder<ServiceArea, ServiceAreaBuilder> {
     if ($v != null) {
       _id = $v.id;
       _name = $v.name;
-      _description = $v.description;
-      _isSystem = $v.isSystem;
-      _permissions = $v.permissions?.toBuilder();
-      _adminCount = $v.adminCount;
-      _createdBy = $v.createdBy;
+      _lguCode = $v.lguCode;
+      _boundary = $v.boundary.toBuilder();
+      _active = $v.active;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -181,19 +157,21 @@ class ServiceAreaBuilder implements Builder<ServiceArea, ServiceAreaBuilder> {
               r'ServiceArea',
               'name',
             ),
-            description: description,
-            isSystem: isSystem,
-            permissions: _permissions?.build(),
-            adminCount: adminCount,
-            createdBy: createdBy,
+            lguCode: lguCode,
+            boundary: boundary.build(),
+            active: BuiltValueNullFieldError.checkNotNull(
+              active,
+              r'ServiceArea',
+              'active',
+            ),
             createdAt: createdAt,
             updatedAt: updatedAt,
           );
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'permissions';
-        _permissions?.build();
+        _$failedField = 'boundary';
+        boundary.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ServiceArea',

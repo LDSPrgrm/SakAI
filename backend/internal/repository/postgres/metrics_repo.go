@@ -80,7 +80,7 @@ func (r *metricsRepo) GetDriverHeatmap(ctx context.Context) (*domain.DriverHeatm
 		       ) AS is_available,
 		       d.updated_at
 		FROM drivers d
-		LEFT JOIN vehicles v ON v.driver_id = d.user_id
+		LEFT JOIN vehicles v ON v.user_id = d.user_id
 		WHERE d.status = 'online' AND d.location IS NOT NULL
 		LIMIT 500`
 	rows, err := r.db.Query(ctx, q)

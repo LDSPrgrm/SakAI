@@ -15,6 +15,9 @@ _$complianceDataAccreditationStatusEnum_expiring =
 const ComplianceDataAccreditationStatusEnum
 _$complianceDataAccreditationStatusEnum_expired =
     const ComplianceDataAccreditationStatusEnum._('expired');
+const ComplianceDataAccreditationStatusEnum
+_$complianceDataAccreditationStatusEnum_pending =
+    const ComplianceDataAccreditationStatusEnum._('pending');
 
 ComplianceDataAccreditationStatusEnum
 _$complianceDataAccreditationStatusEnumValueOf(String name) {
@@ -25,6 +28,8 @@ _$complianceDataAccreditationStatusEnumValueOf(String name) {
       return _$complianceDataAccreditationStatusEnum_expiring;
     case 'expired':
       return _$complianceDataAccreditationStatusEnum_expired;
+    case 'pending':
+      return _$complianceDataAccreditationStatusEnum_pending;
     default:
       throw ArgumentError(name);
   }
@@ -37,6 +42,7 @@ _$complianceDataAccreditationStatusEnumValues =
         _$complianceDataAccreditationStatusEnum_active,
         _$complianceDataAccreditationStatusEnum_expiring,
         _$complianceDataAccreditationStatusEnum_expired,
+        _$complianceDataAccreditationStatusEnum_pending,
       ],
     );
 
@@ -50,11 +56,13 @@ class _$ComplianceDataAccreditationStatusEnumSerializer
     'active': 'active',
     'expiring': 'expiring',
     'expired': 'expired',
+    'pending': 'pending',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'active': 'active',
     'expiring': 'expiring',
     'expired': 'expired',
+    'pending': 'pending',
   };
 
   @override
@@ -90,6 +98,12 @@ class _$ComplianceData extends ComplianceData {
   final num? driverComplianceRate;
   @override
   final int? violationCount;
+  @override
+  final int? violationsOpen;
+  @override
+  final int? violationsResolved;
+  @override
+  final DateTime? lastAuditAt;
 
   factory _$ComplianceData([void Function(ComplianceDataBuilder)? updates]) =>
       (ComplianceDataBuilder()..update(updates))._build();
@@ -99,6 +113,9 @@ class _$ComplianceData extends ComplianceData {
     this.accreditationExpiry,
     this.driverComplianceRate,
     this.violationCount,
+    this.violationsOpen,
+    this.violationsResolved,
+    this.lastAuditAt,
   }) : super._();
   @override
   ComplianceData rebuild(void Function(ComplianceDataBuilder) updates) =>
@@ -114,7 +131,10 @@ class _$ComplianceData extends ComplianceData {
         accreditationStatus == other.accreditationStatus &&
         accreditationExpiry == other.accreditationExpiry &&
         driverComplianceRate == other.driverComplianceRate &&
-        violationCount == other.violationCount;
+        violationCount == other.violationCount &&
+        violationsOpen == other.violationsOpen &&
+        violationsResolved == other.violationsResolved &&
+        lastAuditAt == other.lastAuditAt;
   }
 
   @override
@@ -124,6 +144,9 @@ class _$ComplianceData extends ComplianceData {
     _$hash = $jc(_$hash, accreditationExpiry.hashCode);
     _$hash = $jc(_$hash, driverComplianceRate.hashCode);
     _$hash = $jc(_$hash, violationCount.hashCode);
+    _$hash = $jc(_$hash, violationsOpen.hashCode);
+    _$hash = $jc(_$hash, violationsResolved.hashCode);
+    _$hash = $jc(_$hash, lastAuditAt.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -134,7 +157,10 @@ class _$ComplianceData extends ComplianceData {
           ..add('accreditationStatus', accreditationStatus)
           ..add('accreditationExpiry', accreditationExpiry)
           ..add('driverComplianceRate', driverComplianceRate)
-          ..add('violationCount', violationCount))
+          ..add('violationCount', violationCount)
+          ..add('violationsOpen', violationsOpen)
+          ..add('violationsResolved', violationsResolved)
+          ..add('lastAuditAt', lastAuditAt))
         .toString();
   }
 }
@@ -165,6 +191,20 @@ class ComplianceDataBuilder
   set violationCount(int? violationCount) =>
       _$this._violationCount = violationCount;
 
+  int? _violationsOpen;
+  int? get violationsOpen => _$this._violationsOpen;
+  set violationsOpen(int? violationsOpen) =>
+      _$this._violationsOpen = violationsOpen;
+
+  int? _violationsResolved;
+  int? get violationsResolved => _$this._violationsResolved;
+  set violationsResolved(int? violationsResolved) =>
+      _$this._violationsResolved = violationsResolved;
+
+  DateTime? _lastAuditAt;
+  DateTime? get lastAuditAt => _$this._lastAuditAt;
+  set lastAuditAt(DateTime? lastAuditAt) => _$this._lastAuditAt = lastAuditAt;
+
   ComplianceDataBuilder() {
     ComplianceData._defaults(this);
   }
@@ -176,6 +216,9 @@ class ComplianceDataBuilder
       _accreditationExpiry = $v.accreditationExpiry;
       _driverComplianceRate = $v.driverComplianceRate;
       _violationCount = $v.violationCount;
+      _violationsOpen = $v.violationsOpen;
+      _violationsResolved = $v.violationsResolved;
+      _lastAuditAt = $v.lastAuditAt;
       _$v = null;
     }
     return this;
@@ -202,6 +245,9 @@ class ComplianceDataBuilder
           accreditationExpiry: accreditationExpiry,
           driverComplianceRate: driverComplianceRate,
           violationCount: violationCount,
+          violationsOpen: violationsOpen,
+          violationsResolved: violationsResolved,
+          lastAuditAt: lastAuditAt,
         );
     replace(_$result);
     return _$result;

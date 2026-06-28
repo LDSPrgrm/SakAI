@@ -1,10 +1,10 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/surge_zone.dart';
 import 'package:sakai_api_client/src/model/blackout_hour.dart';
-import 'package:sakai_api_client/src/model/geo_json_feature_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -13,13 +13,20 @@ part 'surge_config.g.dart';
 /// SurgeConfig
 ///
 /// Properties:
+/// * [id] 
 /// * [enabled] 
 /// * [maxMultiplier] 
 /// * [triggerRatio] 
-/// * [zones] 
+/// * [zones] - Named polygons with per-zone multipliers. The fare calculator does origin-in-polygon (ray-casting) against this list during SimulateFare; falls back to max_multiplier when no zone matches. 
 /// * [blackoutHours] 
+/// * [updatedAt] 
+/// * [updatedBy] 
+/// * [updatedByName] - Admin display name resolved via LEFT JOIN users on updated_by.
 @BuiltValue()
 abstract class SurgeConfig implements Built<SurgeConfig, SurgeConfigBuilder> {
+  @BuiltValueField(wireName: r'id')
+  String? get id;
+
   @BuiltValueField(wireName: r'enabled')
   bool? get enabled;
 
@@ -29,11 +36,22 @@ abstract class SurgeConfig implements Built<SurgeConfig, SurgeConfigBuilder> {
   @BuiltValueField(wireName: r'trigger_ratio')
   num? get triggerRatio;
 
+  /// Named polygons with per-zone multipliers. The fare calculator does origin-in-polygon (ray-casting) against this list during SimulateFare; falls back to max_multiplier when no zone matches. 
   @BuiltValueField(wireName: r'zones')
-  GeoJSONFeatureCollection? get zones;
+  BuiltList<SurgeZone>? get zones;
 
   @BuiltValueField(wireName: r'blackout_hours')
   BuiltList<BlackoutHour>? get blackoutHours;
+
+  @BuiltValueField(wireName: r'updated_at')
+  DateTime? get updatedAt;
+
+  @BuiltValueField(wireName: r'updated_by')
+  String? get updatedBy;
+
+  /// Admin display name resolved via LEFT JOIN users on updated_by.
+  @BuiltValueField(wireName: r'updated_by_name')
+  String? get updatedByName;
 
   SurgeConfig._();
 
@@ -58,6 +76,13 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
     SurgeConfig object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.id != null) {
+      yield r'id';
+      yield serializers.serialize(
+        object.id,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.enabled != null) {
       yield r'enabled';
       yield serializers.serialize(
@@ -83,7 +108,7 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
       yield r'zones';
       yield serializers.serialize(
         object.zones,
-        specifiedType: const FullType(GeoJSONFeatureCollection),
+        specifiedType: const FullType(BuiltList, [FullType(SurgeZone)]),
       );
     }
     if (object.blackoutHours != null) {
@@ -91,6 +116,27 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
       yield serializers.serialize(
         object.blackoutHours,
         specifiedType: const FullType(BuiltList, [FullType(BlackoutHour)]),
+      );
+    }
+    if (object.updatedAt != null) {
+      yield r'updated_at';
+      yield serializers.serialize(
+        object.updatedAt,
+        specifiedType: const FullType(DateTime),
+      );
+    }
+    if (object.updatedBy != null) {
+      yield r'updated_by';
+      yield serializers.serialize(
+        object.updatedBy,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.updatedByName != null) {
+      yield r'updated_by_name';
+      yield serializers.serialize(
+        object.updatedByName,
+        specifiedType: const FullType(String),
       );
     }
   }
@@ -116,6 +162,13 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.id = valueDes;
+          break;
         case r'enabled':
           final valueDes = serializers.deserialize(
             value,
@@ -140,8 +193,8 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
         case r'zones':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(GeoJSONFeatureCollection),
-          ) as GeoJSONFeatureCollection;
+            specifiedType: const FullType(BuiltList, [FullType(SurgeZone)]),
+          ) as BuiltList<SurgeZone>;
           result.zones.replace(valueDes);
           break;
         case r'blackout_hours':
@@ -150,6 +203,27 @@ class _$SurgeConfigSerializer implements PrimitiveSerializer<SurgeConfig> {
             specifiedType: const FullType(BuiltList, [FullType(BlackoutHour)]),
           ) as BuiltList<BlackoutHour>;
           result.blackoutHours.replace(valueDes);
+          break;
+        case r'updated_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
+          break;
+        case r'updated_by':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.updatedBy = valueDes;
+          break;
+        case r'updated_by_name':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.updatedByName = valueDes;
           break;
         default:
           unhandled.add(key);

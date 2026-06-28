@@ -3,12 +3,15 @@ import 'package:sakai_shared/sakai_shared.dart';
 /// Returns a numeric ordering value for a [RideStatus] so we can compare
 /// whether the ride has progressed past a given stage.
 int _statusOrder(RideStatus s) {
-  if (s == RideStatus.requested) return 0;
-  if (s == RideStatus.accepted) return 1;
-  if (s == RideStatus.arrived) return 2;
-  if (s == RideStatus.inProgress) return 3;
-  if (s == RideStatus.completed || s == RideStatus.cancelled) return 4;
-  throw StateError('Unknown RideStatus: $s');
+  final name = s.name;
+  if (name == 'created') return 0;
+  if (name == 'requested') return 1;
+  if (name == 'accepted') return 2;
+  if (name == 'arrived') return 3;
+  if (name == 'inProgress' || name == 'in_progress') return 4;
+  if (name == 'paymentPending' || name == 'payment_pending') return 5;
+  if (name == 'completed' || name == 'cancelled') return 6;
+  return 0;
 }
 
 /// Extended domain model for the ride detail view.
@@ -118,18 +121,24 @@ class RideDetail {
   bool get isCancelled => status == RideStatus.cancelled;
 
   String get displayFare {
-    final amount = fare ?? estimatedFare;
-    return '\$${amount.toStringAsFixed(2)}';
+    if (fare != null) return SakaiCurrency.format(fare!);
+    return isCompleted ? SakaiCurrency.formatFare(null) : SakaiCurrency.format(estimatedFare);
   }
 
+
+
   String get statusLabel {
-    if (status == RideStatus.requested) return 'Requested';
-    if (status == RideStatus.accepted) return 'Accepted';
-    if (status == RideStatus.arrived) return 'Arrived';
-    if (status == RideStatus.inProgress) return 'In Progress';
-    if (status == RideStatus.completed) return 'Completed';
-    if (status == RideStatus.cancelled) return 'Cancelled';
-    throw StateError('Unknown RideStatus: $status');
+    final name = status.name;
+    if (name == 'created') return 'Created';
+    if (name == 'requested') return 'Requested';
+    if (name == 'accepted') return 'Accepted';
+    if (name == 'arrived') return 'Arrived';
+    if (name == 'inProgress' || name == 'in_progress') return 'In Progress';
+    if (name == 'paymentPending' || name == 'payment_pending')
+      return 'Payment Pending';
+    if (name == 'completed') return 'Completed';
+    if (name == 'cancelled') return 'Cancelled';
+    return name;
   }
 
   String? _formatTimestamp(DateTime? ts) {

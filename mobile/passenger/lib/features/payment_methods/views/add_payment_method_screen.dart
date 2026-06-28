@@ -53,7 +53,7 @@ class _AddPaymentMethodScreenState
     });
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Add Payment Method'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

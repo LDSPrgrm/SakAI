@@ -22,6 +22,7 @@ Method | HTTP request | Description
 [**rideList**](RidesApi.md#ridelist) | **GET** /rides | List user&#39;s ride history
 [**rideRequest**](RidesApi.md#riderequest) | **POST** /rides | Request a new ride
 [**rideStart**](RidesApi.md#ridestart) | **POST** /rides/{rideId}/start | Driver starts the ride after passenger boards
+[**rideTriggerSOS**](RidesApi.md#ridetriggersos) | **POST** /rides/{rideId}/sos | Trigger SOS/Emergency for an active ride
 [**submitRating**](RidesApi.md#submitrating) | **POST** /rides/{rideId}/rating | Submit a rating for the other party in a ride
 
 
@@ -292,7 +293,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **rideComplete**
-> RideResponse rideComplete(rideId, rideArriveRequest)
+> RideResponse rideComplete(rideId, rideCompleteRequest)
 
 Driver completes the ride at dropoff
 
@@ -304,10 +305,10 @@ import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getRidesApi();
 final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
-final RideArriveRequest rideArriveRequest = ; // RideArriveRequest | 
+final RideCompleteRequest rideCompleteRequest = ; // RideCompleteRequest | 
 
 try {
-    final response = api.rideComplete(rideId, rideArriveRequest);
+    final response = api.rideComplete(rideId, rideCompleteRequest);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling RidesApi->rideComplete: $e\n');
@@ -319,7 +320,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rideId** | **String**| UUID of the ride | 
- **rideArriveRequest** | [**RideArriveRequest**](RideArriveRequest.md)|  | 
+ **rideCompleteRequest** | [**RideCompleteRequest**](RideCompleteRequest.md)|  | 
 
 ### Return type
 
@@ -592,6 +593,51 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **rideTriggerSOS**
+> Incident rideTriggerSOS(rideId, triggerSOSRequest)
+
+Trigger SOS/Emergency for an active ride
+
+Signals an emergency for the given ride. This notifies admin support and records the current GPS trail for security purposes. Both the passenger and the assigned driver may trigger this. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getRidesApi();
+final String rideId = d4e5f6a7-b8c9-0123-def4-567890abcdef; // String | UUID of the ride
+final TriggerSOSRequest triggerSOSRequest = ; // TriggerSOSRequest | 
+
+try {
+    final response = api.rideTriggerSOS(rideId, triggerSOSRequest);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling RidesApi->rideTriggerSOS: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **rideId** | **String**| UUID of the ride | 
+ **triggerSOSRequest** | [**TriggerSOSRequest**](TriggerSOSRequest.md)|  | 
+
+### Return type
+
+[**Incident**](Incident.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

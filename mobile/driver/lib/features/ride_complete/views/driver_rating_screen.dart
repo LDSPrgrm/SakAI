@@ -73,12 +73,7 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
     final notifier = ref.read(driverRatingNotifierProvider.notifier);
     final success = await notifier.submitRating();
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thank you for your rating!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      SakaiSnackBar.success(context, 'Thank you for your rating!');
     }
   }
 
@@ -87,6 +82,7 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
     final state = ref.watch(driverRatingNotifierProvider);
     final theme = Theme.of(context);
     final tokens = SakaiDesignTokens.of(context);
+    final warning = SakaiSemanticColors.of(context).warning;
 
     // Auto-navigate home when timer completes
     if (state.shouldNavigateHome && mounted) {
@@ -333,7 +329,7 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
                           children: [
                             Icon(
                               Icons.star_rate_rounded,
-                              color: Colors.amber[700],
+                              color: SakaiSemanticColors.of(context).warning,
                             ),
                             SizedBox(width: tokens.spaceSm),
                             Text(
@@ -367,8 +363,8 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
                                           : Icons.star_border_rounded,
                                       size: 52,
                                       color: i <= state.stars
-                                          ? Colors.amber[700]
-                                          : Colors.grey[400],
+                                          ? warning
+                                          : theme.colorScheme.outlineVariant,
                                     ),
                                   ),
                                 ),

@@ -95,12 +95,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     _saveLanguage(option.code);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Language preference saved'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SakaiSnackBar.success(context, 'Language preference saved');
     }
   }
 
@@ -125,7 +120,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Language'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

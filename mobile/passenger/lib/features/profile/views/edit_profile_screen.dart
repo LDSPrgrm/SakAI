@@ -41,12 +41,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     // Listen for save success to show snackbar and pop
     ref.listen<EditProfileState>(editProfileNotifierProvider, (_, next) {
       if (next.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        SakaiSnackBar.success(context, 'Profile updated successfully');
         if (context.canPop()) {
           context.pop();
         }
@@ -54,7 +49,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Edit Profile'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

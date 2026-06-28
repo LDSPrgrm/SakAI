@@ -44,6 +44,7 @@
 //     await Future.delayed(const Duration(milliseconds: 100));
 //     return RideEntity(
 //       id: 'ride-123',
+//       passengerId: 'fake-passenger-id',
 //       status: RideState.requested,
 //       origin: origin,
 //       destination: destination,
@@ -225,7 +226,7 @@
 //         await tester.pumpAndSettle();
 
 //         // Verify we are on home screen
-//         expect(find.textContaining('Saan kayo pupunta?'), findsOneWidget);
+//         expect(find.textContaining('Where to?'), findsOneWidget);
 
 //         final notifier =
 //             ProviderScope.containerOf(

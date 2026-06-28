@@ -18,9 +18,13 @@ interface RoleBadgeProps {
   className?: string;
 }
 
+function titleCase(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function RoleBadge({ role, showSystemTag, className }: RoleBadgeProps) {
   const color  = ROLE_COLORS[role] ?? 'bg-surface text-text-muted border-border';
-  const label  = ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role.replace(/_/g, ' ');
+  const label  = ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? titleCase(role);
   const isSystem = role === 'superadmin';
 
   return (

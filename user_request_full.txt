@@ -1,0 +1,18 @@
+<USER_REQUEST>
+Grab-Style Conditional Map Booking Flow
+After tapping Transport, Grab shows:
+
+Destination search sheet (already works via LocationPickerScreen)
+Once destination is set → map fills the screen showing the route, with a bottom drawer containing ride controls
+This plan restores GoogleMap only during the booking states (destinationSet / requesting), keeping the idle dashboard map-free.
+
+What Grab does (the target)
+┌─────────────────────────────────┐
+│  [←]  SakAI          [?]        │  ← Compact app bar
+├─────────────────────────────────┤
+│                                 │
+│         GoogleMap               │  ← Route polyline (pickup → dest)
+│   [📍 pickup pin]               │     + Nearby driver markers
+│   [📌 dest pin]                 │     Camera fits both pins
+│                                 │
+<truncated 2214 bytes>

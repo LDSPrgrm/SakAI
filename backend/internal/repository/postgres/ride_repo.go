@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 // rideRepo implements repository.RideRepository using PostgreSQL.
@@ -41,7 +43,7 @@ func (r *rideRepo) Create(ctx context.Context, ride *domain.Ride) error {
 
 func (r *rideRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -51,7 +53,7 @@ func (r *rideRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ride, err
 
 func (r *rideRepo) GetByIdempotencyKey(ctx context.Context, key string) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -61,7 +63,7 @@ func (r *rideRepo) GetByIdempotencyKey(ctx context.Context, key string) (*domain
 
 func (r *rideRepo) GetActiveByPassengerID(ctx context.Context, pID uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -74,7 +76,7 @@ func (r *rideRepo) GetActiveByPassengerID(ctx context.Context, pID uuid.UUID) (*
 
 func (r *rideRepo) GetActiveByDriverID(ctx context.Context, dID uuid.UUID) (*domain.Ride, error) {
 	const q = `
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -85,28 +87,52 @@ func (r *rideRepo) GetActiveByDriverID(ctx context.Context, dID uuid.UUID) (*dom
 	return r.scanRide(r.db.QueryRow(ctx, q, dID))
 }
 
-func (r *rideRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.RideStatus) error {
-	const q = `UPDATE rides SET status = $1, updated_at = $2 WHERE id = $3`
-	_, err := r.db.Exec(ctx, q, status, time.Now(), id)
-	return err
+func (r *rideRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.RideStatus, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET status = $1, updated_at = $2 WHERE id = $3 AND status = $4`
+	tag, err := r.db.Exec(ctx, q, status, time.Now(), id, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID) error {
-	const q = `UPDATE rides SET driver_id = $1, status = 'accepted', updated_at = NOW() WHERE id = $2`
-	_, err := r.db.Exec(ctx, q, driverID, rideID)
-	return err
+func (r *rideRepo) AssignDriver(ctx context.Context, rideID, driverID uuid.UUID, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET driver_id = $1, status = 'accepted', updated_at = NOW() WHERE id = $2 AND status = $3`
+	tag, err := r.db.Exec(ctx, q, driverID, rideID, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID) error {
-	const q = `UPDATE rides SET driver_id = NULL, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.Exec(ctx, q, rideID)
-	return err
+func (r *rideRepo) ClearDriver(ctx context.Context, rideID uuid.UUID, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET driver_id = NULL, updated_at = NOW() WHERE id = $1 AND status = $2`
+	tag, err := r.db.Exec(ctx, q, rideID, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
-func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error {
-	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, fare = COALESCE($4, fare), updated_at = NOW() WHERE id = $5`
-	_, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id)
-	return err
+func (r *rideRepo) SetCancelled(ctx context.Context, id uuid.UUID, by domain.CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64, expectedStatus domain.RideStatus) error {
+	const q = `UPDATE rides SET status = 'cancelled', cancelled_by = $1, cancellation_reason = $2, cancellation_reason_text = $3, actual_fare = COALESCE($4, actual_fare), updated_at = NOW() WHERE id = $5 AND status = $6`
+	tag, err := r.db.Exec(ctx, q, by, reasonCode, reasonText, cancellationFee, id, expectedStatus)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrInvalidStateTransition
+	}
+	return nil
 }
 
 func (r *rideRepo) CancelExpiredOffers(ctx context.Context, timeout time.Duration) ([]domain.ExpiredOffer, error) {
@@ -176,7 +202,7 @@ func (r *rideRepo) ListAll(ctx context.Context, f domain.AdminRideFilter) ([]*do
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -206,16 +232,21 @@ func (r *rideRepo) ListAll(ctx context.Context, f domain.AdminRideFilter) ([]*do
 func (r *rideRepo) scanRide(row pgx.Row) (*domain.Ride, error) {
 	ride := &domain.Ride{}
 	var cancelledBy *domain.CancelledBy
+	var originAddr, destAddr, notes sql.NullString
 	err := row.Scan(
-		&ride.ID, &ride.PassengerID, &ride.DriverID, &ride.Status,
+		&ride.ID, &ride.Seq, &ride.PassengerID, &ride.DriverID, &ride.Status,
 		&ride.Origin.Lat, &ride.Origin.Lng,
 		&ride.Destination.Lat, &ride.Destination.Lng,
-		&ride.OriginAddress, &ride.DestinationAddress, &ride.Notes,
+		&originAddr, &destAddr, &notes,
 		&cancelledBy, &ride.CreatedAt, &ride.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
+	ride.DisplayID = displayid.Ride(ride.Seq)
+	ride.OriginAddress = originAddr.String
+	ride.DestinationAddress = destAddr.String
+	ride.Notes = notes.String
 	ride.CancelledBy = cancelledBy
 	return ride, err
 }
@@ -259,7 +290,7 @@ func (r *rideRepo) ListByPassengerID(ctx context.Context, passengerID uuid.UUID,
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at
@@ -324,7 +355,7 @@ func (r *rideRepo) ListByDriverID(ctx context.Context, driverID uuid.UUID, f dom
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(`
-		SELECT id, passenger_id, driver_id, status,
+		SELECT id, seq, passenger_id, driver_id, status,
 		       origin_lat, origin_lng, destination_lat, destination_lng,
 		       origin_address, destination_address, notes,
 		       cancelled_by, created_at, updated_at

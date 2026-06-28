@@ -268,7 +268,13 @@ class _$Incident extends Incident {
   @override
   final String? id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final String? rideId;
+  @override
+  final String? rideDisplayId;
   @override
   final IncidentTypeEnum? type;
   @override
@@ -288,6 +294,8 @@ class _$Incident extends Incident {
   @override
   final String? assignedTo;
   @override
+  final String? assignedToName;
+  @override
   final DateTime? createdAt;
   @override
   final DateTime? resolvedAt;
@@ -299,7 +307,10 @@ class _$Incident extends Incident {
 
   _$Incident._({
     this.id,
+    this.seq,
+    this.displayId,
     this.rideId,
+    this.rideDisplayId,
     this.type,
     this.severity,
     this.status,
@@ -309,6 +320,7 @@ class _$Incident extends Incident {
     this.driverId,
     this.driverName,
     this.assignedTo,
+    this.assignedToName,
     this.createdAt,
     this.resolvedAt,
     this.resolutionNotes,
@@ -325,7 +337,10 @@ class _$Incident extends Incident {
     if (identical(other, this)) return true;
     return other is Incident &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         rideId == other.rideId &&
+        rideDisplayId == other.rideDisplayId &&
         type == other.type &&
         severity == other.severity &&
         status == other.status &&
@@ -335,6 +350,7 @@ class _$Incident extends Incident {
         driverId == other.driverId &&
         driverName == other.driverName &&
         assignedTo == other.assignedTo &&
+        assignedToName == other.assignedToName &&
         createdAt == other.createdAt &&
         resolvedAt == other.resolvedAt &&
         resolutionNotes == other.resolutionNotes;
@@ -344,7 +360,10 @@ class _$Incident extends Incident {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, rideId.hashCode);
+    _$hash = $jc(_$hash, rideDisplayId.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
     _$hash = $jc(_$hash, severity.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
@@ -354,6 +373,7 @@ class _$Incident extends Incident {
     _$hash = $jc(_$hash, driverId.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, assignedTo.hashCode);
+    _$hash = $jc(_$hash, assignedToName.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, resolvedAt.hashCode);
     _$hash = $jc(_$hash, resolutionNotes.hashCode);
@@ -365,7 +385,10 @@ class _$Incident extends Incident {
   String toString() {
     return (newBuiltValueToStringHelper(r'Incident')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('rideId', rideId)
+          ..add('rideDisplayId', rideDisplayId)
           ..add('type', type)
           ..add('severity', severity)
           ..add('status', status)
@@ -375,6 +398,7 @@ class _$Incident extends Incident {
           ..add('driverId', driverId)
           ..add('driverName', driverName)
           ..add('assignedTo', assignedTo)
+          ..add('assignedToName', assignedToName)
           ..add('createdAt', createdAt)
           ..add('resolvedAt', resolvedAt)
           ..add('resolutionNotes', resolutionNotes))
@@ -389,9 +413,22 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
 
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(String? displayId) => _$this._displayId = displayId;
+
   String? _rideId;
   String? get rideId => _$this._rideId;
   set rideId(String? rideId) => _$this._rideId = rideId;
+
+  String? _rideDisplayId;
+  String? get rideDisplayId => _$this._rideDisplayId;
+  set rideDisplayId(String? rideDisplayId) =>
+      _$this._rideDisplayId = rideDisplayId;
 
   IncidentTypeEnum? _type;
   IncidentTypeEnum? get type => _$this._type;
@@ -430,6 +467,11 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
   String? get assignedTo => _$this._assignedTo;
   set assignedTo(String? assignedTo) => _$this._assignedTo = assignedTo;
 
+  String? _assignedToName;
+  String? get assignedToName => _$this._assignedToName;
+  set assignedToName(String? assignedToName) =>
+      _$this._assignedToName = assignedToName;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -451,7 +493,10 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _rideId = $v.rideId;
+      _rideDisplayId = $v.rideDisplayId;
       _type = $v.type;
       _severity = $v.severity;
       _status = $v.status;
@@ -461,6 +506,7 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
       _driverId = $v.driverId;
       _driverName = $v.driverName;
       _assignedTo = $v.assignedTo;
+      _assignedToName = $v.assignedToName;
       _createdAt = $v.createdAt;
       _resolvedAt = $v.resolvedAt;
       _resolutionNotes = $v.resolutionNotes;
@@ -487,7 +533,10 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
         _$v ??
         _$Incident._(
           id: id,
+          seq: seq,
+          displayId: displayId,
           rideId: rideId,
+          rideDisplayId: rideDisplayId,
           type: type,
           severity: severity,
           status: status,
@@ -497,6 +546,7 @@ class IncidentBuilder implements Builder<Incident, IncidentBuilder> {
           driverId: driverId,
           driverName: driverName,
           assignedTo: assignedTo,
+          assignedToName: assignedToName,
           createdAt: createdAt,
           resolvedAt: resolvedAt,
           resolutionNotes: resolutionNotes,

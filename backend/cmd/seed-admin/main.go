@@ -22,6 +22,10 @@ func main() {
 	passwordFlag := flag.String("password", "admin123", "Password for the admin user")
 	resetFlag    := flag.Bool("reset", false, "Delete all admin users, reseed system roles/permissions and 4 test accounts in one transaction")
 
+	demoFlag       := flag.Bool("demo", false, "Run the demo data populator (passengers, drivers, rides, etc.)")
+	demoPhasesFlag := flag.String("demo-phases", "", "Comma list of phases to run: users,rides,safety,system (or 1,2,3,4). Default: all registered phases.")
+	demoWipeFlag   := flag.Bool("demo-wipe", false, "Before insert, delete only demo rows (id LIKE '2000%') for the requested phases")
+
 	flag.Parse()
 
 	_ = godotenv.Load("../../.env")
@@ -49,6 +53,17 @@ func main() {
 	if *resetFlag {
 		if err := runReset(ctx, pool); err != nil {
 			log.Fatalf("Reset failed (transaction rolled back): %v", err)
+		}
+		os.Exit(0)
+	}
+
+	// -------------------------------------------------------------------------
+	// DEMO PATH: populate demo data (passengers, drivers, rides, ...) in one txn
+	// -------------------------------------------------------------------------
+	if *demoFlag {
+		phases := parsePhases(*demoPhasesFlag)
+		if err := runDemo(ctx, pool, phases, *demoWipeFlag); err != nil {
+			log.Fatalf("Demo seed failed (transaction rolled back): %v", err)
 		}
 		os.Exit(0)
 	}

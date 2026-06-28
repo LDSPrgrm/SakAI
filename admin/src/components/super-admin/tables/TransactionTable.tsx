@@ -5,11 +5,12 @@ import { DataTable } from './DataTable';
 import { StatusBadge } from '../shared/StatusBadge';
 import { CurrencyDisplay } from '../shared/CurrencyDisplay';
 import { DateDisplay } from '../shared/DateDisplay';
+import { EntityId } from '@/components/ui/EntityId';
 import type { Transaction } from '@/types/super-admin';
 
 const COLUMNS: ColumnDef<Transaction>[] = [
-  { accessorKey: 'id',             header: 'Txn ID',          cell: ({ getValue }) => <span className="font-mono text-xs text-text-muted">{String(getValue()).slice(0, 8)}…</span> },
-  { accessorKey: 'ride_id',        header: 'Ride ID',         cell: ({ getValue }) => <span className="font-mono text-xs text-text-muted">{String(getValue()).slice(0, 8)}…</span> },
+  { accessorKey: 'id',             header: 'Txn ID',          cell: ({ row }) => <EntityId displayId={(row.original as any).display_id} uuid={row.original.id} fallbackPrefix="TXN" /> },
+  { accessorKey: 'ride_id',        header: 'Ride ID',         cell: ({ row }) => <EntityId displayId={(row.original as any).ride_display_id} uuid={row.original.ride_id} fallbackPrefix="RIDE" /> },
   { accessorKey: 'rider_name',     header: 'Rider' },
   { accessorKey: 'driver_name',    header: 'Driver' },
   { accessorKey: 'amount',         header: 'Amount',          cell: ({ getValue }) => <CurrencyDisplay amount={getValue() as number} /> },

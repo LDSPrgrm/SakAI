@@ -19,10 +19,12 @@ import (
 	handler "github.com/sakai/backend/internal/delivery/http"
 	"github.com/sakai/backend/internal/delivery/http/router"
 	"github.com/sakai/backend/internal/delivery/ws"
+	"github.com/sakai/backend/internal/domain"
 	"github.com/sakai/backend/internal/infrastructure/alerting"
 	"github.com/sakai/backend/internal/infrastructure/database"
 	"github.com/sakai/backend/internal/infrastructure/expiry"
 	"github.com/sakai/backend/internal/infrastructure/health"
+	"github.com/sakai/backend/internal/infrastructure/notifications"
 	"github.com/sakai/backend/internal/infrastructure/storage"
 	"github.com/sakai/backend/internal/infrastructure/stripe"
 	"github.com/sakai/backend/internal/repository/postgres"
@@ -100,6 +102,8 @@ func main() {
 	serviceAreaRepo := postgres.NewServiceAreaRepo(pool)
 	lguRepo := postgres.NewLGUPartnershipRepo(pool)
 	alertRepo := postgres.NewAlertRepo(pool)
+	savedPlaceRepo := postgres.NewSavedPlaceRepo(pool)
+	promoRepo := postgres.NewPromotionRepo(pool)
 
 	// ── Use cases ─────────────────────────────────────────────────────────────
 	authUC := usecase.NewAuthUseCase(
@@ -108,9 +112,9 @@ func main() {
 		cfg.AccessTokenExpiry,
 		cfg.RefreshTokenExpiry,
 	)
-	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo)
+	driverUC := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo, incidentRepo)
 	fareCalc := usecase.NewFareCalculator()
-	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, fareCalc)
+	rideUC := usecase.NewRideUseCase(rideRepo, driverRepo, incidentRepo, fareCalc)
 	adminUC := usecase.NewAdminUseCase(adminRepo, userRepo, rideRepo, incidentRepo, metricsRepo, auditRepo, roleRepo)
 	fareUC := usecase.NewFareUseCase(fareRepo, auditRepo)
 	auditUC := usecase.NewAuditUseCase(auditRepo)
@@ -126,14 +130,17 @@ func main() {
 	serviceAreaUC := usecase.NewServiceAreaUseCase(serviceAreaRepo, auditRepo)
 	lguUC := usecase.NewLGUPartnershipUseCase(lguRepo, auditRepo)
 	alertUC := usecase.NewAlertUseCase(alertRepo, auditRepo)
+	savedPlaceUC := usecase.NewSavedPlaceUseCase(savedPlaceRepo)
+	promotionUC := usecase.NewPromotionUseCase(promoRepo)
 
 	// Stripe client — real SDK replaces the stub.
 	stripeClient := stripe.New(cfg.StripeSecretKey)
 
-	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo)
+	txManager := postgres.NewPgTransactionManager(pool)
+	paymentProcessingUC := usecase.NewPaymentProcessingUsecase(ridePaymentRepo, stripeClient, rideRepo, userRepo, earningsRepo, txManager)
 	// Tip use case.
 	tipRepo := postgres.NewTipRepo(pool)
-	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient)
+	tipUC := usecase.NewTipUseCase(tipRepo, rideRepo, stripeClient, cfg.Currency)
 
 	// Payment method repository and usecase
 	pmRepo := postgres.NewPaymentMethodRepo(pool)
@@ -144,6 +151,7 @@ func main() {
 
 	// ── WebSocket hub ─────────────────────────────────────────────────────────
 	hub := ws.NewHub(cfg.WSPingInterval)
+	ws.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	// In a real clustered setup, workerCtx is cancelled on shutdown causing Run to gracefully exit.
 	workerCtx, workerCancel := context.WithCancel(context.Background())
@@ -156,8 +164,8 @@ func main() {
 	deps := router.Deps{
 		Auth:           handler.NewAuthHandler(authUC),
 		Driver:         handler.NewDriverHandler(driverUC, dispatcher),
-		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo),
-		Admin:          handler.NewAdminHandler(adminUC, auditUC),
+		Ride:           handler.NewRideHandler(rideUC, userRideUC, dispatcher, rideRepo, userRepo, driverRepo, ridePaymentRepo).WithIncidentRepo(incidentRepo).WithSosPrefsRepo(postgres.NewSosPrefsRepo(pool)),
+		Admin:          handler.NewAdminHandler(adminUC, auditUC, dispatcher, rideRepo),
 		Fare:           handler.NewFareHandler(fareUC),
 		Audit:          handler.NewAuditHandler(auditUC),
 		Role:           handler.NewRoleHandler(roleUC, authUC),
@@ -166,7 +174,7 @@ func main() {
 		System:         handler.NewSystemHandler(systemUC),
 		Report:         handler.NewReportHandler(reportUC),
 		Metrics:        handler.NewMetricsHandler(metricsUC),
-		Document:       handler.NewDocumentHandler(documentUC, mustUploader(cfg.UploadDir, cfg.UploadPublicBaseURL)),
+		Document:       handler.NewDocumentHandler(documentUC, mustUploader(cfg)),
 		Rating:         handler.NewRatingHandler(ratingUC),
 		PayProcess:     handler.NewRidePaymentHandler(paymentProcessingUC, rideRepo, userRepo),
 		Tip:            handler.NewTipHandler(tipUC),
@@ -174,10 +182,21 @@ func main() {
 		ServiceArea:    handler.NewServiceAreaHandler(serviceAreaUC),
 		LGUPartnership: handler.NewLGUPartnershipHandler(lguUC),
 		Alert:          handler.NewAlertHandler(alertUC),
+		Promotion:      handler.NewPromotionHandler(promotionUC),
+		SavedPlace:     handler.NewSavedPlaceHandler(savedPlaceUC),
 		WS:             ws.NewHandler(hub),
+		E2E:            e2eHandlerIfEnabled(cfg, userRepo, driverRepo, rideRepo, dispatcher),
 		PerfSampler:    systemRepo,
+		AllowedOrigins: cfg.AllowedOrigins,
 		FilesRoot:      cfg.UploadDir,
+		AuthUC:         authUC,
+		RoleUC:         roleUC,
+		AppVersion:     cfg.AppVersion,
 	}
+
+	// Wire WebSocket metrics into Prometheus's default registry. Safe to call
+	// once at startup — RegisterPrometheus is sync.Once-guarded.
+	ws.RegisterPrometheus(nil)
 
 	engine := router.New(cfg.JWTSecret, deps)
 
@@ -186,7 +205,9 @@ func main() {
 	// must honour this context and exit cleanly within the shutdown window.
 	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
 	go health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run(workerCtx)
-	go alerting.New(alertRepo, pool, 5*time.Minute).Run(workerCtx)
+	notifier := notifications.NewNotifier(pool)
+	go alerting.New(alertRepo, pool, 5*time.Minute).WithNotifier(notifier).Run(workerCtx)
+	go notifications.NewDispatcher(pool, 30*time.Second, 20).Run(workerCtx)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{
@@ -219,12 +240,50 @@ func main() {
 	log.Println("server stopped")
 }
 
-// mustUploader builds the storage backend used for driver documents. Empty
-// config falls back to ./uploads served at /files/*.
-func mustUploader(baseDir, publicBaseURL string) storage.Uploader {
+// e2eHandlerIfEnabled returns an E2EHandler when both E2E_ENABLED and a
+// non-empty E2E_SEED_TOKEN are present. Returns nil otherwise so the route
+// stays off the mux entirely on production deploys — defence in depth on
+// top of the in-handler bearer check.
+func e2eHandlerIfEnabled(
+	cfg *configs.Config,
+	userRepo domain.UserRepository,
+	driverRepo domain.DriverRepository,
+	rideRepo domain.RideRepository,
+	dispatcher ws.Dispatcher,
+) *handler.E2EHandler {
+	if !cfg.E2EEnabled || cfg.E2ESeedToken == "" {
+		return nil
+	}
+	return handler.NewE2EHandler(userRepo, driverRepo, rideRepo, dispatcher, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.E2ESeedToken)
+}
+
+// mustUploader builds the storage backend used for driver documents.
+// Set STORAGE_PROVIDER=s3 (with matching STORAGE_* vars) for S3-compatible
+// providers (Supabase Storage, Cloudflare R2, AWS S3, etc.).
+// Defaults to local disk — only suitable for development.
+func mustUploader(cfg *configs.Config) storage.Uploader {
+	if cfg.StorageProvider == "s3" {
+		u, err := storage.NewS3Uploader(storage.S3Config{
+			Endpoint:      cfg.StorageEndpoint,
+			Region:        cfg.StorageRegion,
+			AccessKey:     cfg.StorageAccessKey,
+			SecretKey:     cfg.StorageSecretKey,
+			Bucket:        cfg.StorageBucket,
+			PublicBaseURL: cfg.StoragePublicBaseURL,
+		})
+		if err != nil {
+			log.Fatalf("storage: init s3 uploader: %v", err)
+		}
+		log.Printf("storage: using S3 bucket %q via %s", cfg.StorageBucket, cfg.StorageEndpoint)
+		return u
+	}
+
+	// Local fallback — dev only.
+	baseDir := cfg.UploadDir
 	if baseDir == "" {
 		baseDir = "./uploads"
 	}
+	publicBaseURL := cfg.UploadPublicBaseURL
 	if publicBaseURL == "" {
 		publicBaseURL = "/api/files"
 	}

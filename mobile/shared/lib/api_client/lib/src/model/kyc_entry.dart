@@ -1,8 +1,9 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/kyc_document.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -13,6 +14,7 @@ part 'kyc_entry.g.dart';
 /// Properties:
 /// * [id] 
 /// * [driverId] 
+/// * [driverDisplayId] - Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
 /// * [driverName] 
 /// * [submittedAt] 
 /// * [docs] 
@@ -25,6 +27,10 @@ abstract class KycEntry implements Built<KycEntry, KycEntryBuilder> {
   @BuiltValueField(wireName: r'driver_id')
   String? get driverId;
 
+  /// Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
+  @BuiltValueField(wireName: r'driver_display_id')
+  String? get driverDisplayId;
+
   @BuiltValueField(wireName: r'driver_name')
   String? get driverName;
 
@@ -32,11 +38,11 @@ abstract class KycEntry implements Built<KycEntry, KycEntryBuilder> {
   DateTime? get submittedAt;
 
   @BuiltValueField(wireName: r'docs')
-  BuiltList<String>? get docs;
+  BuiltList<KycDocument>? get docs;
 
   @BuiltValueField(wireName: r'status')
   KycEntryStatusEnum? get status;
-  // enum statusEnum {  pending,  approved,  rejected,  };
+  // enum statusEnum {  pending,  approved,  rejected,  needs_more_info,  };
 
   KycEntry._();
 
@@ -75,6 +81,13 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.driverDisplayId != null) {
+      yield r'driver_display_id';
+      yield serializers.serialize(
+        object.driverDisplayId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.driverName != null) {
       yield r'driver_name';
       yield serializers.serialize(
@@ -93,7 +106,7 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
       yield r'docs';
       yield serializers.serialize(
         object.docs,
-        specifiedType: const FullType(BuiltList, [FullType(String)]),
+        specifiedType: const FullType(BuiltList, [FullType(KycDocument)]),
       );
     }
     if (object.status != null) {
@@ -140,6 +153,13 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
           ) as String;
           result.driverId = valueDes;
           break;
+        case r'driver_display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.driverDisplayId = valueDes;
+          break;
         case r'driver_name':
           final valueDes = serializers.deserialize(
             value,
@@ -157,8 +177,8 @@ class _$KycEntrySerializer implements PrimitiveSerializer<KycEntry> {
         case r'docs':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(String)]),
-          ) as BuiltList<String>;
+            specifiedType: const FullType(BuiltList, [FullType(KycDocument)]),
+          ) as BuiltList<KycDocument>;
           result.docs.replace(valueDes);
           break;
         case r'status':
@@ -205,6 +225,8 @@ class KycEntryStatusEnum extends EnumClass {
   static const KycEntryStatusEnum approved = _$kycEntryStatusEnum_approved;
   @BuiltValueEnumConst(wireName: r'rejected')
   static const KycEntryStatusEnum rejected = _$kycEntryStatusEnum_rejected;
+  @BuiltValueEnumConst(wireName: r'needs_more_info')
+  static const KycEntryStatusEnum needsMoreInfo = _$kycEntryStatusEnum_needsMoreInfo;
 
   static Serializer<KycEntryStatusEnum> get serializer => _$kycEntryStatusEnumSerializer;
 

@@ -4,14 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../features/auth/views/auth_screen.dart';
+import '../features/auth/views/otp_verification_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
+import '../features/wallet/views/wallet_screen.dart';
+import '../features/notifications/views/notifications_screen.dart';
+import '../features/ride/views/no_drivers_screen.dart';
+import '../features/connectivity/views/no_internet_screen.dart';
+import '../features/home/views/activity_screen.dart';
 import '../features/home/views/rider_home_screen.dart';
 import '../features/profile/views/edit_profile_screen.dart';
 import '../features/ride/views/waiting_screen.dart';
 import '../features/active_ride/views/active_ride_screen.dart';
 import '../features/ride_complete/views/ride_complete_screen.dart';
-import '../features/ride_history/views/ride_history_list_screen.dart';
 import '../features/ride_history/views/ride_detail_screen.dart';
 import '../features/cancelled_ride/views/cancelled_ride_screen.dart';
 import '../features/receipt/views/receipt_screen.dart';
@@ -20,10 +25,14 @@ import '../features/payment_methods/views/add_payment_method_screen.dart';
 import '../features/settings/views/settings_menu_screen.dart';
 import '../features/settings/views/notification_settings_screen.dart';
 import '../features/settings/views/emergency_contacts_screen.dart';
-import '../features/settings/views/help_center_screen.dart';
+import '../features/support/views/support_screen.dart';
 import '../features/settings/views/terms_screen.dart';
 import '../features/settings/views/privacy_policy_screen.dart';
 import '../features/settings/views/language_selection_screen.dart';
+import '../features/settings/views/sos_safety_settings_screen.dart';
+import '../features/saved_places/views/saved_places_screen.dart';
+import '../features/promotions/views/promotions_screen.dart';
+import '../features/coming_soon/views/coming_soon_screen.dart';
 import 'providers.dart';
 import 'routes.dart';
 
@@ -46,8 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isWelcome = state.matchedLocation == Routes.welcome;
       final isLogin = state.matchedLocation == Routes.login;
       final isRegister = state.matchedLocation == Routes.register;
-      final isAuthRoute = isWelcome || isLogin || isRegister;
+      final isOtp = state.matchedLocation == Routes.otp;
+      final isAuthRoute = isWelcome || isLogin || isRegister || isOtp;
 
+      // Guard: if we're already on splash, let the splash screen handle its own
+      // navigation via its listener. This prevents GoRouter from remounting the
+      // splash screen mid-flight when auth state flips during the async check,
+      // which would otherwise cause a redirect loop.
       if (isSplash) return null;
 
       if (authState.status == AuthStatus.unknown) {
@@ -91,6 +105,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             const AuthScreen(initialMode: AuthMode.register),
       ),
       GoRoute(
+        path: Routes.otp,
+        builder: (context, state) {
+          final destination = state.extra as String? ?? '';
+          return OtpVerificationScreen(destination: destination);
+        },
+      ),
+      GoRoute(
+        path: Routes.wallet,
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.noDrivers,
+        builder: (context, state) => const NoDriversScreen(),
+      ),
+      GoRoute(
+        path: Routes.noInternet,
+        builder: (context, state) => const NoInternetScreen(),
+      ),
+      GoRoute(
         path: Routes.home,
         builder: (context, state) => const RiderHomeScreen(),
       ),
@@ -130,7 +167,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.rideHistory,
-        builder: (context, state) => const RideHistoryListScreen(),
+        builder: (context, state) => const ActivityScreen(isStandalone: true),
       ),
       GoRoute(
         path: Routes.rideDetail,
@@ -168,7 +205,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.settingsHelp,
-        builder: (context, state) => const HelpCenterScreen(),
+        builder: (context, state) => const SupportScreen(),
       ),
       GoRoute(
         path: Routes.settingsTerms,
@@ -181,6 +218,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settingsLanguage,
         builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: Routes.settingsSosSafety,
+        builder: (context, state) => const SosSafetySettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.savedPlaces,
+        builder: (context, state) => const SavedPlacesScreen(),
+      ),
+      GoRoute(
+        path: Routes.promotions,
+        builder: (context, state) => const PromotionsScreen(),
+      ),
+      GoRoute(
+        path: Routes.comingSoon,
+        builder: (context, state) {
+          final feature = state.extra as String? ?? 'This feature';
+          return ComingSoonScreen(feature: feature);
+        },
       ),
     ],
   );

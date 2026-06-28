@@ -1,6 +1,6 @@
 package domain
 
-//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,StripeClient,EarningsRepository
+//go:generate go run go.uber.org/mock/mockgen -destination=mocks/mock_ports.go -package=mocks github.com/sakai/backend/internal/domain UserRepository,TokenRepository,RideRepository,DriverRepository,AdminRepository,FareRepository,AuditRepository,IncidentRepository,SosPrefsRepository,SystemMetricsRepository,RoleRepository,PaymentRepository,SafetyRepository,SystemRepository,ReportRepository,MetricsRepository,DocumentRepository,RatingRepository,RidePaymentRepository,SavedPlaceRepository,PromotionRepository,AuthUseCase,RideUseCase,DriverUseCase,AdminUseCase,FareUseCase,AuditUseCase,RoleUseCase,PaymentUseCase,SafetyUseCase,SystemUseCase,ReportUseCase,MetricsUseCase,DocumentUseCase,RatingUseCase,PaymentProcessingUseCase,TipUseCase,SavedPlaceUseCase,PromotionUseCase,StripeClient,EarningsRepository
 
 import (
 	"context"
@@ -50,6 +50,9 @@ type UserRepository interface {
 
 	// UpdatePassword sets a new bcrypt password hash for the user.
 	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+
+	// Delete permanently removes a user record and associated data (e.g., vehicle).
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // TokenRepository manages opaque refresh tokens (stored server-side).
@@ -87,17 +90,16 @@ type RideRepository interface {
 	GetActiveByDriverID(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 
 	// UpdateStatus transitions a ride to a new status and bumps updated_at.
-	UpdateStatus(ctx context.Context, id uuid.UUID, status RideStatus) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status RideStatus, expectedStatus RideStatus) error
 
-	// AssignDriver sets the driver_id on a ride in the requested state.
-	AssignDriver(ctx context.Context, rideID, driverID uuid.UUID) error
+	// AssignDriver sets the driver_id on a ride if it is in the expected state.
+	AssignDriver(ctx context.Context, rideID, driverID uuid.UUID, expectedStatus RideStatus) error
 
-	// ClearDriver sets driver_id to NULL, used when a driver declines a ride.
-	ClearDriver(ctx context.Context, rideID uuid.UUID) error
+	// ClearDriver sets driver_id to NULL if it is in the expected state.
+	ClearDriver(ctx context.Context, rideID uuid.UUID, expectedStatus RideStatus) error
 
-	// SetCancelled transitions a ride to cancelled and records who cancelled,
-	// along with optional reason code and text, and any cancellation fee.
-	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64) error
+	// SetCancelled transitions a ride to cancelled if it matches the expected status.
+	SetCancelled(ctx context.Context, id uuid.UUID, by CancelledBy, reasonCode *string, reasonText *string, cancellationFee *float64, expectedStatus RideStatus) error
 
 	// CancelExpiredOffers cancels all rides that have been in "requested" status
 	// for longer than timeout. Returns the identity of the cancelled rides.
@@ -139,6 +141,7 @@ type NearbyDriver struct {
 	DistanceM    float64 `json:"distance_m"`
 	Lat          float64 `json:"-"` // not serialized directly
 	Lng          float64 `json:"-"` // not serialized directly
+	Heading      *float64 `json:"heading,omitempty"`
 }
 
 // Location returns the nested location object expected by the mobile API client.
@@ -169,8 +172,8 @@ type DriverRepository interface {
 	// GetByUserID retrieves a driver's operational state by their user ID.
 	GetByUserID(ctx context.Context, userID uuid.UUID) (*Driver, error)
 
-	// UpdateStatus sets the driver online or offline.
-	UpdateStatus(ctx context.Context, userID uuid.UUID, status DriverStatus) error
+	// UpdateStatus sets the driver online or offline and returns the updated entity.
+	UpdateStatus(ctx context.Context, userID uuid.UUID, status DriverStatus) (*Driver, error)
 
 	// UpdateLocation persists the driver's latest geographic position.
 	// Called frequently — implementation must be efficient (upsert pattern).
@@ -316,6 +319,33 @@ type IncidentRepository interface {
 	// AssignIncident sets assigned_to (nullable) and is recorded in the
 	// history via trigger.
 	AssignIncident(ctx context.Context, id uuid.UUID, assigneeID *uuid.UUID) error
+	// ListLocationTrail returns GPS pings captured while the incident was
+	// open, oldest first. Empty slice when no pings were recorded.
+	ListLocationTrail(ctx context.Context, id uuid.UUID) ([]*IncidentLocationPoint, error)
+	// FindActiveByDriver returns the IDs of any currently-unresolved incidents
+	// involving this driver. Called from the driver location hot path — uses
+	// the partial index idx_incidents_active_driver so the empty case is O(1).
+	FindActiveByDriver(ctx context.Context, driverID uuid.UUID) ([]uuid.UUID, error)
+	// RecordLocationPing appends one trail point bound to an incident_id.
+	// Called only when FindActiveByDriver returned at least one id.
+	RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error
+
+	// RecordIncidentLocation appends one trail point attributed to any ride
+	// participant (passenger OR driver). Used by the participant-driven
+	// `POST /incidents/:id/location` endpoint. Returns the recorded ping
+	// so the handler can publish a `sos.location_stream` WS event with the
+	// authoritative server timestamp.
+	RecordIncidentLocation(ctx context.Context, incidentID, actorID uuid.UUID, lat, lng float64) (*IncidentLocationPoint, error)
+
+	// Create inserts a new incident record.
+	Create(ctx context.Context, incident *Incident) error
+}
+
+// SosPrefsRepository stores per-user SOS live-location opt-in.
+type SosPrefsRepository interface {
+	// GetLiveLocationOptIn returns false (fail closed) when no row exists.
+	GetLiveLocationOptIn(ctx context.Context, userID uuid.UUID) (bool, error)
+	SetLiveLocationOptIn(ctx context.Context, userID uuid.UUID, optIn bool) error
 }
 
 // SystemMetricsRepository aggregates platform-wide KPIs.
@@ -324,6 +354,10 @@ type SystemMetricsRepository interface {
 }
 
 type DashboardMetrics struct {
+	// Total* are raw user counts (ever-registered).
+	TotalRiders  int
+	TotalDrivers int
+	// Active* are last-30-day engagement counts derived from rides.
 	ActiveRiders       int
 	ActiveDrivers      int
 	RidesToday         int
@@ -345,6 +379,7 @@ type AuthUseCase interface {
 	// GetUserByID is a helper for the auth middleware and /users/me endpoint.
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error
+	DeleteAccount(ctx context.Context, userID uuid.UUID) error
 }
 
 // RideUseCase defines the ride lifecycle contract.
@@ -358,11 +393,12 @@ type RideUseCase interface {
 	Start(ctx context.Context, driverID, rideID uuid.UUID) (*Ride, error)
 	Complete(ctx context.Context, driverID, rideID uuid.UUID, driverLocation LatLng) (*Ride, error)
 	Cancel(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reasonCode *string, reasonText *string) (*Ride, error)
+	TriggerSOS(ctx context.Context, userID uuid.UUID, role UserRole, rideID uuid.UUID, reason string) (*Incident, error)
 }
 
 // DriverUseCase defines driver operational actions.
 type DriverUseCase interface {
-	SetStatus(ctx context.Context, driverID uuid.UUID, status DriverStatus) error
+	SetStatus(ctx context.Context, driverID uuid.UUID, status DriverStatus) (*Driver, error)
 	UpdateLocation(ctx context.Context, driverID uuid.UUID, loc DriverLocation) error
 	GetIncomingRide(ctx context.Context, driverID uuid.UUID) (*Ride, error)
 	// GetActiveRide returns the driver's current active ride regardless of state.
@@ -375,6 +411,8 @@ type DriverUseCase interface {
 	// GetEarnings lists earnings for the authenticated driver over an optional
 	// date range with pagination.
 	GetEarnings(ctx context.Context, driverID uuid.UUID, from, to *time.Time, page, limit int) ([]*DriverEarnings, int, error)
+	// GetStatus returns the current operational status of a driver.
+	GetStatus(ctx context.Context, driverID uuid.UUID) (*Driver, error)
 }
 
 // AdminRideFilter is the filter/pagination input for admin ride browsing.
@@ -555,13 +593,13 @@ type RatingRepository interface {
 
 // RidePaymentRepository manages ride-specific payment transactions.
 type RidePaymentRepository interface {
-	// Create inserts a new ride payment record.
+	// Create inserts a new ride payment record. Supports transactions via context.
 	Create(ctx context.Context, payment *Payment) error
 
 	// GetByRideID returns the payment for a ride, or nil.
 	GetByRideID(ctx context.Context, rideID uuid.UUID) (*Payment, error)
 
-	// UpdateStatus changes the payment status (e.g., failed -> completed on retry).
+	// UpdateStatus changes the payment status. Supports transactions via context.
 	UpdateStatus(ctx context.Context, id uuid.UUID, status PaymentStatus, gatewayTxnID *string, processedAt time.Time, failureReason *string) error
 
 	// HasUnpaidBlock returns true if the passenger has any failed payment older than the given cutoff.
@@ -570,7 +608,7 @@ type RidePaymentRepository interface {
 
 // EarningsRepository manages driver earnings persistence.
 type EarningsRepository interface {
-	// Create inserts a new driver earnings record (called on ride completion).
+	// Create inserts a new driver earnings record (called on ride completion). Supports transactions via context.
 	Create(ctx context.Context, earnings *DriverEarnings) error
 
 	// ListByDriverID returns paginated earnings for a driver, optionally filtered by date range.
@@ -675,3 +713,37 @@ type PaymentMethodRepository interface {
 	// ExistsByUser checks if a payment method belongs to a user (for authorization).
 	ExistsByUser(ctx context.Context, id uuid.UUID, userID uuid.UUID) (bool, error)
 }
+
+// ─── Saved Places ────────────────────────────────────────────────────────────
+
+// SavedPlaceRepository manages persistent storage for user's saved locations.
+type SavedPlaceRepository interface {
+	Create(ctx context.Context, place *SavedPlace) error
+	GetByID(ctx context.Context, id uuid.UUID) (*SavedPlace, error)
+	ListByUserID(ctx context.Context, userID uuid.UUID) ([]*SavedPlace, error)
+	Update(ctx context.Context, place *SavedPlace) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+// SavedPlaceUseCase defines business logic for saved places.
+type SavedPlaceUseCase interface {
+	AddPlace(ctx context.Context, userID uuid.UUID, name, address string, lat, lng float64, placeType SavedPlaceType) (*SavedPlace, error)
+	ListPlaces(ctx context.Context, userID uuid.UUID) ([]*SavedPlace, error)
+	UpdatePlace(ctx context.Context, userID, placeID uuid.UUID, name, address *string, lat, lng *float64, placeType *SavedPlaceType) (*SavedPlace, error)
+	DeletePlace(ctx context.Context, userID, placeID uuid.UUID) error
+}
+
+// ─── Promotions ──────────────────────────────────────────────────────────────
+
+// PromotionRepository manages promotion data.
+type PromotionRepository interface {
+	GetByCode(ctx context.Context, code string) (*Promotion, error)
+	ListActive(ctx context.Context) ([]*Promotion, error)
+}
+
+// PromotionUseCase defines business logic for promotions.
+type PromotionUseCase interface {
+	ValidateCode(ctx context.Context, code string, rideFare *float64) (*Promotion, error)
+	ListActive(ctx context.Context) ([]*Promotion, error)
+}
+

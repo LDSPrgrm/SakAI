@@ -138,6 +138,7 @@ export function DataTable<TData>({
           </span>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               className="p-1 rounded hover:bg-surface-hover disabled:opacity-30"
@@ -145,6 +146,7 @@ export function DataTable<TData>({
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               className="p-1 rounded hover:bg-surface-hover disabled:opacity-30"

@@ -93,12 +93,20 @@ export const metricsApi = {
   getActivityFeed: () =>
     adminRequest<unknown>('GET', '/audit?limit=10').then((raw) => {
       const logs = extractArray<{ id: string; actor_name: string; action: string; resource_type?: string; timestamp: string }>(raw);
-      return logs.map((log) => ({
-        id:      log.id,
-        type:    log.action ?? 'event',
-        message: `${log.actor_name} ${log.action}d ${(log.resource_type ?? 'resource').replace('_', ' ')}`,
-        time:    new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        isAlert: log.action === 'delete' || log.action === 'reject',
-      }) satisfies ActivityItem);
+      return logs.map((log) => {
+        const actor = log.actor_name?.trim() || 'System';
+        const action = String(log.action ?? 'event').toLowerCase();
+        const parts = action.split('_');
+        parts[0] = /e$/.test(parts[0]) ? `${parts[0]}d` : /ed$/.test(parts[0]) ? parts[0] : `${parts[0]}ed`;
+        const actionText = parts.join(' ');
+        const resource = (log.resource_type ?? 'resource').replace(/_/g, ' ');
+        return {
+          id:      log.id,
+          type:    action,
+          message: `${actor} ${actionText} ${resource}`,
+          time:    new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          isAlert: action === 'delete' || action === 'reject',
+        } satisfies ActivityItem;
+      });
     }),
 };

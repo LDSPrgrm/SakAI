@@ -33,12 +33,26 @@ info:
 
     All messages use the envelope format:
     ```json
-    { "event": "ride.accepted", "payload": { ... } }
+    {
+      "event": "ride.accepted",
+      "payload": { ... },
+      "timestamp": "2026-05-20T12:34:56Z",
+      "event_id": "018f4e6e-8b1c-7000-a000-000000000000"
+    }
     ```
+
+    - `event` — one of the values in the `WsEventType` enum.
+    - `payload` — event-specific payload; see `WsEnvelope.payload` oneOf in
+      `components/schemas` for the per-event shape.
+    - `timestamp` — RFC3339 UTC timestamp stamped by the server when the
+      envelope is built. Optional on the wire for backward compatibility
+      (older servers omit it); clients should tolerate its absence.
+    - `event_id` — UUIDv7 stamped by the server. Enables client-side
+      idempotency / dedup. Optional for backward compatibility.
 
     See **WebSocket Event Schemas** in `components/schemas` for all payload definitions.
 
-  version: "1.2.0"
+  version: "1.3.0"
   contact:
     name: SakAI Engineering
   x-ci:
@@ -179,6 +193,42 @@ paths:
               example:
                 code: NO_DRIVERS_AVAILABLE
                 message: "No drivers of requested type within range"
+
+  /drivers/nearby/all:
+    get:
+      tags: [Driver]
+      summary: Get all nearby drivers grouping by type
+      description: |
+        Returns aggregated counts and sample locations for all available vehicle types in the vicinity.
+        Used for the initial ride request screen to show available options.
+      operationId: getNearbyDriversAllTypes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: radius_m
+          in: query
+          schema: { type: number, format: double, default: 5000 }
+      responses:
+        "200":
+          description: Aggregated nearby drivers
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/NearbyDriver"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   # ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -323,6 +373,20 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "401":
           $ref: "#/components/responses/Unauthorized"
+    delete:
+      summary: Delete current user account
+      operationId: usersDeleteMe
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Account deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /users/me/payment-methods:
     get:
@@ -467,9 +531,154 @@ paths:
                 code: PAYMENT_METHOD_NOT_FOUND
                 message: "Payment method not found"
 
+  /users/me/saved-places:
+    get:
+      tags: [Users]
+      summary: List saved places
+      description: |
+        Returns a list of saved places (home, work, etc.) for the current passenger.
+      operationId: savedPlacesList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of saved places
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedPlace"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Users]
+      summary: Add a saved place
+      description: |
+        Creates a new saved place for the passenger.
+      operationId: savedPlacesCreate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedPlaceCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/saved-places/{placeId}:
+    delete:
+      tags: [Users]
+      summary: Remove a saved place
+      description: |
+        Deletes a saved place by ID.
+      operationId: savedPlacesDelete
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Place not found
+
+  /promotions:
+    get:
+      tags: [Users]
+      summary: List available promotions
+      description: |
+        Returns a list of active promotions/vouchers available for the authenticated passenger.
+      operationId: promotionsList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Promotion"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /promotions/validate:
+    post:
+      tags: [Users]
+      summary: Validate a promotion code
+      description: |
+        Checks if a specific promo code is valid for the current user and returns discount details.
+      operationId: promotionsValidate
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionValidateRequest"
+      responses:
+        "200":
+          description: Promotion is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: PROMO_INVALID
+                message: "This code has expired or is not valid for your account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── Driver ────────────────────────────────────────────────────────────────
 
   /driver/status:
+    get:
+      tags: [Driver]
+      summary: Get current driver online/offline status
+      description: |
+        Returns the driver's current availability status.
+      operationId: driverGetStatus
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverStatusResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     put:
       tags: [Driver]
       summary: Set driver online/offline status
@@ -542,6 +751,36 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+
+  /driver/rides:
+    get:
+      tags: [Driver]
+      summary: List authenticated driver's ride history
+      description: Returns a paginated list of rides completed or cancelled by the driver.
+      operationId: adminListDriverRides
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Driver's ride list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rides:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RideResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /driver/rides/incoming:
     get:
@@ -1064,6 +1303,50 @@ paths:
                 code: RIDE_INVALID_STATE_TRANSITION
                 message: "Rides cannot be cancelled once they are in progress"
 
+  /rides/{rideId}/sos:
+    post:
+      tags: [Rides]
+      summary: Trigger SOS/Emergency for an active ride
+      description: |
+        Signals an emergency for the given ride.
+        This notifies admin support and records the current GPS trail for security purposes.
+        Both the passenger and the assigned driver may trigger this.
+      operationId: rideTriggerSOS
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RideId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerSOSRequest"
+      responses:
+        "201":
+          description: SOS triggered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Ride is not in a state that allows SOS triggering
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: RIDE_INVALID_STATE_TRANSITION
+                message: "Cannot trigger SOS for an inactive ride"
+
   # ── Admin ─────────────────────────────────────────────────────────────────
 
   /admin/dashboard:
@@ -1334,6 +1617,37 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Incident"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/support-staff:
+    get:
+      tags: [Admin]
+      summary: List candidate assignees for incident reassignment
+      description: |
+        Slim list of admin/support users that may be assigned an incident.
+        Narrower than `/admin/users` (no creation metadata, no password
+        flags) so the route can be exposed to operations and support
+        callers without leaking sensitive admin-account fields.
+      operationId: listAssigneeCandidates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of candidate assignees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name, role]
+                  properties:
+                    id: { type: string, format: uuid }
+                    name: { type: string }
+                    role: { type: string, description: "Admin role slug (e.g. superadmin, support, operations)." }
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2926,28 +3240,6 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  # ── Admin self-profile ─────────────────────────────────────────────────────────────────────────
-
-  /admin/users/me:
-    get:
-      tags: [Admin]
-      summary: Get the authenticated admin's own profile
-      description: |
-        Returns the current admin's profile including role_id, role_name, and status.
-        Call on admin app cold-start to re-hydrate session state.
-      operationId: adminGetMe
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Admin profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminUser"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
   # ── Admin self permissions ─────────────────────────────────────────────────────────────────────────
 
   /admin/me/permissions:
@@ -3546,6 +3838,16 @@ components:
             code: RATE_LIMIT_EXCEEDED
             message: "Too many requests. Please slow down."
 
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: "An unexpected error occurred"
+
   # ── Schemas ───────────────────────────────────────────────────────────────
   schemas:
     # -- Error ----------------------------------------------------------------
@@ -3609,6 +3911,11 @@ components:
         # Proximity
         - DRIVER_TOO_FAR
         - DRIVER_TOO_FAR_FROM_DESTINATION
+        # Promotions
+        - PROMO_INVALID
+        - PROMO_EXPIRED
+        - PROMO_NOT_FOUND
+        - PROMO_MIN_AMOUNT_NOT_MET
 
     ErrorResponse:
       type: object
@@ -3787,6 +4094,12 @@ components:
           type: string
           format: uuid
           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. USR-0042).
         name:
           type: string
           example: "Maria Santos"
@@ -3917,7 +4230,6 @@ components:
           status,
           origin_address,
           destination_address,
-          estimated_fare,
           payment_method,
           created_at,
           updated_at,
@@ -3950,7 +4262,7 @@ components:
           nullable: true
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
         created_at:
           type: string
           format: date-time
@@ -4031,16 +4343,18 @@ components:
       description: |
         Ride state machine:
         ```
-        requested → accepted → arrived → in_progress → completed
-             ↘          ↙       ↙
-               cancelled  (not from in_progress)
+        created → requested → accepted → arrived → in_progress → payment_pending → completed
+             ↘          ↙       ↙                                 ↙
+               cancelled  (not from in_progress) -----------------
         ```
         Terminal states: `completed`, `cancelled`
       enum:
+        - created
         - requested
         - accepted
         - arrived
         - in_progress
+        - payment_pending
         - completed
         - cancelled
 
@@ -4072,7 +4386,7 @@ components:
           description: Passenger's selected vehicle type
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
           default: cash
           description: Payment method for this ride
 
@@ -4085,6 +4399,12 @@ components:
           type: string
           format: uuid
           example: "d4e5f6a7-b8c9-0123-def4-567890abcdef"
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. RIDE-000123).
         status:
           $ref: "#/components/schemas/RideStatus"
         passenger:
@@ -4144,7 +4464,7 @@ components:
           description: Vehicle type for this ride
         payment_method:
           type: string
-          enum: [cash, card]
+          enum: [cash, card, gcash, paymaya]
           description: Payment method used for ride
         cancelled_by:
           type: string
@@ -4161,6 +4481,10 @@ components:
           nullable: true
           description: Free-text cancellation reason
           example: "Driver was too far away"
+        decline_count:
+          type: integer
+          description: Number of times this ride was declined by drivers
+          default: 0
         created_at:
           type: string
           format: date-time
@@ -4176,6 +4500,9 @@ components:
         id:
           type: string
           format: uuid
+        display_id:
+          type: string
+          description: Human-readable reference for the driver's user record (e.g. USR-0042).
         name:
           type: string
           example: "Juan dela Cruz"
@@ -4228,9 +4555,7 @@ components:
           type: string
           format: uuid
         status:
-          type: string
-          enum:
-            [requested, accepted, arrived, in_progress, completed, cancelled]
+          $ref: "#/components/schemas/RideStatus"
         driver_id:
           type: string
           format: uuid
@@ -4274,18 +4599,95 @@ components:
     #   - Drivers only receive events for their assigned ride
     #   - Passengers only receive events for their own ride
     # ==================================================================
+    WsEventType:
+      type: string
+      description: |
+        Canonical WebSocket event identifier. Used as the discriminator
+        for `WsEnvelope.payload`. Add new values here in lockstep with
+        the matching `WsEvent*` payload schema below.
+      enum:
+        - ride.requested
+        - ride.accepted
+        - ride.declined
+        - ride.offer_expired
+        - ride.status_changed
+        - ride.completed
+        - ride.cancelled
+        - ride.sos_triggered
+        - ride.no_drivers
+        - ride.state_sync
+        - incident.assigned
+        - incident.resolved
+        - driver.location_updated
+        - conn.welcome
+
     WsEnvelope:
       type: object
-      description: Wrapper for all WebSocket messages
+      description: |
+        Wrapper for all WebSocket messages. The `event` field selects which
+        payload schema in the oneOf below applies — clients should validate
+        against the matching schema after dispatching on `event`.
+
+        v2 fields (`v`, `seq`, `corr_id`, `ack_required`) are populated when
+        the client negotiated the `sakai.v2` subprotocol (RFC v2 §4). v1
+        clients see them absent.
       required: [event, payload]
       properties:
         event:
-          type: string
-          description: Event name
-          example: "ride.status_changed"
+          $ref: "#/components/schemas/WsEventType"
         payload:
-          type: object
-          description: Event-specific payload — see schemas below
+          description: Event-specific payload — shape depends on `event`.
+          oneOf:
+            - $ref: "#/components/schemas/WsEventRideRequested"
+            - $ref: "#/components/schemas/WsEventRideAccepted"
+            - $ref: "#/components/schemas/WsEventRideDeclined"
+            - $ref: "#/components/schemas/WsEventRideOfferExpired"
+            - $ref: "#/components/schemas/WsEventRideStatusChanged"
+            - $ref: "#/components/schemas/WsEventRideCompleted"
+            - $ref: "#/components/schemas/WsEventRideCancelled"
+            - $ref: "#/components/schemas/WsEventRideSOSTriggered"
+            - $ref: "#/components/schemas/WsEventNoDriversAvailable"
+            - $ref: "#/components/schemas/WsEventRideStateSync"
+            - $ref: "#/components/schemas/WsEventIncidentAssigned"
+            - $ref: "#/components/schemas/WsEventIncidentResolved"
+            - $ref: "#/components/schemas/WsEventDriverLocationUpdated"
+            - $ref: "#/components/schemas/WsEventConnWelcome"
+        timestamp:
+          type: string
+          format: date-time
+          description: |
+            RFC3339 UTC timestamp stamped by the server. Optional for
+            backward compatibility — older servers omit it.
+        event_id:
+          type: string
+          format: uuid
+          description: |
+            UUIDv7 stamped by the server. Enables client-side idempotency.
+            Optional for backward compatibility.
+        v:
+          type: integer
+          description: |
+            Envelope protocol version. Present only when the client
+            negotiated the `sakai.v2` subprotocol. RFC v2 §4.1.
+          example: 2
+        seq:
+          type: integer
+          format: int64
+          description: |
+            Monotonic per-user sequence number. Clients use this to detect
+            gaps and request replay. v2-only. RFC v2 §4.2.
+        corr_id:
+          type: string
+          description: |
+            Correlation ID propagated from the originating HTTP request (or
+            internal job). Lets clients/operators link a UI event back to
+            the API call that produced it. v2-only. RFC v2 §4.3 / §12.4.
+        ack_required:
+          type: boolean
+          description: |
+            When true, the client must emit `{type:"ack", event_id}` after
+            applying the event. Set for critical events (ride.requested,
+            ride.accepted, ride.completed, …). RFC v2 §4.4.
 
     WsEventRideRequested:
       type: object
@@ -4368,11 +4770,16 @@ components:
 
     WsEventDriverLocationUpdated:
       type: object
+      x-high-frequency: true
       description: |
         **Event:** `driver.location_updated`
         **Direction:** server → passenger
         Pushed on every `PUT /driver/location` call during an active ride.
         Use to animate the driver pin on the passenger's map in real time.
+
+        Marked `x-high-frequency: true` — clients may use a hand-tuned
+        fast-path deserializer (lat/lng/heading/ride_id only) instead of
+        the full schema validator on the hot path.
       required: [ride_id, location]
       properties:
         ride_id:
@@ -4440,6 +4847,204 @@ components:
         message:
           type: string
           example: "No drivers are available in your area right now. Please try again shortly."
+
+    WsEventRideSOSTriggered:
+      type: object
+      description: |
+        **Event:** `ride.sos_triggered`
+        **Direction:** server → both passenger and driver on the active ride
+        Fired when either party invokes `POST /rides/{rideId}/sos`.
+        Clients should display an emergency banner and surface the
+        safety contact action.
+      required: [ride_id, incident_id, triggered_by]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        incident_id:
+          type: string
+          format: uuid
+          description: ID of the incident row created by the trigger.
+        triggered_by:
+          type: string
+          enum: [rider, driver]
+        reason:
+          type: string
+          nullable: true
+          description: Free-text reason the trigger user supplied.
+
+    WsEventRideCompleted:
+      type: object
+      description: |
+        **Event:** `ride.completed`
+        **Direction:** server → both passenger and driver
+        Fired when the driver completes the ride and the fare is finalised.
+        Passenger app should show the receipt; driver app should show the
+        earnings reveal.
+
+        `fare_breakdown` may be omitted by older servers — clients should
+        gracefully fall back to displaying only the total `fare`.
+      required: [ride_id, fare, payment_method, completed_at]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        fare:
+          type: number
+          format: float
+          description: Total fare charged to the passenger in PHP.
+        fare_breakdown:
+          $ref: "#/components/schemas/FareBreakdown"
+        payment_method:
+          type: string
+          enum: [cash, gcash, paymaya, card]
+        tip_amount:
+          type: number
+          format: float
+          nullable: true
+          description: Driver tip in PHP, when one was already received.
+        completed_at:
+          type: string
+          format: date-time
+
+    FareBreakdown:
+      type: object
+      description: |
+        Components of the final fare. Sum of (`base_fare` + `distance_charge`
+        + `time_charge` + `booking_fee`) × `surge_multiplier` − `discount`
+        should equal `fare` on `WsEventRideCompleted`.
+      required: [base_fare, distance_charge, time_charge, booking_fee]
+      properties:
+        base_fare:
+          type: number
+          format: float
+        distance_charge:
+          type: number
+          format: float
+        time_charge:
+          type: number
+          format: float
+        booking_fee:
+          type: number
+          format: float
+        surge_multiplier:
+          type: number
+          format: float
+          description: Active surge multiplier (1.0 means no surge). Omitted when 1.0.
+        discount:
+          type: number
+          format: float
+          description: Total promo / loyalty discount applied. Omitted when zero.
+
+    WsEventIncidentAssigned:
+      type: object
+      description: |
+        **Event:** `incident.assigned`
+        **Direction:** server → both passenger and driver on the SOS ride
+        Fired when an admin/operator assigns themselves (or another operator)
+        to the SOS incident. Clients should update the emergency banner with
+        the assignee's name when present.
+
+        `assignee_id` is null when an admin clears the assignment.
+      required: [ride_id, incident_id, assigned_at]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        incident_id:
+          type: string
+          format: uuid
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+        assignee_name:
+          type: string
+          description: |
+            Display name of the assignee. Optional — publishers populate it
+            only when the value can be resolved cheaply.
+        assigned_at:
+          type: string
+          format: date-time
+
+    WsEventIncidentResolved:
+      type: object
+      description: |
+        **Event:** `incident.resolved`
+        **Direction:** server → both passenger and driver on the SOS ride
+        Fired when the SOS incident is closed by an operator. Clients should
+        dismiss the emergency banner and may surface `resolution_notes` as
+        an informational toast (PII-redacted upstream).
+      required: [ride_id, incident_id, resolved_at]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        incident_id:
+          type: string
+          format: uuid
+        resolution_notes:
+          type: string
+          description: Operator notes. May be redacted before send.
+        resolved_at:
+          type: string
+          format: date-time
+
+    WsEventRideStateSync:
+      type: object
+      description: |
+        **Event:** `ride.state_sync`
+        **Direction:** server → client (originating user only)
+        Emitted by the WS handler when a reconnecting client's
+        `last_event_id` falls outside the replay window. Carries a snapshot
+        of the user's active-ride state so the UI can reconcile without
+        round-tripping REST.
+
+        When `has_active_ride` is false, the client should drop into the
+        "no active ride" screen and clear local ride state.
+      required: [has_active_ride]
+      properties:
+        has_active_ride:
+          type: boolean
+        ride_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: "#/components/schemas/RideStatus"
+        driver_id:
+          type: string
+          format: uuid
+          nullable: true
+        passenger_id:
+          type: string
+          format: uuid
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    WsEventConnWelcome:
+      type: object
+      description: |
+        **Event:** `conn.welcome`
+        **Direction:** server → client (single-shot on successful upgrade)
+        First server-pushed frame after a successful WebSocket upgrade.
+        Announces the negotiated subprotocol so clients can verify the
+        upgrade before sending replay/ack frames. RFC v2 §4.1.
+      required: [v]
+      properties:
+        protocol:
+          type: string
+          description: |
+            Negotiated WebSocket subprotocol. Empty string for v1 clients,
+            `"sakai.v2"` for v2.
+          example: "sakai.v2"
+        v:
+          type: integer
+          description: Envelope protocol version supported by the server.
+          example: 2
 
     DashboardResponse:
       type: object
@@ -4550,6 +5155,9 @@ components:
     SurgeConfig:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         enabled:
           type: boolean
         max_multiplier:
@@ -4568,6 +5176,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BlackoutHour"
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+        updated_by_name:
+          type: string
+          description: Admin display name resolved via LEFT JOIN users on updated_by.
 
     GeoJSONFeatureCollection:
       type: object
@@ -4637,9 +5254,19 @@ components:
         id:
           type: string
           format: uuid
+        seq:
+          type: integer
+          format: int64
+          description: Postgres-assigned monotonic counter; the source for display_id.
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. INC-0042) derived from seq.
         ride_id:
           type: string
           format: uuid
+        ride_display_id:
+          type: string
+          description: Human-readable reference for the linked ride (e.g. RIDE-000123).
         type:
           type: string
           enum: [sos_triggered, reported_incident, safety_complaint]
@@ -4666,6 +5293,9 @@ components:
         assigned_to:
           type: string
           nullable: true
+        assigned_to_name:
+          type: string
+          description: Display name of the assignee user, resolved via JOIN. Empty when unassigned.
         created_at:
           type: string
           format: date-time
@@ -4699,11 +5329,23 @@ components:
       properties:
         id:
           type: string
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. AUD-0042).
         timestamp:
           type: string
           format: date-time
         actor_id:
           type: string
+        actor_display_id:
+          type: string
+          description: Human-readable reference for the actor user (e.g. USR-0042).
+        actor_name:
+          type: string
+          description: Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous.
         ip_address:
           type: string
         action:
@@ -4729,8 +5371,17 @@ components:
       properties:
         id:
           type: string
+        seq:
+          type: integer
+          format: int64
+        display_id:
+          type: string
+          description: Human-readable reference (e.g. TXN-000042).
         ride_id:
           type: string
+        ride_display_id:
+          type: string
+          description: Human-readable reference for the linked ride (e.g. RIDE-000123).
         rider_name:
           type: string
         driver_name:
@@ -4777,6 +5428,24 @@ components:
           type: number
         pending_settlements:
           type: number
+
+    TriggerSOSRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Brief description of the emergency or reason for SOS
+          maxLength: 500
+          example: "Unsafe driving behavior"
+        lat:
+          type: number
+          format: double
+          description: Current latitude of the reporter
+        lng:
+          type: number
+          format: double
+          description: Current longitude of the reporter
 
     CommissionConfig:
       type: object
@@ -4861,6 +5530,9 @@ components:
           type: string
         driver_id:
           type: string
+        driver_display_id:
+          type: string
+          description: Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing.
         driver_name:
           type: string
         submitted_at:
@@ -5133,14 +5805,32 @@ components:
         note: { type: string }
         occurred_at: { type: string, format: date-time }
 
+    IncidentLocationPoint:
+      type: object
+      required: [lat, lng, recorded_at]
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+        recorded_at: { type: string, format: date-time }
+
     IncidentDetail:
       type: object
+      # location_trail intentionally omitted from required so older clients
+      # that predate migration 025 still validate against this schema.
       required: [incident, status_history]
       properties:
         incident: { $ref: "#/components/schemas/Incident" }
         status_history:
           type: array
           items: { $ref: "#/components/schemas/IncidentStatusEvent" }
+        location_trail:
+          type: array
+          description: |
+            GPS pings captured during the incident's active window (between
+            created_at and resolved_at). Populated by the driver_location_history
+            write-path while the driver has an unresolved incident; empty when
+            no pings were recorded.
+          items: { $ref: "#/components/schemas/IncidentLocationPoint" }
 
     AlertRule:
       type: object
@@ -5449,8 +6139,8 @@ components:
       properties:
         north: { type: number, format: double }
         south: { type: number, format: double }
-        east:  { type: number, format: double }
-        west:  { type: number, format: double }
+        east: { type: number, format: double }
+        west: { type: number, format: double }
 
     DriverHeatmap:
       type: object
@@ -5594,7 +6284,7 @@ components:
 
     PaymentMethod:
       type: string
-      enum: [cash, card]
+      enum: [cash, card, gcash, paymaya]
 
     PaymentStatus:
       type: string
@@ -5797,3 +6487,116 @@ components:
         lastUpdated:
           type: string
           format: date-time
+
+    SavedPlace:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - latitude
+        - longitude
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Home"
+        address:
+          type: string
+          example: "123 Main St, City, Country"
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [home, work, other]
+          default: other
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    SavedPlaceCreateRequest:
+      type: object
+      required:
+        - name
+        - address
+        - latitude
+        - longitude
+      properties:
+        name:
+          type: string
+          example: "Office"
+        address:
+          type: string
+          example: "456 Business Rd, City, Country"
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [home, work, other]
+          default: other
+
+    # ── Promotions ──────────────────────────────────────────────────────────
+
+    Promotion:
+      type: object
+      required: [id, code, description, discountValue, discountType, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: "WELCOME50"
+        title:
+          type: string
+          example: "50% Off First Ride"
+        description:
+          type: string
+          example: "Get 50% discount on your first ride, up to $5."
+        discountValue:
+          type: number
+          format: double
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+          example: "percentage"
+        maxDiscount:
+          type: number
+          format: double
+          nullable: true
+          description: Maximum discount amount for percentage types
+        minRideAmount:
+          type: number
+          format: double
+          nullable: true
+          description: Minimum ride fare required to apply this promo
+        expiresAt:
+          type: string
+          format: date-time
+        terms:
+          type: string
+          nullable: true
+
+    PromotionValidateRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          example: "SAKAI2026"
+        rideFare:
+          type: number
+          format: double
+          nullable: true
+          description: Optional fare to check if minimum amount criteria is met

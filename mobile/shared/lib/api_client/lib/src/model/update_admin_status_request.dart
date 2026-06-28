@@ -1,8 +1,7 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
-import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -11,12 +10,19 @@ part 'update_admin_status_request.g.dart';
 /// UpdateAdminStatusRequest
 ///
 /// Properties:
-/// * [role] 
+/// * [name] 
+/// * [email] 
+/// * [roleId] 
 @BuiltValue()
 abstract class UpdateAdminStatusRequest implements Built<UpdateAdminStatusRequest, UpdateAdminStatusRequestBuilder> {
-  @BuiltValueField(wireName: r'role')
-  UpdateAdminStatusRequestRoleEnum get role;
-  // enum roleEnum {  admin,  superadmin,  operations,  finance,  support,  };
+  @BuiltValueField(wireName: r'name')
+  String? get name;
+
+  @BuiltValueField(wireName: r'email')
+  String? get email;
+
+  @BuiltValueField(wireName: r'role_id')
+  String get roleId;
 
   UpdateAdminStatusRequest._();
 
@@ -41,10 +47,24 @@ class _$UpdateAdminStatusRequestSerializer implements PrimitiveSerializer<Update
     UpdateAdminStatusRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    yield r'role';
+    if (object.name != null) {
+      yield r'name';
+      yield serializers.serialize(
+        object.name,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.email != null) {
+      yield r'email';
+      yield serializers.serialize(
+        object.email,
+        specifiedType: const FullType(String),
+      );
+    }
+    yield r'role_id';
     yield serializers.serialize(
-      object.role,
-      specifiedType: const FullType(UpdateAdminStatusRequestRoleEnum),
+      object.roleId,
+      specifiedType: const FullType(String),
     );
   }
 
@@ -69,12 +89,26 @@ class _$UpdateAdminStatusRequestSerializer implements PrimitiveSerializer<Update
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
-        case r'role':
+        case r'name':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(UpdateAdminStatusRequestRoleEnum),
-          ) as UpdateAdminStatusRequestRoleEnum;
-          result.role = valueDes;
+            specifiedType: const FullType(String),
+          ) as String;
+          result.name = valueDes;
+          break;
+        case r'email':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.email = valueDes;
+          break;
+        case r'role_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.roleId = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -103,26 +137,5 @@ class _$UpdateAdminStatusRequestSerializer implements PrimitiveSerializer<Update
     );
     return result.build();
   }
-}
-
-class UpdateAdminStatusRequestRoleEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'admin')
-  static const UpdateAdminStatusRequestRoleEnum admin = _$updateAdminStatusRequestRoleEnum_admin;
-  @BuiltValueEnumConst(wireName: r'superadmin')
-  static const UpdateAdminStatusRequestRoleEnum superadmin = _$updateAdminStatusRequestRoleEnum_superadmin;
-  @BuiltValueEnumConst(wireName: r'operations')
-  static const UpdateAdminStatusRequestRoleEnum operations = _$updateAdminStatusRequestRoleEnum_operations;
-  @BuiltValueEnumConst(wireName: r'finance')
-  static const UpdateAdminStatusRequestRoleEnum finance = _$updateAdminStatusRequestRoleEnum_finance;
-  @BuiltValueEnumConst(wireName: r'support')
-  static const UpdateAdminStatusRequestRoleEnum support = _$updateAdminStatusRequestRoleEnum_support;
-
-  static Serializer<UpdateAdminStatusRequestRoleEnum> get serializer => _$updateAdminStatusRequestRoleEnumSerializer;
-
-  const UpdateAdminStatusRequestRoleEnum._(String name): super(name);
-
-  static BuiltSet<UpdateAdminStatusRequestRoleEnum> get values => _$updateAdminStatusRequestRoleEnumValues;
-  static UpdateAdminStatusRequestRoleEnum valueOf(String name) => _$updateAdminStatusRequestRoleEnumValueOf(name);
 }
 

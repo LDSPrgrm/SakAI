@@ -62,6 +62,16 @@ func (r *reportRepo) getChartDataRange(ctx context.Context, reportType string, f
 		return r.querySafetyIncidents(ctx, start, end)
 	case "kyc-processing":
 		return r.queryKycProcessing(ctx, start, end)
+	case "rides":
+		return r.queryDashboardRides(ctx, start, end)
+	case "revenue":
+		return r.queryDashboardRevenue(ctx, start, end)
+	case "vehicles":
+		return r.queryDashboardVehicles(ctx, start, end)
+	case "wait-time":
+		return r.queryWaitTime(ctx, start, end)
+	case "average-ratings":
+		return r.queryAverageRatings(ctx, start, end)
 	default:
 		return nil, fmt.Errorf("unknown report type %q", reportType)
 	}
@@ -97,7 +107,7 @@ func (r *reportRepo) ExportReport(ctx context.Context, reportType string, from, 
 	for _, row := range data {
 		rec := make([]string, len(headers))
 		for i, h := range headers {
-			rec[i] = fmt.Sprintf("%v", row[h])
+			rec[i] = escapeCSVCell(fmt.Sprintf("%v", row[h]))
 		}
 		if err := w.Write(rec); err != nil {
 			return nil, err
@@ -105,6 +115,19 @@ func (r *reportRepo) ExportReport(ctx context.Context, reportType string, from, 
 	}
 	w.Flush()
 	return buf.Bytes(), nil
+}
+
+// escapeCSVCell neutralizes spreadsheet formula injection: a leading
+// = + - @ would execute in Excel/Sheets, so prefix such cells with a quote.
+func escapeCSVCell(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@':
+		return "'" + s
+	}
+	return s
 }
 
 // --- queries -----------------------------------------------------------------
@@ -211,7 +234,7 @@ func (r *reportRepo) queryRideVolume(ctx context.Context, start, end time.Time) 
 
 func (r *reportRepo) queryVehicleDistribution(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
 	const q = `
-		SELECT COALESCE(vehicle_type, 'unknown') AS label, COUNT(*) AS value
+		SELECT COALESCE(ride_type, 'unknown') AS label, COUNT(*) AS value
 		FROM rides
 		WHERE created_at::date BETWEEN $1 AND $2
 		GROUP BY 1
@@ -267,6 +290,104 @@ func (r *reportRepo) queryKycProcessing(ctx context.Context, start, end time.Tim
 		LEFT JOIN per_day p ON p.d = days.d
 		ORDER BY days.d`
 	return r.scanKV(ctx, q, []string{"label", "approved", "rejected"}, start, end)
+}
+
+// Dashboard chart variants — return frontend-ready {name, <metric>} shape so
+// SADashboard can render Recharts series without client-side reshaping.
+
+func (r *reportRepo) queryDashboardRides(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT created_at::date AS d, COUNT(*) AS cnt
+			FROM rides
+			WHERE created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name, COALESCE(p.cnt, 0) AS rides
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "rides"}, start, end)
+}
+
+func (r *reportRepo) queryDashboardRevenue(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT processed_at::date AS d, SUM(amount) AS amt
+			FROM ride_payments
+			WHERE status = 'completed' AND processed_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name, COALESCE(p.amt, 0)::float AS revenue
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "revenue"}, start, end)
+}
+
+// queryWaitTime returns avg pickup wait (minutes from request to driver accept)
+// per day. Days with no accepted rides emit 0 so the chart x-axis stays dense.
+func (r *reportRepo) queryWaitTime(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT created_at::date AS d,
+			       AVG(EXTRACT(EPOCH FROM (accepted_at - created_at)) / 60.0) AS wait_min
+			FROM rides
+			WHERE accepted_at IS NOT NULL
+			  AND created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name,
+		       ROUND(COALESCE(p.wait_min, 0)::numeric, 1)::float AS wait
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "wait"}, start, end)
+}
+
+// queryAverageRatings returns per-day average stars split by ratee role.
+// driver = ratings where ratee_id is the ride's driver, rider = ratings where
+// ratee_id is the ride's passenger.
+func (r *reportRepo) queryAverageRatings(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		WITH days AS (
+			SELECT generate_series($1::date, $2::date, '1 day')::date AS d
+		),
+		per_day AS (
+			SELECT rt.created_at::date AS d,
+			       AVG(rt.stars) FILTER (WHERE rt.ratee_id = rd.driver_id)    AS driver_avg,
+			       AVG(rt.stars) FILTER (WHERE rt.ratee_id = rd.passenger_id) AS rider_avg
+			FROM ratings rt
+			JOIN rides rd ON rd.id = rt.ride_id
+			WHERE rt.created_at::date BETWEEN $1 AND $2
+			GROUP BY 1
+		)
+		SELECT to_char(days.d, 'Dy') AS name,
+		       ROUND(COALESCE(p.driver_avg, 0)::numeric, 2)::float AS driver,
+		       ROUND(COALESCE(p.rider_avg, 0)::numeric, 2)::float  AS rider
+		FROM days
+		LEFT JOIN per_day p ON p.d = days.d
+		ORDER BY days.d`
+	return r.scanKV(ctx, q, []string{"name", "driver", "rider"}, start, end)
+}
+
+func (r *reportRepo) queryDashboardVehicles(ctx context.Context, start, end time.Time) ([]map[string]interface{}, error) {
+	const q = `
+		SELECT COALESCE(ride_type, 'unknown') AS name, COUNT(*) AS value
+		FROM rides
+		WHERE created_at::date BETWEEN $1 AND $2
+		GROUP BY 1
+		ORDER BY value DESC`
+	return r.scanKV(ctx, q, []string{"name", "value"}, start, end)
 }
 
 // --- helpers -----------------------------------------------------------------

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/router.dart';
 import '../view_models/earnings_notifier.dart';
 
 /// Session-level earnings overview screen.
@@ -10,15 +12,42 @@ class EarningsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final earnings = ref.watch(earningsNotifierProvider);
+    final earningsState = ref.watch(earningsNotifierProvider);
+    final earnings = earningsState.earnings;
     final tokens = SakaiDesignTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Earnings — Current Shift'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push(Routes.earningsBreakdown),
+            icon: const Icon(Icons.bar_chart),
+            label: const Text('Breakdown'),
+          ),
+        ],
       ),
-      body: earnings.completedRidesCount == 0
+      body: earningsState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : earningsState.error != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: scheme.error),
+                  const SizedBox(height: 16),
+                  Text('Error: ${earningsState.error}'),
+                  ElevatedButton(
+                    onPressed: () => ref
+                        .read(earningsNotifierProvider.notifier)
+                        .loadEarnings(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : earnings.completedRidesCount == 0
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -68,12 +97,13 @@ class EarningsScreen extends ConsumerWidget {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Text(
-                            '\$${earnings.totalEarnings.toStringAsFixed(2)}',
+                            SakaiCurrency.format(earnings.totalEarnings),
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      SakaiSemanticColors.of(context).success,
+                                  color: SakaiSemanticColors.of(
+                                    context,
+                                  ).success,
                                 ),
                           ),
                         ],
@@ -103,25 +133,24 @@ class EarningsScreen extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               Text(
-                                'Fare: \$${b.fare.toStringAsFixed(2)}',
+                                'Fare: ${SakaiCurrency.format(b.fare)}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               if (b.tip > 0)
                                 Text(
-                                  'Tip: \$${b.tip.toStringAsFixed(2)}',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(
-                                    color: SakaiSemanticColors.of(
-                                      context,
-                                    ).success,
-                                  ),
+                                  'Tip: ${SakaiCurrency.format(b.tip)}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: SakaiSemanticColors.of(
+                                          context,
+                                        ).success,
+                                      ),
                                 ),
                             ],
                           ),
                         ),
                         Text(
-                          '\$${b.total.toStringAsFixed(2)}',
+                          SakaiCurrency.format(b.total),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),

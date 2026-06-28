@@ -19,23 +19,37 @@ const (
 type RideStatus string
 
 const (
+	// RideStatusCreated marks a ride that was just placed but is not yet
+	// being dispatched to drivers (e.g. waiting for fare confirmation).
+	// RFC v2 §7 — pre-`requested` state.
+	RideStatusCreated RideStatus = "created"
+
 	RideStatusRequested  RideStatus = "requested"
 	RideStatusAccepted   RideStatus = "accepted"
 	RideStatusArrived    RideStatus = "arrived"
 	RideStatusInProgress RideStatus = "in_progress"
-	RideStatusCompleted  RideStatus = "completed"
-	RideStatusCancelled  RideStatus = "cancelled"
+
+	// RideStatusPaymentPending sits between in_progress and completed for
+	// rides that finish with a non-cash payment method whose settlement
+	// hasn't been confirmed by the gateway. RFC v2 §7. Driver sees
+	// "Payment processing…" until payment.succeeded transitions through.
+	RideStatusPaymentPending RideStatus = "payment_pending"
+
+	RideStatusCompleted RideStatus = "completed"
+	RideStatusCancelled RideStatus = "cancelled"
 )
 
 // validTransitions defines the allowed state machine transitions.
 // Any transition not listed here is invalid and must be rejected.
 var validTransitions = map[RideStatus]map[RideStatus]bool{
-	RideStatusRequested:  {RideStatusAccepted: true, RideStatusCancelled: true},
-	RideStatusAccepted:   {RideStatusArrived: true, RideStatusCancelled: true},
-	RideStatusArrived:    {RideStatusInProgress: true, RideStatusCancelled: true},
-	RideStatusInProgress: {RideStatusCompleted: true},
-	RideStatusCompleted:  {},
-	RideStatusCancelled:  {},
+	RideStatusCreated:        {RideStatusRequested: true, RideStatusCancelled: true},
+	RideStatusRequested:      {RideStatusAccepted: true, RideStatusCancelled: true},
+	RideStatusAccepted:       {RideStatusArrived: true, RideStatusCancelled: true},
+	RideStatusArrived:        {RideStatusInProgress: true, RideStatusCancelled: true},
+	RideStatusInProgress:     {RideStatusCompleted: true, RideStatusPaymentPending: true},
+	RideStatusPaymentPending: {RideStatusCompleted: true, RideStatusCancelled: true},
+	RideStatusCompleted:      {},
+	RideStatusCancelled:      {},
 }
 
 // CanTransitionTo returns true if moving from the current status to next is a valid transition.
@@ -58,23 +72,78 @@ const (
 )
 
 // CancellationReason represents a predefined reason code for cancellation.
+// RFC v2 §8 splits reason codes by actor: passengers and drivers see
+// different pickers in the UI, and `other` is the only shared code.
 type CancellationReason string
 
 const (
+	// Passenger-side reasons (selected by passenger in cancel flow).
 	ReasonDriverTooFar    CancellationReason = "driver_too_far"
 	ReasonChangedPlans    CancellationReason = "changed_plans"
 	ReasonWrongPickup     CancellationReason = "wrong_pickup"
 	ReasonDriverNotMoving CancellationReason = "driver_not_moving"
 	ReasonSafetyConcern   CancellationReason = "safety_concern"
-	ReasonOther           CancellationReason = "other"
+
+	// Driver-side reasons (selected by driver in cancel flow). RFC v2 §8.6.
+	ReasonPassengerNoShow      CancellationReason = "passenger_no_show"
+	ReasonUnsafePickupArea     CancellationReason = "unsafe_pickup_area"
+	ReasonVehicleIssue         CancellationReason = "vehicle_issue"
+	ReasonPassengerRequest     CancellationReason = "passenger_request"
+	ReasonOtherDriverReason    CancellationReason = "other_driver_reason"
+
+	// Shared.
+	ReasonOther CancellationReason = "other"
 )
 
-// IsValidCancellationReason returns true if the string is a valid cancellation reason.
+// passengerReasons + driverReasons partition the taxonomy by actor.
+// `other` is intentionally in both sets so the validators stay symmetrical.
+var passengerReasons = map[CancellationReason]struct{}{
+	ReasonDriverTooFar:    {},
+	ReasonChangedPlans:    {},
+	ReasonWrongPickup:     {},
+	ReasonDriverNotMoving: {},
+	ReasonSafetyConcern:   {},
+	ReasonOther:           {},
+}
+
+var driverReasons = map[CancellationReason]struct{}{
+	ReasonPassengerNoShow:   {},
+	ReasonUnsafePickupArea:  {},
+	ReasonVehicleIssue:      {},
+	ReasonPassengerRequest:  {},
+	ReasonOtherDriverReason: {},
+	ReasonOther:             {},
+}
+
+// IsValidCancellationReason returns true if the string is a valid
+// cancellation reason for any actor. Use [IsValidCancellationReasonFor]
+// when actor context is known — the actor-scoped check rejects driver
+// codes from passengers and vice versa.
 func IsValidCancellationReason(s string) bool {
-	switch CancellationReason(s) {
-	case ReasonDriverTooFar, ReasonChangedPlans, ReasonWrongPickup,
-		ReasonDriverNotMoving, ReasonSafetyConcern, ReasonOther:
+	r := CancellationReason(s)
+	if _, ok := passengerReasons[r]; ok {
 		return true
+	}
+	_, ok := driverReasons[r]
+	return ok
+}
+
+// IsValidCancellationReasonFor scopes reason validation to the actor that
+// chose it. RFC v2 §8: rejecting cross-actor codes catches both API
+// misuse and stale clients.
+func IsValidCancellationReasonFor(by CancelledBy, s string) bool {
+	r := CancellationReason(s)
+	switch by {
+	case CancelledByPassenger:
+		_, ok := passengerReasons[r]
+		return ok
+	case CancelledByDriver:
+		_, ok := driverReasons[r]
+		return ok
+	case CancelledBySystem:
+		// System cancellations carry their own reasons (offer expiry,
+		// auto-cancel); any value in either set is acceptable.
+		return IsValidCancellationReason(s)
 	}
 	return false
 }
@@ -82,6 +151,8 @@ func IsValidCancellationReason(s string) bool {
 // Ride is the central aggregate for a single trip lifecycle.
 type Ride struct {
 	ID                   uuid.UUID    `json:"id"`
+	Seq                  int64        `json:"seq"`
+	DisplayID            string       `json:"display_id"`
 	PassengerID          uuid.UUID    `json:"passenger_id"`
 	DriverID             *uuid.UUID   `json:"driver_id,omitempty"`
 	Status               RideStatus   `json:"status"`

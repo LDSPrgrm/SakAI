@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart' show rideCompleteRepositoryProvider;
-import '../models/ride_completion_summary.dart';
+import '../models/rating_exception.dart';
 import '../models/rating_state.dart';
+import '../models/ride_completion_summary.dart';
 import '../models/tip_option.dart';
 import '../repositories/ride_complete_repository.dart';
 
@@ -148,7 +149,12 @@ class RideCompleteNotifier extends Notifier<RideCompleteState> {
         showThankYou: true,
       );
       return true;
-    } catch (e) {
+    } on RatingException catch (e) {
+      state = state.copyWith(
+        rating: state.rating.copyWith(submitting: false, error: e.userMessage),
+      );
+      return false;
+    } catch (_) {
       state = state.copyWith(
         rating: state.rating.copyWith(
           submitting: false,

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
 )
@@ -24,7 +25,19 @@ func (r *earningsRepo) Create(ctx context.Context, earnings *domain.DriverEarnin
 		INSERT INTO driver_earnings (
 			id, driver_id, ride_id, fare_amount, tip_amount, currency, completed_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err := r.db.Exec(ctx, q,
+
+	// Use tx from context if available, otherwise fallback to pool.
+	var executor interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	} = r.db
+
+	if tx, ok := ctx.Value(txKey{}).(interface {
+		Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	}); ok {
+		executor = tx
+	}
+
+	_, err := executor.Exec(ctx, q,
 		earnings.ID, earnings.DriverID, earnings.RideID,
 		earnings.FareAmount, earnings.TipAmount, earnings.Currency, earnings.CompletedAt,
 	)

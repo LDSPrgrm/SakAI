@@ -12,6 +12,8 @@ const KycEntryStatusEnum _$kycEntryStatusEnum_approved =
     const KycEntryStatusEnum._('approved');
 const KycEntryStatusEnum _$kycEntryStatusEnum_rejected =
     const KycEntryStatusEnum._('rejected');
+const KycEntryStatusEnum _$kycEntryStatusEnum_needsMoreInfo =
+    const KycEntryStatusEnum._('needsMoreInfo');
 
 KycEntryStatusEnum _$kycEntryStatusEnumValueOf(String name) {
   switch (name) {
@@ -21,6 +23,8 @@ KycEntryStatusEnum _$kycEntryStatusEnumValueOf(String name) {
       return _$kycEntryStatusEnum_approved;
     case 'rejected':
       return _$kycEntryStatusEnum_rejected;
+    case 'needsMoreInfo':
+      return _$kycEntryStatusEnum_needsMoreInfo;
     default:
       throw ArgumentError(name);
   }
@@ -31,6 +35,7 @@ final BuiltSet<KycEntryStatusEnum> _$kycEntryStatusEnumValues =
       _$kycEntryStatusEnum_pending,
       _$kycEntryStatusEnum_approved,
       _$kycEntryStatusEnum_rejected,
+      _$kycEntryStatusEnum_needsMoreInfo,
     ]);
 
 Serializer<KycEntryStatusEnum> _$kycEntryStatusEnumSerializer =
@@ -42,11 +47,13 @@ class _$KycEntryStatusEnumSerializer
     'pending': 'pending',
     'approved': 'approved',
     'rejected': 'rejected',
+    'needsMoreInfo': 'needs_more_info',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'pending': 'pending',
     'approved': 'approved',
     'rejected': 'rejected',
+    'needs_more_info': 'needsMoreInfo',
   };
 
   @override
@@ -77,11 +84,13 @@ class _$KycEntry extends KycEntry {
   @override
   final String? driverId;
   @override
+  final String? driverDisplayId;
+  @override
   final String? driverName;
   @override
   final DateTime? submittedAt;
   @override
-  final BuiltList<String>? docs;
+  final BuiltList<KycDocument>? docs;
   @override
   final KycEntryStatusEnum? status;
 
@@ -91,6 +100,7 @@ class _$KycEntry extends KycEntry {
   _$KycEntry._({
     this.id,
     this.driverId,
+    this.driverDisplayId,
     this.driverName,
     this.submittedAt,
     this.docs,
@@ -109,6 +119,7 @@ class _$KycEntry extends KycEntry {
     return other is KycEntry &&
         id == other.id &&
         driverId == other.driverId &&
+        driverDisplayId == other.driverDisplayId &&
         driverName == other.driverName &&
         submittedAt == other.submittedAt &&
         docs == other.docs &&
@@ -120,6 +131,7 @@ class _$KycEntry extends KycEntry {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, driverId.hashCode);
+    _$hash = $jc(_$hash, driverDisplayId.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, submittedAt.hashCode);
     _$hash = $jc(_$hash, docs.hashCode);
@@ -133,6 +145,7 @@ class _$KycEntry extends KycEntry {
     return (newBuiltValueToStringHelper(r'KycEntry')
           ..add('id', id)
           ..add('driverId', driverId)
+          ..add('driverDisplayId', driverDisplayId)
           ..add('driverName', driverName)
           ..add('submittedAt', submittedAt)
           ..add('docs', docs)
@@ -152,6 +165,11 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
   String? get driverId => _$this._driverId;
   set driverId(String? driverId) => _$this._driverId = driverId;
 
+  String? _driverDisplayId;
+  String? get driverDisplayId => _$this._driverDisplayId;
+  set driverDisplayId(String? driverDisplayId) =>
+      _$this._driverDisplayId = driverDisplayId;
+
   String? _driverName;
   String? get driverName => _$this._driverName;
   set driverName(String? driverName) => _$this._driverName = driverName;
@@ -160,9 +178,10 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
   DateTime? get submittedAt => _$this._submittedAt;
   set submittedAt(DateTime? submittedAt) => _$this._submittedAt = submittedAt;
 
-  ListBuilder<String>? _docs;
-  ListBuilder<String> get docs => _$this._docs ??= ListBuilder<String>();
-  set docs(ListBuilder<String>? docs) => _$this._docs = docs;
+  ListBuilder<KycDocument>? _docs;
+  ListBuilder<KycDocument> get docs =>
+      _$this._docs ??= ListBuilder<KycDocument>();
+  set docs(ListBuilder<KycDocument>? docs) => _$this._docs = docs;
 
   KycEntryStatusEnum? _status;
   KycEntryStatusEnum? get status => _$this._status;
@@ -177,6 +196,7 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
     if ($v != null) {
       _id = $v.id;
       _driverId = $v.driverId;
+      _driverDisplayId = $v.driverDisplayId;
       _driverName = $v.driverName;
       _submittedAt = $v.submittedAt;
       _docs = $v.docs?.toBuilder();
@@ -207,6 +227,7 @@ class KycEntryBuilder implements Builder<KycEntry, KycEntryBuilder> {
           _$KycEntry._(
             id: id,
             driverId: driverId,
+            driverDisplayId: driverDisplayId,
             driverName: driverName,
             submittedAt: submittedAt,
             docs: _docs?.build(),

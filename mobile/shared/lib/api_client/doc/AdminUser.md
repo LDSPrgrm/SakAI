@@ -9,6 +9,8 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
+**seq** | **int** |  | [optional] 
+**displayId** | **String** | Human-readable reference (e.g. USR-0042). | [optional] 
 **name** | **String** |  | 
 **email** | **String** |  | 
 **role** | **String** |  | 

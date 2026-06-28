@@ -10,8 +10,14 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(earningsNotifierProvider).completedRidesCount, 0);
-      expect(container.read(earningsNotifierProvider).totalEarnings, 0.0);
+      expect(
+        container.read(earningsNotifierProvider).earnings.completedRidesCount,
+        0,
+      );
+      expect(
+        container.read(earningsNotifierProvider).earnings.totalEarnings,
+        0.0,
+      );
     });
 
     test('addRide increases count and total', () {
@@ -27,7 +33,7 @@ void main() {
             completedAt: DateTime.now(),
           );
 
-      final earnings = container.read(earningsNotifierProvider);
+      final earnings = container.read(earningsNotifierProvider).earnings;
       expect(earnings.completedRidesCount, 1);
       expect(earnings.totalEarnings, 170.0);
     });
@@ -50,7 +56,7 @@ void main() {
         completedAt: DateTime.now(),
       );
 
-      final earnings = container.read(earningsNotifierProvider);
+      final earnings = container.read(earningsNotifierProvider).earnings;
       expect(earnings.completedRidesCount, 2);
       expect(earnings.totalEarnings, 310.0);
       expect(earnings.rideBreakdowns.length, 2);
@@ -69,7 +75,7 @@ void main() {
 
       notifier.reset();
 
-      final earnings = container.read(earningsNotifierProvider);
+      final earnings = container.read(earningsNotifierProvider).earnings;
       expect(earnings.completedRidesCount, 0);
       expect(earnings.totalEarnings, 0.0);
     });

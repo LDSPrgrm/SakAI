@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -21,7 +21,7 @@ abstract class WsEventRideStatusChanged implements Built<WsEventRideStatusChange
 
   @BuiltValueField(wireName: r'status')
   RideStatus get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'updated_at')
   DateTime get updatedAt;

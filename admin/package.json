@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "generate:types": "openapi-typescript ../openapi/swagger.yaml -o src/types/openapi.d.ts",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -44,6 +45,7 @@
     "fast-check": "^4.6.0",
     "jsdom": "^29.0.1",
     "openapi-typescript": "^7.13.0",
+    "react-doctor": "^0.2.9",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",

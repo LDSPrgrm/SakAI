@@ -82,14 +82,17 @@ func (r Rating) IsValidStars() bool {
 type PaymentMethod string
 
 const (
-	PaymentMethodCash  PaymentMethod = "cash"
-	PaymentMethodCard  PaymentMethod = "card"
+	PaymentMethodCash    PaymentMethod = "cash"
+	PaymentMethodCard    PaymentMethod = "card"
+	PaymentMethodGcash   PaymentMethod = "gcash"
+	PaymentMethodPaymaya PaymentMethod = "paymaya"
 )
 
-// IsValid returns true if the payment method is known.
+// IsValid returns true if the payment method is known. Keep in sync with the
+// `payment_method` ENUM in Postgres (migration 011 + extension 027).
 func (pm PaymentMethod) IsValid() bool {
 	switch pm {
-	case PaymentMethodCash, PaymentMethodCard:
+	case PaymentMethodCash, PaymentMethodCard, PaymentMethodGcash, PaymentMethodPaymaya:
 		return true
 	}
 	return false

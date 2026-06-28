@@ -59,12 +59,28 @@ export function CommissionConfigCard({ config, onSave, saving }: CommissionConfi
       </CardHeader>
       <CardContent>
         {!config ? (
-          <div className="text-sm text-text-muted text-center py-6">Loading config...</div>
+          <div className="space-y-6 max-w-3xl animate-pulse" aria-busy="true" aria-label="Loading commission settings">
+            <div className="space-y-3">
+              <div className="h-4 w-48 bg-surface-hover rounded" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-3 w-20 bg-surface-hover rounded" />
+                    <div className="h-9 w-full bg-surface-hover rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-4 w-56 bg-surface-hover rounded" />
+              <div className="h-9 w-40 bg-surface-hover rounded" />
+            </div>
+          </div>
         ) : (
-          <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-            <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
+          <form onSubmit={handleSubmit(onSave)} className="space-y-6 max-w-3xl">
+            <div className="space-y-3">
               <h4 className="text-sm font-semibold text-text-main">Platform Commission Rate</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {(['motorcycle', 'tricycle', 'car', 'other'] as const).map((key) => (
                   <Controller
                     key={key}
@@ -85,9 +101,9 @@ export function CommissionConfigCard({ config, onSave, saving }: CommissionConfi
               </div>
             </div>
 
-            <div className="p-4 bg-surface-hover rounded-lg border border-border space-y-4">
+            <div className="border-t border-border pt-6 space-y-3">
               <h4 className="text-sm font-semibold text-text-main">Pricing Floors & Promos</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Controller
                   name="minimum_commission"
                   control={control}

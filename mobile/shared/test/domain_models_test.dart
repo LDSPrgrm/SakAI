@@ -142,6 +142,37 @@ void main() {
       expect(event.type, 'ride.cancelled');
       expect(event.payload, isEmpty);
     });
+
+    test('handles null or missing event gracefully', () {
+      final message1 = {'payload': {'ride_id': 'r1'}};
+      final event1 = WsEvent.fromMessage(message1);
+      expect(event1.type, '');
+      expect(event1.payload['ride_id'], 'r1');
+
+      final message2 = {'event': null};
+      final event2 = WsEvent.fromMessage(message2);
+      expect(event2.type, '');
+    });
+
+    test('handles invalid payload type gracefully', () {
+      final message = {
+        'event': 'ride.accepted',
+        'payload': 'not-a-map',
+      };
+      final event = WsEvent.fromMessage(message);
+      expect(event.type, 'ride.accepted');
+      expect(event.payload, isEmpty);
+    });
+
+    test('handles payload map casting failures gracefully', () {
+      final message = {
+        'event': 'ride.accepted',
+        'payload': {123: 'non-string-key'},
+      };
+      final event = WsEvent.fromMessage(message);
+      expect(event.type, 'ride.accepted');
+      expect(event.payload['123'], 'non-string-key');
+    });
   });
 
   group('WsEventNames', () {
@@ -153,6 +184,31 @@ void main() {
       expect(WsEventNames.rideStatusChanged, 'ride.status_changed');
       expect(WsEventNames.rideCancelled, 'ride.cancelled');
       expect(WsEventNames.driverLocationUpdated, 'driver.location_updated');
+    });
+  });
+
+  group('RideState', () {
+    test('fromString parses valid states correctly (case-insensitive)', () {
+      expect(RideState.fromString('requested'), RideState.requested);
+      expect(RideState.fromString('REQUESTED'), RideState.requested);
+      expect(RideState.fromString('accepted'), RideState.accepted);
+      expect(RideState.fromString('ACCEPTED'), RideState.accepted);
+      expect(RideState.fromString('arrived'), RideState.arrived);
+      expect(RideState.fromString('ARRIVED'), RideState.arrived);
+      expect(RideState.fromString('in_progress'), RideState.inProgress);
+      expect(RideState.fromString('inprogress'), RideState.inProgress);
+      expect(RideState.fromString('inProgress'), RideState.inProgress);
+      expect(RideState.fromString('IN_PROGRESS'), RideState.inProgress);
+      expect(RideState.fromString('INPROGRESS'), RideState.inProgress);
+      expect(RideState.fromString('completed'), RideState.completed);
+      expect(RideState.fromString('COMPLETED'), RideState.completed);
+      expect(RideState.fromString('cancelled'), RideState.cancelled);
+      expect(RideState.fromString('CANCELLED'), RideState.cancelled);
+    });
+
+    test('fromString throws ArgumentError for invalid values', () {
+      expect(() => RideState.fromString('unknown'), throwsArgumentError);
+      expect(() => RideState.fromString(''), throwsArgumentError);
     });
   });
 }

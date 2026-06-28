@@ -33,14 +33,21 @@ class LoginViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    debugPrint('LoginViewModel: Attempting to sign in user with email: $trimmed');
+    debugPrint(
+      'LoginViewModel: Attempting to sign in user with email: $trimmed',
+    );
 
     try {
-      final session = await _authRepository.login(email: trimmed, password: password);
+      final session = await _authRepository.login(
+        email: trimmed,
+        password: password,
+      );
       debugPrint('LoginViewModel: Sign in successful for email: $trimmed');
       return session;
     } on AuthException catch (e) {
-      debugPrint('LoginViewModel: Sign in failed for email: $trimmed. Error: ${e.machineCode} - ${e.userMessage}');
+      debugPrint(
+        'LoginViewModel: Sign in failed for email: $trimmed. Error: ${e.machineCode} - ${e.userMessage}',
+      );
       _errorMessage = e.userMessage;
       return null;
     } finally {

@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -41,7 +41,7 @@ abstract class TipResponse implements Built<TipResponse, TipResponseBuilder> {
 
   @BuiltValueField(wireName: r'paymentMethod')
   PaymentMethod get paymentMethod;
-  // enum paymentMethodEnum {  cash,  card,  };
+  // enum paymentMethodEnum {  cash,  card,  gcash,  paymaya,  };
 
   /// Payment gateway transaction ID
   @BuiltValueField(wireName: r'transactionId')

@@ -1,6 +1,6 @@
 // Canonical confirmation dialog used for all destructive/high-impact actions.
 // Spec: superadmin.md §2 modals/ConfirmationModal.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +36,20 @@ export function ConfirmationModal({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onCancel();
+    }
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   const styles = VARIANT_STYLES[variant];
@@ -43,10 +57,14 @@ export function ConfirmationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
+      <div
+        className="absolute inset-0 bg-black/60 animate-[confirm-fade_120ms_ease-out]"
+        onClick={onCancel}
+      />
 
-      <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5">
+      <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5 animate-[confirm-pop_150ms_ease-out]">
         <button
+          type="button"
           onClick={onCancel}
           aria-label="Close"
           className="absolute top-4 right-4 text-text-muted hover:text-text-main transition-colors"
@@ -68,6 +86,7 @@ export function ConfirmationModal({
 
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={onCancel}
             disabled={loading}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-border text-text-muted hover:text-text-main hover:border-primary/50 transition-colors disabled:opacity-50"
@@ -75,6 +94,7 @@ export function ConfirmationModal({
             {cancelLabel}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={loading}
             className={cn('px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50', styles.confirm)}
@@ -83,6 +103,14 @@ export function ConfirmationModal({
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes confirm-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes confirm-pop {
+          from { opacity: 0; transform: scale(0.97); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -143,6 +143,10 @@ class _$AdminUser extends AdminUser {
   @override
   final String id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final String name;
   @override
   final String email;
@@ -163,6 +167,8 @@ class _$AdminUser extends AdminUser {
     this.roleName,
     this.status,
     required this.id,
+    this.seq,
+    this.displayId,
     required this.name,
     required this.email,
     required this.role,
@@ -186,6 +192,8 @@ class _$AdminUser extends AdminUser {
         roleName == other.roleName &&
         status == other.status &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         name == other.name &&
         email == other.email &&
         role == other.role &&
@@ -202,6 +210,8 @@ class _$AdminUser extends AdminUser {
     _$hash = $jc(_$hash, roleName.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
@@ -220,6 +230,8 @@ class _$AdminUser extends AdminUser {
           ..add('roleName', roleName)
           ..add('status', status)
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('name', name)
           ..add('email', email)
           ..add('role', role)
@@ -258,6 +270,14 @@ class AdminUserBuilder
   String? get id => _$this._id;
   set id(covariant String? id) => _$this._id = id;
 
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(covariant int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(covariant String? displayId) => _$this._displayId = displayId;
+
   String? _name;
   String? get name => _$this._name;
   set name(covariant String? name) => _$this._name = name;
@@ -292,6 +312,8 @@ class AdminUserBuilder
       _roleName = $v.roleName;
       _status = $v.status;
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _name = $v.name;
       _email = $v.email;
       _role = $v.role;
@@ -327,6 +349,8 @@ class AdminUserBuilder
             roleName: roleName,
             status: status,
             id: BuiltValueNullFieldError.checkNotNull(id, r'AdminUser', 'id'),
+            seq: seq,
+            displayId: displayId,
             name: BuiltValueNullFieldError.checkNotNull(
               name,
               r'AdminUser',

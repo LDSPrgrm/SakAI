@@ -1,18 +1,21 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide LatLng, NearbyDriver;
+import 'package:sakai_shared/sakai_shared.dart'
+    hide LatLng, NearbyDriver, ServiceArea;
 import 'package:uuid/uuid.dart';
 
 import '../../ride/models/ride_exception.dart';
 import '../../../app/providers.dart';
 import '../models/ride_type_option.dart';
 import '../models/nearby_driver.dart';
+import '../models/service_area.dart';
 import '../repositories/driver_repository.dart';
+import '../repositories/geocoding_service.dart';
+import '../repositories/service_area_repository.dart';
 
 enum HomeStatus {
   idle,
@@ -31,7 +34,9 @@ class HomeState {
   final RideEntity? createdRide;
   final VehicleType? selectedRideType;
   final List<RideTypeOption> rideTypeOptions;
-  final List<NearbyDriver> nearbyDrivers; // Consolidated nearby drivers
+  final List<NearbyDriver> nearbyDrivers;
+  final List<ServiceArea> serviceAreas;
+  final bool permissionPermanentlyDenied;
 
   const HomeState({
     required this.status,
@@ -43,6 +48,8 @@ class HomeState {
     this.selectedRideType,
     this.rideTypeOptions = const [],
     this.nearbyDrivers = const [],
+    this.serviceAreas = const [],
+    this.permissionPermanentlyDenied = false,
   });
 
   HomeState copyWith({
@@ -60,6 +67,8 @@ class HomeState {
     bool clearSelectedRideType = false,
     List<RideTypeOption>? rideTypeOptions,
     List<NearbyDriver>? nearbyDrivers,
+    List<ServiceArea>? serviceAreas,
+    bool? permissionPermanentlyDenied,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -73,6 +82,9 @@ class HomeState {
           : (selectedRideType ?? this.selectedRideType),
       rideTypeOptions: rideTypeOptions ?? this.rideTypeOptions,
       nearbyDrivers: nearbyDrivers ?? this.nearbyDrivers,
+      serviceAreas: serviceAreas ?? this.serviceAreas,
+      permissionPermanentlyDenied:
+          permissionPermanentlyDenied ?? this.permissionPermanentlyDenied,
     );
   }
 
@@ -90,6 +102,7 @@ class HomeNotifier extends Notifier<HomeState> {
   final _uuid = const Uuid();
   String? _idempotencyKey;
   Timer? _nearbyDriverPollTimer;
+  bool _initialized = false;
 
   @override
   HomeState build() {
@@ -97,7 +110,23 @@ class HomeNotifier extends Notifier<HomeState> {
       _stopLocationStreaming();
       _stopNearbyDriverPolling();
     });
+    // Only fetch service areas once during initialization.
+    if (!_initialized) {
+      _initialized = true;
+      unawaited(_fetchServiceAreas());
+    }
     return const HomeState(status: HomeStatus.idle);
+  }
+
+  Future<void> _fetchServiceAreas() async {
+    try {
+      final authInterceptor = ref.read(authInterceptorProvider);
+      final repo = ServiceAreaRepository(authInterceptor: authInterceptor);
+      final areas = await repo.getServiceAreas();
+      state = state.copyWith(serviceAreas: areas);
+    } catch (e) {
+      debugPrint('[HomeNotifier] Failed to fetch service areas: $e');
+    }
   }
 
   /// Starts consolidated periodic polling for nearby drivers.
@@ -119,7 +148,10 @@ class HomeNotifier extends Notifier<HomeState> {
 
   /// Fetches nearby drivers and updates both ride type options and map markers from a single API call.
   Future<void> _fetchNearbyDrivers() async {
-    final currentPos = state.currentLatLng;
+    final pickup = state.pickup;
+    final currentPos =
+        state.currentLatLng ??
+        (pickup == null ? null : LatLng(pickup.lat, pickup.lng));
     if (currentPos == null) return;
 
     try {
@@ -133,15 +165,22 @@ class HomeNotifier extends Notifier<HomeState> {
           .expand<NearbyDriver>((d) => d)
           .toList();
 
-      // Build ride type options with fare estimates
-      final options = _buildRideTypeOptions(allDrivers);
+      // Skip the whole state update when nothing meaningful changed —
+      // same driver set within 5m of where we last saw them. Otherwise
+      // every poll repaints map markers + rebuilds the ride-type picker
+      // even when the world hasn't moved.
+      if (_driversSubstantiallyEqual(state.nearbyDrivers, flatDrivers)) {
+        return;
+      }
 
       state = state.copyWith(
         nearbyDrivers: flatDrivers,
-        rideTypeOptions: options,
+        rideTypeOptions: _buildRideTypeOptions(allDrivers),
       );
     } catch (e) {
       debugPrint('[HomeNotifier] Nearby driver poll error: $e');
+      // Keep whatever placeholder rideTypeOptions setDestination already
+      // populated; do not clear them on transient API failures.
     }
   }
 
@@ -170,10 +209,12 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   Future<void> initLocation() async {
+    debugPrint('[P-Home] initLocation called');
     state = state.copyWith(status: HomeStatus.locating);
     try {
       final permission = await _ensureLocationPermission();
       if (!permission) {
+        debugPrint('[P-Home] initLocation: location permission denied');
         state = state.copyWith(
           status: HomeStatus.idle,
           errorMessage: 'Location permission is required to request a ride.',
@@ -183,6 +224,7 @@ class HomeNotifier extends Notifier<HomeState> {
       await _updatePickupFromGps();
       _startLocationStreaming();
     } catch (e) {
+      debugPrint('[P-Home] initLocation error: $e');
       state = state.copyWith(
         status: HomeStatus.idle,
         errorMessage: 'Could not determine your location. Check GPS settings.',
@@ -211,6 +253,9 @@ class HomeNotifier extends Notifier<HomeState> {
             p.locality,
           ].where((s) => s != null && s.isNotEmpty).join(', ');
 
+    debugPrint(
+      '[P-Home] _updatePickupFromGps: got position (${pos.latitude}, ${pos.longitude}), address=$address',
+    );
     state = state.copyWith(
       status: HomeStatus.idle,
       currentLatLng: currentLatLng,
@@ -280,14 +325,46 @@ class HomeNotifier extends Notifier<HomeState> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    return permission == LocationPermission.whileInUse ||
+    if (permission == LocationPermission.deniedForever) {
+      // Permanent denial requires the user to open OS settings — surface a
+      // banner the UI can pair with openLocationSettings() instead of
+      // silently retrying forever.
+      state = state.copyWith(
+        permissionPermanentlyDenied: true,
+        errorMessage:
+            'Location permission permanently denied. Open Settings to grant access.',
+      );
+      return false;
+    }
+    final granted =
+        permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always;
+    if (granted && state.permissionPermanentlyDenied) {
+      state = state.copyWith(permissionPermanentlyDenied: false);
+    }
+    return granted;
+  }
+
+  /// Open the OS settings page so the user can flip a `deniedForever`
+  /// permission back to allowed.
+  Future<void> openLocationSettings() async {
+    await Geolocator.openAppSettings();
   }
 
   void setDestination(RideLocation destination) {
+    debugPrint(
+      '[P-Home] setDestination: ${destination.address} (${destination.lat}, ${destination.lng})',
+    );
+    // Pre-populate ride type options so the UI never blocks on the
+    // "Checking nearby drivers…" loader while the first poll is in flight.
+    // Subsequent polls overwrite with live driver counts.
+    final initialOptions = state.rideTypeOptions.isEmpty
+        ? _buildRideTypeOptions(const {})
+        : state.rideTypeOptions;
     state = state.copyWith(
       status: HomeStatus.destinationSet,
       destination: destination,
+      rideTypeOptions: initialOptions,
       clearError: true,
     );
     // Start consolidated nearby driver polling (serves both ride options and map markers)
@@ -295,6 +372,7 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   void setPickup(RideLocation pickup) {
+    debugPrint('[P-Home] setPickup: ${pickup.address}');
     state = state.copyWith(
       pickup: pickup,
       status: state.destination != null
@@ -304,25 +382,111 @@ class HomeNotifier extends Notifier<HomeState> {
     );
   }
 
-  void clearDestination() {
-    _stopNearbyDriverPolling();
+  void clearPickup() {
+    debugPrint('[P-Home] clearPickup');
     state = state.copyWith(
-      status: HomeStatus.idle,
-      clearDestination: true,
-      nearbyDrivers: [],
-      rideTypeOptions: [],
+      clearPickup: true,
+      status: state.destination != null
+          ? HomeStatus.destinationSet
+          : HomeStatus.idle,
     );
+  }
+
+  void clearDestination({bool exit = false}) {
+    debugPrint('[P-Home] clearDestination (exit: $exit)');
+    if (exit) {
+      _stopNearbyDriverPolling();
+      state = state.copyWith(
+        status: HomeStatus.idle,
+        clearDestination: true,
+        clearSelectedRideType: true,
+        nearbyDrivers: [],
+        rideTypeOptions: [],
+      );
+    } else {
+      state = state.copyWith(
+        clearDestination: true,
+        clearSelectedRideType: true,
+        status: state.pickup != null
+            ? HomeStatus.destinationSet
+            : HomeStatus.idle,
+        rideTypeOptions: [],
+      );
+    }
   }
 
   /// Sets the selected ride type.
   void setSelectedRideType(VehicleType type) {
+    debugPrint('[P-Home] setSelectedRideType: $type');
     state = state.copyWith(selectedRideType: type);
+  }
+
+  /// Sets pickup using an address string.
+  Future<void> setPickupFromString(String address) async {
+    try {
+      final loc = await GeocodingService().geocode(address);
+      setPickup(loc);
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Could not find that location.');
+    }
+  }
+
+  /// Sets destination using an address string.
+  Future<void> setDestinationFromString(String address) async {
+    try {
+      final loc = await GeocodingService().geocode(address);
+      setDestination(loc);
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Could not find that location.');
+    }
+  }
+
+  /// Clears the transient [createdRide] state after it has been handled by the UI.
+  void clearCreatedRide() {
+    if (state.createdRide != null) {
+      debugPrint('[P-Home] clearCreatedRide');
+      state = state.copyWith(
+        clearCreatedRide: true,
+        status: HomeStatus.destinationSet,
+      );
+    }
+  }
+
+  bool _isLocationInServiceArea(RideLocation location) {
+    if (state.serviceAreas.isEmpty) {
+      return true; // Default to true if not loaded yet
+    }
+
+    final point = LatLng(location.lat, location.lng);
+    for (final area in state.serviceAreas) {
+      if (area.contains(point)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<RideEntity?> requestRide() async {
     final pickup = state.pickup;
     final destination = state.destination;
     final rideType = state.selectedRideType;
+
+    if (pickup != null && !_isLocationInServiceArea(pickup)) {
+      // Log the mismatch but do not hard-block: the backend is the
+      // authoritative service-area validator. Client-side polygon checks
+      // can fail due to coordinate precision or polygon coverage gaps.
+      debugPrint(
+        '[HomeNotifier] WARN: pickup may be outside service area polygon '
+        '(lat=${pickup.lat}, lng=${pickup.lng}). Proceeding — backend will validate.',
+      );
+    }
+
+    if (destination != null && !_isLocationInServiceArea(destination)) {
+      debugPrint(
+        '[HomeNotifier] WARN: destination may be outside service area polygon '
+        '(lat=${destination.lat}, lng=${destination.lng}). Proceeding — backend will validate.',
+      );
+    }
     debugPrint(
       '[HOME] requestRide called: pickup=$pickup, destination=$destination, rideType=$rideType',
     );
@@ -368,7 +532,36 @@ class HomeNotifier extends Notifier<HomeState> {
 
   void clearError() {
     if (state.errorMessage != null) {
+      debugPrint('[P-Home] clearError');
       state = state.copyWith(clearError: true);
     }
   }
+
+  // Lets the notifier skip a `copyWith` that would otherwise trigger a
+  // map-marker repaint for noise-level GPS jitter (<5m).
+  static bool _driversSubstantiallyEqual(
+    List<NearbyDriver> prev,
+    List<NearbyDriver> next,
+  ) {
+    if (prev.length != next.length) return false;
+    final byId = {for (final d in prev) d.id: d};
+    for (final n in next) {
+      final p = byId[n.id];
+      if (p == null) return false;
+      if (p.location.latitude == n.location.latitude &&
+          p.location.longitude == n.location.longitude) {
+        continue;
+      }
+      final distance = Geolocator.distanceBetween(
+        p.location.latitude,
+        p.location.longitude,
+        n.location.latitude,
+        n.location.longitude,
+      );
+      if (distance > _kDriverMoveThresholdMeters) return false;
+    }
+    return true;
+  }
+
+  static const double _kDriverMoveThresholdMeters = 5.0;
 }

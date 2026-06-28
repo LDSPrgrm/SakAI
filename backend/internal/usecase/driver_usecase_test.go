@@ -12,24 +12,25 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func newDriverUC(ctrl *gomock.Controller) (domain.DriverUseCase, *mocks.MockDriverRepository, *mocks.MockRideRepository) {
+func newDriverUC(ctrl *gomock.Controller) (domain.DriverUseCase, *mocks.MockDriverRepository, *mocks.MockRideRepository, *mocks.MockIncidentRepository) {
 	driverRepo := mocks.NewMockDriverRepository(ctrl)
 	rideRepo := mocks.NewMockRideRepository(ctrl)
 	earningsRepo := mocks.NewMockEarningsRepository(ctrl)
-	uc := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo)
-	return uc, driverRepo, rideRepo
+	incidentRepo := mocks.NewMockIncidentRepository(ctrl)
+	uc := usecase.NewDriverUseCase(driverRepo, rideRepo, earningsRepo, incidentRepo)
+	return uc, driverRepo, rideRepo, incidentRepo
 }
 
 func TestDriverUseCase_SetStatus_Online(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, driverRepo, _ := newDriverUC(ctrl)
+	uc, driverRepo, _, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 
-	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(nil)
+	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOnline).Return(&domain.Driver{UserID: driverID, Status: domain.DriverStatusOnline}, nil)
 
-	if err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOnline); err != nil {
+	if _, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOnline); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
@@ -38,13 +39,13 @@ func TestDriverUseCase_SetStatus_Offline_NoActiveRide(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, driverRepo, rideRepo := newDriverUC(ctrl)
+	uc, driverRepo, rideRepo, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 
 	rideRepo.EXPECT().GetActiveByDriverID(gomock.Any(), driverID).Return(nil, domain.ErrNotFound)
-	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOffline).Return(nil)
+	driverRepo.EXPECT().UpdateStatus(gomock.Any(), driverID, domain.DriverStatusOffline).Return(&domain.Driver{UserID: driverID, Status: domain.DriverStatusOffline}, nil)
 
-	if err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline); err != nil {
+	if _, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
@@ -53,7 +54,7 @@ func TestDriverUseCase_SetStatus_Offline_ActiveRide(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, _, rideRepo := newDriverUC(ctrl)
+	uc, _, rideRepo, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 	activeRide := testutil.NewTestRide(uuid.New(), func(r *domain.Ride) {
 		r.DriverID = &driverID
@@ -62,7 +63,7 @@ func TestDriverUseCase_SetStatus_Offline_ActiveRide(t *testing.T) {
 
 	rideRepo.EXPECT().GetActiveByDriverID(gomock.Any(), driverID).Return(activeRide, nil)
 
-	err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline)
+	_, err := uc.SetStatus(context.Background(), driverID, domain.DriverStatusOffline)
 	if err != domain.ErrCannotGoOffline {
 		t.Errorf("expected ErrCannotGoOffline, got %v", err)
 	}
@@ -72,7 +73,7 @@ func TestDriverUseCase_UpdateLocation_OnlineDriver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, driverRepo, _ := newDriverUC(ctrl)
+	uc, driverRepo, _, incidentRepo := newDriverUC(ctrl)
 	driverID := uuid.New()
 	driver := testutil.NewTestDriverRecord(driverID)
 
@@ -80,6 +81,7 @@ func TestDriverUseCase_UpdateLocation_OnlineDriver(t *testing.T) {
 
 	driverRepo.EXPECT().GetByUserID(gomock.Any(), driverID).Return(driver, nil)
 	driverRepo.EXPECT().UpdateLocation(gomock.Any(), driverID, loc).Return(nil)
+	incidentRepo.EXPECT().FindActiveByDriver(gomock.Any(), driverID).Return(nil, nil)
 
 	if err := uc.UpdateLocation(context.Background(), driverID, loc); err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -90,7 +92,7 @@ func TestDriverUseCase_UpdateLocation_OfflineDriver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, driverRepo, _ := newDriverUC(ctrl)
+	uc, driverRepo, _, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 	driver := testutil.NewTestDriverRecord(driverID, func(d *domain.Driver) {
 		d.Status = domain.DriverStatusOffline
@@ -108,7 +110,7 @@ func TestDriverUseCase_GetIncomingRide_RequestedOnly(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	uc, _, rideRepo := newDriverUC(ctrl)
+	uc, _, rideRepo, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
 
 	// If the active ride is not in "requested" state, GetIncomingRide should return ErrNotFound.

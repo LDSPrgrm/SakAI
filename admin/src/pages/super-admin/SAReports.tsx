@@ -13,13 +13,17 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
+  LabelList,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DateRangePicker, DateRange, getDefaultRange } from '@/components/shared/DateRangePicker';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useReportList, useReportChart, useExportReport } from '@/hooks/useReports';
 import type { ReportRange } from '@/api/super-admin/reports';
 import { CHART_COLORS, DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
+import { renderOutsidePieLabel } from '@/utils/pieLabels';
+import { aggregateByWeekday } from '@/utils/chartAggregate';
 
 function toIsoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -29,6 +33,15 @@ function toIsoDate(d: Date): string {
 
 const COLORS = CHART_COLORS;
 const DARK_TOOLTIP = DARK_TOOLTIP_STYLE;
+
+const yAxisLabel = (value: string) => ({
+  value,
+  angle: -90 as const,
+  position: 'insideLeft' as const,
+  fill: '#9CA3AF',
+  fontSize: 11,
+  style: { textAnchor: 'middle' as const },
+});
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -42,7 +55,7 @@ interface ReportItem {
 
 export function SAReports() {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange('30d'));
-  const [selectedReport, setSelectedReport] = useState<string>('weekly-financial');
+  const [selectedReport, setSelectedReport] = useState<string>('');
 
   const apiRange: ReportRange = useMemo(
     () => ({ from: toIsoDate(dateRange.from), to: toIsoDate(dateRange.to) }),
@@ -63,11 +76,20 @@ export function SAReports() {
     .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
   const paymentData = ((paymentQuery.data ?? []) as { label?: string; name?: string; value: number }[])
     .map(d => ({ name: d.name ?? d.label ?? 'Unknown', value: d.value }));
-  const waitTimeData = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
-    .map(d => ({ name: d.name ?? d.label ?? '', wait: d.wait ?? d.value ?? 0 }));
-  const ratingsData = (ratingsQuery.data ?? []) as {
+  const waitTimeRaw = ((waitTimeQuery.data ?? []) as { label?: string; name?: string; wait?: number; value?: number }[])
+    .map(d => {
+      const v = d.wait ?? d.value ?? 0;
+      return { name: d.name ?? d.label ?? '', wait: v > 0 ? v : null };
+    });
+  const waitTimeData = aggregateByWeekday(waitTimeRaw, ['wait'] as const);
+  const ratingsRaw = ((ratingsQuery.data ?? []) as {
     name: string; driver: number; rider: number;
-  }[];
+  }[]).map(d => ({
+    name: d.name,
+    driver: d.driver > 0 ? d.driver : null,
+    rider: d.rider > 0 ? d.rider : null,
+  }));
+  const ratingsData = aggregateByWeekday(ratingsRaw, ['driver', 'rider'] as const);
   const loading = reportListQuery.isPending;
 
   async function handleExport(type: string) {
@@ -82,7 +104,10 @@ export function SAReports() {
     URL.revokeObjectURL(url);
   }
 
+  const selectedReportItem = reportList.find((r) => r.id === selectedReport) ?? null;
+
   async function handleExportAll() {
+    if (!selectedReport) return;
     await handleExport(selectedReport);
   }
 
@@ -91,17 +116,25 @@ export function SAReports() {
   return (
     <div className="space-y-6 p-6">
 
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-text-main">Reports & Analytics</h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-          <Button variant="outline" size="sm" onClick={handleExportAll}>
-            <Download className="w-4 h-4 mr-1.5" />
-            Export CSV
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Reports & Analytics"
+        subtitle={selectedReportItem ? `Selected report: ${selectedReportItem.title}` : 'Pick a report below to export.'}
+        actions={
+          <>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAll}
+              disabled={!selectedReport || exportReport.isPending}
+              title={selectedReportItem ? `Export ${selectedReportItem.title} as CSV` : 'Select a report to enable export'}
+            >
+              <Download className="w-4 h-4 mr-1.5" />
+              {selectedReportItem ? `Export: ${selectedReportItem.title}` : 'Export CSV'}
+            </Button>
+          </>
+        }
+      />
 
       {/* Section 1 — Charts */}
       {loading ? (
@@ -121,6 +154,7 @@ export function SAReports() {
           <Card>
             <CardHeader>
               <CardTitle>Rides by Vehicle Type</CardTitle>
+              <p className="text-xs text-text-muted mt-1">Share of total rides</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
@@ -129,9 +163,12 @@ export function SAReports() {
                     data={vehicleData}
                     dataKey="value"
                     nameKey="name"
+                    cy="55%"
                     innerRadius={60}
                     outerRadius={90}
                     paddingAngle={3}
+                    label={renderOutsidePieLabel}
+                    labelLine={false}
                   >
                     {vehicleData.map((_, index) => (
                       <Cell
@@ -141,7 +178,7 @@ export function SAReports() {
                     ))}
                   </Pie>
                   <Tooltip {...DARK_TOOLTIP} />
-                  <Legend />
+                  <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -151,6 +188,7 @@ export function SAReports() {
           <Card>
             <CardHeader>
               <CardTitle>Payment Method Distribution</CardTitle>
+              <p className="text-xs text-text-muted mt-1">Share of total transactions</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
@@ -159,9 +197,12 @@ export function SAReports() {
                     data={paymentData}
                     dataKey="value"
                     nameKey="name"
+                    cy="55%"
                     innerRadius={60}
                     outerRadius={90}
                     paddingAngle={3}
+                    label={renderOutsidePieLabel}
+                    labelLine={false}
                   >
                     {paymentData.map((_, index) => (
                       <Cell
@@ -171,7 +212,7 @@ export function SAReports() {
                     ))}
                   </Pie>
                   <Tooltip {...DARK_TOOLTIP} />
-                  <Legend />
+                  <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -181,12 +222,13 @@ export function SAReports() {
           <Card>
             <CardHeader>
               <CardTitle>Wait Time Trends</CardTitle>
+              <p className="text-xs text-text-muted mt-1">Daily average · target ≤ 5 min</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart
                   data={waitTimeData}
-                  margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+                  margin={{ top: 28, right: 16, left: 24, bottom: 24 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis
@@ -194,12 +236,14 @@ export function SAReports() {
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={32}
                   />
                   <YAxis
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
-                    unit=" min"
+                    label={yAxisLabel('Wait time (min)')}
                   />
                   <Tooltip
                     {...DARK_TOOLTIP}
@@ -217,13 +261,22 @@ export function SAReports() {
                     }}
                   />
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="wait"
                     stroke="#1A73E8"
                     strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
+                    connectNulls
+                    dot={{ r: 3, fill: '#1A73E8' }}
+                    activeDot={{ r: 5 }}
+                  >
+                    <LabelList
+                      dataKey="wait"
+                      position="top"
+                      fill="#E5E7EB"
+                      fontSize={11}
+                      formatter={(v: number | null) => (v == null ? '' : `${v}m`)}
+                    />
+                  </Line>
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -233,12 +286,13 @@ export function SAReports() {
           <Card>
             <CardHeader>
               <CardTitle>Average Ratings</CardTitle>
+              <p className="text-xs text-text-muted mt-1">1–5 scale · driver vs rider</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart
                   data={ratingsData}
-                  margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+                  margin={{ top: 28, right: 16, left: 24, bottom: 24 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis
@@ -246,33 +300,54 @@ export function SAReports() {
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={32}
                   />
                   <YAxis
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                     domain={[1, 5]}
+                    label={yAxisLabel('Rating (1–5)')}
                   />
                   <Tooltip {...DARK_TOOLTIP} />
                   <Legend />
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="driver"
                     name="Driver Rating"
                     stroke="#1A73E8"
                     strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
+                    connectNulls
+                    dot={{ r: 3, fill: '#1A73E8' }}
+                    activeDot={{ r: 5 }}
+                  >
+                    <LabelList
+                      dataKey="driver"
+                      position="top"
+                      fill="#E5E7EB"
+                      fontSize={11}
+                      formatter={(v: number | null) => (v == null ? '' : v.toFixed(1))}
+                    />
+                  </Line>
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="rider"
                     name="Rider Rating"
                     stroke="#34A853"
                     strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
+                    connectNulls
+                    dot={{ r: 3, fill: '#34A853' }}
+                    activeDot={{ r: 5 }}
+                  >
+                    <LabelList
+                      dataKey="rider"
+                      position="bottom"
+                      fill="#E5E7EB"
+                      fontSize={11}
+                      formatter={(v: number | null) => (v == null ? '' : v.toFixed(1))}
+                    />
+                  </Line>
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

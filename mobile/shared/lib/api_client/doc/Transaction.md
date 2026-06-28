@@ -9,7 +9,10 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | [optional] 
+**seq** | **int** |  | [optional] 
+**displayId** | **String** | Human-readable reference (e.g. TXN-000042). | [optional] 
 **rideId** | **String** |  | [optional] 
+**rideDisplayId** | **String** | Human-readable reference for the linked ride (e.g. RIDE-000123). | [optional] 
 **riderName** | **String** |  | [optional] 
 **driverName** | **String** |  | [optional] 
 **amount** | **num** |  | [optional] 

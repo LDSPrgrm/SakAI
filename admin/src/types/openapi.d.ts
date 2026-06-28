@@ -67,6 +67,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/drivers/nearby/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get all nearby drivers grouping by type
+         * @description Returns aggregated counts and sample locations for all available vehicle types in the vicinity.
+         *     Used for the initial ride request screen to show available options.
+         */
+        get: operations["getNearbyDriversAllTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -168,7 +189,8 @@ export interface paths {
         get: operations["usersGetMe"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete current user account */
+        delete: operations["usersDeleteMe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -243,7 +265,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/driver/status": {
+    "/users/me/saved-places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List saved places
+         * @description Returns a list of saved places (home, work, etc.) for the current passenger.
+         */
+        get: operations["savedPlacesList"];
+        put?: never;
+        /**
+         * Add a saved place
+         * @description Creates a new saved place for the passenger.
+         */
+        post: operations["savedPlacesCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/saved-places/{placeId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -251,6 +297,70 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a saved place
+         * @description Deletes a saved place by ID.
+         */
+        delete: operations["savedPlacesDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available promotions
+         * @description Returns a list of active promotions/vouchers available for the authenticated passenger.
+         */
+        get: operations["promotionsList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate a promotion code
+         * @description Checks if a specific promo code is valid for the current user and returns discount details.
+         */
+        post: operations["promotionsValidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/driver/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get current driver online/offline status
+         * @description Returns the driver's current availability status.
+         */
+        get: operations["driverGetStatus"];
         /**
          * Set driver online/offline status
          * @description Toggles the driver's availability. Only users with `role=driver` may call this.
@@ -285,6 +395,26 @@ export interface paths {
          *     WebSocket event to the passenger.
          */
         put: operations["driverUpdateLocation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/driver/rides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List authenticated driver's ride history
+         * @description Returns a paginated list of rides completed or cancelled by the driver.
+         */
+        get: operations["adminListDriverRides"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -545,6 +675,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rides/{rideId}/sos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trigger SOS/Emergency for an active ride
+         * @description Signals an emergency for the given ride.
+         *     This notifies admin support and records the current GPS trail for security purposes.
+         *     Both the passenger and the assigned driver may trigger this.
+         */
+        post: operations["rideTriggerSOS"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/dashboard": {
         parameters: {
             query?: never;
@@ -709,6 +861,29 @@ export interface paths {
          * @description Requires Superadmin, Operations, or Support role.
          */
         get: operations["adminListIncidents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/support-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List candidate assignees for incident reassignment
+         * @description Slim list of admin/support users that may be assigned an incident.
+         *     Narrower than `/admin/users` (no creation metadata, no password
+         *     flags) so the route can be exposed to operations and support
+         *     callers without leaking sensitive admin-account fields.
+         */
+        get: operations["listAssigneeCandidates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1817,27 +1992,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/users/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the authenticated admin's own profile
-         * @description Returns the current admin's profile including role_id, role_name, and status.
-         *     Call on admin app cold-start to re-hydrate session state.
-         */
-        get: operations["adminGetMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/me/permissions": {
         parameters: {
             query?: never;
@@ -2069,7 +2223,7 @@ export interface components {
          * @description Machine-readable error code. Flutter clients should branch on this, not on `message`.
          * @enum {string}
          */
-        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION";
+        ErrorCode: "EMAIL_ALREADY_REGISTERED" | "INVALID_CREDENTIALS" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "REFRESH_TOKEN_INVALID" | "VALIDATION_ERROR" | "FORBIDDEN" | "NOT_FOUND" | "RIDE_NOT_FOUND" | "USER_NOT_FOUND" | "DOCUMENT_NOT_FOUND" | "RIDE_INVALID_STATE_TRANSITION" | "PASSENGER_HAS_ACTIVE_RIDE" | "DRIVER_HAS_ACTIVE_RIDE" | "RIDE_NOT_COMPLETED" | "NO_DRIVERS_AVAILABLE" | "INVALID_RIDE_TYPE" | "DRIVER_REMATCH_IN_PROGRESS" | "CANCELLATION_FEE_APPLIED" | "PAYMENT_FAILED" | "INVALID_PAYMENT_TOKEN" | "DUPLICATE_PAYMENT" | "UNPAID_RIDE_BLOCKED" | "PAYMENT_METHOD_UNSUPPORTED" | "PAYMENT_METHOD_DUPLICATE" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_METHOD_NOT_FOUND" | "PAYMENT_METHOD_LAST_METHOD" | "INVALID_TIP_AMOUNT" | "TIP_ALREADY_ADDED" | "INVALID_RATING" | "FEEDBACK_TOO_LONG" | "ALREADY_RATED" | "FILE_TOO_LARGE" | "INVALID_FILE_FORMAT" | "INVALID_DOCUMENT_TYPE" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_SERVER_ERROR" | "DRIVER_TOO_FAR" | "DRIVER_TOO_FAR_FROM_DESTINATION" | "PROMO_INVALID" | "PROMO_EXPIRED" | "PROMO_NOT_FOUND" | "PROMO_MIN_AMOUNT_NOT_MET";
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -2213,6 +2367,10 @@ export interface components {
              * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
              */
             id: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. USR-0042). */
+            display_id?: string;
             /** @example Maria Santos */
             name: string;
             /**
@@ -2317,7 +2475,7 @@ export interface components {
             estimated_fare: number;
             driver?: components["schemas"]["DriverSummary"] | null;
             /** @enum {string} */
-            payment_method: "cash" | "card";
+            payment_method: "cash" | "card" | "gcash" | "paymaya";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -2402,7 +2560,7 @@ export interface components {
              * @default cash
              * @enum {string}
              */
-            payment_method: "cash" | "card";
+            payment_method: "cash" | "card" | "gcash" | "paymaya";
         };
         RideResponse: {
             /**
@@ -2410,6 +2568,10 @@ export interface components {
              * @example d4e5f6a7-b8c9-0123-def4-567890abcdef
              */
             id: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. RIDE-000123). */
+            display_id?: string;
             status: components["schemas"]["RideStatus"];
             passenger: components["schemas"]["UserProfile"];
             /** @description Null until a driver is matched and accepts. */
@@ -2460,7 +2622,7 @@ export interface components {
              * @description Payment method used for ride
              * @enum {string}
              */
-            payment_method?: "cash" | "card";
+            payment_method?: "cash" | "card" | "gcash" | "paymaya";
             /**
              * @description Set only when status is `cancelled`
              * @enum {string|null}
@@ -2476,6 +2638,11 @@ export interface components {
              * @example Driver was too far away
              */
             cancellation_reason_text?: string | null;
+            /**
+             * @description Number of times this ride was declined by drivers
+             * @default 0
+             */
+            decline_count: number;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -2485,6 +2652,8 @@ export interface components {
         DriverSummary: {
             /** Format: uuid */
             id: string;
+            /** @description Human-readable reference for the driver's user record (e.g. USR-0042). */
+            display_id?: string;
             /** @example Juan dela Cruz */
             name: string;
             /** @description Null if driver has no vehicle record yet. */
@@ -2543,15 +2712,62 @@ export interface components {
             /** @description Free-text explanation when reason_code is "other" */
             reason_text?: string | null;
         };
-        /** @description Wrapper for all WebSocket messages */
+        /**
+         * @description Canonical WebSocket event identifier. Used as the discriminator
+         *     for `WsEnvelope.payload`. Add new values here in lockstep with
+         *     the matching `WsEvent*` payload schema below.
+         * @enum {string}
+         */
+        WsEventType: "ride.requested" | "ride.accepted" | "ride.declined" | "ride.offer_expired" | "ride.status_changed" | "ride.completed" | "ride.cancelled" | "ride.sos_triggered" | "ride.no_drivers" | "ride.state_sync" | "incident.assigned" | "incident.resolved" | "driver.location_updated" | "conn.welcome";
+        /**
+         * @description Wrapper for all WebSocket messages. The `event` field selects which
+         *     payload schema in the oneOf below applies — clients should validate
+         *     against the matching schema after dispatching on `event`.
+         *
+         *     v2 fields (`v`, `seq`, `corr_id`, `ack_required`) are populated when
+         *     the client negotiated the `sakai.v2` subprotocol (RFC v2 §4). v1
+         *     clients see them absent.
+         */
         WsEnvelope: {
+            event: components["schemas"]["WsEventType"];
+            /** @description Event-specific payload — shape depends on `event`. */
+            payload: components["schemas"]["WsEventRideRequested"] | components["schemas"]["WsEventRideAccepted"] | components["schemas"]["WsEventRideDeclined"] | components["schemas"]["WsEventRideOfferExpired"] | components["schemas"]["WsEventRideStatusChanged"] | components["schemas"]["WsEventRideCompleted"] | components["schemas"]["WsEventRideCancelled"] | components["schemas"]["WsEventRideSOSTriggered"] | components["schemas"]["WsEventNoDriversAvailable"] | components["schemas"]["WsEventRideStateSync"] | components["schemas"]["WsEventIncidentAssigned"] | components["schemas"]["WsEventIncidentResolved"] | components["schemas"]["WsEventDriverLocationUpdated"] | components["schemas"]["WsEventConnWelcome"];
             /**
-             * @description Event name
-             * @example ride.status_changed
+             * Format: date-time
+             * @description RFC3339 UTC timestamp stamped by the server. Optional for
+             *     backward compatibility — older servers omit it.
              */
-            event: string;
-            /** @description Event-specific payload — see schemas below */
-            payload: Record<string, never>;
+            timestamp?: string;
+            /**
+             * Format: uuid
+             * @description UUIDv7 stamped by the server. Enables client-side idempotency.
+             *     Optional for backward compatibility.
+             */
+            event_id?: string;
+            /**
+             * @description Envelope protocol version. Present only when the client
+             *     negotiated the `sakai.v2` subprotocol. RFC v2 §4.1.
+             * @example 2
+             */
+            v?: number;
+            /**
+             * Format: int64
+             * @description Monotonic per-user sequence number. Clients use this to detect
+             *     gaps and request replay. v2-only. RFC v2 §4.2.
+             */
+            seq?: number;
+            /**
+             * @description Correlation ID propagated from the originating HTTP request (or
+             *     internal job). Lets clients/operators link a UI event back to
+             *     the API call that produced it. v2-only. RFC v2 §4.3 / §12.4.
+             */
+            corr_id?: string;
+            /**
+             * @description When true, the client must emit `{type:"ack", event_id}` after
+             *     applying the event. Set for critical events (ride.requested,
+             *     ride.accepted, ride.completed, …). RFC v2 §4.4.
+             */
+            ack_required?: boolean;
         };
         /**
          * @description **Event:** `ride.requested`
@@ -2615,6 +2831,10 @@ export interface components {
          *     **Direction:** server → passenger
          *     Pushed on every `PUT /driver/location` call during an active ride.
          *     Use to animate the driver pin on the passenger's map in real time.
+         *
+         *     Marked `x-high-frequency: true` — clients may use a hand-tuned
+         *     fast-path deserializer (lat/lng/heading/ride_id only) instead of
+         *     the full schema validator on the hot path.
          */
         WsEventDriverLocationUpdated: {
             /** Format: uuid */
@@ -2665,6 +2885,164 @@ export interface components {
             ride_id: string;
             /** @example No drivers are available in your area right now. Please try again shortly. */
             message?: string;
+        };
+        /**
+         * @description **Event:** `ride.sos_triggered`
+         *     **Direction:** server → both passenger and driver on the active ride
+         *     Fired when either party invokes `POST /rides/{rideId}/sos`.
+         *     Clients should display an emergency banner and surface the
+         *     safety contact action.
+         */
+        WsEventRideSOSTriggered: {
+            /** Format: uuid */
+            ride_id: string;
+            /**
+             * Format: uuid
+             * @description ID of the incident row created by the trigger.
+             */
+            incident_id: string;
+            /** @enum {string} */
+            triggered_by: "rider" | "driver";
+            /** @description Free-text reason the trigger user supplied. */
+            reason?: string | null;
+        };
+        /**
+         * @description **Event:** `ride.completed`
+         *     **Direction:** server → both passenger and driver
+         *     Fired when the driver completes the ride and the fare is finalised.
+         *     Passenger app should show the receipt; driver app should show the
+         *     earnings reveal.
+         *
+         *     `fare_breakdown` may be omitted by older servers — clients should
+         *     gracefully fall back to displaying only the total `fare`.
+         */
+        WsEventRideCompleted: {
+            /** Format: uuid */
+            ride_id: string;
+            /**
+             * Format: float
+             * @description Total fare charged to the passenger in PHP.
+             */
+            fare: number;
+            fare_breakdown?: components["schemas"]["FareBreakdown"];
+            /** @enum {string} */
+            payment_method: "cash" | "gcash" | "paymaya" | "card";
+            /**
+             * Format: float
+             * @description Driver tip in PHP, when one was already received.
+             */
+            tip_amount?: number | null;
+            /** Format: date-time */
+            completed_at: string;
+        };
+        /**
+         * @description Components of the final fare. Sum of (`base_fare` + `distance_charge`
+         *     + `time_charge` + `booking_fee`) × `surge_multiplier` − `discount`
+         *     should equal `fare` on `WsEventRideCompleted`.
+         */
+        FareBreakdown: {
+            /** Format: float */
+            base_fare: number;
+            /** Format: float */
+            distance_charge: number;
+            /** Format: float */
+            time_charge: number;
+            /** Format: float */
+            booking_fee: number;
+            /**
+             * Format: float
+             * @description Active surge multiplier (1.0 means no surge). Omitted when 1.0.
+             */
+            surge_multiplier?: number;
+            /**
+             * Format: float
+             * @description Total promo / loyalty discount applied. Omitted when zero.
+             */
+            discount?: number;
+        };
+        /**
+         * @description **Event:** `incident.assigned`
+         *     **Direction:** server → both passenger and driver on the SOS ride
+         *     Fired when an admin/operator assigns themselves (or another operator)
+         *     to the SOS incident. Clients should update the emergency banner with
+         *     the assignee's name when present.
+         *
+         *     `assignee_id` is null when an admin clears the assignment.
+         */
+        WsEventIncidentAssigned: {
+            /** Format: uuid */
+            ride_id: string;
+            /** Format: uuid */
+            incident_id: string;
+            /** Format: uuid */
+            assignee_id?: string | null;
+            /**
+             * @description Display name of the assignee. Optional — publishers populate it
+             *     only when the value can be resolved cheaply.
+             */
+            assignee_name?: string;
+            /** Format: date-time */
+            assigned_at: string;
+        };
+        /**
+         * @description **Event:** `incident.resolved`
+         *     **Direction:** server → both passenger and driver on the SOS ride
+         *     Fired when the SOS incident is closed by an operator. Clients should
+         *     dismiss the emergency banner and may surface `resolution_notes` as
+         *     an informational toast (PII-redacted upstream).
+         */
+        WsEventIncidentResolved: {
+            /** Format: uuid */
+            ride_id: string;
+            /** Format: uuid */
+            incident_id: string;
+            /** @description Operator notes. May be redacted before send. */
+            resolution_notes?: string;
+            /** Format: date-time */
+            resolved_at: string;
+        };
+        /**
+         * @description **Event:** `ride.state_sync`
+         *     **Direction:** server → client (originating user only)
+         *     Emitted by the WS handler when a reconnecting client's
+         *     `last_event_id` falls outside the replay window. Carries a snapshot
+         *     of the user's active-ride state so the UI can reconcile without
+         *     round-tripping REST.
+         *
+         *     When `has_active_ride` is false, the client should drop into the
+         *     "no active ride" screen and clear local ride state.
+         */
+        WsEventRideStateSync: {
+            has_active_ride: boolean;
+            /** Format: uuid */
+            ride_id?: string | null;
+            status?: components["schemas"]["RideStatus"];
+            /** Format: uuid */
+            driver_id?: string | null;
+            /** Format: uuid */
+            passenger_id?: string | null;
+            /** Format: date-time */
+            updated_at?: string | null;
+        };
+        /**
+         * @description **Event:** `conn.welcome`
+         *     **Direction:** server → client (single-shot on successful upgrade)
+         *     First server-pushed frame after a successful WebSocket upgrade.
+         *     Announces the negotiated subprotocol so clients can verify the
+         *     upgrade before sending replay/ack frames. RFC v2 §4.1.
+         */
+        WsEventConnWelcome: {
+            /**
+             * @description Negotiated WebSocket subprotocol. Empty string for v1 clients,
+             *     `"sakai.v2"` for v2.
+             * @example sakai.v2
+             */
+            protocol?: string;
+            /**
+             * @description Envelope protocol version supported by the server.
+             * @example 2
+             */
+            v: number;
         };
         DashboardResponse: {
             active_riders?: number;
@@ -2721,6 +3099,8 @@ export interface components {
             updated_by_name?: string;
         };
         SurgeConfig: {
+            /** Format: uuid */
+            id?: string;
             enabled?: boolean;
             max_multiplier?: number;
             trigger_ratio?: number;
@@ -2731,6 +3111,12 @@ export interface components {
              */
             zones?: components["schemas"]["SurgeZone"][];
             blackout_hours?: components["schemas"]["BlackoutHour"][];
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: uuid */
+            updated_by?: string;
+            /** @description Admin display name resolved via LEFT JOIN users on updated_by. */
+            updated_by_name?: string;
         };
         GeoJSONFeatureCollection: {
             /** @enum {string} */
@@ -2764,8 +3150,17 @@ export interface components {
         Incident: {
             /** Format: uuid */
             id?: string;
+            /**
+             * Format: int64
+             * @description Postgres-assigned monotonic counter; the source for display_id.
+             */
+            seq?: number;
+            /** @description Human-readable reference (e.g. INC-0042) derived from seq. */
+            display_id?: string;
             /** Format: uuid */
             ride_id?: string;
+            /** @description Human-readable reference for the linked ride (e.g. RIDE-000123). */
+            ride_display_id?: string;
             /** @enum {string} */
             type?: "sos_triggered" | "reported_incident" | "safety_complaint";
             /**
@@ -2784,6 +3179,8 @@ export interface components {
             driver_id?: string;
             driver_name?: string;
             assigned_to?: string | null;
+            /** @description Display name of the assignee user, resolved via JOIN. Empty when unassigned. */
+            assigned_to_name?: string;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -2799,9 +3196,17 @@ export interface components {
         };
         AuditLog: {
             id?: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. AUD-0042). */
+            display_id?: string;
             /** Format: date-time */
             timestamp?: string;
             actor_id?: string;
+            /** @description Human-readable reference for the actor user (e.g. USR-0042). */
+            actor_display_id?: string;
+            /** @description Display name of the actor user, resolved server-side via JOIN. Empty when the actor is missing or anonymous. */
+            actor_name?: string;
             ip_address?: string;
             action?: string;
             resource_type?: string;
@@ -2816,7 +3221,13 @@ export interface components {
         };
         Transaction: {
             id?: string;
+            /** Format: int64 */
+            seq?: number;
+            /** @description Human-readable reference (e.g. TXN-000042). */
+            display_id?: string;
             ride_id?: string;
+            /** @description Human-readable reference for the linked ride (e.g. RIDE-000123). */
+            ride_display_id?: string;
             rider_name?: string;
             driver_name?: string;
             amount?: number;
@@ -2842,6 +3253,23 @@ export interface components {
             payouts?: number;
             commission?: number;
             pending_settlements?: number;
+        };
+        TriggerSOSRequest: {
+            /**
+             * @description Brief description of the emergency or reason for SOS
+             * @example Unsafe driving behavior
+             */
+            reason: string;
+            /**
+             * Format: double
+             * @description Current latitude of the reporter
+             */
+            lat?: number;
+            /**
+             * Format: double
+             * @description Current longitude of the reporter
+             */
+            lng?: number;
         };
         CommissionConfig: {
             rates?: {
@@ -2888,6 +3316,8 @@ export interface components {
         KycEntry: {
             id?: string;
             driver_id?: string;
+            /** @description Human-readable reference for the driver user (e.g. USR-0042), resolved server-side via JOIN. Empty when the user row is missing. */
+            driver_display_id?: string;
             driver_name?: string;
             /** Format: date-time */
             submitted_at?: string;
@@ -3090,9 +3520,24 @@ export interface components {
             /** Format: date-time */
             occurred_at: string;
         };
+        IncidentLocationPoint: {
+            /** Format: double */
+            lat: number;
+            /** Format: double */
+            lng: number;
+            /** Format: date-time */
+            recorded_at: string;
+        };
         IncidentDetail: {
             incident: components["schemas"]["Incident"];
             status_history: components["schemas"]["IncidentStatusEvent"][];
+            /**
+             * @description GPS pings captured during the incident's active window (between
+             *     created_at and resolved_at). Populated by the driver_location_history
+             *     write-path while the driver has an unresolved incident; empty when
+             *     no pings were recorded.
+             */
+            location_trail?: components["schemas"]["IncidentLocationPoint"][];
         };
         AlertRule: {
             /** Format: uuid */
@@ -3381,7 +3826,7 @@ export interface components {
             documents: components["schemas"]["DriverDocumentResponse"][];
         };
         /** @enum {string} */
-        PaymentMethod: "cash" | "card";
+        PaymentMethod: "cash" | "card" | "gcash" | "paymaya";
         /** @enum {string} */
         PaymentStatus: "pending" | "completed" | "failed" | "refunded";
         PaymentResponse: {
@@ -3493,6 +3938,79 @@ export interface components {
             /** Format: date-time */
             lastUpdated?: string;
         };
+        SavedPlace: {
+            /** Format: uuid */
+            id: string;
+            /** @example Home */
+            name: string;
+            /** @example 123 Main St, City, Country */
+            address: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "home" | "work" | "other";
+            /** Format: date-time */
+            readonly createdAt?: string;
+        };
+        SavedPlaceCreateRequest: {
+            /** @example Office */
+            name: string;
+            /** @example 456 Business Rd, City, Country */
+            address: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "home" | "work" | "other";
+        };
+        Promotion: {
+            /** Format: uuid */
+            id: string;
+            /** @example WELCOME50 */
+            code: string;
+            /** @example 50% Off First Ride */
+            title?: string;
+            /** @example Get 50% discount on your first ride, up to $5. */
+            description: string;
+            /** Format: double */
+            discountValue: number;
+            /**
+             * @example percentage
+             * @enum {string}
+             */
+            discountType: "percentage" | "fixed";
+            /**
+             * Format: double
+             * @description Maximum discount amount for percentage types
+             */
+            maxDiscount?: number | null;
+            /**
+             * Format: double
+             * @description Minimum ride fare required to apply this promo
+             */
+            minRideAmount?: number | null;
+            /** Format: date-time */
+            expiresAt: string;
+            terms?: string | null;
+        };
+        PromotionValidateRequest: {
+            /** @example SAKAI2026 */
+            code: string;
+            /**
+             * Format: double
+             * @description Optional fare to check if minimum amount criteria is met
+             */
+            rideFare?: number | null;
+        };
     };
     responses: {
         /** @description Invalid request payload or missing required fields */
@@ -3569,6 +4087,21 @@ export interface components {
                  * @example {
                  *       "code": "RATE_LIMIT_EXCEEDED",
                  *       "message": "Too many requests. Please slow down."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Unexpected server error */
+        InternalError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "INTERNAL_SERVER_ERROR",
+                 *       "message": "An unexpected error occurred"
                  *     }
                  */
                 "application/json": components["schemas"]["ErrorResponse"];
@@ -3688,6 +4221,33 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    getNearbyDriversAllTypes: {
+        parameters: {
+            query: {
+                lat: number;
+                lng: number;
+                radius_m?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aggregated nearby drivers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["NearbyDriver"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
         };
     };
     authRegister: {
@@ -3853,6 +4413,26 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    usersDeleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     paymentMethodsList: {
         parameters: {
             query?: never;
@@ -4010,6 +4590,164 @@ export interface operations {
             };
         };
     };
+    savedPlacesList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of saved places */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPlace"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    savedPlacesCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPlaceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPlace"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    savedPlacesDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Place not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    promotionsList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of promotions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Promotion"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    promotionsValidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionValidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Promotion is valid */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Promotion"];
+                };
+            };
+            /** @description Invalid or expired code */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PROMO_INVALID",
+                     *       "message": "This code has expired or is not valid for your account"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    driverGetStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverStatusResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     driverSetStatus: {
         parameters: {
             query?: never;
@@ -4076,6 +4814,36 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    adminListDriverRides: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: components["parameters"]["Page"];
+                /** @description Items per page */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Driver's ride list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        rides?: components["schemas"]["RideResponse"][];
+                        pagination?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     driverGetIncomingRide: {
@@ -4562,6 +5330,52 @@ export interface operations {
             };
         };
     };
+    rideTriggerSOS: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID of the ride */
+                rideId: components["parameters"]["RideId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TriggerSOSRequest"];
+            };
+        };
+        responses: {
+            /** @description SOS triggered successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Ride is not in a state that allows SOS triggering */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RIDE_INVALID_STATE_TRANSITION",
+                     *       "message": "Cannot trigger SOS for an inactive ride"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     adminGetDashboard: {
         parameters: {
             query?: never;
@@ -4824,6 +5638,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Incident"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listAssigneeCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of candidate assignees */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        /** @description Admin role slug (e.g. superadmin, support, operations). */
+                        role: string;
+                    }[];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -6338,27 +7180,6 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Admin profile */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminUser"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
         };
     };
     adminGetMyPermissions: {

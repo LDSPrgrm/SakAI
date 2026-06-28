@@ -9,3 +9,12 @@ coverage/
 .claudeignore
 .kiro/
 .vite/
+.playwright-mcp/
+*.png
+*.md
+CLAUDE.md
+
+# react-doctor: ignore transient scan output, keep the false-positive config tracked
+rd-report.json
+react-doctor-report.txt
+!.react-doctor/*.md

@@ -3,15 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
-import '../features/auth/views/login_screen.dart';
-import '../features/auth/views/register_screen.dart';
+import '../features/auth/views/auth_screen.dart';
+import '../features/auth/views/otp_verification_screen.dart';
 import '../features/auth/views/splash_screen.dart';
 import '../features/auth/views/welcome_screen.dart';
 import '../features/home/views/driver_home_screen.dart';
 import '../features/ride_offer/views/ride_offer_screen.dart';
 import '../features/active_ride/views/active_ride_screen.dart';
 import '../features/earnings/views/earnings_screen.dart';
+import '../features/earnings/views/earnings_breakdown_screen.dart';
 import '../features/ride_complete/views/driver_rating_screen.dart';
+import '../features/documents/views/documents_screen.dart';
+import '../features/documents/views/upload_document_screen.dart';
+import '../features/onboarding/views/approval_pending_screen.dart';
+import '../features/profile/views/driver_profile_screen.dart';
+import '../features/profile/views/vehicle_details_screen.dart';
+import '../features/profile/views/vehicle_info_screen.dart';
+import '../features/settings/views/settings_screen.dart';
+import '../features/settings/views/availability_settings_screen.dart';
+import '../features/settings/views/sos_safety_settings_screen.dart';
+import '../features/notifications/views/notifications_screen.dart';
+import '../features/support/views/support_screen.dart';
+import '../features/sos/views/sos_screen.dart';
+import '../features/ride_history/views/trip_history_list_screen.dart';
+import '../features/ride_history/views/trip_detail_screen.dart';
 import 'providers.dart';
 
 abstract class Routes {
@@ -24,7 +39,26 @@ abstract class Routes {
   static const rideActive = '/ride/active';
   static const earnings = '/earnings';
   static const rideRating = '/ride-complete/rating';
+  static const documents = '/documents';
+  static const uploadDocument = '/documents/upload';
+
+  // Gap-fill additions
+  static const otp = '/auth/otp';
+  static const approvalPending = '/onboarding/approval-pending';
+  static const vehicleDetails = '/onboarding/vehicle';
+  static const profile = '/profile';
+  static const vehicleInfo = '/profile/vehicle';
+  static const settings = '/settings';
+  static const availability = '/settings/availability';
+  static const sosSafety = '/settings/sos-safety';
+  static const notifications = '/notifications';
+  static const support = '/support';
+  static const sos = '/sos';
+  static const tripHistory = '/trip-history';
+  static const tripDetail = '/trip-history/detail';
+  static const earningsBreakdown = '/earnings/breakdown';
 }
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final listenable = ValueNotifier<AuthStateModel>(ref.read(authStateProvider));
@@ -45,7 +79,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isWelcome = state.matchedLocation == Routes.welcome;
       final isLogin = state.matchedLocation == Routes.login;
       final isRegister = state.matchedLocation == Routes.register;
-      final isAuthRoute = isWelcome || isLogin || isRegister;
+      final isOtp = state.matchedLocation == Routes.otp;
+      final isAuthRoute = isWelcome || isLogin || isRegister || isOtp;
 
       if (isSplash) return null;
 
@@ -81,11 +116,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.login,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => const AuthScreen(initialMode: AuthMode.login),
       ),
       GoRoute(
         path: Routes.register,
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => const AuthScreen(initialMode: AuthMode.register),
       ),
       GoRoute(
         path: Routes.home,
@@ -127,6 +162,82 @@ final routerProvider = Provider<GoRouter>((ref) {
             passengerName: passengerName,
           );
         },
+      ),
+      GoRoute(
+        path: Routes.documents,
+        builder: (context, state) => const DocumentsScreen(),
+      ),
+      GoRoute(
+        path: Routes.uploadDocument,
+        builder: (context, state) => const UploadDocumentScreen(),
+      ),
+      GoRoute(
+        path: Routes.otp,
+        builder: (context, state) {
+          final destination = state.extra as String? ?? '';
+          return OtpVerificationScreen(destination: destination);
+        },
+      ),
+      GoRoute(
+        path: Routes.approvalPending,
+        builder: (context, state) => const ApprovalPendingScreen(),
+      ),
+      GoRoute(
+        path: Routes.vehicleDetails,
+        builder: (context, state) => const VehicleDetailsScreen(),
+      ),
+      GoRoute(
+        path: Routes.profile,
+        builder: (context, state) => const DriverProfileScreen(),
+      ),
+      GoRoute(
+        path: Routes.vehicleInfo,
+        builder: (context, state) => const VehicleInfoScreen(),
+      ),
+      GoRoute(
+        path: Routes.settings,
+        builder: (context, state) => const DriverSettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.availability,
+        builder: (context, state) => const AvailabilitySettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.sosSafety,
+        builder: (context, state) => const SosSafetySettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: Routes.support,
+        builder: (context, state) => const DriverSupportScreen(),
+      ),
+      GoRoute(
+        path: Routes.sos,
+        builder: (context, state) {
+          final rideId = state.extra as String? ?? '';
+          return SosScreen(rideId: rideId);
+        },
+      ),
+      GoRoute(
+        path: Routes.tripHistory,
+        builder: (context, state) => const TripHistoryListScreen(),
+      ),
+      GoRoute(
+        path: Routes.tripDetail,
+        builder: (context, state) {
+          final ride = state.extra as RideResponse?;
+          if (ride == null) {
+            return const Scaffold(body: Center(child: Text('No ride data')));
+          }
+          return TripDetailScreen(ride: ride);
+        },
+      ),
+      GoRoute(
+        path: Routes.earningsBreakdown,
+        builder: (context, state) => const EarningsBreakdownScreen(),
       ),
     ],
   );

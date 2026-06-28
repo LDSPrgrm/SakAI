@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sakai_shared/sakai_shared.dart';
-
+import '../models/location_search_mode.dart';
 import '../repositories/geocoding_service.dart';
 import '../view_models/destination_sheet_view_model.dart';
-
-enum LocationSearchMode { pickup, destination }
 
 /// Bottom sheet that lets the rider type a destination address.
 ///
@@ -81,9 +79,9 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 widget.mode == LocationSearchMode.pickup
                     ? 'Where from?'
                     : 'Where to?',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               SizedBox(height: tokens.spaceMd),
               SakaiTextField(
@@ -106,9 +104,9 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 SizedBox(height: tokens.spaceXs),
                 Text(
                   vm.errorMessage!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.error,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: scheme.error),
                 ),
               ],
               SizedBox(height: tokens.spaceMd),
@@ -116,8 +114,8 @@ class _DestinationSheetState extends State<DestinationSheet> {
                 label: vm.geocoding
                     ? 'Looking up…'
                     : (widget.mode == LocationSearchMode.pickup
-                        ? 'Confirm pickup'
-                        : 'Confirm destination'),
+                          ? 'Confirm pickup'
+                          : 'Confirm destination'),
                 icon: Icons.arrow_forward,
                 onPressed: vm.geocoding ? null : _confirm,
               ),
@@ -138,13 +136,8 @@ Future<void> showLocationSearchSheet(
   required ValueChanged<RideLocation> onLocationConfirmed,
 }) {
   final vm = DestinationSheetViewModel(GeocodingService());
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+  return SakaiModalSheet.show<void>(
+    context,
     builder: (_) => DestinationSheet(
       mode: mode,
       onLocationConfirmed: onLocationConfirmed,

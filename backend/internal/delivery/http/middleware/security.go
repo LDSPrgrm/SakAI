@@ -25,11 +25,19 @@ func MaxBodySize(limit int64) gin.HandlerFunc {
 	}
 }
 
-// CORS returns a middleware that handles Cross-Origin Resource Sharing (CORS) preflight requests.
-func CORS() gin.HandlerFunc {
+// CORS returns a middleware that handles Cross-Origin Resource Sharing (CORS)
+// preflight requests. Only origins present in the allowed slice are echoed
+// back in Access-Control-Allow-Origin; all others receive no CORS headers.
+// An empty allowed slice means no browser origin is permitted (correct for
+// non-browser API consumers or when ALLOWED_ORIGINS is unset).
+func CORS(allowed []string) gin.HandlerFunc {
+	allowSet := make(map[string]bool, len(allowed))
+	for _, o := range allowed {
+		allowSet[o] = true
+	}
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		if origin != "" {
+		if origin != "" && allowSet[origin] {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Idempotency-Key")

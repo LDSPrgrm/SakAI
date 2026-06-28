@@ -35,7 +35,9 @@ class RegisterViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    debugPrint('RegisterViewModel: Attempting to register user with email: $trimmedEmail');
+    debugPrint(
+      'RegisterViewModel: Attempting to register user with email: $trimmedEmail',
+    );
 
     try {
       final session = await _authRepository.register(
@@ -43,10 +45,14 @@ class RegisterViewModel extends ChangeNotifier {
         email: trimmedEmail,
         password: password,
       );
-      debugPrint('RegisterViewModel: Registration successful for email: $trimmedEmail');
+      debugPrint(
+        'RegisterViewModel: Registration successful for email: $trimmedEmail',
+      );
       return session;
     } on AuthException catch (e) {
-      debugPrint('RegisterViewModel: Registration failed for email: $trimmedEmail. Error: ${e.machineCode} - ${e.userMessage}');
+      debugPrint(
+        'RegisterViewModel: Registration failed for email: $trimmedEmail. Error: ${e.machineCode} - ${e.userMessage}',
+      );
       _errorMessage = e.userMessage;
       return null;
     } finally {

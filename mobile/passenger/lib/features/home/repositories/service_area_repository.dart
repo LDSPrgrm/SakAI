@@ -15,7 +15,7 @@ class ServiceAreaRepository {
           client ??
           SakaiApiSupport.createClient(authInterceptor: authInterceptor);
 
-  Future<List<ServiceArea>> fetchServiceAreas() async {
+  Future<List<ServiceArea>> getServiceAreas() async {
     try {
       final response = await _client.getSystemApi().getServiceAreas();
 
@@ -24,16 +24,14 @@ class ServiceAreaRepository {
         return _defaultAreas();
       }
 
-      // The generated ServiceArea model has outdated fields (role/permission
-      // schema instead of geographic area schema). After T007 (regenerate
-      // Dart client), this mapping will use the correct center/radius fields.
       return data.areas!
           .map(
             (a) => ServiceArea(
               id: a.id,
               name: a.name,
-              center: const LatLng(14.5995, 120.9842), // Default Manila
-              radius: 15000.0,
+              polygon: a.boundary.polygon
+                  .map((p) => LatLng(p[0].toDouble(), p[1].toDouble()))
+                  .toList(),
             ),
           )
           .toList();
@@ -47,8 +45,12 @@ class ServiceAreaRepository {
       ServiceArea(
         id: 'default-manila',
         name: 'Metro Manila (Default)',
-        center: const LatLng(14.5995, 120.9842),
-        radius: 15000.0, // 15km
+        polygon: const [
+          LatLng(14.7, 120.9),
+          LatLng(14.7, 121.1),
+          LatLng(14.5, 121.1),
+          LatLng(14.5, 120.9),
+        ],
       ),
     ];
   }

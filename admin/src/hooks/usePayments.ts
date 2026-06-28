@@ -17,10 +17,11 @@ export function useTransactions(filters: import('@/api/super-admin/payments').Tr
   });
 }
 
-export function usePayouts() {
+export function usePayouts(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: [...PAYMENTS_KEY, 'payouts'] as const,
     queryFn: () => paymentsApi.getPayouts(),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -38,10 +39,11 @@ export function useCommissionConfig() {
   });
 }
 
-export function useGatewayConfigs() {
+export function useGatewayConfigs(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: [...PAYMENTS_KEY, 'gateway-configs'] as const,
     queryFn: () => paymentsApi.getGatewayConfigs(),
+    refetchInterval: options?.refetchInterval,
   });
 }
 

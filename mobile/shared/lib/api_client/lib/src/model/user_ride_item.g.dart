@@ -10,6 +10,10 @@ const UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnum_cash =
     const UserRideItemPaymentMethodEnum._('cash');
 const UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnum_card =
     const UserRideItemPaymentMethodEnum._('card');
+const UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnum_gcash =
+    const UserRideItemPaymentMethodEnum._('gcash');
+const UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnum_paymaya =
+    const UserRideItemPaymentMethodEnum._('paymaya');
 
 UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnumValueOf(
   String name,
@@ -19,6 +23,10 @@ UserRideItemPaymentMethodEnum _$userRideItemPaymentMethodEnumValueOf(
       return _$userRideItemPaymentMethodEnum_cash;
     case 'card':
       return _$userRideItemPaymentMethodEnum_card;
+    case 'gcash':
+      return _$userRideItemPaymentMethodEnum_gcash;
+    case 'paymaya':
+      return _$userRideItemPaymentMethodEnum_paymaya;
     default:
       throw ArgumentError(name);
   }
@@ -29,6 +37,8 @@ _$userRideItemPaymentMethodEnumValues = BuiltSet<UserRideItemPaymentMethodEnum>(
   const <UserRideItemPaymentMethodEnum>[
     _$userRideItemPaymentMethodEnum_cash,
     _$userRideItemPaymentMethodEnum_card,
+    _$userRideItemPaymentMethodEnum_gcash,
+    _$userRideItemPaymentMethodEnum_paymaya,
   ],
 );
 
@@ -41,10 +51,14 @@ class _$UserRideItemPaymentMethodEnumSerializer
   static const Map<String, Object> _toWire = const <String, Object>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
 
   @override
@@ -81,7 +95,7 @@ class _$UserRideItem extends UserRideItem {
   @override
   final double? fare;
   @override
-  final double estimatedFare;
+  final double? estimatedFare;
   @override
   final DriverSummary? driver;
   @override
@@ -100,7 +114,7 @@ class _$UserRideItem extends UserRideItem {
     required this.originAddress,
     required this.destinationAddress,
     this.fare,
-    required this.estimatedFare,
+    this.estimatedFare,
     this.driver,
     required this.paymentMethod,
     required this.createdAt,
@@ -273,11 +287,7 @@ class UserRideItemBuilder
               'destinationAddress',
             ),
             fare: fare,
-            estimatedFare: BuiltValueNullFieldError.checkNotNull(
-              estimatedFare,
-              r'UserRideItem',
-              'estimatedFare',
-            ),
+            estimatedFare: estimatedFare,
             driver: _driver?.build(),
             paymentMethod: BuiltValueNullFieldError.checkNotNull(
               paymentMethod,
