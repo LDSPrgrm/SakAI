@@ -4,6 +4,7 @@ import 'package:driver/features/earnings/models/session_earnings.dart';
 import 'package:driver/features/earnings/view_models/earnings_notifier.dart';
 import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/features/home/views/driver_home_screen.dart';
+import 'package:driver/features/profile/repositories/driver_profile_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,8 +52,32 @@ class FakeEarningsNotifier extends EarningsNotifier {
   EarningsState build() => _fixedState;
 }
 
+/// Avoids a real network call from the driver profile notifier's initial
+/// load (the home screen now reads the driver's real name — honesty follow-up).
+class MockDriverProfileRepository implements DriverProfileRepository {
+  @override
+  Future<UserProfile> getProfile() async => $UserProfile(
+    (b) => b
+      ..id = 'drv-1'
+      ..name = 'Test Driver'
+      ..email = 'driver@test.com'
+      ..role = UserProfileRoleEnum.driver
+      ..createdAt = DateTime(2026, 1, 1),
+  );
+  @override
+  Future<void> updateProfile({String? name}) async {}
+  @override
+  Future<void> updateVehicle({
+    required String make,
+    required String model,
+    required String color,
+    required String plate,
+  }) async {}
+}
+
 final _mockDriverRepo = MockDriverRepository();
 final _mockActiveRideRepo = MockActiveRideRepository();
+final _mockDriverProfileRepo = MockDriverProfileRepository();
 
 Future<void> pumpStatsRow(
   WidgetTester tester, {
@@ -76,6 +101,7 @@ Future<void> pumpStatsRow(
         earningsNotifierProvider.overrideWith(
           () => FakeEarningsNotifier(fixedState),
         ),
+        driverProfileRepositoryProvider.overrideWithValue(_mockDriverProfileRepo),
       ],
       child: MaterialApp(
         theme: SakaiTheme.light(_themeConfig),
