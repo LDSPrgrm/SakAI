@@ -8,10 +8,12 @@ RUN apk add --no-cache git ca-certificates tzdata
 
 WORKDIR /build
 
-# Copy all source first so go mod tidy can resolve new imports,
-# then download and verify all dependencies.
+# Cache dependency downloads separately from source compilation
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+# Copy backend source and build a statically linked binary
 COPY backend/ .
-RUN go mod tidy && go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" -o /app/server ./cmd/api
 
