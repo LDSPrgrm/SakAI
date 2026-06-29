@@ -31,11 +31,16 @@ func (h *DriverHandler) SetStatus(c *gin.Context) {
 		return
 	}
 	driverID := c.MustGet("userID").(uuid.UUID)
-	if err := h.uc.SetStatus(c.Request.Context(), driverID, req.Status); err != nil {
+	driver, err := h.uc.SetStatus(c.Request.Context(), driverID, req.Status)
+	if err != nil {
 		respondError(c, err)
 		return
 	}
-	respondOK(c, dto.SetStatusResponse{DriverID: driverID.String(), Status: req.Status})
+	respondOK(c, dto.SetStatusResponse{
+		DriverID:  driver.UserID.String(),
+		Status:    driver.Status,
+		UpdatedAt: driver.UpdatedAt.UTC(),
+	})
 }
 
 func (h *DriverHandler) UpdateLocation(c *gin.Context) {
@@ -45,7 +50,6 @@ func (h *DriverHandler) UpdateLocation(c *gin.Context) {
 		return
 	}
 	driverID := c.MustGet("userID").(uuid.UUID)
-	log.Printf("[DRIVER_HANDLER] UpdateLocation: driverID=%s, loc=(%.5f, %.5f)", driverID, req.Location.Lat, req.Location.Lng)
 	loc := req.ToDomainDriverLocation()
 	if err := h.uc.UpdateLocation(c.Request.Context(), driverID, loc); err != nil {
 		log.Printf("[DRIVER_HANDLER] UpdateLocation error: %v", err)
@@ -56,6 +60,7 @@ func (h *DriverHandler) UpdateLocation(c *gin.Context) {
 	// Best-effort: if no active ride exists we still return 204.
 	if ride, err := h.uc.GetActiveRide(c.Request.Context(), driverID); err == nil {
 		_ = h.upsert.PublishToUser(c.Request.Context(), ride.PassengerID, ws.EventDriverLocationUpdated, gin.H{
+			"ride_id":   ride.ID,
 			"driver_id": driverID,
 			"location":  loc.LatLng,
 			"heading":   req.Heading,
@@ -72,6 +77,21 @@ func (h *DriverHandler) GetIncomingRide(c *gin.Context) {
 		return
 	}
 	respondOK(c, dto.NewRideResponse(ride, nil))
+}
+
+// GetStatus returns the current operational status of the authenticated driver.
+func (h *DriverHandler) GetStatus(c *gin.Context) {
+	driverID := c.MustGet("userID").(uuid.UUID)
+	driver, err := h.uc.GetStatus(c.Request.Context(), driverID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondOK(c, dto.SetStatusResponse{
+		DriverID:  driver.UserID.String(),
+		Status:    driver.Status,
+		UpdatedAt: driver.UpdatedAt.UTC(),
+	})
 }
 
 // GetNearbyDrivers handles GET /drivers/nearby?lat=...&lng=...&radius=...&ride_type=...
@@ -96,7 +116,12 @@ func (h *DriverHandler) GetNearbyDrivers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": drivers})
+	resp := make([]dto.NearbyDriverResponse, 0, len(drivers))
+	for _, d := range drivers {
+		resp = append(resp, dto.NewNearbyDriverResponse(&d))
+	}
+
+	c.JSON(http.StatusOK, gin.H{"drivers": resp})
 }
 
 // GetEarnings handles GET /driver/earnings?from=&to=&page=&limit=.
@@ -179,5 +204,14 @@ func (h *DriverHandler) GetNearbyDriversAllTypes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": drivers})
+	resp := make(map[domain.RideType][]dto.NearbyDriverResponse)
+	for rt, list := range drivers {
+		dtoList := make([]dto.NearbyDriverResponse, 0, len(list))
+		for _, d := range list {
+			dtoList = append(dtoList, dto.NewNearbyDriverResponse(&d))
+		}
+		resp[rt] = dtoList
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

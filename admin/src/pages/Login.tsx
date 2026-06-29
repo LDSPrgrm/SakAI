@@ -62,7 +62,7 @@ export function Login() {
               <Input
                 {...register('email')}
                 type="email"
-                placeholder="admin@sakai.ph"
+                placeholder="you@sakai.com"
                 icon={<Mail className="w-4 h-4" />}
                 autoComplete="email"
                 className={errors.email ? 'border-danger' : ''}

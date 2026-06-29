@@ -15,6 +15,16 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     required this.darkSurface,
     required this.darkBorder,
     required this.warning,
+    required this.neutral,
+    required this.neutralVariant,
+    required this.disabledSurface,
+    required this.disabledOnSurface,
+    required this.dangerSubtle,
+    required this.warningSubtle,
+    required this.successSubtle,
+    this.warningDark,
+    this.glassTintLight = const Color(0x0A000000),
+    this.glassTintDark = const Color(0x0FFFFFFF),
   });
 
   static SakaiSemanticColors of(BuildContext context) {
@@ -33,6 +43,22 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
   final Color darkSurface;
   final Color darkBorder;
   final Color warning;
+  final Color neutral;
+  final Color neutralVariant;
+  final Color disabledSurface;
+  final Color disabledOnSurface;
+  final Color dangerSubtle;
+  final Color warningSubtle;
+  final Color successSubtle;
+
+  /// Brighter dark-mode warning (~+8% lightness vs [warning]) so amber holds
+  /// contrast on dark surfaces. Null in light mode — fall back to [warning].
+  final Color? warningDark;
+
+  /// Tint overlays used by `SakaiGlassCard` to keep frosted surfaces legible
+  /// against arbitrary backgrounds.
+  final Color glassTintLight;
+  final Color glassTintDark;
 
   @override
   SakaiSemanticColors copyWith({
@@ -43,6 +69,16 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     Color? darkSurface,
     Color? darkBorder,
     Color? warning,
+    Color? neutral,
+    Color? neutralVariant,
+    Color? disabledSurface,
+    Color? disabledOnSurface,
+    Color? dangerSubtle,
+    Color? warningSubtle,
+    Color? successSubtle,
+    Color? warningDark,
+    Color? glassTintLight,
+    Color? glassTintDark,
   }) {
     return SakaiSemanticColors(
       success: success ?? this.success,
@@ -52,6 +88,16 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       darkSurface: darkSurface ?? this.darkSurface,
       darkBorder: darkBorder ?? this.darkBorder,
       warning: warning ?? this.warning,
+      neutral: neutral ?? this.neutral,
+      neutralVariant: neutralVariant ?? this.neutralVariant,
+      disabledSurface: disabledSurface ?? this.disabledSurface,
+      disabledOnSurface: disabledOnSurface ?? this.disabledOnSurface,
+      dangerSubtle: dangerSubtle ?? this.dangerSubtle,
+      warningSubtle: warningSubtle ?? this.warningSubtle,
+      successSubtle: successSubtle ?? this.successSubtle,
+      warningDark: warningDark ?? this.warningDark,
+      glassTintLight: glassTintLight ?? this.glassTintLight,
+      glassTintDark: glassTintDark ?? this.glassTintDark,
     );
   }
 
@@ -70,6 +116,25 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       darkSurface: Color.lerp(darkSurface, other.darkSurface, t) ?? darkSurface,
       darkBorder: Color.lerp(darkBorder, other.darkBorder, t) ?? darkBorder,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
+      neutral: Color.lerp(neutral, other.neutral, t) ?? neutral,
+      neutralVariant:
+          Color.lerp(neutralVariant, other.neutralVariant, t) ?? neutralVariant,
+      disabledSurface: Color.lerp(disabledSurface, other.disabledSurface, t) ??
+          disabledSurface,
+      disabledOnSurface:
+          Color.lerp(disabledOnSurface, other.disabledOnSurface, t) ??
+              disabledOnSurface,
+      dangerSubtle:
+          Color.lerp(dangerSubtle, other.dangerSubtle, t) ?? dangerSubtle,
+      warningSubtle:
+          Color.lerp(warningSubtle, other.warningSubtle, t) ?? warningSubtle,
+      successSubtle:
+          Color.lerp(successSubtle, other.successSubtle, t) ?? successSubtle,
+      warningDark: Color.lerp(warningDark, other.warningDark, t),
+      glassTintLight:
+          Color.lerp(glassTintLight, other.glassTintLight, t) ?? glassTintLight,
+      glassTintDark:
+          Color.lerp(glassTintDark, other.glassTintDark, t) ?? glassTintDark,
     );
   }
 }

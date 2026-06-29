@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sakai_shared/sakai_shared.dart' hide PaymentMethod;
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/routes.dart';
 import '../models/tip_option.dart';
@@ -71,12 +71,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     final notifier = ref.read(rideCompleteNotifierProvider.notifier);
     final success = await notifier.submitRating(widget.rideId);
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thank you for your rating!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      SakaiSnackBar.success(context, 'Thank you for your rating!');
     }
   }
 
@@ -113,12 +108,16 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
     if (state.error != null && state.summary == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Error')),
+        appBar: SakaiAppBar(title: const Text('Error')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: SakaiSemanticColors.of(context).danger,
+              ),
               const SizedBox(height: 16),
               Text(state.error!),
               const SizedBox(height: 16),
@@ -248,7 +247,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         _SummaryRow(
                           icon: Icons.attach_money,
                           label: 'Base Fare',
-                          value: '\$${summary.baseFare.toStringAsFixed(2)}',
+                          value: SakaiCurrency.format(summary.baseFare),
                           bold: true,
                         ),
                         if (state.selectedTip != null) ...[
@@ -256,8 +255,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                           _SummaryRow(
                             icon: Icons.card_giftcard,
                             label: 'Tip',
-                            value:
-                                '\$${state.selectedTip!.amount.toStringAsFixed(2)}',
+                            value: SakaiCurrency.format(
+                              state.selectedTip!.amount,
+                            ),
                             valueColor: theme.colorScheme.primary,
                           ),
                         ],
@@ -266,7 +266,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         _SummaryRow(
                           icon: Icons.payments,
                           label: 'Total',
-                          value: '\$${state.finalTotal.toStringAsFixed(2)}',
+                          value: SakaiCurrency.format(state.finalTotal),
                           bold: true,
                           valueColor: theme.colorScheme.primary,
                           valueSize: 20,
@@ -497,7 +497,7 @@ class _TipSelectorSection extends StatelessWidget {
               for (final preset in presets)
                 ChoiceChip(
                   label: Text(
-                    '${preset.label}\n\$${preset.amount.toStringAsFixed(2)}',
+                    '${preset.label}\n${SakaiCurrency.format(preset.amount)}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 13),
                   ),
@@ -544,6 +544,7 @@ class _RatingSelectorSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = SakaiDesignTokens.of(context);
+    final warning = SakaiSemanticColors.of(context).warning;
 
     return _ModernCard(
       child: Column(
@@ -551,7 +552,7 @@ class _RatingSelectorSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.star_rate_rounded, color: Colors.amber[700]),
+              Icon(Icons.star_rate_rounded, color: warning),
               SizedBox(width: tokens.spaceSm),
               Text(
                 'Rate Your Driver',
@@ -580,8 +581,8 @@ class _RatingSelectorSection extends StatelessWidget {
                             : Icons.star_border_rounded,
                         size: 52,
                         color: i <= state.stars
-                            ? Colors.amber[700]
-                            : Colors.grey[400],
+                            ? warning
+                            : theme.colorScheme.outlineVariant,
                       ),
                     ),
                   ),
@@ -590,19 +591,12 @@ class _RatingSelectorSection extends StatelessWidget {
           ),
           if (state.stars > 0) ...[
             SizedBox(height: tokens.spaceMd),
-            TextField(
+            SakaiTextField(
               controller: feedbackController,
               onChanged: onFeedbackChanged,
-              maxLength: 500,
               maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Share feedback (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest,
-              ),
+              maxLength: 500,
+              label: 'Share feedback (optional)',
             ),
           ],
           SizedBox(height: tokens.spaceMd),

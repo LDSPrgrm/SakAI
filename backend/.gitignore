@@ -1,0 +1,11 @@
+# Air dev-loop output
+tmp/
+
+# Compiled binaries (Windows + nix)
+*.exe
+*.test
+*.test.exe
+
+# Local test/scratch output
+test_output.log
+coverage.out

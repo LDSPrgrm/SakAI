@@ -10,11 +10,9 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
 **name** | **String** |  | 
-**description** | **String** |  | [optional] 
-**isSystem** | **bool** | True for built-in roles that cannot be deleted | [optional] 
-**permissions** | [**BuiltList&lt;RolePermission&gt;**](RolePermission.md) |  | [optional] 
-**adminCount** | **int** | Number of active admins with this role | [optional] 
-**createdBy** | **String** |  | [optional] 
+**lguCode** | **String** |  | [optional] 
+**boundary** | [**SurgeZone**](SurgeZone.md) |  | 
+**active** | **bool** |  | 
 **createdAt** | [**DateTime**](DateTime.md) |  | [optional] 
 **updatedAt** | [**DateTime**](DateTime.md) |  | [optional] 
 

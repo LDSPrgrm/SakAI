@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 type paymentRepo struct{ db *pgxpool.Pool }
@@ -43,7 +44,8 @@ func (r *paymentRepo) ListTransactions(ctx context.Context, page, limit int) ([]
 
 	const q = `
 		SELECT
-			p.id, p.ride_id, p.amount, p.method::text, p.status::text, p.created_at,
+			p.id, p.seq, p.ride_id, COALESCE(r.seq, 0) AS ride_seq,
+			p.amount, p.method::text, p.status::text, p.created_at,
 			COALESCE(rider.name, '') AS rider_name,
 			COALESCE(driver.name, '') AS driver_name,
 			COALESCE(cs.rate_percent, 0) AS rate_percent,
@@ -52,7 +54,7 @@ func (r *paymentRepo) ListTransactions(ctx context.Context, page, limit int) ([]
 		JOIN rides r ON r.id = p.ride_id
 		LEFT JOIN users rider  ON rider.id  = r.passenger_id
 		LEFT JOIN users driver ON driver.id = r.driver_id
-		LEFT JOIN commission_settings cs ON cs.vehicle_type = r.vehicle_type
+		LEFT JOIN commission_settings cs ON cs.vehicle_type = r.ride_type
 		ORDER BY p.created_at DESC
 		LIMIT $1 OFFSET $2`
 	rows, err := r.db.Query(ctx, q, limit, offset)
@@ -65,15 +67,19 @@ func (r *paymentRepo) ListTransactions(ctx context.Context, page, limit int) ([]
 	for rows.Next() {
 		var (
 			t             = &domain.Transaction{}
+			rideSeq       int64
 			ratePercent   float64
 			minCommission float64
 		)
 		if err := rows.Scan(
-			&t.ID, &t.RideID, &t.Amount, &t.PaymentMethod, &t.Status, &t.CreatedAt,
+			&t.ID, &t.Seq, &t.RideID, &rideSeq,
+			&t.Amount, &t.PaymentMethod, &t.Status, &t.CreatedAt,
 			&t.RiderName, &t.DriverName, &ratePercent, &minCommission,
 		); err != nil {
 			return nil, 0, err
 		}
+		t.DisplayID = displayid.Transaction(t.Seq)
+		t.RideDisplayID = displayid.Ride(rideSeq)
 		t.Commission = t.Amount * ratePercent / 100.0
 		if t.Commission < minCommission {
 			t.Commission = minCommission

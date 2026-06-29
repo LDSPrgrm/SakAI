@@ -1,16 +1,54 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/session_earnings.dart';
+import '../repositories/earnings_repository.dart';
+import '../../../app/providers.dart';
 
-class EarningsNotifier extends Notifier<SessionEarnings> {
+class EarningsState {
+  final bool isLoading;
+  final SessionEarnings earnings;
+  final String? error;
+
+  const EarningsState({
+    this.isLoading = false,
+    this.earnings = const SessionEarnings(),
+    this.error,
+  });
+
+  EarningsState copyWith({
+    bool? isLoading,
+    SessionEarnings? earnings,
+    String? error,
+  }) {
+    return EarningsState(
+      isLoading: isLoading ?? this.isLoading,
+      earnings: earnings ?? this.earnings,
+      error: error,
+    );
+  }
+}
+
+class EarningsNotifier extends Notifier<EarningsState> {
   @override
-  SessionEarnings build() => const SessionEarnings();
+  EarningsState build() {
+    // Initial load in microtask to avoid building while notifying
+    Future.microtask(() => loadEarnings());
+    return const EarningsState();
+  }
 
-  SessionEarnings get earnings => state;
-  int get completedRidesCount => state.completedRidesCount;
-  double get totalEarnings => state.totalEarnings;
+  EarningsRepository get _repository => ref.read(earningsRepositoryProvider);
 
-  /// Adds a completed ride to the earnings total.
+  Future<void> loadEarnings() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final earnings = await _repository.getEarnings();
+      state = state.copyWith(isLoading: false, earnings: earnings);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Adds a completed ride to the earnings total (local update).
   void addRide({
     required String rideId,
     required double fare,
@@ -24,19 +62,23 @@ class EarningsNotifier extends Notifier<SessionEarnings> {
       completedAt: completedAt,
     );
 
-    final newTotal = state.totalEarnings + breakdown.total;
-    state = state.copyWith(
-      completedRidesCount: state.completedRidesCount + 1,
+    final currentEarnings = state.earnings;
+    final newTotal = currentEarnings.totalEarnings + breakdown.total;
+
+    final updatedEarnings = currentEarnings.copyWith(
+      completedRidesCount: currentEarnings.completedRidesCount + 1,
       totalEarnings: newTotal,
-      rideBreakdowns: [...state.rideBreakdowns, breakdown],
+      rideBreakdowns: [breakdown, ...currentEarnings.rideBreakdowns],
     );
+
+    state = state.copyWith(earnings: updatedEarnings);
   }
 
   /// Resets earnings (on app restart or manual reset).
   void reset() {
-    state = const SessionEarnings();
+    state = const EarningsState();
   }
 }
 
 final earningsNotifierProvider =
-    NotifierProvider<EarningsNotifier, SessionEarnings>(EarningsNotifier.new);
+    NotifierProvider<EarningsNotifier, EarningsState>(EarningsNotifier.new);

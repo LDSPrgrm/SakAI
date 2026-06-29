@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/Table';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import {
   useAlertRules, useAlertEvents,
   useCreateAlertRule, useUpdateAlertRule, useDeleteAlertRule,
@@ -153,14 +153,14 @@ export function AlertRulesTab() {
         />
       )}
 
-      <ConfirmModal
+      <ConfirmationModal
         open={!!deleteId}
         title="Delete Alert Rule"
-        message="This stops evaluation for this rule. Historical events are retained."
+        description="This stops evaluation for this rule. Historical events are retained."
         variant="danger"
         confirmLabel="Delete"
         onConfirm={() => deleteId && deleteMut.mutateAsync(deleteId).then(() => setDeleteId(null))}
-        onClose={() => setDeleteId(null)}
+        onCancel={() => setDeleteId(null)}
       />
     </div>
   );

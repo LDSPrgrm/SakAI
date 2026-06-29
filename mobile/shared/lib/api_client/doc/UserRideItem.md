@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 **originAddress** | **String** |  | 
 **destinationAddress** | **String** |  | 
 **fare** | **double** | Final fare (null if not completed) | [optional] 
-**estimatedFare** | **double** |  | 
+**estimatedFare** | **double** |  | [optional] 
 **driver** | [**DriverSummary**](DriverSummary.md) |  | [optional] 
 **paymentMethod** | **String** |  | 
 **createdAt** | [**DateTime**](DateTime.md) |  | 

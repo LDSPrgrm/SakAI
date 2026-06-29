@@ -19,9 +19,12 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { EntityId } from '@/components/ui/EntityId';
 import { SummaryCard } from '@/components/shared/SummaryCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { PageHeader } from '@/components/shared/PageHeader';
 import type { PaymentSummary } from '@/api/super-admin/payments';
 import {
   useTransactions, usePayouts, usePaymentSummary,
@@ -31,6 +34,7 @@ import {
 } from '@/hooks/usePayments';
 import type { Transaction, DriverPayout, PaymentMethod } from '@/types/super-admin';
 import { formatPHP } from '@/lib/utils';
+import { csvRow } from '@/utils/csv';
 import { CommissionConfigCard } from '@/components/super-admin/payments/CommissionConfigCard';
 import { GatewayProvidersSection } from '@/components/super-admin/payments/GatewayProvidersSection';
 import { TransactionDetailModal } from '@/components/super-admin/modals/TransactionDetailModal';
@@ -47,11 +51,6 @@ function methodVariant(method: PaymentMethod): 'info' | 'warning' | 'default' {
   if (method === 'gcash') return 'info';
   if (method === 'paymaya') return 'warning';
   return 'default';
-}
-
-function shortId(id: string | undefined | null, len = 8): string {
-  if (!id) return '—';
-  return id.length > len ? `${id.slice(0, len)}…` : id;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -133,14 +132,17 @@ export function SAPayments() {
   // ── CSV download ───────────────────────────────────────────────────────────
 
   function downloadCsv() {
-    const headers = 'Transaction ID,Ride ID,Rider,Driver,Amount,Commission,Method,Status,Date\n';
-    const rows = filtered
-      .map(
-        (t) =>
-          `${t.id},${t.ride_id},${t.rider_name},${t.driver_name},${t.amount},${t.commission},${t.payment_method},${t.status},${t.created_at}`
-      )
-      .join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const header = csvRow([
+      'Transaction ID', 'Ride ID', 'Rider', 'Driver',
+      'Amount', 'Commission', 'Method', 'Status', 'Date',
+    ]);
+    const rows = filtered.map((t) =>
+      csvRow([
+        t.id, t.ride_id, t.rider_name, t.driver_name,
+        t.amount, t.commission, t.payment_method, t.status, t.created_at,
+      ]),
+    );
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -154,11 +156,10 @@ export function SAPayments() {
   return (
     <div className="space-y-6 p-6">
 
-      {/* Page title */}
-      <h1 className="text-2xl font-bold text-text-main">Payments</h1>
+      <PageHeader title="Financial Controls" />
 
       {/* Section 1 — Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           title="Total Revenue"
           value={formatPHP(summary.total_revenue ?? 0)}
@@ -195,7 +196,7 @@ export function SAPayments() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   icon={<Search className="w-4 h-4" />}
-                  className="w-52"
+                  className="w-full sm:w-72 lg:w-80"
                 />
                 <Button variant="outline" size="sm" onClick={downloadCsv}>
                   <Download className="w-4 h-4 mr-1.5" />
@@ -219,10 +220,18 @@ export function SAPayments() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.length === 0 ? (
+                  {transactionsQuery.isPending && filtered.length === 0 ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={`txn-skel-${i}`}>
+                        <TableCell colSpan={7} className="py-3">
+                          <div className="h-4 bg-surface-hover rounded animate-pulse" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : filtered.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-center text-text-muted py-10"
                       >
                         No transactions found.
@@ -237,18 +246,10 @@ export function SAPayments() {
                       >
                         {/* Transaction ID + Ride ID */}
                         <TableCell className="whitespace-nowrap">
-                          <span
-                            className="block text-sm font-mono font-medium text-text-main"
-                            title={t.id ?? ''}
-                          >
-                            {shortId(t.id)}
-                          </span>
-                          <span
-                            className="block text-xs font-mono text-text-muted"
-                            title={t.ride_id ?? ''}
-                          >
-                            Ride {shortId(t.ride_id)}
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <EntityId displayId={(t as any).display_id} uuid={t.id} fallbackPrefix="TXN" />
+                            <EntityId displayId={(t as any).ride_display_id} uuid={t.ride_id} fallbackPrefix="RIDE" />
+                          </div>
                         </TableCell>
 
                         {/* Rider + Driver names */}
@@ -331,106 +332,122 @@ export function SAPayments() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      {(() => {
-                        const pendingIds = payouts
-                          .filter((p) => p.status === 'pending')
-                          .map((p) => p.id);
-                        const allSelected =
-                          pendingIds.length > 0 &&
-                          pendingIds.every((id) => selectedPayoutIds.has(id));
-                        const someSelected =
-                          pendingIds.some((id) => selectedPayoutIds.has(id)) && !allSelected;
-                        return (
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-border accent-primary"
-                            disabled={pendingIds.length === 0}
-                            checked={allSelected}
-                            ref={(el) => {
-                              if (el) el.indeterminate = someSelected;
-                            }}
-                            onChange={(e) => {
-                              setSelectedPayoutIds(
-                                e.target.checked ? new Set(pendingIds) : new Set(),
-                              );
-                            }}
-                            aria-label="Select all pending payouts"
-                          />
-                        );
-                      })()}
-                    </TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead className="text-right">Drivers</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payouts.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-text-muted py-10"
-                      >
-                        No payouts found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    payouts.map((payout) => (
-                      <TableRow key={payout.id}>
-                        <TableCell>
-                          {payout.status === 'pending' ? (
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-border accent-primary"
-                              checked={selectedPayoutIds.has(payout.id)}
-                              onChange={(e) => {
-                                setSelectedPayoutIds((prev) => {
-                                  const next = new Set(prev);
-                                  if (e.target.checked) next.add(payout.id);
-                                  else next.delete(payout.id);
-                                  return next;
-                                });
-                              }}
-                              aria-label={`Select payout ${payout.batch}`}
-                            />
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium text-text-main whitespace-nowrap">
-                          {payout.batch}
-                        </TableCell>
-                        <TableCell className="text-right text-sm text-text-muted whitespace-nowrap">
-                          {payout.driver_count}
-                        </TableCell>
-                        <TableCell className="text-right text-sm font-medium text-text-main whitespace-nowrap">
-                          {formatPHP(payout.total_amount)}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <StatusBadge status={payout.status} />
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          {payout.status === 'pending' ? (
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={() => openApproveModal(payout)}
-                            >
-                              Approve
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))
+            {(() => {
+              const pendingIds = payouts
+                .filter((p) => p.status === 'pending')
+                .map((p) => p.id);
+              const allSelected =
+                pendingIds.length > 0 &&
+                pendingIds.every((id) => selectedPayoutIds.has(id));
+              const someSelected =
+                pendingIds.some((id) => selectedPayoutIds.has(id)) && !allSelected;
+
+              return (
+                <>
+                  {/* Column header strip — visible only when there are payouts */}
+                  {payouts.length > 0 && (
+                    <div className="flex items-center gap-4 px-6 py-3 border-b border-border text-xs uppercase tracking-wide text-text-muted">
+                      <div className="w-5 flex-shrink-0">
+                        <Checkbox
+                          disabled={pendingIds.length === 0}
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onCheckedChange={(checked) => {
+                            setSelectedPayoutIds(
+                              checked ? new Set(pendingIds) : new Set(),
+                            );
+                          }}
+                          aria-label="Select all pending payouts"
+                        />
+                      </div>
+                      <div className="flex-1">Batch / Period</div>
+                      <div className="w-20 text-right">Drivers</div>
+                      <div className="w-32 text-right">Amount</div>
+                      <div className="w-24 text-center">Status</div>
+                      <div className="w-28" aria-hidden />
+                    </div>
                   )}
-                </TableBody>
-              </Table>
-            </div>
+
+                  {payoutsQuery.isPending && payouts.length === 0 ? (
+                    <div className="space-y-3 p-6">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                          key={`payout-skel-${i}`}
+                          className="h-10 bg-surface-hover rounded animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : payouts.length === 0 ? (
+                    <p className="text-center text-text-muted py-10">
+                      No payouts found.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border">
+                      {payouts.map((payout) => (
+                        <li
+                          key={payout.id}
+                          className="flex items-center gap-4 px-6 py-4 hover:bg-surface-hover/40 transition-colors"
+                        >
+                          <div className="w-5 flex-shrink-0">
+                            {payout.status === 'pending' ? (
+                              <Checkbox
+                                checked={selectedPayoutIds.has(payout.id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedPayoutIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (checked) next.add(payout.id);
+                                    else next.delete(payout.id);
+                                    return next;
+                                  });
+                                }}
+                                aria-label={`Select payout ${payout.batch}`}
+                              />
+                            ) : null}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-text-main truncate">
+                              {payout.batch}
+                            </p>
+                            {payout.period && (
+                              <p className="text-xs text-text-muted truncate">
+                                {payout.period}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="w-20 text-right text-sm text-text-muted whitespace-nowrap">
+                            {payout.driver_count}
+                          </div>
+
+                          <div className="w-32 text-right text-sm font-semibold text-text-main whitespace-nowrap">
+                            {formatPHP(payout.total_amount)}
+                          </div>
+
+                          <div className="w-24 flex justify-center">
+                            <StatusBadge status={payout.status} />
+                          </div>
+
+                          <div className="w-28 flex justify-end">
+                            {payout.status === 'pending' ? (
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => openApproveModal(payout)}
+                              >
+                                Approve
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-text-muted" aria-hidden>—</span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
@@ -455,14 +472,17 @@ export function SAPayments() {
       />
 
       {/* Approve Payout Confirm Modal */}
-      <ConfirmModal
+      <ConfirmationModal
         open={confirmModal.open}
         title="Approve Payout"
-        message={`Are you sure you want to approve the payout batch "${confirmModal.batchName}"? This action cannot be undone.`}
+        description={`Are you sure you want to approve the payout batch "${confirmModal.batchName}"? This action cannot be undone.`}
         variant="success"
         confirmLabel="Approve"
-        onConfirm={handleApprovePayout}
-        onClose={() => setConfirmModal((s) => ({ ...s, open: false }))}
+        onConfirm={() => {
+          handleApprovePayout();
+          setConfirmModal((s) => ({ ...s, open: false }));
+        }}
+        onCancel={() => setConfirmModal((s) => ({ ...s, open: false }))}
       />
     </div>
   );

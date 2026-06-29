@@ -46,6 +46,9 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout({required String refreshToken}) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 class _FakeRideRepository implements RideRepository {
@@ -60,6 +63,7 @@ class _FakeRideRepository implements RideRepository {
   }) async {
     return RideEntity(
       id: 'fake-ride',
+      passengerId: 'fake-passenger-id',
       status: RideState.requested,
       origin: origin,
       destination: destination,
@@ -91,6 +95,15 @@ class _FakeOnboardingService implements OnboardingService {
 // ---------------------------------------------------------------------------
 
 void main() {
+  setUp(() {
+    // Prevent the infinite repeat() loop from blocking pumpAndSettle.
+    SakaiAnimatedBackdrop.debugDisableAnimations = true;
+  });
+
+  tearDown(() {
+    SakaiAnimatedBackdrop.debugDisableAnimations = false;
+  });
+
   testWidgets('after splash resolves unauthenticated → shows login screen', (
     WidgetTester tester,
   ) async {

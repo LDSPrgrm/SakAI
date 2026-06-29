@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 import 'dart:async';
@@ -11,16 +11,19 @@ import 'package:sakai_api_client/src/api_util.dart';
 import 'package:sakai_api_client/src/model/add_ride_tip_request.dart';
 import 'package:sakai_api_client/src/model/cancel_request.dart';
 import 'package:sakai_api_client/src/model/error_response.dart';
+import 'package:sakai_api_client/src/model/incident.dart';
 import 'package:sakai_api_client/src/model/payment_failure_response.dart';
 import 'package:sakai_api_client/src/model/payment_process_request.dart';
 import 'package:sakai_api_client/src/model/payment_response.dart';
 import 'package:sakai_api_client/src/model/rating_response.dart';
 import 'package:sakai_api_client/src/model/receipt_response.dart';
 import 'package:sakai_api_client/src/model/ride_arrive_request.dart';
+import 'package:sakai_api_client/src/model/ride_complete_request.dart';
 import 'package:sakai_api_client/src/model/ride_request_body.dart';
 import 'package:sakai_api_client/src/model/ride_response.dart';
 import 'package:sakai_api_client/src/model/submit_rating_request.dart';
 import 'package:sakai_api_client/src/model/tip_response.dart';
+import 'package:sakai_api_client/src/model/trigger_sos_request.dart';
 import 'package:sakai_api_client/src/model/user_ride_list_response.dart';
 
 class RidesApi {
@@ -611,7 +614,7 @@ class RidesApi {
   ///
   /// Parameters:
   /// * [rideId] - UUID of the ride
-  /// * [rideArriveRequest] 
+  /// * [rideCompleteRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -623,7 +626,7 @@ class RidesApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<RideResponse>> rideComplete({ 
     required String rideId,
-    required RideArriveRequest rideArriveRequest,
+    required RideCompleteRequest rideCompleteRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -654,8 +657,8 @@ class RidesApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(RideArriveRequest);
-      _bodyData = _serializers.serialize(rideArriveRequest, specifiedType: _type);
+      const _type = FullType(RideCompleteRequest);
+      _bodyData = _serializers.serialize(rideCompleteRequest, specifiedType: _type);
 
     } catch(error, stackTrace) {
       throw DioException(
@@ -1216,6 +1219,109 @@ class RidesApi {
     }
 
     return Response<RideResponse>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Trigger SOS/Emergency for an active ride
+  /// Signals an emergency for the given ride. This notifies admin support and records the current GPS trail for security purposes. Both the passenger and the assigned driver may trigger this. 
+  ///
+  /// Parameters:
+  /// * [rideId] - UUID of the ride
+  /// * [triggerSOSRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Incident] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Incident>> rideTriggerSOS({ 
+    required String rideId,
+    required TriggerSOSRequest triggerSOSRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/rides/{rideId}/sos'.replaceAll('{' r'rideId' '}', encodeQueryParameter(_serializers, rideId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'BearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(TriggerSOSRequest);
+      _bodyData = _serializers.serialize(triggerSOSRequest, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Incident? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(Incident),
+      ) as Incident;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Incident>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

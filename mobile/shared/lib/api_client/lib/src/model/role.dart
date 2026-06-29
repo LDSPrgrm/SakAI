@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -14,7 +14,11 @@ part 'role.g.dart';
 /// Properties:
 /// * [id] 
 /// * [name] 
+/// * [description] 
+/// * [isSystem] - True for built-in roles that cannot be deleted
 /// * [permissions] 
+/// * [adminCount] - Number of active admins with this role
+/// * [createdBy] 
 /// * [createdAt] 
 /// * [updatedAt] 
 @BuiltValue()
@@ -23,11 +27,24 @@ abstract class Role implements Built<Role, RoleBuilder> {
   String get id;
 
   @BuiltValueField(wireName: r'name')
-  RoleNameEnum get name;
-  // enum nameEnum {  passenger,  driver,  admin,  superadmin,  };
+  String get name;
+
+  @BuiltValueField(wireName: r'description')
+  String? get description;
+
+  /// True for built-in roles that cannot be deleted
+  @BuiltValueField(wireName: r'is_system')
+  bool? get isSystem;
 
   @BuiltValueField(wireName: r'permissions')
   BuiltList<RolePermission> get permissions;
+
+  /// Number of active admins with this role
+  @BuiltValueField(wireName: r'admin_count')
+  int? get adminCount;
+
+  @BuiltValueField(wireName: r'created_by')
+  String? get createdBy;
 
   @BuiltValueField(wireName: r'created_at')
   DateTime? get createdAt;
@@ -66,13 +83,41 @@ class _$RoleSerializer implements PrimitiveSerializer<Role> {
     yield r'name';
     yield serializers.serialize(
       object.name,
-      specifiedType: const FullType(RoleNameEnum),
+      specifiedType: const FullType(String),
     );
+    if (object.description != null) {
+      yield r'description';
+      yield serializers.serialize(
+        object.description,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.isSystem != null) {
+      yield r'is_system';
+      yield serializers.serialize(
+        object.isSystem,
+        specifiedType: const FullType(bool),
+      );
+    }
     yield r'permissions';
     yield serializers.serialize(
       object.permissions,
       specifiedType: const FullType(BuiltList, [FullType(RolePermission)]),
     );
+    if (object.adminCount != null) {
+      yield r'admin_count';
+      yield serializers.serialize(
+        object.adminCount,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.createdBy != null) {
+      yield r'created_by';
+      yield serializers.serialize(
+        object.createdBy,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.createdAt != null) {
       yield r'created_at';
       yield serializers.serialize(
@@ -120,9 +165,23 @@ class _$RoleSerializer implements PrimitiveSerializer<Role> {
         case r'name':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(RoleNameEnum),
-          ) as RoleNameEnum;
+            specifiedType: const FullType(String),
+          ) as String;
           result.name = valueDes;
+          break;
+        case r'description':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.description = valueDes;
+          break;
+        case r'is_system':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.isSystem = valueDes;
           break;
         case r'permissions':
           final valueDes = serializers.deserialize(
@@ -130,6 +189,20 @@ class _$RoleSerializer implements PrimitiveSerializer<Role> {
             specifiedType: const FullType(BuiltList, [FullType(RolePermission)]),
           ) as BuiltList<RolePermission>;
           result.permissions.replace(valueDes);
+          break;
+        case r'admin_count':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.adminCount = valueDes;
+          break;
+        case r'created_by':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.createdBy = valueDes;
           break;
         case r'created_at':
           final valueDes = serializers.deserialize(
@@ -172,24 +245,5 @@ class _$RoleSerializer implements PrimitiveSerializer<Role> {
     );
     return result.build();
   }
-}
-
-class RoleNameEnum extends EnumClass {
-
-  @BuiltValueEnumConst(wireName: r'passenger')
-  static const RoleNameEnum passenger = _$roleNameEnum_passenger;
-  @BuiltValueEnumConst(wireName: r'driver')
-  static const RoleNameEnum driver = _$roleNameEnum_driver;
-  @BuiltValueEnumConst(wireName: r'admin')
-  static const RoleNameEnum admin = _$roleNameEnum_admin;
-  @BuiltValueEnumConst(wireName: r'superadmin')
-  static const RoleNameEnum superadmin = _$roleNameEnum_superadmin;
-
-  static Serializer<RoleNameEnum> get serializer => _$roleNameEnumSerializer;
-
-  const RoleNameEnum._(String name): super(name);
-
-  static BuiltSet<RoleNameEnum> get values => _$roleNameEnumValues;
-  static RoleNameEnum valueOf(String name) => _$roleNameEnumValueOf(name);
 }
 

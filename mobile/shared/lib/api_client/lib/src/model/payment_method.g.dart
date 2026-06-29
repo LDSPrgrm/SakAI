@@ -8,6 +8,8 @@ part of 'payment_method.dart';
 
 const PaymentMethod _$cash = const PaymentMethod._('cash');
 const PaymentMethod _$card = const PaymentMethod._('card');
+const PaymentMethod _$gcash = const PaymentMethod._('gcash');
+const PaymentMethod _$paymaya = const PaymentMethod._('paymaya');
 
 PaymentMethod _$valueOf(String name) {
   switch (name) {
@@ -15,14 +17,33 @@ PaymentMethod _$valueOf(String name) {
       return _$cash;
     case 'card':
       return _$card;
+    case 'gcash':
+      return _$gcash;
+    case 'paymaya':
+      return _$paymaya;
     default:
       throw ArgumentError(name);
   }
 }
 
 final BuiltSet<PaymentMethod> _$values = BuiltSet<PaymentMethod>(
-  const <PaymentMethod>[_$cash, _$card],
+  const <PaymentMethod>[_$cash, _$card, _$gcash, _$paymaya],
 );
+
+class _$PaymentMethodMeta {
+  const _$PaymentMethodMeta();
+  PaymentMethod get cash => _$cash;
+  PaymentMethod get card => _$card;
+  PaymentMethod get gcash => _$gcash;
+  PaymentMethod get paymaya => _$paymaya;
+  PaymentMethod valueOf(String name) => _$valueOf(name);
+  BuiltSet<PaymentMethod> get values => _$values;
+}
+
+mixin _$PaymentMethodMixin {
+  // ignore: non_constant_identifier_names
+  _$PaymentMethodMeta get PaymentMethod => const _$PaymentMethodMeta();
+}
 
 Serializer<PaymentMethod> _$paymentMethodSerializer =
     _$PaymentMethodSerializer();
@@ -31,10 +52,14 @@ class _$PaymentMethodSerializer implements PrimitiveSerializer<PaymentMethod> {
   static const Map<String, Object> _toWire = const <String, Object>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
 
   @override

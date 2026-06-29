@@ -11,7 +11,7 @@ class SettingsMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -21,6 +21,23 @@ class SettingsMenuScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSectionHeader(context, 'Account'),
+          _buildTile(
+            context,
+            Icons.account_balance_wallet_outlined,
+            'Wallet',
+            'Balance and transactions',
+            onTap: () => context.push(Routes.wallet),
+          ),
+          _buildTile(
+            context,
+            Icons.inbox_outlined,
+            'Notification inbox',
+            'Recent alerts and ride updates',
+            onTap: () => context.push(Routes.notifications),
+          ),
+
+          const SizedBox(height: 16),
           _buildSectionHeader(context, 'Preferences'),
           _buildTile(
             context,
@@ -38,10 +55,24 @@ class SettingsMenuScreen extends StatelessWidget {
           ),
           _buildTile(
             context,
+            Icons.shield_outlined,
+            'SOS & Safety',
+            'Ambient audio, live location, photo opt-ins',
+            onTap: () => context.push(Routes.settingsSosSafety),
+          ),
+          _buildTile(
+            context,
             Icons.language_outlined,
             'Language',
             'Choose your preferred language',
             onTap: () => context.push(Routes.settingsLanguage),
+          ),
+          _buildTile(
+            context,
+            Icons.place_outlined,
+            'Saved Places',
+            'Manage your saved locations',
+            onTap: () => context.push(Routes.savedPlaces),
           ),
 
           const SizedBox(height: 16),

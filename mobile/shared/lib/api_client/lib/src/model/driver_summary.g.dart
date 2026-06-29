@@ -10,6 +10,8 @@ class _$DriverSummary extends DriverSummary {
   @override
   final String id;
   @override
+  final String? displayId;
+  @override
   final String name;
   @override
   final VehicleInfo? vehicle;
@@ -21,6 +23,7 @@ class _$DriverSummary extends DriverSummary {
 
   _$DriverSummary._({
     required this.id,
+    this.displayId,
     required this.name,
     this.vehicle,
     this.currentLocation,
@@ -37,6 +40,7 @@ class _$DriverSummary extends DriverSummary {
     if (identical(other, this)) return true;
     return other is DriverSummary &&
         id == other.id &&
+        displayId == other.displayId &&
         name == other.name &&
         vehicle == other.vehicle &&
         currentLocation == other.currentLocation;
@@ -46,6 +50,7 @@ class _$DriverSummary extends DriverSummary {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, vehicle.hashCode);
     _$hash = $jc(_$hash, currentLocation.hashCode);
@@ -57,6 +62,7 @@ class _$DriverSummary extends DriverSummary {
   String toString() {
     return (newBuiltValueToStringHelper(r'DriverSummary')
           ..add('id', id)
+          ..add('displayId', displayId)
           ..add('name', name)
           ..add('vehicle', vehicle)
           ..add('currentLocation', currentLocation))
@@ -71,6 +77,10 @@ class DriverSummaryBuilder
   String? _id;
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(String? displayId) => _$this._displayId = displayId;
 
   String? _name;
   String? get name => _$this._name;
@@ -94,6 +104,7 @@ class DriverSummaryBuilder
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _displayId = $v.displayId;
       _name = $v.name;
       _vehicle = $v.vehicle?.toBuilder();
       _currentLocation = $v.currentLocation?.toBuilder();
@@ -126,6 +137,7 @@ class DriverSummaryBuilder
               r'DriverSummary',
               'id',
             ),
+            displayId: displayId,
             name: BuiltValueNullFieldError.checkNotNull(
               name,
               r'DriverSummary',

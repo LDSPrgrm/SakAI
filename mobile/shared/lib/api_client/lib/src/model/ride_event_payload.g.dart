@@ -6,97 +6,11 @@ part of 'ride_event_payload.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_requested =
-    const RideEventPayloadStatusEnum._('requested');
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_accepted =
-    const RideEventPayloadStatusEnum._('accepted');
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_arrived =
-    const RideEventPayloadStatusEnum._('arrived');
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_inProgress =
-    const RideEventPayloadStatusEnum._('inProgress');
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_completed =
-    const RideEventPayloadStatusEnum._('completed');
-const RideEventPayloadStatusEnum _$rideEventPayloadStatusEnum_cancelled =
-    const RideEventPayloadStatusEnum._('cancelled');
-
-RideEventPayloadStatusEnum _$rideEventPayloadStatusEnumValueOf(String name) {
-  switch (name) {
-    case 'requested':
-      return _$rideEventPayloadStatusEnum_requested;
-    case 'accepted':
-      return _$rideEventPayloadStatusEnum_accepted;
-    case 'arrived':
-      return _$rideEventPayloadStatusEnum_arrived;
-    case 'inProgress':
-      return _$rideEventPayloadStatusEnum_inProgress;
-    case 'completed':
-      return _$rideEventPayloadStatusEnum_completed;
-    case 'cancelled':
-      return _$rideEventPayloadStatusEnum_cancelled;
-    default:
-      throw ArgumentError(name);
-  }
-}
-
-final BuiltSet<RideEventPayloadStatusEnum> _$rideEventPayloadStatusEnumValues =
-    BuiltSet<RideEventPayloadStatusEnum>(const <RideEventPayloadStatusEnum>[
-      _$rideEventPayloadStatusEnum_requested,
-      _$rideEventPayloadStatusEnum_accepted,
-      _$rideEventPayloadStatusEnum_arrived,
-      _$rideEventPayloadStatusEnum_inProgress,
-      _$rideEventPayloadStatusEnum_completed,
-      _$rideEventPayloadStatusEnum_cancelled,
-    ]);
-
-Serializer<RideEventPayloadStatusEnum> _$rideEventPayloadStatusEnumSerializer =
-    _$RideEventPayloadStatusEnumSerializer();
-
-class _$RideEventPayloadStatusEnumSerializer
-    implements PrimitiveSerializer<RideEventPayloadStatusEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'requested': 'requested',
-    'accepted': 'accepted',
-    'arrived': 'arrived',
-    'inProgress': 'in_progress',
-    'completed': 'completed',
-    'cancelled': 'cancelled',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'requested': 'requested',
-    'accepted': 'accepted',
-    'arrived': 'arrived',
-    'in_progress': 'inProgress',
-    'completed': 'completed',
-    'cancelled': 'cancelled',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[RideEventPayloadStatusEnum];
-  @override
-  final String wireName = 'RideEventPayloadStatusEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    RideEventPayloadStatusEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  RideEventPayloadStatusEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RideEventPayloadStatusEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$RideEventPayload extends RideEventPayload {
   @override
   final String? rideId;
   @override
-  final RideEventPayloadStatusEnum? status;
+  final RideStatus? status;
   @override
   final String? driverId;
   @override
@@ -160,9 +74,9 @@ class RideEventPayloadBuilder
   String? get rideId => _$this._rideId;
   set rideId(String? rideId) => _$this._rideId = rideId;
 
-  RideEventPayloadStatusEnum? _status;
-  RideEventPayloadStatusEnum? get status => _$this._status;
-  set status(RideEventPayloadStatusEnum? status) => _$this._status = status;
+  RideStatus? _status;
+  RideStatus? get status => _$this._status;
+  set status(RideStatus? status) => _$this._status = status;
 
   String? _driverId;
   String? get driverId => _$this._driverId;

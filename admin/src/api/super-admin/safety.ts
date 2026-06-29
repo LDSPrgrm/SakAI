@@ -5,23 +5,9 @@ export type Incident = components['schemas']['Incident'];
 export type KycEntry = components['schemas']['KycEntry'];
 export type KycBatchRequest = components['schemas']['KycBatchRequest'];
 
-// SOS timeline row. Locally-typed until swagger regen publishes the schema.
-export interface IncidentStatusEvent {
-  id: string;
-  from_status?: string | null;
-  to_status: string;
-  from_assignee?: string | null;
-  to_assignee?: string | null;
-  actor_id?: string | null;
-  actor_name?: string;
-  note?: string;
-  occurred_at: string;
-}
-
-export interface IncidentDetail {
-  incident: Incident;
-  status_history: IncidentStatusEvent[];
-}
+export type IncidentStatusEvent = components['schemas']['IncidentStatusEvent'];
+export type IncidentLocationPoint = components['schemas']['IncidentLocationPoint'];
+export type IncidentDetail = components['schemas']['IncidentDetail'];
 
 // Slim shape returned by GET /admin/support-staff — id/name/role only, no
 // sensitive admin-account metadata. Safe for operations + support callers.

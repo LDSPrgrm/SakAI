@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/sakai_design_tokens.dart';
+import 'sakai_app_bar.dart';
 
-/// Common screen layout: [AppBar], padded body, optional bottom bar.
+/// Common screen layout: [SakaiAppBar], padded body, optional bottom bar.
 class SakaiScreenScaffold extends StatelessWidget {
   const SakaiScreenScaffold({
     super.key,
@@ -23,7 +24,7 @@ class SakaiScreenScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SakaiDesignTokens.of(context);
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: Text(title),
         actions: actions,
       ),

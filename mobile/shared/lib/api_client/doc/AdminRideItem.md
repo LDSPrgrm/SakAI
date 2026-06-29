@@ -9,6 +9,8 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
+**seq** | **int** |  | [optional] 
+**displayId** | **String** | Human-readable reference (e.g. RIDE-000123). | [optional] 
 **status** | [**RideStatus**](RideStatus.md) |  | 
 **passenger** | [**UserProfile**](UserProfile.md) |  | 
 **driver** | [**DriverSummary**](DriverSummary.md) | Null until a driver is matched and accepts. | [optional] 
@@ -26,6 +28,7 @@ Name | Type | Description | Notes
 **cancelledBy** | **String** | Set only when status is `cancelled` | [optional] 
 **cancellationReason** | **String** | Predefined cancellation reason code | [optional] 
 **cancellationReasonText** | **String** | Free-text cancellation reason | [optional] 
+**declineCount** | **int** | Number of times this ride was declined by drivers | [optional] [default to 0]
 **createdAt** | [**DateTime**](DateTime.md) |  | 
 **updatedAt** | [**DateTime**](DateTime.md) |  | 
 **passengerName** | **String** |  | [optional] 

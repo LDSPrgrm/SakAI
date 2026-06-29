@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../home/services/gps_location_service.dart';
 import '../models/driver_session.dart';
@@ -62,7 +64,11 @@ typedef OnRideCancelled = void Function(String rideId);
 typedef OnActiveRideDetected = void Function(RideResponse activeRide);
 
 class DriverHomeNotifier extends Notifier<DriverHomeState> {
-  StreamSubscription<WsEvent>? _wsSubscription;
+  /// WS dispatcher we built ourselves (via [setupWsListener]). When the
+  /// caller hands us a dispatcher via [setupWsDispatcher] we don't own it
+  /// and don't dispose it.
+  WsDispatcher? _ownedDispatcher;
+  final List<void Function()> _wsDisposers = [];
   Timer? _gpsTimer;
   Timer? _incomingRidePollTimer;
   final GpsLocationService _gpsService = GpsLocationService();
@@ -85,21 +91,72 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   }
 
   /// Sets up WS event subscriptions. Called by the screen on init.
+  /// Builds an internal [WsDispatcher] owned by the notifier — disposed
+  /// alongside the notifier.
   void setupWsListener(WsClient wsClient) {
+    debugPrint('[D-Home] setupWsListener');
     _unsubscribeWs();
-    _wsSubscription = wsClient.events.listen(_handleWsEvent);
+    final dispatcher = WsDispatcher(wsClient);
+    _ownedDispatcher = dispatcher;
+    setupWsDispatcher(dispatcher);
+    // Resync hook: every reconnect re-polls incoming-ride and active-ride
+    // so the UI doesn't go stale across a WS gap.
+    wsClient.onResync = () {
+      debugPrint('[D-Home] WS onResync: polling incoming + active ride');
+      unawaited(pollIncomingRide(wsClient));
+      unawaited(checkForActiveRide());
+    };
+  }
+
+  /// Registers handlers on an externally owned [WsDispatcher]. Use this in
+  /// tests or in higher-level coordinators that want one dispatcher
+  /// instance shared across multiple notifiers.
+  void setupWsDispatcher(WsDispatcher dispatcher) {
+    debugPrint('[D-Home] setupWsDispatcher: registering handlers');
+    _unsubscribeHandlersOnly();
+
+    _wsDisposers.add(dispatcher.on<WsEventRideRequested>(
+      WsEventType.rideRequested,
+      (offer) {
+        debugPrint('[D-Home] WS rideRequested: rideId=${offer.rideId}');
+        onRideOffer?.call(offer);
+      },
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideOfferExpired>(
+      WsEventType.rideOfferExpired,
+      (e) {
+        debugPrint('[D-Home] WS rideOfferExpired: rideId=${e.rideId}');
+        onOfferExpired?.call(e.rideId);
+      },
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideStatusChanged>(
+      WsEventType.rideStatusChanged,
+      (e) {
+        final status = _parseRideStatus(e.status.toString());
+        debugPrint('[D-Home] WS rideStatusChanged: rideId=${e.rideId}, status=$status');
+        if (status != null) onStatusChanged?.call(e.rideId, status);
+      },
+    ));
+    _wsDisposers.add(dispatcher.on<WsEventRideCancelled>(
+      WsEventType.rideCancelled,
+      (e) {
+        debugPrint('[D-Home] WS rideCancelled: rideId=${e.rideId}');
+        onRideCancelled?.call(e.rideId);
+      },
+    ));
   }
 
   /// Connects the WebSocket client. Should be called after authentication.
   /// Skips if already connected (e.g., splash screen handled it).
   Future<void> connectWebSocket(WsClient wsClient) async {
     if (wsClient.isConnected) {
-      debugPrint('[DRIVER] WebSocket already connected, skipping reconnect');
+      debugPrint('[D-Home] connectWebSocket: already connected, reusing');
       // Still set up listener and poll for missed offers.
       setupWsListener(wsClient);
       await pollIncomingRide(wsClient);
       return;
     }
+    debugPrint('[D-Home] connectWebSocket: connecting...');
     try {
       final tokenStorage = ref.read(tokenStorageProvider);
       final accessToken = await tokenStorage.getAccessToken();
@@ -108,13 +165,16 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
           baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
           accessToken: accessToken,
         );
+        debugPrint('[D-Home] connectWebSocket: connected, setting up listener');
         setupWsListener(wsClient);
         // Missed offer recovery: poll for incoming ride after WS reconnect.
         await pollIncomingRide(wsClient);
+      } else {
+        debugPrint('[D-Home] connectWebSocket: no access token, skipping');
       }
     } catch (e) {
       // WS connection failure is not fatal — will retry on next init.
-      debugPrint('WS connection failed: $e');
+      debugPrint('[D-Home] connectWebSocket failed: $e');
     }
   }
 
@@ -188,109 +248,15 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     }
   }
 
-  void _handleWsEvent(WsEvent event) {
-    switch (event.type) {
-      case WsEventNames.rideRequested:
-        final offer = _parseRideRequested(event.payload);
-        if (offer != null) onRideOffer?.call(offer);
-        break;
-      case WsEventNames.rideOfferExpired:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        onOfferExpired?.call(rideId);
-        break;
-      case WsEventNames.rideStatusChanged:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        final statusStr = event.payload['status'] as String? ?? '';
-        final status = _parseRideStatus(statusStr);
-        if (status != null) onStatusChanged?.call(rideId, status);
-        break;
-      case WsEventNames.rideCancelled:
-        final rideId = event.payload['ride_id'] as String? ?? '';
-        onRideCancelled?.call(rideId);
-        break;
-    }
-  }
-
-  WsEventRideRequested? _parseRideRequested(Map<String, dynamic> payload) {
-    try {
-      debugPrint('[DRIVER] _parseRideRequested payload: $payload');
-
-      final rideId = payload['ride_id'] as String?;
-      if (rideId == null || rideId.isEmpty) {
-        debugPrint('[DRIVER] Missing ride_id in payload');
-        return null;
-      }
-
-      // Parse passenger profile
-      final passengerData = payload['passenger'] as Map<String, dynamic>?;
-      final roleStr = (passengerData?['role'] as String?) ?? 'passenger';
-      final passengerRole = UserProfileRoleEnum.valueOf(roleStr);
-
-      // Parse createdAt - use current time as fallback if not present
-      DateTime createdAt;
-      try {
-        final createdAtStr = passengerData?['created_at'] as String?;
-        createdAt = createdAtStr != null
-            ? DateTime.parse(createdAtStr)
-            : DateTime.now();
-      } catch (_) {
-        createdAt = DateTime.now();
-      }
-
-      final passenger = $UserProfile(
-        (pb) => pb
-          ..id = (passengerData?['id'] as String?) ?? ''
-          ..name = (passengerData?['name'] as String?) ?? 'Unknown'
-          ..email = (passengerData?['email'] as String?) ?? ''
-          ..role = passengerRole
-          ..createdAt = createdAt,
-      );
-
-      // Parse origin coordinates
-      final originData = payload['origin'] as Map<String, dynamic>?;
-      final originLat = (originData?['lat'] as num?)?.toDouble() ?? 0.0;
-      final originLng = (originData?['lng'] as num?)?.toDouble() ?? 0.0;
-
-      // Parse destination coordinates
-      final destData = payload['destination'] as Map<String, dynamic>?;
-      final destLat = (destData?['lat'] as num?)?.toDouble() ?? 0.0;
-      final destLng = (destData?['lng'] as num?)?.toDouble() ?? 0.0;
-
-      // Parse expires_at
-      final expiresAtStr = payload['expires_at'] as String?;
-      final expiresAt = expiresAtStr != null
-          ? DateTime.parse(expiresAtStr)
-          : DateTime.now().add(const Duration(minutes: 5));
-
-      final offer = WsEventRideRequested(
-        (b) => b
-          ..rideId = rideId
-          ..passenger = passenger
-          ..origin = (LatLngBuilder()
-            ..lat = originLat
-            ..lng = originLng)
-          ..destination = (LatLngBuilder()
-            ..lat = destLat
-            ..lng = destLng)
-          ..originAddress = (payload['origin_address'] as String?) ?? ''
-          ..destinationAddress =
-              (payload['destination_address'] as String?) ?? ''
-          ..notes = (payload['notes'] as String?) ?? ''
-          ..expiresAt = expiresAt,
-      );
-
-      debugPrint('[DRIVER] Successfully parsed ride request: $rideId');
-      return offer;
-    } catch (e, stackTrace) {
-      debugPrint('[DRIVER] Failed to parse ride requested: $e');
-      debugPrint('[DRIVER] Stack trace: $stackTrace');
-      debugPrint('[DRIVER] Payload was: $payload');
-      return null;
-    }
-  }
-
   RideStatus? _parseRideStatus(String s) {
     try {
+      final normalized = s.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+      for (final val in RideStatus.values) {
+        final valNormalized = val.name.toLowerCase().replaceAll('_', '').replaceAll('-', '');
+        if (valNormalized == normalized) {
+          return val;
+        }
+      }
       return RideStatus.valueOf(s);
     } catch (_) {
       return null;
@@ -308,6 +274,22 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
     state = state.copyWith(loading: true, errorMessage: null);
 
     try {
+      if (kIsWeb && isE2EMode()) {
+        state = state.copyWith(
+          online: targetOnline,
+          loading: false,
+          status: targetOnline
+              ? DriverSessionStatus.online
+              : DriverSessionStatus.offline,
+        );
+        if (targetOnline) {
+          _startIncomingRidePolling();
+        } else {
+          _stopIncomingRidePolling();
+        }
+        return;
+      }
+
       if (targetOnline) {
         debugPrint('[DRIVER] Calling goOnline()...');
         await repo.goOnline();
@@ -345,6 +327,7 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// Starts GPS tracking (always runs, regardless of online status).
   /// Position updates the marker; backend updates only happen when online.
   void startGpsTracking() {
+    debugPrint('[D-Home] startGpsTracking');
     _stopGpsStreaming();
     _gpsTimer = Timer.periodic(
       const Duration(seconds: 4),
@@ -363,8 +346,11 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
   /// WS is the primary path — polling is a safety net for mobile network unreliability.
   void _startIncomingRidePolling() {
     _stopIncomingRidePolling();
+    final interval = (kIsWeb && isE2EMode())
+        ? const Duration(seconds: 2)
+        : const Duration(seconds: 15);
     _incomingRidePollTimer = Timer.periodic(
-      const Duration(seconds: 15),
+      interval,
       (_) => _pollIncomingRideOnce(),
     );
     // Poll immediately when starting.
@@ -473,16 +459,29 @@ class DriverHomeNotifier extends Notifier<DriverHomeState> {
 
   void clearError() {
     if (state.errorMessage != null) {
+      debugPrint('[D-Home] clearError');
       state = state.copyWith(errorMessage: null);
     }
   }
 
   void unsubscribeWs() {
+    debugPrint('[D-Home] unsubscribeWs');
     _unsubscribeWs();
   }
 
+  void _unsubscribeHandlersOnly() {
+    for (final dispose in _wsDisposers) {
+      dispose();
+    }
+    _wsDisposers.clear();
+  }
+
   void _unsubscribeWs() {
-    _wsSubscription?.cancel();
-    _wsSubscription = null;
+    _unsubscribeHandlersOnly();
+    final owned = _ownedDispatcher;
+    if (owned != null) {
+      unawaited(owned.dispose());
+      _ownedDispatcher = null;
+    }
   }
 }

@@ -33,6 +33,10 @@ const STATUS_MAP: Record<string, Variant> = {
   offline: 'default',
   refunded: 'default',
   default: 'default',
+
+  // Origin / source labels
+  system: 'info',
+  custom: 'default',
 };
 
 interface StatusBadgeProps {
@@ -40,7 +44,11 @@ interface StatusBadgeProps {
   label?: string;
 }
 
+function titleCase(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function StatusBadge({ status, label }: StatusBadgeProps) {
   const variant = STATUS_MAP[status.toLowerCase()] ?? 'default';
-  return <Badge variant={variant}>{label ?? status}</Badge>;
+  return <Badge variant={variant}>{label ?? titleCase(status)}</Badge>;
 }

@@ -25,15 +25,6 @@ class CancelledRideRepositoryImpl implements CancelledRideRepository {
       }
       return CancellationDetails.fromRideResponse(data);
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails.
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        final data = e.response?.data;
-        if (data is Map<String, dynamic>) {
-          final ride = _rideFromJson(data);
-          return CancellationDetails.fromRideResponse(ride);
-        }
-      }
       throw _fromDio(e);
     }
   }
@@ -48,27 +39,23 @@ class CancelledRideRepositoryImpl implements CancelledRideRepository {
       '[CANCELLED_RIDE_REPO] Cancelling ride: $rideId, reasonCode: $reasonCode',
     );
     try {
-      // Send cancellation request with reason_code and reason_text directly
-      // using Dio to bypass stale generated CancelRequest model
-      final dio = _client.dio;
-      final response = await dio.post(
-        '/rides/$rideId/cancel',
-        data: <String, dynamic>{
-          'reason_code': reasonCode,
-          // ignore: use_null_aware_elements
-          if (reasonText != null) 'reason_text': reasonText,
-        },
+      final request = CancelRequest(
+        (b) => b
+          ..reasonCode = reasonCode != null
+              ? CancelRequestReasonCodeEnum.valueOf(reasonCode)
+              : CancelRequestReasonCodeEnum.other
+          ..reasonText = reasonText,
       );
-      debugPrint(
-        '[CANCELLED_RIDE_REPO] Cancel ride succeeded (HTTP ${response.statusCode})',
+
+      await _client.getRidesApi().rideCancel(
+        rideId: rideId,
+        cancelRequest: request,
       );
+      debugPrint('[CANCELLED_RIDE_REPO] Cancel ride succeeded');
     } on DioException catch (e) {
       debugPrint(
         '[CANCELLED_RIDE_REPO] Cancel ride failed (Dio): ${e.response?.statusCode} ${e.message}',
       );
-      if (e.response?.data != null) {
-        debugPrint('[CANCELLED_RIDE_REPO] Error body: ${e.response?.data}');
-      }
       throw _fromDio(e);
     } catch (e, st) {
       debugPrint('[CANCELLED_RIDE_REPO] Cancel ride failed (Unexpected): $e');
@@ -130,30 +117,4 @@ class CancelledRideRepositoryImpl implements CancelledRideRepository {
   }
 
   // ── Fallback JSON parsing for when generated client fails on 2xx ───────
-
-  RideResponse _rideFromJson(Map<String, dynamic> json) {
-    return $RideResponse(
-      (b) => b
-        ..id = json['id'] as String
-        ..status = RideStatus.valueOf(json['status'] as String)
-        ..origin.replace(
-          LatLng(
-            (ob) => ob
-              ..lat = (json['origin']['lat'] as num).toDouble()
-              ..lng = (json['origin']['lng'] as num).toDouble(),
-          ),
-        )
-        ..destination.replace(
-          LatLng(
-            (db) => db
-              ..lat = (json['destination']['lat'] as num).toDouble()
-              ..lng = (json['destination']['lng'] as num).toDouble(),
-          ),
-        )
-        ..originAddress = json['origin_address'] as String?
-        ..destinationAddress = json['destination_address'] as String?
-        ..createdAt = DateTime.parse(json['created_at'] as String)
-        ..updatedAt = DateTime.parse(json['updated_at'] as String),
-    );
-  }
 }

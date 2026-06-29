@@ -44,6 +44,9 @@ class _FakeDriverAuthRepository implements DriverAuthRepository {
 
   @override
   Future<void> logout({required String refreshToken}) async {}
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 void main() {

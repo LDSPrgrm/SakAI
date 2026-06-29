@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart' show apiClientProvider;
+import '../models/driver_rating_exception.dart';
 import '../models/driver_rating_state.dart' as local;
 import '../repositories/driver_rating_repository.dart';
 import '../repositories/driver_rating_repository_impl.dart';
@@ -63,7 +64,13 @@ class DriverRatingNotifier extends Notifier<local.DriverRatingState> {
         secondsRemaining: 15,
       );
       return true;
-    } catch (e) {
+    } on DriverRatingException catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        error: e.userMessage,
+      );
+      return false;
+    } catch (_) {
       state = state.copyWith(
         isSubmitting: false,
         error: 'Failed to submit rating. Please try again.',

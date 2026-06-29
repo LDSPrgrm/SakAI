@@ -10,22 +10,36 @@ All URIs are relative to *http://localhost:8080/api*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**adminApprovePayout**](AdminApi.md#adminapprovepayout) | **PUT** /admin/payments/payouts/{id}/approve | Approve a driver payout
+[**adminAssignIncident**](AdminApi.md#adminassignincident) | **PUT** /admin/incidents/{id}/assign | Reassign an incident
 [**adminAuditExport**](AdminApi.md#adminauditexport) | **GET** /admin/audit/export | Export audit log as CSV
 [**adminBatchApprovePayouts**](AdminApi.md#adminbatchapprovepayouts) | **POST** /admin/payments/payouts/approve | Batch approve driver payouts
 [**adminBatchKyc**](AdminApi.md#adminbatchkyc) | **POST** /admin/safety/kyc/batch | Batch approve or reject KYC submissions
 [**adminChangePassword**](AdminApi.md#adminchangepassword) | **PUT** /admin/auth/password | Change own password
+[**adminCreateAlertRule**](AdminApi.md#admincreatealertrule) | **POST** /admin/alerts/rules | Create an alert rule
+[**adminCreateAuditEntry**](AdminApi.md#admincreateauditentry) | **POST** /admin/audit | Write an audit log entry
+[**adminCreateLGUPartnership**](AdminApi.md#admincreatelgupartnership) | **POST** /admin/lgu-partnerships | Create an LGU partnership
 [**adminCreateRole**](AdminApi.md#admincreaterole) | **POST** /admin/roles | Create a custom role
+[**adminCreateServiceArea**](AdminApi.md#admincreateservicearea) | **POST** /admin/service-areas | Create a service area
 [**adminCreateUser**](AdminApi.md#admincreateuser) | **POST** /admin/users | Create a new administrator
 [**adminDeactivateUser**](AdminApi.md#admindeactivateuser) | **DELETE** /admin/users/{id} | Deactivate an administrator
+[**adminDeleteAlertRule**](AdminApi.md#admindeletealertrule) | **DELETE** /admin/alerts/rules/{id} | Delete an alert rule
+[**adminDeleteLGUPartnership**](AdminApi.md#admindeletelgupartnership) | **DELETE** /admin/lgu-partnerships/{id} | Delete an LGU partnership
 [**adminDeleteRole**](AdminApi.md#admindeleterole) | **DELETE** /admin/roles/{id} | Delete a role
+[**adminDeleteServiceArea**](AdminApi.md#admindeleteservicearea) | **DELETE** /admin/service-areas/{id} | Delete a service area
+[**adminDriverHeatmap**](AdminApi.md#admindriverheatmap) | **GET** /admin/drivers/heatmap | Driver supply heatmap
+[**adminDuplicateRole**](AdminApi.md#adminduplicaterole) | **POST** /admin/roles/{id}/duplicate | Duplicate a role
 [**adminExportReport**](AdminApi.md#adminexportreport) | **POST** /admin/reports/export/{type} | Generate a report export
 [**adminGetCommissionConfig**](AdminApi.md#admingetcommissionconfig) | **GET** /admin/payments/commission-config | Get commission configuration
 [**adminGetCompliance**](AdminApi.md#admingetcompliance) | **GET** /admin/safety/compliance | LTFRB compliance dashboard data
 [**adminGetDashboard**](AdminApi.md#admingetdashboard) | **GET** /admin/dashboard | Get platform dashboard metrics
 [**adminGetFares**](AdminApi.md#admingetfares) | **GET** /admin/fares | Get fare configurations
 [**adminGetFeatureFlags**](AdminApi.md#admingetfeatureflags) | **GET** /admin/system/feature-flags | Get all feature flags
+[**adminGetIncident**](AdminApi.md#admingetincident) | **GET** /admin/incidents/{id} | Get incident detail with SOS status-history timeline
+[**adminGetInfraMetrics**](AdminApi.md#admingetinframetrics) | **GET** /admin/system/infra-metrics | Get infrastructure performance metrics
 [**adminGetIntegrations**](AdminApi.md#admingetintegrations) | **GET** /admin/system/integrations | Get 3rd party integrations
 [**adminGetKycQueue**](AdminApi.md#admingetkycqueue) | **GET** /admin/safety/kyc | Get KYC queue
+[**adminGetLGUPartnership**](AdminApi.md#admingetlgupartnership) | **GET** /admin/lgu-partnerships/{id} | Get an LGU partnership
+[**adminGetMyPermissions**](AdminApi.md#admingetmypermissions) | **GET** /admin/me/permissions | Get the authenticated admin&#39;s own role and permissions
 [**adminGetNotificationTemplates**](AdminApi.md#admingetnotificationtemplates) | **GET** /admin/system/notification-templates | Get notification templates
 [**adminGetPaymentConfig**](AdminApi.md#admingetpaymentconfig) | **GET** /admin/payments/config | Get payment gateway configurations
 [**adminGetPaymentSummary**](AdminApi.md#admingetpaymentsummary) | **GET** /admin/payments/summary | Get financial summary
@@ -39,31 +53,40 @@ Method | HTTP request | Description
 [**adminGetSurge**](AdminApi.md#admingetsurge) | **GET** /admin/fares/surge | Get surge pricing configuration
 [**adminGetTransactions**](AdminApi.md#admingettransactions) | **GET** /admin/payments/transactions | Get recent transactions
 [**adminGetUserActivity**](AdminApi.md#admingetuseractivity) | **GET** /admin/users/{id}/activity | Get admin activity log
+[**adminListAlertEvents**](AdminApi.md#adminlistalertevents) | **GET** /admin/alerts/events | List recent alert events
+[**adminListAlertRules**](AdminApi.md#adminlistalertrules) | **GET** /admin/alerts/rules | List alert rules
 [**adminListAudit**](AdminApi.md#adminlistaudit) | **GET** /admin/audit | List audit logs
 [**adminListDrivers**](AdminApi.md#adminlistdrivers) | **GET** /admin/users/drivers | List all drivers
 [**adminListIncidents**](AdminApi.md#adminlistincidents) | **GET** /admin/incidents | List system incidents
+[**adminListLGUPartnerships**](AdminApi.md#adminlistlgupartnerships) | **GET** /admin/lgu-partnerships | List LGU partnerships
 [**adminListPassengers**](AdminApi.md#adminlistpassengers) | **GET** /admin/users/passengers | List all passengers
 [**adminListRides**](AdminApi.md#adminlistrides) | **GET** /admin/rides | List all rides (Admin Browse)
 [**adminListRoles**](AdminApi.md#adminlistroles) | **GET** /admin/roles | List all roles
+[**adminListServiceAreas**](AdminApi.md#adminlistserviceareas) | **GET** /admin/service-areas | List service areas (admin — includes inactive)
 [**adminListUsers**](AdminApi.md#adminlistusers) | **GET** /admin/users | List all administrators
 [**adminMetricsDrivers**](AdminApi.md#adminmetricsdrivers) | **GET** /admin/metrics/drivers | Active driver count with trend
 [**adminMetricsRevenue**](AdminApi.md#adminmetricsrevenue) | **GET** /admin/metrics/revenue | Revenue for a period (PHP)
 [**adminMetricsRiders**](AdminApi.md#adminmetricsriders) | **GET** /admin/metrics/riders | Active rider count with trend
 [**adminMetricsRides**](AdminApi.md#adminmetricsrides) | **GET** /admin/metrics/rides | Ride count for a period
 [**adminMetricsWaitTime**](AdminApi.md#adminmetricswaittime) | **GET** /admin/metrics/wait-time | Average wait time stats
+[**adminResetUserPassword**](AdminApi.md#adminresetuserpassword) | **PUT** /admin/users/{id}/password | Reset another admin&#39;s password
 [**adminResolveIncident**](AdminApi.md#adminresolveincident) | **PUT** /admin/incidents/{id}/resolve | Resolve an incident
 [**adminSimulateFare**](AdminApi.md#adminsimulatefare) | **POST** /admin/fares/simulate | Simulate a ride fare
 [**adminTestIntegration**](AdminApi.md#admintestintegration) | **POST** /admin/system/integrations/{service}/test | Test integration health
+[**adminUpdateAlertRule**](AdminApi.md#adminupdatealertrule) | **PUT** /admin/alerts/rules/{id} | Update an alert rule
 [**adminUpdateCommissionConfig**](AdminApi.md#adminupdatecommissionconfig) | **PUT** /admin/payments/commission-config | Update commission configuration
 [**adminUpdateFares**](AdminApi.md#adminupdatefares) | **PUT** /admin/fares | Update base fares
 [**adminUpdateFeatureFlag**](AdminApi.md#adminupdatefeatureflag) | **PUT** /admin/system/feature-flags/{key} | Update a feature flag
 [**adminUpdateIntegration**](AdminApi.md#adminupdateintegration) | **PUT** /admin/system/integrations/{service} | Update integration settings
 [**adminUpdateKycStatus**](AdminApi.md#adminupdatekycstatus) | **PUT** /admin/safety/kyc/{id} | Update KYC status
+[**adminUpdateLGUPartnership**](AdminApi.md#adminupdatelgupartnership) | **PUT** /admin/lgu-partnerships/{id} | Update an LGU partnership
 [**adminUpdateNotificationTemplate**](AdminApi.md#adminupdatenotificationtemplate) | **PUT** /admin/system/notification-templates/{event} | Update a notification template
 [**adminUpdatePaymentConfig**](AdminApi.md#adminupdatepaymentconfig) | **PUT** /admin/payments/config/{provider} | Update payment gateway config
 [**adminUpdateRole**](AdminApi.md#adminupdaterole) | **PUT** /admin/roles/{id} | Update role
+[**adminUpdateServiceArea**](AdminApi.md#adminupdateservicearea) | **PUT** /admin/service-areas/{id} | Update a service area
 [**adminUpdateSurge**](AdminApi.md#adminupdatesurge) | **PUT** /admin/surge | Update surge configuration
 [**adminUpdateUser**](AdminApi.md#adminupdateuser) | **PUT** /admin/users/{id} | Update administrator status
+[**listAssigneeCandidates**](AdminApi.md#listassigneecandidates) | **GET** /admin/support-staff | List candidate assignees for incident reassignment
 
 
 # **adminApprovePayout**
@@ -104,6 +127,50 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminAssignIncident**
+> adminAssignIncident(id, adminAssignIncidentRequest)
+
+Reassign an incident
+
+Sets `assigned_to`. The DB trigger records the change in incident_status_history so the timeline reflects the reassignment. Body `{\"assignee_id\": \"<uuid>\" | null}`. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final AdminAssignIncidentRequest adminAssignIncidentRequest = ; // AdminAssignIncidentRequest | 
+
+try {
+    api.adminAssignIncident(id, adminAssignIncidentRequest);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminAssignIncident: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **adminAssignIncidentRequest** | [**AdminAssignIncidentRequest**](AdminAssignIncidentRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -199,6 +266,8 @@ Name | Type | Description  | Notes
 
 Batch approve or reject KYC submissions
 
+Processes multiple driver KYC submissions in a single batch operation.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -277,6 +346,134 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminCreateAlertRule**
+> AlertRule adminCreateAlertRule(alertRuleInput)
+
+Create an alert rule
+
+Creates a new alert rule. Once active, matching metric conditions will generate alert events consumed by the admin alerts tab. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final AlertRuleInput alertRuleInput = ; // AlertRuleInput | 
+
+try {
+    final response = api.adminCreateAlertRule(alertRuleInput);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCreateAlertRule: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **alertRuleInput** | [**AlertRuleInput**](AlertRuleInput.md)|  | 
+
+### Return type
+
+[**AlertRule**](AlertRule.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminCreateAuditEntry**
+> adminCreateAuditEntry(createAuditEntryRequest)
+
+Write an audit log entry
+
+Records an admin action in the audit trail. Called by the frontend after high-impact mutations (fare changes, role edits, payout approvals). Requires any admin role. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final CreateAuditEntryRequest createAuditEntryRequest = ; // CreateAuditEntryRequest | 
+
+try {
+    api.adminCreateAuditEntry(createAuditEntryRequest);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCreateAuditEntry: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **createAuditEntryRequest** | [**CreateAuditEntryRequest**](CreateAuditEntryRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminCreateLGUPartnership**
+> LGUPartnership adminCreateLGUPartnership(lGUPartnershipInput)
+
+Create an LGU partnership
+
+Registers a new LGU partnership, optionally linking it to an existing service area via `service_area_id`. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final LGUPartnershipInput lGUPartnershipInput = ; // LGUPartnershipInput | 
+
+try {
+    final response = api.adminCreateLGUPartnership(lGUPartnershipInput);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCreateLGUPartnership: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **lGUPartnershipInput** | [**LGUPartnershipInput**](LGUPartnershipInput.md)|  | 
+
+### Return type
+
+[**LGUPartnership**](LGUPartnership.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminCreateRole**
 > Role adminCreateRole(createRoleRequest)
 
@@ -308,6 +505,49 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**Role**](Role.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminCreateServiceArea**
+> ServiceArea adminCreateServiceArea(serviceAreaInput)
+
+Create a service area
+
+Creates a new service area with an associated boundary polygon. The boundary is reused by the fare calculator for point-in-polygon origin lookups. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final ServiceAreaInput serviceAreaInput = ; // ServiceAreaInput | 
+
+try {
+    final response = api.adminCreateServiceArea(serviceAreaInput);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminCreateServiceArea: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **serviceAreaInput** | [**ServiceAreaInput**](ServiceAreaInput.md)|  | 
+
+### Return type
+
+[**ServiceArea**](ServiceArea.md)
 
 ### Authorization
 
@@ -405,6 +645,90 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminDeleteAlertRule**
+> adminDeleteAlertRule(id)
+
+Delete an alert rule
+
+Permanently removes an alert rule. Historical alert events raised by the rule are retained. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    api.adminDeleteAlertRule(id);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminDeleteAlertRule: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminDeleteLGUPartnership**
+> adminDeleteLGUPartnership(id)
+
+Delete an LGU partnership
+
+Permanently removes an LGU partnership record. Does not affect the linked service area. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    api.adminDeleteLGUPartnership(id);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminDeleteLGUPartnership: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminDeleteRole**
 > adminDeleteRole(id)
 
@@ -435,6 +759,130 @@ Name | Type | Description  | Notes
 ### Return type
 
 void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminDeleteServiceArea**
+> adminDeleteServiceArea(id)
+
+Delete a service area
+
+Permanently removes a service area. Any LGU partnerships pointing at this area have their `service_area_id` cleared. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    api.adminDeleteServiceArea(id);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminDeleteServiceArea: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminDriverHeatmap**
+> DriverHeatmap adminDriverHeatmap()
+
+Driver supply heatmap
+
+One position per online driver with last-known PostGIS coordinates, vehicle type, and ride availability. Returned bounds are the actual extents of the positions (Metro Manila default if list is empty). 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminDriverHeatmap();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminDriverHeatmap: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**DriverHeatmap**](DriverHeatmap.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminDuplicateRole**
+> Role adminDuplicateRole(id)
+
+Duplicate a role
+
+Creates a copy of the given role with \"Copy of [name]\" as the new name. Permissions are copied verbatim. The new role is not a system role. Requires Superadmin role. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    final response = api.adminDuplicateRole(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminDuplicateRole: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**Role**](Role.md)
 
 ### Authorization
 
@@ -533,6 +981,8 @@ This endpoint does not need any parameter.
 > ComplianceData adminGetCompliance()
 
 LTFRB compliance dashboard data
+
+Returns aggregated metrics and stats for LTFRB compliance reporting.
 
 ### Example
 ```dart
@@ -683,6 +1133,88 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminGetIncident**
+> IncidentDetail adminGetIncident(id)
+
+Get incident detail with SOS status-history timeline
+
+Returns the full incident record plus the ordered status-history timeline for a single SOS/incident, used by the admin incident detail modal. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    final response = api.adminGetIncident(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminGetIncident: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**IncidentDetail**](IncidentDetail.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminGetInfraMetrics**
+> InfraMetrics adminGetInfraMetrics()
+
+Get infrastructure performance metrics
+
+Aggregated p50/p95 request latency, WebSocket connection count, and DB query p99 latency used by the System Health page. Values are derived from the perf-timing middleware and health-probe goroutine — no more hardcoded SystemHealth.tsx constants. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminGetInfraMetrics();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminGetInfraMetrics: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**InfraMetrics**](InfraMetrics.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminGetIntegrations**
 > BuiltList<Integration> adminGetIntegrations()
 
@@ -749,6 +1281,88 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**BuiltList&lt;KycEntry&gt;**](KycEntry.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminGetLGUPartnership**
+> LGUPartnership adminGetLGUPartnership(id)
+
+Get an LGU partnership
+
+Returns a single LGU partnership record by id, including linked service area and contact details. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+
+try {
+    final response = api.adminGetLGUPartnership(id);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminGetLGUPartnership: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+
+### Return type
+
+[**LGUPartnership**](LGUPartnership.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminGetMyPermissions**
+> Role adminGetMyPermissions()
+
+Get the authenticated admin's own role and permissions
+
+Returns the caller's role (id, name, permissions) used by the admin app to drive sidebar visibility and write-gating. No specific role is required: any authenticated user may call this for themselves. Users with no assigned role_id (e.g. passengers/drivers that reach this endpoint) receive a role envelope with an empty permissions array. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminGetMyPermissions();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminGetMyPermissions: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**Role**](Role.md)
 
 ### Authorization
 
@@ -1004,6 +1618,8 @@ This endpoint does not need any parameter.
 
 Get role with permissions
 
+Returns the details of a specific role, including its associated permissions.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -1045,6 +1661,8 @@ Name | Type | Description  | Notes
 
 List admins assigned to a role
 
+Returns a list of administrators who have been assigned the specified role.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -1085,6 +1703,8 @@ Name | Type | Description  | Notes
 > BuiltList<RolePermission> adminGetRolePermissions(id)
 
 Get permission set for a role
+
+Returns the list of permissions assigned to the specified role.
 
 ### Example
 ```dart
@@ -1165,6 +1785,8 @@ This endpoint does not need any parameter.
 > SurgeConfig adminGetSurge()
 
 Get surge pricing configuration
+
+Returns the current global surge pricing settings and multipliers.
 
 ### Example
 ```dart
@@ -1280,8 +1902,90 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminListAlertEvents**
+> BuiltList<AlertEvent> adminListAlertEvents(limit)
+
+List recent alert events
+
+Returns the most recent alert events raised by configured rules, newest first, capped by the optional `limit` query parameter. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final int limit = 56; // int | 
+
+try {
+    final response = api.adminListAlertEvents(limit);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminListAlertEvents: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **limit** | **int**|  | [optional] [default to 100]
+
+### Return type
+
+[**BuiltList&lt;AlertEvent&gt;**](AlertEvent.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminListAlertRules**
+> BuiltList<AlertRule> adminListAlertRules()
+
+List alert rules
+
+Returns all configured alert rules evaluated against platform metrics (e.g. cancellation spikes, driver supply drops). 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminListAlertRules();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminListAlertRules: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**BuiltList&lt;AlertRule&gt;**](AlertRule.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminListAudit**
-> AuditLogResponse adminListAudit()
+> AuditLogResponse adminListAudit(limit, offset, actorId)
 
 List audit logs
 
@@ -1292,9 +1996,12 @@ Requires Superadmin role.
 import 'package:sakai_api_client/api.dart';
 
 final api = SakaiApiClient().getAdminApi();
+final int limit = 56; // int | 
+final int offset = 56; // int | 
+final String actorId = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | Filter entries to those created by this admin UUID
 
 try {
-    final response = api.adminListAudit();
+    final response = api.adminListAudit(limit, offset, actorId);
     print(response);
 } on DioException catch (e) {
     print('Exception when calling AdminApi->adminListAudit: $e\n');
@@ -1302,7 +2009,12 @@ try {
 ```
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **limit** | **int**|  | [optional] [default to 50]
+ **offset** | **int**|  | [optional] [default to 0]
+ **actorId** | **String**| Filter entries to those created by this admin UUID | [optional] 
 
 ### Return type
 
@@ -1397,6 +2109,45 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**BuiltList&lt;Incident&gt;**](Incident.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminListLGUPartnerships**
+> BuiltList<LGUPartnership> adminListLGUPartnerships()
+
+List LGU partnerships
+
+Returns all Local Government Unit (LGU) partnership records used to track compliance engagements and contact info per city or municipality. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminListLGUPartnerships();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminListLGUPartnerships: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**BuiltList&lt;LGUPartnership&gt;**](LGUPartnership.md)
 
 ### Authorization
 
@@ -1542,6 +2293,45 @@ This endpoint does not need any parameter.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminListServiceAreas**
+> BuiltList<ServiceArea> adminListServiceAreas()
+
+List service areas (admin — includes inactive)
+
+Returns every configured service area, including inactive ones, for admin management views. Unlike the public list, this endpoint does not filter by `active` status. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.adminListServiceAreas();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminListServiceAreas: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**BuiltList&lt;ServiceArea&gt;**](ServiceArea.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminListUsers**
 > BuiltList<UserProfile> adminListUsers()
 
@@ -1586,6 +2376,8 @@ This endpoint does not need any parameter.
 
 Active driver count with trend
 
+Returns the current number of active drivers and the trend compared to the previous period.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -1622,6 +2414,8 @@ This endpoint does not need any parameter.
 > MetricResponse adminMetricsRevenue(period)
 
 Revenue for a period (PHP)
+
+Returns the total revenue generated within the specified period in Philippine Pesos.
 
 ### Example
 ```dart
@@ -1664,6 +2458,8 @@ Name | Type | Description  | Notes
 
 Active rider count with trend
 
+Returns the current number of active riders and the trend compared to the previous period.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -1700,6 +2496,8 @@ This endpoint does not need any parameter.
 > MetricResponse adminMetricsRides(period)
 
 Ride count for a period
+
+Returns the total number of rides completed within the specified period.
 
 ### Example
 ```dart
@@ -1742,6 +2540,8 @@ Name | Type | Description  | Notes
 
 Average wait time stats
 
+Returns the average wait time for passengers across the platform.
+
 ### Example
 ```dart
 import 'package:sakai_api_client/api.dart';
@@ -1770,6 +2570,50 @@ This endpoint does not need any parameter.
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminResetUserPassword**
+> adminResetUserPassword(id, resetPasswordRequest)
+
+Reset another admin's password
+
+Superadmin sets a new password for another admin account. Distinct from `PUT /admin/auth/password` which is self-service. Requires Superadmin role. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final ResetPasswordRequest resetPasswordRequest = ; // ResetPasswordRequest | 
+
+try {
+    api.adminResetUserPassword(id, resetPasswordRequest);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminResetUserPassword: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **resetPasswordRequest** | [**ResetPasswordRequest**](ResetPasswordRequest.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -1901,6 +2745,50 @@ Name | Type | Description  | Notes
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **adminUpdateAlertRule**
+> adminUpdateAlertRule(id, alertRuleInput)
+
+Update an alert rule
+
+Updates the threshold, severity, or enabled flag of an existing alert rule. Historical alert events are not modified. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final AlertRuleInput alertRuleInput = ; // AlertRuleInput | 
+
+try {
+    api.adminUpdateAlertRule(id, alertRuleInput);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminUpdateAlertRule: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **alertRuleInput** | [**AlertRuleInput**](AlertRuleInput.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -2120,6 +3008,50 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminUpdateLGUPartnership**
+> adminUpdateLGUPartnership(id, lGUPartnershipInput)
+
+Update an LGU partnership
+
+Updates LGU partnership fields such as status, contact info, or linked service area. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final LGUPartnershipInput lGUPartnershipInput = ; // LGUPartnershipInput | 
+
+try {
+    api.adminUpdateLGUPartnership(id, lGUPartnershipInput);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminUpdateLGUPartnership: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **lGUPartnershipInput** | [**LGUPartnershipInput**](LGUPartnershipInput.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminUpdateNotificationTemplate**
 > adminUpdateNotificationTemplate(event, adminUpdateNotificationTemplateRequest)
 
@@ -2253,6 +3185,50 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **adminUpdateServiceArea**
+> adminUpdateServiceArea(id, serviceAreaInput)
+
+Update a service area
+
+Updates the name, LGU code, boundary polygon, and/or active flag of an existing service area. Boundary changes take effect on the next fare calculation. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+final String id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final ServiceAreaInput serviceAreaInput = ; // ServiceAreaInput | 
+
+try {
+    api.adminUpdateServiceArea(id, serviceAreaInput);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->adminUpdateServiceArea: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **String**|  | 
+ **serviceAreaInput** | [**ServiceAreaInput**](ServiceAreaInput.md)|  | 
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **adminUpdateSurge**
 > adminUpdateSurge(surgeConfig)
 
@@ -2335,6 +3311,45 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listAssigneeCandidates**
+> BuiltList<ListAssigneeCandidates200ResponseInner> listAssigneeCandidates()
+
+List candidate assignees for incident reassignment
+
+Slim list of admin/support users that may be assigned an incident. Narrower than `/admin/users` (no creation metadata, no password flags) so the route can be exposed to operations and support callers without leaking sensitive admin-account fields. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getAdminApi();
+
+try {
+    final response = api.listAssigneeCandidates();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling AdminApi->listAssigneeCandidates: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**BuiltList&lt;ListAssigneeCandidates200ResponseInner&gt;**](ListAssigneeCandidates200ResponseInner.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

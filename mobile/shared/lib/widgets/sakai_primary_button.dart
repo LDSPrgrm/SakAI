@@ -17,21 +17,35 @@ class SakaiPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = icon != null
+    final scheme = Theme.of(context).colorScheme;
+    final isEnabled = onPressed != null;
+
+    final childWidget = icon != null
         ? Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 20),
               const SizedBox(width: 8),
-              Text(label),
+              Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ],
           )
-        : Text(label);
+        : Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          );
 
     final button = FilledButton(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        elevation: isEnabled ? 4 : 0,
+        shadowColor: scheme.primary.withValues(alpha: 0.25),
+      ),
       onPressed: onPressed,
-      child: child,
+      child: childWidget,
     );
 
     if (expand) {

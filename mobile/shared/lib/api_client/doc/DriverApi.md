@@ -9,15 +9,63 @@ All URIs are relative to *http://localhost:8080/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**adminListDriverRides**](DriverApi.md#adminlistdriverrides) | **GET** /driver/rides | List authenticated driver&#39;s ride history
 [**driverGetDocumentStatus**](DriverApi.md#drivergetdocumentstatus) | **GET** /drivers/documents/{documentId} | Get status of a specific document
 [**driverGetEarnings**](DriverApi.md#drivergetearnings) | **GET** /driver/earnings | Get driver earnings history
 [**driverGetIncomingRide**](DriverApi.md#drivergetincomingride) | **GET** /driver/rides/incoming | Get the current pending ride offer for this driver
+[**driverGetStatus**](DriverApi.md#drivergetstatus) | **GET** /driver/status | Get current driver online/offline status
 [**driverListDocuments**](DriverApi.md#driverlistdocuments) | **GET** /drivers/documents | List all uploaded documents for the authenticated driver
 [**driverSetStatus**](DriverApi.md#driversetstatus) | **PUT** /driver/status | Set driver online/offline status
 [**driverUpdateLocation**](DriverApi.md#driverupdatelocation) | **PUT** /driver/location | Update driver&#39;s current location
 [**driverUploadDocument**](DriverApi.md#driveruploaddocument) | **POST** /drivers/documents | Upload a driver verification document
 [**getNearbyDrivers**](DriverApi.md#getnearbydrivers) | **GET** /drivers/nearby | Get nearby available drivers by ride type
+[**getNearbyDriversAllTypes**](DriverApi.md#getnearbydriversalltypes) | **GET** /drivers/nearby/all | Get all nearby drivers grouping by type
 
+
+# **adminListDriverRides**
+> AdminListDriverRides200Response adminListDriverRides(page, limit)
+
+List authenticated driver's ride history
+
+Returns a paginated list of rides completed or cancelled by the driver.
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final int page = 56; // int | Page number (1-indexed)
+final int limit = 56; // int | Items per page
+
+try {
+    final response = api.adminListDriverRides(page, limit);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->adminListDriverRides: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **page** | **int**| Page number (1-indexed) | [optional] [default to 1]
+ **limit** | **int**| Items per page | [optional] [default to 20]
+
+### Return type
+
+[**AdminListDriverRides200Response**](AdminListDriverRides200Response.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **driverGetDocumentStatus**
 > DriverDocumentResponse driverGetDocumentStatus(documentId)
@@ -138,6 +186,45 @@ This endpoint does not need any parameter.
 ### Return type
 
 [**RideResponse**](RideResponse.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **driverGetStatus**
+> DriverStatusResponse driverGetStatus()
+
+Get current driver online/offline status
+
+Returns the driver's current availability status. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+
+try {
+    final response = api.driverGetStatus();
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->driverGetStatus: $e\n');
+}
+```
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**DriverStatusResponse**](DriverStatusResponse.md)
 
 ### Authorization
 
@@ -360,6 +447,53 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**GetNearbyDrivers200Response**](GetNearbyDrivers200Response.md)
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getNearbyDriversAllTypes**
+> BuiltMap<String, BuiltList<NearbyDriver>> getNearbyDriversAllTypes(lat, lng, radiusM)
+
+Get all nearby drivers grouping by type
+
+Returns aggregated counts and sample locations for all available vehicle types in the vicinity. Used for the initial ride request screen to show available options. 
+
+### Example
+```dart
+import 'package:sakai_api_client/api.dart';
+
+final api = SakaiApiClient().getDriverApi();
+final double lat = 1.2; // double | 
+final double lng = 1.2; // double | 
+final double radiusM = 1.2; // double | 
+
+try {
+    final response = api.getNearbyDriversAllTypes(lat, lng, radiusM);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DriverApi->getNearbyDriversAllTypes: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **lat** | **double**|  | 
+ **lng** | **double**|  | 
+ **radiusM** | **double**|  | [optional] [default to 5000]
+
+### Return type
+
+[**BuiltMap&lt;String, BuiltList&lt;NearbyDriver&gt;&gt;**](BuiltList.md)
 
 ### Authorization
 

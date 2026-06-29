@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { permSummary } from './PermissionGrid';
+import { permSummary } from './permissionGrid.helpers';
 import type { RolePermission } from '@/types/super-admin';
 
 describe('permSummary', () => {

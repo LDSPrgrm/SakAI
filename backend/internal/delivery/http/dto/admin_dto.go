@@ -8,12 +8,24 @@ import (
 )
 
 type DashboardResponse struct {
-	ActiveRiders       int     `json:"active_riders"`
-	ActiveDrivers      int     `json:"active_drivers"`
-	RidesToday         int     `json:"rides_today"`
-	RevenueToday       float64 `json:"revenue_today"`
+	// Raw user counts.
+	TotalRiders  int `json:"total_riders"`
+	TotalDrivers int `json:"total_drivers"`
+	// Last-30-day engagement counts derived from rides.
+	ActiveRiders  int `json:"active_riders"`
+	ActiveDrivers int `json:"active_drivers"`
+
+	RidesToday   int     `json:"rides_today"`
+	RevenueToday float64 `json:"revenue_today"`
+
+	// Wait time shipped in both seconds and minutes — frontend reads minutes,
+	// older clients still read seconds.
 	AvgWaitTimeSeconds float64 `json:"avg_wait_time_seconds"`
-	SystemUptime       float64 `json:"system_uptime"`
+	AvgWaitMinutes     float64 `json:"avg_wait_minutes"`
+
+	// Platform uptime shipped under both keys for the same reason.
+	SystemUptime    float64 `json:"system_uptime"`
+	PlatformUptime  float64 `json:"platform_uptime"`
 }
 
 // UpdateAdminStatusRequest is the body of PUT /admin/users/:id.
@@ -62,6 +74,7 @@ type IncidentDTO struct {
 	RiderID         string     `json:"rider_id"`
 	DriverID        string     `json:"driver_id"`
 	AssignedTo      *string    `json:"assigned_to,omitempty"`
+	AssignedToName  string     `json:"assigned_to_name,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
@@ -69,12 +82,16 @@ type IncidentDTO struct {
 
 func NewDashboardResponse(m *domain.DashboardMetrics) *DashboardResponse {
 	return &DashboardResponse{
+		TotalRiders:        m.TotalRiders,
+		TotalDrivers:       m.TotalDrivers,
 		ActiveRiders:       m.ActiveRiders,
 		ActiveDrivers:      m.ActiveDrivers,
 		RidesToday:         m.RidesToday,
 		RevenueToday:       m.RevenueToday,
 		AvgWaitTimeSeconds: m.AvgWaitTimeSeconds,
+		AvgWaitMinutes:     m.AvgWaitTimeSeconds / 60.0,
 		SystemUptime:       m.SystemUptime,
+		PlatformUptime:     m.SystemUptime,
 	}
 }
 
@@ -95,6 +112,7 @@ func NewIncidentDTO(i *domain.Incident) *IncidentDTO {
 		s := i.AssignedTo.String()
 		dto.AssignedTo = &s
 	}
+	dto.AssignedToName = i.AssignedToName
 	return dto
 }
 
@@ -111,16 +129,25 @@ type IncidentStatusEventDTO struct {
 	OccurredAt   time.Time `json:"occurred_at"`
 }
 
+// IncidentLocationPointDTO is one GPS ping captured during an active incident.
+type IncidentLocationPointDTO struct {
+	Lat        float64   `json:"lat"`
+	Lng        float64   `json:"lng"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // IncidentDetailDTO is returned by GET /admin/incidents/{id}.
 type IncidentDetailDTO struct {
-	Incident      *IncidentDTO             `json:"incident"`
-	StatusHistory []IncidentStatusEventDTO `json:"status_history"`
+	Incident      *IncidentDTO               `json:"incident"`
+	StatusHistory []IncidentStatusEventDTO   `json:"status_history"`
+	LocationTrail []IncidentLocationPointDTO `json:"location_trail"`
 }
 
 func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
 	res := &IncidentDetailDTO{
 		Incident:      NewIncidentDTO(d.Incident),
 		StatusHistory: make([]IncidentStatusEventDTO, 0, len(d.StatusHistory)),
+		LocationTrail: make([]IncidentLocationPointDTO, 0, len(d.LocationTrail)),
 	}
 	for _, ev := range d.StatusHistory {
 		item := IncidentStatusEventDTO{
@@ -144,6 +171,13 @@ func NewIncidentDetailDTO(d *domain.IncidentDetail) *IncidentDetailDTO {
 			item.ActorID = &s
 		}
 		res.StatusHistory = append(res.StatusHistory, item)
+	}
+	for _, p := range d.LocationTrail {
+		res.LocationTrail = append(res.LocationTrail, IncidentLocationPointDTO{
+			Lat:        p.Lat,
+			Lng:        p.Lng,
+			RecordedAt: p.RecordedAt,
+		})
 	}
 	return res
 }
@@ -290,12 +324,13 @@ func NewDriverPayoutDTO(p *domain.DriverPayout) DriverPayoutDTO {
 // ─── Safety DTOs ──────────────────────────────────────────────────────────────
 
 type KycEntryDTO struct {
-	ID          string    `json:"id"`
-	DriverID    string    `json:"driver_id"`
-	DriverName  string    `json:"driver_name"`
-	SubmittedAt time.Time `json:"submitted_at"`
-	Docs        []string  `json:"docs"`
-	Status      string    `json:"status"`
+	ID              string    `json:"id"`
+	DriverID        string    `json:"driver_id"`
+	DriverDisplayID string    `json:"driver_display_id"`
+	DriverName      string    `json:"driver_name"`
+	SubmittedAt     time.Time `json:"submitted_at"`
+	Docs            []string  `json:"docs"`
+	Status          string    `json:"status"`
 }
 
 type UpdateKycRequest struct {
@@ -310,7 +345,7 @@ type KycBatchRequest struct {
 
 func NewKycEntryDTO(e *domain.KycEntry) KycEntryDTO {
 	return KycEntryDTO{
-		ID: e.ID.String(), DriverID: e.DriverID.String(), DriverName: e.DriverName,
+		ID: e.ID.String(), DriverID: e.DriverID.String(), DriverDisplayID: e.DriverDisplayID, DriverName: e.DriverName,
 		SubmittedAt: e.SubmittedAt, Docs: e.Docs, Status: e.Status,
 	}
 }

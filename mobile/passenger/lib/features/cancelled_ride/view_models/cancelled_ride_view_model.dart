@@ -50,6 +50,7 @@ class CancelledRideViewModel extends ChangeNotifier {
 
   final CancelledRideRepository _repo;
   CancelledRideState _state = const CancelledRideState();
+  bool _disposed = false;
 
   CancelledRideState get state => _state;
 
@@ -57,19 +58,31 @@ class CancelledRideViewModel extends ChangeNotifier {
   List<CancellationReason> get reasonOptions =>
       CancellationReason.predefinedReasons;
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotifyListeners() {
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
   /// Select a cancellation reason.
   void selectReason(CancellationReason reason) {
     _state = _state.copyWith(selectedReason: reason);
     if (reason != CancellationReason.other) {
       _state = _state.copyWith(reasonText: null);
     }
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Set the reason text for "Other" option.
   void setReasonText(String? text) {
     _state = _state.copyWith(reasonText: text);
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Load cancellation details for the given ride.
@@ -78,7 +91,7 @@ class CancelledRideViewModel extends ChangeNotifier {
       status: CancelledRideStatus.loading,
       clearError: true,
     );
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final details = await _repo.getCancellationDetails(rideId);
@@ -95,7 +108,7 @@ class CancelledRideViewModel extends ChangeNotifier {
         error: message,
       );
     }
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Cancel the ride with the selected reason.
@@ -105,12 +118,12 @@ class CancelledRideViewModel extends ChangeNotifier {
       _state = _state.copyWith(
         error: 'Please select a reason for cancellation.',
       );
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
 
     _state = _state.copyWith(isCancelling: true, clearError: true);
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final reasonText = selectedReason == CancellationReason.other
@@ -130,7 +143,7 @@ class CancelledRideViewModel extends ChangeNotifier {
           ? e.userMessage
           : 'Failed to cancel ride.';
       _state = _state.copyWith(error: message, isCancelling: false);
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }

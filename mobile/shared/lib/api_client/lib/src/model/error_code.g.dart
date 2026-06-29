@@ -19,6 +19,7 @@ const ErrorCode _$REFRESH_TOKEN_INVALID = const ErrorCode._(
 );
 const ErrorCode _$VALIDATION_ERROR = const ErrorCode._('VALIDATION_ERROR');
 const ErrorCode _$FORBIDDEN = const ErrorCode._('FORBIDDEN');
+const ErrorCode _$NOT_FOUND = const ErrorCode._('NOT_FOUND');
 const ErrorCode _$RIDE_NOT_FOUND = const ErrorCode._('RIDE_NOT_FOUND');
 const ErrorCode _$USER_NOT_FOUND = const ErrorCode._('USER_NOT_FOUND');
 const ErrorCode _$DOCUMENT_NOT_FOUND = const ErrorCode._('DOCUMENT_NOT_FOUND');
@@ -74,11 +75,24 @@ const ErrorCode _$FILE_TOO_LARGE = const ErrorCode._('FILE_TOO_LARGE');
 const ErrorCode _$INVALID_FILE_FORMAT = const ErrorCode._(
   'INVALID_FILE_FORMAT',
 );
+const ErrorCode _$INVALID_DOCUMENT_TYPE = const ErrorCode._(
+  'INVALID_DOCUMENT_TYPE',
+);
 const ErrorCode _$RATE_LIMIT_EXCEEDED = const ErrorCode._(
   'RATE_LIMIT_EXCEEDED',
 );
 const ErrorCode _$INTERNAL_SERVER_ERROR = const ErrorCode._(
   'INTERNAL_SERVER_ERROR',
+);
+const ErrorCode _$DRIVER_TOO_FAR = const ErrorCode._('DRIVER_TOO_FAR');
+const ErrorCode _$DRIVER_TOO_FAR_FROM_DESTINATION = const ErrorCode._(
+  'DRIVER_TOO_FAR_FROM_DESTINATION',
+);
+const ErrorCode _$PROMO_INVALID = const ErrorCode._('PROMO_INVALID');
+const ErrorCode _$PROMO_EXPIRED = const ErrorCode._('PROMO_EXPIRED');
+const ErrorCode _$PROMO_NOT_FOUND = const ErrorCode._('PROMO_NOT_FOUND');
+const ErrorCode _$PROMO_MIN_AMOUNT_NOT_MET = const ErrorCode._(
+  'PROMO_MIN_AMOUNT_NOT_MET',
 );
 
 ErrorCode _$valueOf(String name) {
@@ -97,6 +111,8 @@ ErrorCode _$valueOf(String name) {
       return _$VALIDATION_ERROR;
     case 'FORBIDDEN':
       return _$FORBIDDEN;
+    case 'NOT_FOUND':
+      return _$NOT_FOUND;
     case 'RIDE_NOT_FOUND':
       return _$RIDE_NOT_FOUND;
     case 'USER_NOT_FOUND':
@@ -151,10 +167,24 @@ ErrorCode _$valueOf(String name) {
       return _$FILE_TOO_LARGE;
     case 'INVALID_FILE_FORMAT':
       return _$INVALID_FILE_FORMAT;
+    case 'INVALID_DOCUMENT_TYPE':
+      return _$INVALID_DOCUMENT_TYPE;
     case 'RATE_LIMIT_EXCEEDED':
       return _$RATE_LIMIT_EXCEEDED;
     case 'INTERNAL_SERVER_ERROR':
       return _$INTERNAL_SERVER_ERROR;
+    case 'DRIVER_TOO_FAR':
+      return _$DRIVER_TOO_FAR;
+    case 'DRIVER_TOO_FAR_FROM_DESTINATION':
+      return _$DRIVER_TOO_FAR_FROM_DESTINATION;
+    case 'PROMO_INVALID':
+      return _$PROMO_INVALID;
+    case 'PROMO_EXPIRED':
+      return _$PROMO_EXPIRED;
+    case 'PROMO_NOT_FOUND':
+      return _$PROMO_NOT_FOUND;
+    case 'PROMO_MIN_AMOUNT_NOT_MET':
+      return _$PROMO_MIN_AMOUNT_NOT_MET;
     default:
       throw ArgumentError(name);
   }
@@ -168,6 +198,7 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$REFRESH_TOKEN_INVALID,
   _$VALIDATION_ERROR,
   _$FORBIDDEN,
+  _$NOT_FOUND,
   _$RIDE_NOT_FOUND,
   _$USER_NOT_FOUND,
   _$DOCUMENT_NOT_FOUND,
@@ -195,9 +226,73 @@ final BuiltSet<ErrorCode> _$values = BuiltSet<ErrorCode>(const <ErrorCode>[
   _$ALREADY_RATED,
   _$FILE_TOO_LARGE,
   _$INVALID_FILE_FORMAT,
+  _$INVALID_DOCUMENT_TYPE,
   _$RATE_LIMIT_EXCEEDED,
   _$INTERNAL_SERVER_ERROR,
+  _$DRIVER_TOO_FAR,
+  _$DRIVER_TOO_FAR_FROM_DESTINATION,
+  _$PROMO_INVALID,
+  _$PROMO_EXPIRED,
+  _$PROMO_NOT_FOUND,
+  _$PROMO_MIN_AMOUNT_NOT_MET,
 ]);
+
+class _$ErrorCodeMeta {
+  const _$ErrorCodeMeta();
+  ErrorCode get EMAIL_ALREADY_REGISTERED => _$EMAIL_ALREADY_REGISTERED;
+  ErrorCode get INVALID_CREDENTIALS => _$INVALID_CREDENTIALS;
+  ErrorCode get TOKEN_INVALID => _$TOKEN_INVALID;
+  ErrorCode get TOKEN_EXPIRED => _$TOKEN_EXPIRED;
+  ErrorCode get REFRESH_TOKEN_INVALID => _$REFRESH_TOKEN_INVALID;
+  ErrorCode get VALIDATION_ERROR => _$VALIDATION_ERROR;
+  ErrorCode get FORBIDDEN => _$FORBIDDEN;
+  ErrorCode get NOT_FOUND => _$NOT_FOUND;
+  ErrorCode get RIDE_NOT_FOUND => _$RIDE_NOT_FOUND;
+  ErrorCode get USER_NOT_FOUND => _$USER_NOT_FOUND;
+  ErrorCode get DOCUMENT_NOT_FOUND => _$DOCUMENT_NOT_FOUND;
+  ErrorCode get RIDE_INVALID_STATE_TRANSITION =>
+      _$RIDE_INVALID_STATE_TRANSITION;
+  ErrorCode get PASSENGER_HAS_ACTIVE_RIDE => _$PASSENGER_HAS_ACTIVE_RIDE;
+  ErrorCode get DRIVER_HAS_ACTIVE_RIDE => _$DRIVER_HAS_ACTIVE_RIDE;
+  ErrorCode get RIDE_NOT_COMPLETED => _$RIDE_NOT_COMPLETED;
+  ErrorCode get NO_DRIVERS_AVAILABLE => _$NO_DRIVERS_AVAILABLE;
+  ErrorCode get INVALID_RIDE_TYPE => _$INVALID_RIDE_TYPE;
+  ErrorCode get DRIVER_REMATCH_IN_PROGRESS => _$DRIVER_REMATCH_IN_PROGRESS;
+  ErrorCode get CANCELLATION_FEE_APPLIED => _$CANCELLATION_FEE_APPLIED;
+  ErrorCode get PAYMENT_FAILED => _$PAYMENT_FAILED;
+  ErrorCode get INVALID_PAYMENT_TOKEN => _$INVALID_PAYMENT_TOKEN;
+  ErrorCode get DUPLICATE_PAYMENT => _$DUPLICATE_PAYMENT;
+  ErrorCode get UNPAID_RIDE_BLOCKED => _$UNPAID_RIDE_BLOCKED;
+  ErrorCode get PAYMENT_METHOD_UNSUPPORTED => _$PAYMENT_METHOD_UNSUPPORTED;
+  ErrorCode get PAYMENT_METHOD_DUPLICATE => _$PAYMENT_METHOD_DUPLICATE;
+  ErrorCode get PAYMENT_GATEWAY_ERROR => _$PAYMENT_GATEWAY_ERROR;
+  ErrorCode get PAYMENT_METHOD_NOT_FOUND => _$PAYMENT_METHOD_NOT_FOUND;
+  ErrorCode get PAYMENT_METHOD_LAST_METHOD => _$PAYMENT_METHOD_LAST_METHOD;
+  ErrorCode get INVALID_TIP_AMOUNT => _$INVALID_TIP_AMOUNT;
+  ErrorCode get TIP_ALREADY_ADDED => _$TIP_ALREADY_ADDED;
+  ErrorCode get INVALID_RATING => _$INVALID_RATING;
+  ErrorCode get FEEDBACK_TOO_LONG => _$FEEDBACK_TOO_LONG;
+  ErrorCode get ALREADY_RATED => _$ALREADY_RATED;
+  ErrorCode get FILE_TOO_LARGE => _$FILE_TOO_LARGE;
+  ErrorCode get INVALID_FILE_FORMAT => _$INVALID_FILE_FORMAT;
+  ErrorCode get INVALID_DOCUMENT_TYPE => _$INVALID_DOCUMENT_TYPE;
+  ErrorCode get RATE_LIMIT_EXCEEDED => _$RATE_LIMIT_EXCEEDED;
+  ErrorCode get INTERNAL_SERVER_ERROR => _$INTERNAL_SERVER_ERROR;
+  ErrorCode get DRIVER_TOO_FAR => _$DRIVER_TOO_FAR;
+  ErrorCode get DRIVER_TOO_FAR_FROM_DESTINATION =>
+      _$DRIVER_TOO_FAR_FROM_DESTINATION;
+  ErrorCode get PROMO_INVALID => _$PROMO_INVALID;
+  ErrorCode get PROMO_EXPIRED => _$PROMO_EXPIRED;
+  ErrorCode get PROMO_NOT_FOUND => _$PROMO_NOT_FOUND;
+  ErrorCode get PROMO_MIN_AMOUNT_NOT_MET => _$PROMO_MIN_AMOUNT_NOT_MET;
+  ErrorCode valueOf(String name) => _$valueOf(name);
+  BuiltSet<ErrorCode> get values => _$values;
+}
+
+mixin _$ErrorCodeMixin {
+  // ignore: non_constant_identifier_names
+  _$ErrorCodeMeta get ErrorCode => const _$ErrorCodeMeta();
+}
 
 Serializer<ErrorCode> _$errorCodeSerializer = _$ErrorCodeSerializer();
 
@@ -210,6 +305,7 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'REFRESH_TOKEN_INVALID': 'REFRESH_TOKEN_INVALID',
     'VALIDATION_ERROR': 'VALIDATION_ERROR',
     'FORBIDDEN': 'FORBIDDEN',
+    'NOT_FOUND': 'NOT_FOUND',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
     'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
@@ -237,8 +333,15 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'ALREADY_RATED': 'ALREADY_RATED',
     'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
     'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
+    'INVALID_DOCUMENT_TYPE': 'INVALID_DOCUMENT_TYPE',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
+    'DRIVER_TOO_FAR': 'DRIVER_TOO_FAR',
+    'DRIVER_TOO_FAR_FROM_DESTINATION': 'DRIVER_TOO_FAR_FROM_DESTINATION',
+    'PROMO_INVALID': 'PROMO_INVALID',
+    'PROMO_EXPIRED': 'PROMO_EXPIRED',
+    'PROMO_NOT_FOUND': 'PROMO_NOT_FOUND',
+    'PROMO_MIN_AMOUNT_NOT_MET': 'PROMO_MIN_AMOUNT_NOT_MET',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'EMAIL_ALREADY_REGISTERED': 'EMAIL_ALREADY_REGISTERED',
@@ -248,6 +351,7 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'REFRESH_TOKEN_INVALID': 'REFRESH_TOKEN_INVALID',
     'VALIDATION_ERROR': 'VALIDATION_ERROR',
     'FORBIDDEN': 'FORBIDDEN',
+    'NOT_FOUND': 'NOT_FOUND',
     'RIDE_NOT_FOUND': 'RIDE_NOT_FOUND',
     'USER_NOT_FOUND': 'USER_NOT_FOUND',
     'DOCUMENT_NOT_FOUND': 'DOCUMENT_NOT_FOUND',
@@ -275,8 +379,15 @@ class _$ErrorCodeSerializer implements PrimitiveSerializer<ErrorCode> {
     'ALREADY_RATED': 'ALREADY_RATED',
     'FILE_TOO_LARGE': 'FILE_TOO_LARGE',
     'INVALID_FILE_FORMAT': 'INVALID_FILE_FORMAT',
+    'INVALID_DOCUMENT_TYPE': 'INVALID_DOCUMENT_TYPE',
     'RATE_LIMIT_EXCEEDED': 'RATE_LIMIT_EXCEEDED',
     'INTERNAL_SERVER_ERROR': 'INTERNAL_SERVER_ERROR',
+    'DRIVER_TOO_FAR': 'DRIVER_TOO_FAR',
+    'DRIVER_TOO_FAR_FROM_DESTINATION': 'DRIVER_TOO_FAR_FROM_DESTINATION',
+    'PROMO_INVALID': 'PROMO_INVALID',
+    'PROMO_EXPIRED': 'PROMO_EXPIRED',
+    'PROMO_NOT_FOUND': 'PROMO_NOT_FOUND',
+    'PROMO_MIN_AMOUNT_NOT_MET': 'PROMO_MIN_AMOUNT_NOT_MET',
   };
 
   @override

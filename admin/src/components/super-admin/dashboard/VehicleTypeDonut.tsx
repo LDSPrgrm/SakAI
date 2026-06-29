@@ -5,6 +5,7 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { renderInsidePieLabel } from '@/utils/pieLabels';
 
 interface DataPoint {
   name: string;
@@ -21,7 +22,8 @@ const COLORS = ['#1A73E8', '#FF9800', '#4CAF50', '#9C27B0'];
 export function VehicleTypeDonut({ data, className }: VehicleTypeDonutProps) {
   return (
     <div className={cn('bg-surface border border-border rounded-xl p-5', className)}>
-      <p className="text-sm font-semibold text-text-main mb-4">Vehicle Type Distribution</p>
+      <p className="text-sm font-semibold text-text-main">Vehicle Type Distribution</p>
+      <p className="text-xs text-text-muted mb-4">Share by vehicle type</p>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
@@ -31,6 +33,8 @@ export function VehicleTypeDonut({ data, className }: VehicleTypeDonutProps) {
             innerRadius={55}
             outerRadius={80}
             dataKey="value"
+            label={renderInsidePieLabel}
+            labelLine={false}
           >
             {data.map((_entry, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />

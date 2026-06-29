@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
 import '../view_models/waiting_view_model.dart';
@@ -29,6 +32,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
   late final AnimationController _pulse;
   late final WaitingViewModel _vm;
   StreamSubscription<WsEvent>? _wsSub;
+  Timer? _e2ePollTimer;
 
   /// Guards against double-navigation when both the HTTP success callback
   /// and the WebSocket `rideCancelled` event fire in quick succession.
@@ -37,6 +41,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
   @override
   void initState() {
     super.initState();
+    debugPrint('[WaitingScreen] initState for rideId=${widget.rideId}');
     _pulse = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -49,28 +54,61 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
     _vm.addListener(_onVmChanged);
 
     _setupWebSocketListener();
+    _setupE2EPolling();
   }
 
   @override
   void dispose() {
+    debugPrint('[WaitingScreen] dispose');
     _vm.removeListener(_onVmChanged);
     _vm.dispose();
     _pulse.dispose();
     _wsSub?.cancel();
+    _e2ePollTimer?.cancel();
     super.dispose();
+  }
+
+  void _setupE2EPolling() {
+    if (!kIsWeb || !isE2EMode()) return;
+    debugPrint('[WaitingScreen] setting up E2E polling');
+    _e2ePollTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      if (!mounted || _navigating) return;
+      try {
+        final active = await ref.read(rideRepositoryProvider).getActiveRide();
+        if (!mounted) return;
+        if (active == null || active.id != widget.rideId) return;
+        if (active.status != RideState.requested) {
+          debugPrint(
+            '[WaitingScreen] E2E: ride status changed to ${active.status}, navigating...',
+          );
+          _e2ePollTimer?.cancel();
+          _navigating = true;
+          context.go(Routes.rideActive, extra: widget.rideId);
+        }
+      } catch (_) {
+        // E2E fallback only; normal WebSocket flow remains authoritative.
+      }
+    });
   }
 
   /// React to ViewModel state changes — navigation and snack bars stay here.
   void _onVmChanged() {
     debugPrint(
-      '[WaitingScreen] _onVmChanged: cancelled=${_vm.cancelled}, error=${_vm.errorMessage}, mounted=$mounted',
+      '[WaitingScreen] _onVmChanged: cancelled=${_vm.cancelled}, error=${_vm.errorMessage}, navigating=$_navigating, mounted=$mounted',
     );
+
+    // Guard: ignore updates if we are already navigating away.
+    if (_navigating) return;
+
     if (_vm.cancelled && mounted) {
+      debugPrint(
+        '[WaitingScreen] VM signal: ride cancelled, proceeding to cancelled screen',
+      );
       _goToCancelled();
       return;
     }
     if (_vm.errorMessage != null && mounted) {
-      debugPrint('[WaitingScreen] showing SnackBar: ${_vm.errorMessage}');
+      debugPrint('[WaitingScreen] showing error SnackBar: ${_vm.errorMessage}');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_vm.errorMessage!)));
@@ -81,34 +119,46 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
   /// Navigate to the cancelled-ride screen exactly once, regardless of whether
   /// the trigger is the HTTP response or the WebSocket `rideCancelled` event.
   void _goToCancelled() {
-    if (_navigating || !mounted) return;
+    if (_navigating || !mounted) {
+      debugPrint(
+        '[WaitingScreen] _goToCancelled ignored: navigating=$_navigating, mounted=$mounted',
+      );
+      return;
+    }
     _navigating = true;
-    debugPrint('[WaitingScreen] navigating to cancelled screen');
-    context.go('/ride/cancelled/${widget.rideId}');
+    debugPrint('[WaitingScreen] context.go to cancelled screen');
+    try {
+      context.go('/ride/cancelled/${widget.rideId}');
+    } catch (e) {
+      debugPrint('[WaitingScreen] context.go FAILED: $e');
+      _navigating = false; // Reset so user can try again if possible
+    }
   }
 
   /// Listen for WebSocket events to navigate when driver accepts.
   void _setupWebSocketListener() {
     final wsClient = ref.read(wsClientProvider);
+    debugPrint('[WaitingScreen] setting up WS listener');
     _wsSub = wsClient.events.listen((event) {
       if (!mounted) return;
+      debugPrint('[WaitingScreen] WS event received: ${event.type}');
 
       if (event.type == WsEventNames.rideAccepted) {
-        // Driver accepted — navigate to active ride screen.
+        debugPrint('[WaitingScreen] rideAccepted -> Routes.rideActive');
+        _navigating = true;
         context.go(Routes.rideActive, extra: widget.rideId);
       } else if (event.type == WsEventNames.rideOfferExpired) {
-        // No drivers available — go back to home.
+        debugPrint('[WaitingScreen] rideOfferExpired -> Routes.home');
+        _navigating = true;
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No drivers available. Please try again.'),
-            ),
+          SakaiSnackBar.info(
+            context,
+            'No drivers available. Please try again.',
           );
           context.go(Routes.home);
         }
       } else if (event.type == WsEventNames.rideCancelled) {
-        // Server confirmed cancellation via WS.
-        debugPrint('[WaitingScreen] WS rideCancelled event received');
+        debugPrint('[WaitingScreen] rideCancelled WS event');
         // Update the VM so the button disables immediately if navigation is slow.
         _vm.onRideCancelledByServer();
         // Trigger navigation helper.
@@ -198,7 +248,7 @@ class _WaitingScreenState extends ConsumerState<WaitingScreen>
                   label: _vm.cancelling ? 'Cancelling…' : 'Cancel Ride',
                   icon: Icons.close,
                   // Disable while cancelling OR after success (before navigation fires).
-                  onPressed: (_vm.cancelling || _vm.cancelled)
+                  onPressed: (_vm.cancelling || _vm.cancelled || _navigating)
                       ? null
                       : _vm.cancel,
                 ),

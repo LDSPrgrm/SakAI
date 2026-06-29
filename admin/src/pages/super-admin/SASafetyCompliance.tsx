@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { Search, Eye } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  Search, Eye, Download, ShieldCheck, FileCheck2,
+  AlertCircle, Siren, Users, Activity,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Table,
@@ -12,10 +15,15 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Select } from '@/components/ui/Select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { EntityId } from '@/components/ui/EntityId';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { SaveBanner } from '@/components/shared/SaveBanner';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { SummaryCard } from '@/components/shared/SummaryCard';
 import { KycDocPreview } from '@/components/super-admin/kyc/KycDocPreview';
 import {
   useIncidents, useKycQueue, useLtfrbCompliance,
@@ -23,9 +31,10 @@ import {
 } from '@/hooks/useSafety';
 import { useExportReport } from '@/hooks/useReports';
 import { formatDate } from '@/utils/formatDate';
+import { csvRow } from '@/utils/csv';
 import { LtfrbReportsSection, type LtfrbData } from '@/components/super-admin/safety/LtfrbReportsSection';
 import { IncidentDetailModal } from '@/components/super-admin/modals/IncidentDetailModal';
-import type { Incident, IncidentStatus, IncidentType, KycEntry } from '@/types/super-admin';
+import type { Incident, IncidentType, KycEntry } from '@/types/super-admin';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -53,6 +62,11 @@ const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
   { label: 'Resolved', value: 'resolved' },
   { label: 'Escalated', value: 'escalated' },
 ];
+
+const INCIDENT_CSV_HEADER = csvRow([
+  'Incident ID', 'Created At', 'Ride ID', 'Triggered By',
+  'Rider', 'Driver', 'Type', 'Status', 'Assigned To', 'Resolution Notes',
+]);
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -91,18 +105,32 @@ export function SASafetyCompliance() {
 
   // ── Derived counts ─────────────────────────────────────────────────────────
 
-  const filteredIncidents = incidents.filter((inc) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      (inc.id ?? '').toLowerCase().includes(q) ||
-      (inc.ride_id ?? '').toLowerCase().includes(q) ||
-      (inc.rider_name ?? '').toLowerCase().includes(q) ||
-      (inc.driver_name ?? '').toLowerCase().includes(q);
-    const matchesStatus = statusFilter === '' || inc.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredIncidents = useMemo(
+    () =>
+      incidents.filter((inc) => {
+        const q = search.toLowerCase();
+        const matchesSearch =
+          (inc.id ?? '').toLowerCase().includes(q) ||
+          (inc.ride_id ?? '').toLowerCase().includes(q) ||
+          (inc.rider_name ?? '').toLowerCase().includes(q) ||
+          (inc.driver_name ?? '').toLowerCase().includes(q);
+        const matchesStatus = statusFilter === '' || inc.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [incidents, search, statusFilter],
+  );
 
   const pendingKycCount = kycQueue.filter((k) => k.status === 'pending').length;
+  const openIncidentCount = incidents.filter(
+    (i) => i.status === 'open' || i.status === 'investigating' || i.status === 'escalated',
+  ).length;
+  const sosActiveCount = incidents.filter(
+    (i) => i.type === 'sos_triggered' && i.status !== 'resolved',
+  ).length;
+  const complianceRate = ltfrbData?.driver_compliance_rate ?? null;
+
+  const incidentsLoading = incidentsQuery.isLoading;
+  const kycLoading = kycQuery.isLoading;
 
   // ── KYC actions ───────────────────────────────────────────────────────────
 
@@ -144,13 +172,60 @@ export function SASafetyCompliance() {
     if (res?.url) window.open(res.url, '_blank');
   }
 
+  // ── Incident CSV export ───────────────────────────────────────────────────
+
+  function downloadIncidentsCsv() {
+    const rows = filteredIncidents.map((inc) =>
+      csvRow([
+        inc.id, inc.created_at, inc.ride_id, inc.triggered_by,
+        inc.rider_name, inc.driver_name, inc.type, inc.status,
+        inc.assigned_to, inc.resolution_notes,
+      ]),
+    );
+    const blob = new Blob([[INCIDENT_CSV_HEADER, ...rows].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `incidents-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Safety & Compliance</h1>
-        <SaveBanner visible={banner.visible} message={banner.message} />
+      <PageHeader
+        title="Safety & Compliance"
+        actions={<SaveBanner visible={banner.visible} message={banner.message} />}
+      />
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SummaryCard
+          title="Open Incidents"
+          value={incidentsLoading ? '—' : openIncidentCount.toLocaleString('en-PH')}
+          icon={<AlertCircle className="w-5 h-5 text-warning" />}
+        />
+        <SummaryCard
+          title="SOS Active"
+          value={incidentsLoading ? '—' : sosActiveCount.toLocaleString('en-PH')}
+          icon={<Siren className="w-5 h-5 text-danger" />}
+        />
+        <SummaryCard
+          title="Pending KYC"
+          value={kycLoading ? '—' : pendingKycCount.toLocaleString('en-PH')}
+          icon={<Users className="w-5 h-5 text-primary" />}
+        />
+        <SummaryCard
+          title="Driver Compliance"
+          value={
+            ltfrbQuery.isLoading || complianceRate == null
+              ? '—'
+              : `${complianceRate.toFixed(1)}%`
+          }
+          icon={<Activity className="w-5 h-5 text-success" />}
+        />
       </div>
 
       <Tabs defaultValue="incidents">
@@ -188,17 +263,22 @@ export function SASafetyCompliance() {
                     icon={<Search className="w-4 h-4" />}
                     className="w-52"
                   />
-                  <select
+                  <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-10 rounded-lg border border-border bg-background px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                    onValueChange={setStatusFilter}
+                    options={STATUS_FILTER_OPTIONS}
+                    aria-label="Filter incidents by status"
+                    className="w-40"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={downloadIncidentsCsv}
+                    disabled={incidentsLoading || filteredIncidents.length === 0}
                   >
-                    {STATUS_FILTER_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Export CSV
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -219,13 +299,26 @@ export function SASafetyCompliance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredIncidents.length === 0 ? (
+                    {incidentsLoading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={`inc-skel-${i}`}>
+                          {Array.from({ length: 9 }).map((__, j) => (
+                            <TableCell key={j}>
+                              <div className="h-4 bg-surface-hover rounded animate-pulse" />
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : filteredIncidents.length === 0 ? (
                       <TableRow>
                         <TableCell
                           colSpan={9}
                           className="text-center text-text-muted py-10"
                         >
-                          No incidents found.
+                          <div className="flex flex-col items-center gap-2">
+                            <ShieldCheck className="w-8 h-8 text-text-muted/60" />
+                            <span>No incidents found.</span>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -236,13 +329,13 @@ export function SASafetyCompliance() {
                           onClick={() => inc.id && setSelectedIncidentId(inc.id)}
                         >
                           <TableCell className="text-sm font-medium text-text-main">
-                            {inc.id}
+                            <EntityId displayId={(inc as any).display_id} uuid={inc.id} fallbackPrefix="INC" />
                           </TableCell>
                           <TableCell className="text-sm text-text-muted whitespace-nowrap">
                             {inc.created_at ? formatDate(inc.created_at) : '—'}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
-                            {inc.ride_id}
+                            <EntityId displayId={(inc as any).ride_display_id} uuid={inc.ride_id} fallbackPrefix="RIDE" />
                           </TableCell>
                           <TableCell>
                             <Badge variant="default">
@@ -264,7 +357,7 @@ export function SASafetyCompliance() {
                           </TableCell>
                           <TableCell className="text-sm">
                             {inc.assigned_to ? (
-                              <span className="text-text-main">{inc.assigned_to}</span>
+                              <span className="text-text-main">{inc.assigned_to_name || inc.assigned_to}</span>
                             ) : (
                               <span className="text-text-muted italic">Unassigned</span>
                             )}
@@ -320,30 +413,42 @@ export function SASafetyCompliance() {
               </div>
             )}
 
-            {kycQueue.length === 0 ? (
+            {kycLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={`kyc-skel-${i}`}
+                  className="bg-surface-hover rounded-lg border border-border p-4 space-y-3"
+                >
+                  <div className="h-4 w-1/3 bg-background rounded animate-pulse" />
+                  <div className="h-20 w-full bg-background rounded animate-pulse" />
+                </div>
+              ))
+            ) : kycQueue.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center text-text-muted">
-                  No KYC entries in queue.
+                  <div className="flex flex-col items-center gap-2">
+                    <FileCheck2 className="w-8 h-8 text-text-muted/60" />
+                    <span>No KYC entries in queue.</span>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               kycQueue.map((entry) => (
                 <div
                   key={entry.id}
-                  className="bg-surface-hover rounded-lg border border-border p-4 space-y-3"
+                  className="bg-surface-hover rounded-lg border border-border p-4 space-y-3 focus-within:ring-2 focus-within:ring-primary/30 transition-shadow"
                 >
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       {entry.status === 'pending' && (
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 flex-shrink-0 rounded border-border accent-primary"
+                        <Checkbox
+                          className="flex-shrink-0"
                           checked={selectedKycIds.has(entry.id)}
-                          onChange={(e) => {
+                          onCheckedChange={(checked) => {
                             setSelectedKycIds((prev) => {
                               const next = new Set(prev);
-                              if (e.target.checked) next.add(entry.id);
+                              if (checked) next.add(entry.id);
                               else next.delete(entry.id);
                               return next;
                             });
@@ -405,18 +510,21 @@ export function SASafetyCompliance() {
       />
 
       {/* KYC Confirm Modal */}
-      <ConfirmModal
+      <ConfirmationModal
         open={kycConfirm.open}
         title={kycConfirm.action === 'approve' ? 'Approve KYC' : 'Reject KYC'}
-        message={
+        description={
           kycConfirm.action === 'approve'
             ? `Approve the KYC documents submitted by ${kycConfirm.driverName}?`
             : `Reject the KYC documents submitted by ${kycConfirm.driverName}? The driver will be notified.`
         }
         variant={kycConfirm.action === 'approve' ? 'success' : 'danger'}
         confirmLabel={kycConfirm.action === 'approve' ? 'Approve' : 'Reject'}
-        onConfirm={handleKycConfirm}
-        onClose={() => setKycConfirm((s) => ({ ...s, open: false }))}
+        onConfirm={() => {
+          handleKycConfirm();
+          setKycConfirm((s) => ({ ...s, open: false }));
+        }}
+        onCancel={() => setKycConfirm((s) => ({ ...s, open: false }))}
       />
     </div>
   );

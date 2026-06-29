@@ -6,81 +6,21 @@ part of 'role.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-const RoleNameEnum _$roleNameEnum_passenger = const RoleNameEnum._('passenger');
-const RoleNameEnum _$roleNameEnum_driver = const RoleNameEnum._('driver');
-const RoleNameEnum _$roleNameEnum_admin = const RoleNameEnum._('admin');
-const RoleNameEnum _$roleNameEnum_superadmin = const RoleNameEnum._(
-  'superadmin',
-);
-
-RoleNameEnum _$roleNameEnumValueOf(String name) {
-  switch (name) {
-    case 'passenger':
-      return _$roleNameEnum_passenger;
-    case 'driver':
-      return _$roleNameEnum_driver;
-    case 'admin':
-      return _$roleNameEnum_admin;
-    case 'superadmin':
-      return _$roleNameEnum_superadmin;
-    default:
-      throw ArgumentError(name);
-  }
-}
-
-final BuiltSet<RoleNameEnum> _$roleNameEnumValues =
-    BuiltSet<RoleNameEnum>(const <RoleNameEnum>[
-      _$roleNameEnum_passenger,
-      _$roleNameEnum_driver,
-      _$roleNameEnum_admin,
-      _$roleNameEnum_superadmin,
-    ]);
-
-Serializer<RoleNameEnum> _$roleNameEnumSerializer = _$RoleNameEnumSerializer();
-
-class _$RoleNameEnumSerializer implements PrimitiveSerializer<RoleNameEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{
-    'passenger': 'passenger',
-    'driver': 'driver',
-    'admin': 'admin',
-    'superadmin': 'superadmin',
-  };
-  static const Map<Object, String> _fromWire = const <Object, String>{
-    'passenger': 'passenger',
-    'driver': 'driver',
-    'admin': 'admin',
-    'superadmin': 'superadmin',
-  };
-
-  @override
-  final Iterable<Type> types = const <Type>[RoleNameEnum];
-  @override
-  final String wireName = 'RoleNameEnum';
-
-  @override
-  Object serialize(
-    Serializers serializers,
-    RoleNameEnum object, {
-    FullType specifiedType = FullType.unspecified,
-  }) => _toWire[object.name] ?? object.name;
-
-  @override
-  RoleNameEnum deserialize(
-    Serializers serializers,
-    Object serialized, {
-    FullType specifiedType = FullType.unspecified,
-  }) => RoleNameEnum.valueOf(
-    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
-  );
-}
-
 class _$Role extends Role {
   @override
   final String id;
   @override
-  final RoleNameEnum name;
+  final String name;
+  @override
+  final String? description;
+  @override
+  final bool? isSystem;
   @override
   final BuiltList<RolePermission> permissions;
+  @override
+  final int? adminCount;
+  @override
+  final String? createdBy;
   @override
   final DateTime? createdAt;
   @override
@@ -92,7 +32,11 @@ class _$Role extends Role {
   _$Role._({
     required this.id,
     required this.name,
+    this.description,
+    this.isSystem,
     required this.permissions,
+    this.adminCount,
+    this.createdBy,
     this.createdAt,
     this.updatedAt,
   }) : super._();
@@ -109,7 +53,11 @@ class _$Role extends Role {
     return other is Role &&
         id == other.id &&
         name == other.name &&
+        description == other.description &&
+        isSystem == other.isSystem &&
         permissions == other.permissions &&
+        adminCount == other.adminCount &&
+        createdBy == other.createdBy &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -119,7 +67,11 @@ class _$Role extends Role {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
+    _$hash = $jc(_$hash, description.hashCode);
+    _$hash = $jc(_$hash, isSystem.hashCode);
     _$hash = $jc(_$hash, permissions.hashCode);
+    _$hash = $jc(_$hash, adminCount.hashCode);
+    _$hash = $jc(_$hash, createdBy.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -131,7 +83,11 @@ class _$Role extends Role {
     return (newBuiltValueToStringHelper(r'Role')
           ..add('id', id)
           ..add('name', name)
+          ..add('description', description)
+          ..add('isSystem', isSystem)
           ..add('permissions', permissions)
+          ..add('adminCount', adminCount)
+          ..add('createdBy', createdBy)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -145,15 +101,31 @@ class RoleBuilder implements Builder<Role, RoleBuilder> {
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
 
-  RoleNameEnum? _name;
-  RoleNameEnum? get name => _$this._name;
-  set name(RoleNameEnum? name) => _$this._name = name;
+  String? _name;
+  String? get name => _$this._name;
+  set name(String? name) => _$this._name = name;
+
+  String? _description;
+  String? get description => _$this._description;
+  set description(String? description) => _$this._description = description;
+
+  bool? _isSystem;
+  bool? get isSystem => _$this._isSystem;
+  set isSystem(bool? isSystem) => _$this._isSystem = isSystem;
 
   ListBuilder<RolePermission>? _permissions;
   ListBuilder<RolePermission> get permissions =>
       _$this._permissions ??= ListBuilder<RolePermission>();
   set permissions(ListBuilder<RolePermission>? permissions) =>
       _$this._permissions = permissions;
+
+  int? _adminCount;
+  int? get adminCount => _$this._adminCount;
+  set adminCount(int? adminCount) => _$this._adminCount = adminCount;
+
+  String? _createdBy;
+  String? get createdBy => _$this._createdBy;
+  set createdBy(String? createdBy) => _$this._createdBy = createdBy;
 
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
@@ -172,7 +144,11 @@ class RoleBuilder implements Builder<Role, RoleBuilder> {
     if ($v != null) {
       _id = $v.id;
       _name = $v.name;
+      _description = $v.description;
+      _isSystem = $v.isSystem;
       _permissions = $v.permissions.toBuilder();
+      _adminCount = $v.adminCount;
+      _createdBy = $v.createdBy;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -201,7 +177,11 @@ class RoleBuilder implements Builder<Role, RoleBuilder> {
           _$Role._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'Role', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(name, r'Role', 'name'),
+            description: description,
+            isSystem: isSystem,
             permissions: permissions.build(),
+            adminCount: adminCount,
+            createdBy: createdBy,
             createdAt: createdAt,
             updatedAt: updatedAt,
           );

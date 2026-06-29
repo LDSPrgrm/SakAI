@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -47,7 +47,7 @@ abstract class RideRequestBody implements Built<RideRequestBody, RideRequestBody
   /// Payment method for this ride
   @BuiltValueField(wireName: r'payment_method')
   RideRequestBodyPaymentMethodEnum? get paymentMethod;
-  // enum paymentMethodEnum {  cash,  card,  };
+  // enum paymentMethodEnum {  cash,  card,  gcash,  paymaya,  };
 
   RideRequestBody._();
 
@@ -246,6 +246,12 @@ class RideRequestBodyPaymentMethodEnum extends EnumClass {
   /// Payment method for this ride
   @BuiltValueEnumConst(wireName: r'card')
   static const RideRequestBodyPaymentMethodEnum card = _$rideRequestBodyPaymentMethodEnum_card;
+  /// Payment method for this ride
+  @BuiltValueEnumConst(wireName: r'gcash')
+  static const RideRequestBodyPaymentMethodEnum gcash = _$rideRequestBodyPaymentMethodEnum_gcash;
+  /// Payment method for this ride
+  @BuiltValueEnumConst(wireName: r'paymaya')
+  static const RideRequestBodyPaymentMethodEnum paymaya = _$rideRequestBodyPaymentMethodEnum_paymaya;
 
   static Serializer<RideRequestBodyPaymentMethodEnum> get serializer => _$rideRequestBodyPaymentMethodEnumSerializer;
 

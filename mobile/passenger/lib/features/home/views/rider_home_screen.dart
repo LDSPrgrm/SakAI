@@ -1,25 +1,32 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sakai_shared/sakai_shared.dart'
     hide LatLng, NearbyDriver, ServiceArea;
 
+import '../../../app/providers.dart';
 import '../../../app/routes.dart';
 import 'activity_screen.dart';
-import 'destination_sheet.dart';
-
-import '../repositories/geocoding_service.dart';
-import '../repositories/service_area_repository.dart';
-import '../models/service_area.dart';
-import '../models/nearby_driver.dart';
-import '../models/ride_type_option.dart';
-import '../view_models/home_notifier.dart';
+import 'location_picker_screen.dart';
 import 'profile_screen.dart';
-import '../../../app/providers.dart';
+import '../../wallet/views/wallet_screen.dart';
+import '../models/ride_type_option.dart';
+import '../models/location_search_mode.dart';
+import '../view_models/home_notifier.dart';
+import 'widgets/booking_map.dart';
+import 'widgets/home_dashboard_header.dart';
+import 'widgets/home_promo_carousel.dart';
+import 'widgets/home_services_grid.dart';
+import 'widgets/home_wallet_cards.dart';
 
-/// Full-screen Google Map home screen for ride requesting (REQ-3.2.4).
+/// Premium Grab-style scrollable dashboard home screen (REQ-3.2.4).
+///
+/// Layout:
+///   [Idle]           → scrollable dashboard (header, grid, wallet, promos, trips)
+///   [destinationSet] → booking flow overlay (timeline card, transit cards, CTA)
+///
+/// Removes GoogleMap + DraggableScrollableSheet entirely for fast startup.
 class RiderHomeScreen extends ConsumerStatefulWidget {
   const RiderHomeScreen({super.key});
 
@@ -28,166 +35,47 @@ class RiderHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
-  // Navigation State
   int _currentIndex = 0;
 
-  // Sheet & Search State
-  final _sheetController = DraggableScrollableController();
-  final _searchController = TextEditingController();
-  final _searchFocus = FocusNode();
-  bool _isSearching = false;
-  bool _isLoadingSuggestions = false;
-  LocationSearchMode? _searchMode;
-  List<String> _suggestions = [];
-  List<NearbyDriver> _nearbyDrivers = [];
-  Timer? _debounce;
-  Timer? _driverTimer;
-  final _sheetKey = GlobalKey();
-
-  // Map & Ride Logic State
-  GoogleMapController? _mapController;
-  List<ServiceArea> _serviceAreas = [];
-  static const _defaultLatLng = LatLng(
-    0.0,
-    0.0,
-  ); // Uses GPS location at runtime
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    _searchFocus.addListener(_onSearchFocusChange);
-    // Schedule initLocation after first build to read provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeNotifierProvider.notifier).initLocation();
-      _fetchServiceAreas();
     });
   }
 
-  Future<void> _fetchServiceAreas() async {
-    final authInterceptor = ref.read(authInterceptorProvider);
-    final areas = await ServiceAreaRepository(
-      authInterceptor: authInterceptor,
-    ).fetchServiceAreas();
-    if (mounted) {
-      setState(() => _serviceAreas = areas);
+  // ── Auth / logout ──────────────────────────────────────────────────────────
 
-      // If user location is not yet available, center on the first service area
-      final currentPos = ref.read(homeNotifierProvider).currentLatLng;
-      if (currentPos == null && areas.isNotEmpty && _mapController != null) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(areas.first.center, 12),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    _sheetController.dispose();
-    _searchController.dispose();
-    _searchFocus.removeListener(_onSearchFocusChange);
-    _searchFocus.dispose();
-    _debounce?.cancel();
-    _driverTimer?.cancel();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String val) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
-      if (val.trim().isEmpty) {
-        setState(() {
-          _suggestions = [];
-          _isLoadingSuggestions = false;
-        });
-        return;
-      }
-
-      setState(() => _isLoadingSuggestions = true);
+  Future<void> _logout() async {
+    final tokenStorage = ref.read(tokenStorageProvider);
+    final refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken != null && refreshToken.isNotEmpty) {
       try {
-        // No service area biasing — search globally
-        final results = await GeocodingService().getSuggestions(val);
-        if (mounted) {
-          setState(() {
-            _suggestions = results;
-            _isLoadingSuggestions = false;
-          });
-        }
-      } catch (_) {
-        if (mounted) {
-          setState(() => _isLoadingSuggestions = false);
-        }
-      }
-    });
-  }
-
-  // ignore: unused_element
-  ServiceArea? _getNearestAreaBias(LatLng? currentLoc) {
-    if (_serviceAreas.isEmpty) return null;
-    if (currentLoc == null) return _serviceAreas.first;
-
-    ServiceArea? nearest;
-    double minDistance = double.infinity;
-
-    for (final area in _serviceAreas) {
-      final distance = _calculateDistance(currentLoc, area.center);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearest = area;
-      }
+        await ref
+            .read(authRepositoryProvider)
+            .logout(refreshToken: refreshToken);
+      } catch (_) {}
     }
-    return nearest;
+    await ref.read(wsConnectionProvider).disconnect();
+    await tokenStorage.clear();
+    ref.read(authStateProvider.notifier).markUnauthenticated(forceLogin: true);
   }
 
-  // ignore: unused_element
-  bool _isInsideArea(LatLng? loc, ServiceArea area) {
-    if (loc == null) return false;
-    return _calculateDistance(loc, area.center) <= area.radius;
-  }
-
-  double _calculateDistance(LatLng p1, LatLng p2) {
-    // Basic approximate distance for biasing logic
-    // In a real app, use a proper Vincenty/Haversine or the 'geolocator' package helper
-    return (p1.latitude - p2.latitude).abs() +
-        (p1.longitude - p2.longitude).abs();
-  }
-
-  void _onSearchFocusChange() {
-    if (_searchFocus.hasFocus && !_isSearching) {
-      setState(() => _isSearching = true);
-      _sheetController.animateTo(
-        0.9,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
+  // ── State listener ─────────────────────────────────────────────────────────
 
   void _listenToState() {
     ref.listen<HomeState>(homeNotifierProvider, (previous, next) {
-      if (next.currentLatLng != null &&
-          previous?.currentLatLng == null &&
-          _mapController != null) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(next.currentLatLng!, 15),
-        );
-      }
-
-      // Sync nearby drivers from notifier (single source of truth)
-      if (next.nearbyDrivers != previous?.nearbyDrivers && mounted) {
-        setState(() {
-          _nearbyDrivers = next.nearbyDrivers;
-        });
-      }
-
+      // Navigate to waiting screen on successful booking.
       if (next.createdRide != null &&
           next.createdRide != previous?.createdRide &&
           mounted) {
-        final ride = next.createdRide!;
-        context.push(Routes.rideWaiting, extra: ride.id);
+        context.push(Routes.rideWaiting, extra: next.createdRide!.id);
       }
 
+      // Show error snackbar.
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage &&
           mounted) {
@@ -200,721 +88,275 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
               backgroundColor: Theme.of(context).colorScheme.errorContainer,
             ),
           );
-        // Defer clearError to avoid mutating provider during build phase.
-        Future(() {
-          ref.read(homeNotifierProvider.notifier).clearError();
-        });
+        Future(() => ref.read(homeNotifierProvider.notifier).clearError());
       }
     });
   }
 
-  String _getTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'SakAI · Home';
-      case 1:
-        return 'Activity';
-      case 2:
-        return 'Profile';
-      default:
-        return 'SakAI';
-    }
-  }
-
-  Future<void> _logout() async {
-    final tokenStorage = ref.read(tokenStorageProvider);
-    final refreshToken = await tokenStorage.getRefreshToken();
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      try {
-        await ref
-            .read(authRepositoryProvider)
-            .logout(refreshToken: refreshToken);
-      } catch (_) {
-        // Best effort: local session must still be cleared.
-      }
-    }
-
-    // Disconnect WebSocket on logout.
-    await ref.read(wsConnectionProvider).disconnect();
-
-    await tokenStorage.clear();
-    ref.read(authStateProvider.notifier).markUnauthenticated(forceLogin: true);
-  }
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     _listenToState();
     final scheme = Theme.of(context).colorScheme;
 
-    // Determine the main body based on navigation index
     Widget body;
     switch (_currentIndex) {
       case 1:
         body = const ActivityScreen();
         break;
       case 2:
+        body = const WalletScreen();
+        break;
+      case 3:
         body = ProfileScreen(onSignOut: _logout);
         break;
       case 0:
       default:
-        body = _buildMapHomeStack(context, scheme);
+        body = _buildHomeBody(scheme);
         break;
     }
 
-    // Using a standard Scaffold to handle the Stack properly
-    return Scaffold(
-      appBar: _currentIndex != 0
-          ? AppBar(title: Text(_getTitle(_currentIndex)))
-          : null, // Map handles its own top bar
-      body: body,
-      drawer: _buildDrawer(context, scheme),
+    final homeState = ref.watch(homeNotifierProvider);
+    final isBookingActive =
+        _currentIndex == 0 &&
+        (homeState.status == HomeStatus.destinationSet ||
+            homeState.status == HomeStatus.requesting);
+
+    return PopScope(
+      canPop: !isBookingActive,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (isBookingActive) {
+          ref.read(homeNotifierProvider.notifier).clearDestination(exit: true);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        extendBody: true,
+        body: body,
+        bottomNavigationBar: _buildBottomNav(scheme),
+      ),
     );
   }
 
-  /// The original Map-based UI for the Home tab
-  Widget _buildMapHomeStack(BuildContext context, ColorScheme scheme) {
+  // ── Home body (idle vs booking) ────────────────────────────────────────────
+
+  Widget _buildHomeBody(ColorScheme scheme) {
+    final status = ref.watch(homeNotifierProvider).status;
+    final isActive =
+        status == HomeStatus.destinationSet || status == HomeStatus.requesting;
+
+    if (isActive) {
+      return _buildBookingFlow(scheme);
+    }
+    return _buildDashboard(scheme);
+  }
+
+  // ── Scrollable Dashboard (idle) ────────────────────────────────────────────
+
+  Widget _buildDashboard(ColorScheme scheme) {
+    final tokens = SakaiDesignTokens.of(context);
+
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // Green header (non-scrolling pinned effect via SliverToBoxAdapter)
+        SliverToBoxAdapter(child: const HomeDashboardHeader()),
+
+        // Services Grid
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: tokens.spaceLg,
+              bottom: tokens.spaceMd,
+            ),
+            child: HomeServicesGrid(
+              onTransportTap: () => _initiateTransportFlow(),
+            ),
+          ),
+        ),
+
+        // Section divider
+        SliverToBoxAdapter(child: _SectionDivider(scheme: scheme)),
+
+        // Wallet & loyalty cards
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SakaiSectionHeader(title: 'My Wallet'),
+              const HomeWalletCards(),
+              SizedBox(height: tokens.spaceLg),
+            ],
+          ),
+        ),
+
+        // Promotions carousel
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SakaiSectionHeader(
+                title: 'Promotions',
+                trailingLabel: 'See all',
+                onTrailingTap: () => context.push(Routes.promotions),
+              ),
+              const HomePromoCarousel(),
+              SizedBox(height: tokens.spaceLg),
+            ],
+          ),
+        ),
+
+
+        // Bottom padding for floating nav bar
+        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+      ],
+    );
+  }
+
+  // ── Booking flow (destination set / requesting) ────────────────────────────
+
+  Widget _buildBookingFlow(ColorScheme scheme) {
+    final tokens = SakaiDesignTokens.of(context);
+
     return Stack(
       children: [
-        _buildMap(scheme),
-        _buildTopBar(context, scheme),
-        if (ref.watch(homeNotifierProvider).status == HomeStatus.idle)
-          Positioned(
-            right: 16,
-            bottom: 320, // Adjusted to sit above the bottom card
-            child: FloatingActionButton.small(
-              onPressed: () {
-                if (ref.watch(homeNotifierProvider).currentLatLng != null &&
-                    _mapController != null) {
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLngZoom(
-                      ref.watch(homeNotifierProvider).currentLatLng!,
-                      15,
-                    ),
-                  );
-                }
-              },
-              backgroundColor: scheme.surface.withAlpha(230),
-              child: Icon(Icons.my_location, color: scheme.onSurface),
-            ),
-          ),
-        Positioned.fill(child: _buildDraggableSheet(context, scheme)),
-        if (ref.watch(homeNotifierProvider).status == HomeStatus.locating)
-          const Positioned.fill(
-            child: ColoredBox(
-              color: Color(0x88000000),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ),
-      ],
-    );
-  }
+        // Full-screen map — always visible behind the panel
+        const BookingMap(),
 
-  // --- UI Helpers (Map, TopBar, Cards) ---
-
-  Widget _buildMap(ColorScheme scheme) {
-    final center =
-        ref.watch(homeNotifierProvider).currentLatLng ?? _defaultLatLng;
-    final markers = <Marker>{
-      if (ref.watch(homeNotifierProvider).currentLatLng != null)
-        Marker(
-          markerId: const MarkerId('pickup'),
-          position: ref.watch(homeNotifierProvider).currentLatLng!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueAzure,
-          ),
-        ),
-      if (ref.watch(homeNotifierProvider).destination != null)
-        Marker(
-          markerId: const MarkerId('destination'),
-          position: LatLng(
-            ref.watch(homeNotifierProvider).destination!.lat,
-            ref.watch(homeNotifierProvider).destination!.lng,
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
-          ),
-        ),
-      ..._nearbyDrivers.map(
-        (d) => Marker(
-          markerId: MarkerId('driver_${d.id}'),
-          position: d.location,
-          rotation: d.heading,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            d.vehicleType == VehicleType.car
-                ? BitmapDescriptor.hueBlue
-                : d.vehicleType == VehicleType.motorcycle
-                ? BitmapDescriptor.hueYellow
-                : BitmapDescriptor.hueGreen,
-          ),
-          infoWindow: InfoWindow(title: d.name),
-        ),
-      ),
-    };
-
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: center, zoom: 14),
-      onMapCreated: (c) => _mapController = c,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      markers: markers,
-    );
-  }
-
-  Widget _buildTopBar(BuildContext context, ColorScheme scheme) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            CircleAvatar(
-              backgroundColor: scheme.surface.withAlpha(235),
-              child: Builder(
-                builder: (context) => IconButton(
-                  icon: Icon(Icons.menu, color: scheme.onSurface),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- Navigation & Bottom Sheets ---
-
-  Widget _buildDrawer(BuildContext context, ColorScheme scheme) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: scheme.primary),
-            child: Text(
-              'SakAI Menu',
-              style: TextStyle(color: scheme.onPrimary, fontSize: 24),
-            ),
-          ),
-          ListTile(
-            leading: Icon(
-              _currentIndex == 0 ? Icons.home : Icons.home_outlined,
-            ),
-            title: const Text('Home'),
-            selected: _currentIndex == 0,
-            onTap: () {
-              setState(() => _currentIndex = 0);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(
-              _currentIndex == 1 ? Icons.history : Icons.history_outlined,
-            ),
-            title: const Text('Activity'),
-            selected: _currentIndex == 1,
-            onTap: () {
-              setState(() => _currentIndex = 1);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(
-              _currentIndex == 2 ? Icons.person : Icons.person_outline,
-            ),
-            title: const Text('Profile'),
-            selected: _currentIndex == 2,
-            onTap: () {
-              setState(() => _currentIndex = 2);
-              Navigator.pop(context);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log Out'),
-            onTap: () {
-              Navigator.pop(context);
-              _logout();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDraggableSheet(BuildContext context, ColorScheme scheme) {
-    final tokens = SakaiDesignTokens.of(context);
-    final isIdle = ref.watch(homeNotifierProvider).status == HomeStatus.idle;
-
-    return DraggableScrollableSheet(
-      key: _sheetKey,
-      controller: _sheetController,
-      initialChildSize: isIdle ? (_currentIndex == 0 ? 0.35 : 0.22) : 0.45,
-      minChildSize: 0.22,
-      maxChildSize: 0.9,
-      snap: true,
-      snapSizes: const [0.22, 0.35, 0.45, 0.9],
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
+        // Top bar
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
             color: scheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: tokens.elevationLg,
-          ),
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    // Drag Handle
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: scheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-              if (isIdle)
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildIdleContent(context, scheme, tokens),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildActiveContent(context, scheme, tokens),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildIdleContent(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
-    if (_isSearching) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(
-                _searchMode == LocationSearchMode.pickup
-                    ? 'Where from?'
-                    : 'Where to?',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: _closeLocationSearch,
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text('Cancel'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSearchField(context, scheme, tokens),
-          if (_isLoadingSuggestions)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: LinearProgressIndicator(minHeight: 2),
-            )
-          else
-            const SizedBox(height: 16),
-
-          if (_suggestions.isNotEmpty) ...[
-            Text(
-              'Suggestions',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            // Real Suggestions List
-            ..._suggestions.map(
-              (s) => ListTile(
-                leading: Icon(
-                  Icons.place_outlined,
-                  size: 20,
-                  color: scheme.outline,
-                ),
-                title: Text(s, style: const TextStyle(fontSize: 14)),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                onTap: () => _handleSuggestionTapped(s),
+            child: SafeArea(
+              bottom: false,
+              child: BookingTopBar(
+                scheme: scheme,
+                onBack: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(homeNotifierProvider.notifier).clearDestination(exit: true);
+                },
               ),
             ),
-          ] else if (!_isLoadingSuggestions) ...[
-            // No results found
-            const SizedBox(height: 32),
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 48,
-                    color: scheme.outlineVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No results found',
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Try a different or more specific address',
-                    style: TextStyle(color: scheme.outline, fontSize: 12),
-                  ),
-                  const SizedBox(height: 24),
-                  SakaiPrimaryButton(
-                    label: 'Confirm "${_searchController.text}"',
-                    onPressed: () =>
-                        _handleSuggestionTapped(_searchController.text),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          TextButton.icon(
-            onPressed: () {
-              setState(() => _isSearching = false);
-              _searchFocus.unfocus();
-              _searchController.clear();
-              _sheetController.animateTo(
-                0.35,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-              );
-            },
-            icon: const Icon(Icons.close),
-            label: const Text('Cancel Search'),
           ),
-        ],
-      );
-    }
+        ),
 
-    return Column(
-      children: [
-        // Pickup and destination display
-        _buildLocationRow(context, scheme, tokens),
-        const SizedBox(height: 16),
+        // Fixed bottom panel — no dragging required
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _BottomBookingPanel(
+            scheme: scheme,
+            tokens: tokens,
+            timelineCard: _buildTimelineCard(scheme, tokens),
+            rideTypeCards: _buildRideTypeCards(scheme, tokens),
+            confirmButton: _buildConfirmButton(scheme),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildLocationRow(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
+  Widget _buildTimelineCard(ColorScheme scheme, SakaiDesignTokens tokens) {
     final pickup = ref.watch(homeNotifierProvider).pickup;
     final destination = ref.watch(homeNotifierProvider).destination;
 
-    return Column(
-      children: [
-        // Pickup field
-        _buildLocationTile(
-          icon: Icons.my_location,
-          label: pickup?.address ?? 'Tap to set pickup',
-          onTap: () => _openLocationSearch(LocationSearchMode.pickup),
-          scheme: scheme,
-        ),
-        const SizedBox(height: 12),
-        // Destination field
-        _buildLocationTile(
-          icon: Icons.place,
-          label: destination?.address ?? 'Saan kayo pupunta?',
-          onTap: () => _openLocationSearch(LocationSearchMode.destination),
-          scheme: scheme,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLocationTile({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme scheme,
-  }) {
-    final isPlaceholder = label.contains('Tap') || label.contains('Where');
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: scheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isPlaceholder
-                      ? scheme.onSurfaceVariant
-                      : scheme.onSurface,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Timeline indicators
+          Column(
+            children: [
+              const SizedBox(height: 6),
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: scheme.primary, width: 3),
+                  color: scheme.surface,
                 ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: scheme.outline, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleSuggestionTapped(String address) async {
-    final notifier = ref.read(homeNotifierProvider.notifier);
-    final mode = _searchMode; // Save before clearing
-    setState(() {
-      _isSearching = false;
-      _suggestions = [];
-      _searchMode = null;
-      _searchController.text = address;
-    });
-    _searchFocus.unfocus();
-    _sheetController.animateTo(
-      0.35,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-
-    try {
-      final loc = await GeocodingService().geocode(address);
-      if (mounted) {
-        if (mode == LocationSearchMode.pickup) {
-          notifier.setPickup(loc);
-        } else {
-          notifier.setDestination(loc);
-          // setDestination() auto-starts ride type polling
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not find that location.')),
-        );
-      }
-    }
-  }
-
-  void _openLocationSearch(LocationSearchMode mode) {
-    setState(() {
-      _searchMode = mode;
-      _isSearching = true;
-      _searchController.clear();
-      _suggestions = [];
-    });
-    _sheetController.animateTo(
-      0.9,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-    _searchFocus.requestFocus();
-  }
-
-  void _closeLocationSearch() {
-    setState(() {
-      _searchMode = null;
-      _isSearching = false;
-      _suggestions = [];
-      _searchController.clear();
-    });
-    _searchFocus.unfocus();
-    _sheetController.animateTo(
-      0.35,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
-  Widget _buildSearchField(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
-    return SakaiTextField(
-      controller: _searchController,
-      focusNode: _searchFocus,
-      label: 'Saan kayo pupunta?',
-      hint: 'Enter destination...',
-      prefixIcon: Icon(Icons.search, color: scheme.primary),
-      textInputAction: TextInputAction.search,
-      onChanged: _onSearchChanged,
-      suffixIcon: _searchController.text.isNotEmpty
-          ? IconButton(
-              icon: const Icon(Icons.clear, size: 18),
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  _suggestions = [];
-                });
-              },
-            )
-          : null,
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildRecentItem(
-    IconData icon,
-    String title,
-    String subtitle,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens, {
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(tokens.radiusSm),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16, top: 4),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: scheme.surfaceContainerHighest,
-              child: Icon(icon, size: 20, color: scheme.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 4),
+              CustomPaint(
+                size: const Size(2, 32),
+                painter: _DottedLinePainter(color: scheme.outlineVariant),
               ),
-            ),
-            Icon(Icons.chevron_right, color: scheme.outline),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActiveContent(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Column(
+              const SizedBox(height: 4),
+              Icon(Icons.place, size: 16, color: scheme.error),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Address fields
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () => _openLocationSearch(LocationSearchMode.pickup),
-                  child: Icon(
-                    Icons.my_location,
-                    size: 16,
-                    color: scheme.primary,
-                  ),
-                ),
-                Container(width: 1, height: 24, color: scheme.outlineVariant),
-                Icon(Icons.place, size: 16, color: scheme.error),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => _openLocationSearch(LocationSearchMode.pickup),
-                    child: Text(
-                      ref.watch(homeNotifierProvider).pickup?.address ??
-                          "Tap to set pickup",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: ref.watch(homeNotifierProvider).pickup == null
-                            ? scheme.primary
-                            : null,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AddressField(
+                        label: 'PICKUP',
+                        text: pickup?.address ?? 'Tap to set pickup',
+                        active: pickup != null,
+                        onTap: () => _openLocationSearch(isPickup: true),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    ref.watch(homeNotifierProvider).destination?.address ??
-                        "Select destination",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    if (pickup != null)
+                      IconButton(
+                        onPressed: () => ref
+                            .read(homeNotifierProvider.notifier)
+                            .clearPickup(),
+                        icon: const Icon(Icons.close, size: 18),
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
+                Divider(
+                  height: 16,
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AddressField(
+                        label: 'DESTINATION',
+                        text: destination?.address ?? 'Select destination',
+                        active: destination != null,
+                        onTap: () => _openLocationSearch(),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    if (destination != null)
+                      IconButton(
+                        onPressed: () => ref
+                            .read(homeNotifierProvider.notifier)
+                            .clearDestination(),
+                        icon: const Icon(Icons.close, size: 18),
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
+              ],
             ),
-            IconButton(
-              onPressed: () =>
-                  ref.read(homeNotifierProvider.notifier).clearDestination(),
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-        const Divider(height: 32),
-        // Real-time ride type cards with live driver counts
-        _buildRideTypeCards(context, scheme, tokens),
-        const SizedBox(height: 16),
-        // Single-tap Request Ride button
-        SakaiPrimaryButton(
-          label: _buildRequestButtonLabel(),
-          onPressed: _canRequestRide() ? _handleRequestRide : null,
-        ),
-        const SizedBox(height: 16),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
-  /// Builds inline ride type cards with live driver counts.
-  Widget _buildRideTypeCards(
-    BuildContext context,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-  ) {
+  Widget _buildRideTypeCards(ColorScheme scheme, SakaiDesignTokens tokens) {
     final options = ref.watch(homeNotifierProvider).rideTypeOptions;
     final selectedType = ref.watch(homeNotifierProvider).selectedRideType;
     final notifier = ref.read(homeNotifierProvider.notifier);
@@ -934,102 +376,84 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Choose your ride',
-          style: Theme.of(context).textTheme.titleMedium,
+        const Text(
+          'Choose ride type',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        const SizedBox(height: 8),
-        ...options.map(
-          (opt) => _buildRideTypeCard(
-            opt,
-            selectedType == opt.type,
-            scheme,
-            tokens,
-            () => notifier.setSelectedRideType(opt.type),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: options
+                .map(
+                  (opt) => _TransitCard(
+                    option: opt,
+                    selected: selectedType == opt.type,
+                    scheme: scheme,
+                    onTap: () => notifier.setSelectedRideType(opt.type),
+                  ),
+                )
+                .toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRideTypeCard(
-    RideTypeOption option,
-    bool selected,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens,
-    VoidCallback onTap,
-  ) {
-    final typeLabels = {
-      VehicleType.motorcycle: 'Moto',
-      VehicleType.car: 'Car',
-      VehicleType.tricycle: 'Tricycle',
-    };
-    final typeDesc = {
-      VehicleType.motorcycle: 'Fastest through traffic',
-      VehicleType.car: 'Comfortable, up to 4 seats',
-      VehicleType.tricycle: 'Budget-friendly local rides',
-    };
+  Widget _buildConfirmButton(ColorScheme scheme) {
+    final canBook = _canRequestRide();
 
-    return InkWell(
-      onTap: option.isAvailable ? onTap : null,
-      borderRadius: BorderRadius.circular(tokens.radiusMd),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+    return GestureDetector(
+      onTap: canBook
+          ? () {
+              HapticFeedback.mediumImpact();
+              _handleRequestRide();
+            }
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 56,
         decoration: BoxDecoration(
-          color: selected
-              ? scheme.primaryContainer.withValues(alpha: 0.3)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(
-            color: selected ? scheme.primary : scheme.outlineVariant,
-          ),
+          gradient: canBook
+              ? const LinearGradient(
+                  colors: [
+                    SakaiDesignTokens.confirmCtaGradientStart,
+                    SakaiDesignTokens.confirmCtaGradientEnd,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: canBook ? null : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: canBook
+              ? [
+                  BoxShadow(
+                    color: SakaiDesignTokens.confirmCtaGradientStart
+                        .withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [],
         ),
+        alignment: Alignment.center,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              option.type.icon,
-              size: 28,
-              color: selected ? scheme.primary : scheme.onSurfaceVariant,
+              Icons.bolt,
+              color: canBook ? Colors.black : scheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    typeLabels[option.type] ?? option.type.displayName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    typeDesc[option.type] ?? '',
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 8),
+            Text(
+              'Confirm Booking',
+              style: TextStyle(
+                color: canBook ? Colors.black : scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '₱${option.estimatedFare.toStringAsFixed(0)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  option.isAvailable
-                      ? '${option.availableDrivers} nearby'
-                      : 'None available',
-                  style: TextStyle(
-                    color: option.isAvailable
-                        ? scheme.onSurfaceVariant
-                        : scheme.error,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -1037,26 +461,53 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     );
   }
 
-  String _buildRequestButtonLabel() {
-    final state = ref.watch(homeNotifierProvider);
-    if (state.status == HomeStatus.requesting) return 'Requesting…';
-    if (state.selectedRideType != null) {
-      return 'Request ${state.selectedRideType!.displayName}';
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  Future<void> _initiateTransportFlow() async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    await notifier.initLocation();
+
+    // 1. Pickup
+    final pickup = await showLocationPicker(context, mode: LocationSearchMode.pickup);
+    if (pickup == null || !mounted) return;
+    notifier.setPickup(pickup);
+
+    // 2. Destination
+    final destination = await showLocationPicker(context, mode: LocationSearchMode.destination);
+    if (destination == null || !mounted) return;
+    
+    notifier.setDestination(destination);
+    setState(() {});
+  }
+
+  Future<void> _openLocationSearch({bool isPickup = false}) async {
+    final notifier = ref.read(homeNotifierProvider.notifier);
+    await notifier.initLocation();
+
+    final mode = isPickup
+        ? LocationSearchMode.pickup
+        : LocationSearchMode.destination;
+    final result = await showLocationPicker(context, mode: mode);
+    if (result == null || !mounted) return;
+    
+    if (isPickup) {
+      notifier.setPickup(result);
+    } else {
+      notifier.setDestination(result);
+      setState(() {});
     }
-    return 'Request Ride';
   }
 
   bool _canRequestRide() {
-    return ref.watch(homeNotifierProvider).canRequest ||
-        (ref.watch(homeNotifierProvider).destination != null &&
-            ref.watch(homeNotifierProvider).rideTypeOptions.isNotEmpty);
+    final state = ref.watch(homeNotifierProvider);
+    return state.pickup != null &&
+        (state.canRequest ||
+            (state.destination != null && state.rideTypeOptions.isNotEmpty));
   }
 
   void _handleRequestRide() {
     final notifier = ref.read(homeNotifierProvider.notifier);
     final state = ref.read(homeNotifierProvider);
-
-    // If no type selected yet, pick the one with most drivers
     if (state.selectedRideType == null && state.rideTypeOptions.isNotEmpty) {
       final best = state.rideTypeOptions
           .where((o) => o.isAvailable)
@@ -1067,60 +518,606 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 ? opt
                 : prev,
           );
-      if (best != null) {
-        notifier.setSelectedRideType(best.type);
-      }
+      if (best != null) notifier.setSelectedRideType(best.type);
     }
-
     notifier.requestRide();
   }
 
-  // ignore: unused_element
-  Widget _buildRideOption(
-    String name,
-    String type,
-    String price,
-    IconData icon,
-    ColorScheme scheme,
-    SakaiDesignTokens tokens, {
-    bool selected = false,
-  }) {
+  // ── Bottom Navigation ──────────────────────────────────────────────────────
+
+  Widget _buildBottomNav(ColorScheme scheme) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      color: Colors.transparent,
+      child: Container(
+        height: 68,
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: 0.97),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.45),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _NavItem(
+              0,
+              Icons.explore_rounded,
+              'Home',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              1,
+              Icons.receipt_long_rounded,
+              'Activity',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              2,
+              Icons.account_balance_wallet_rounded,
+              'Wallet',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+            _NavItem(
+              3,
+              Icons.person_rounded,
+              'Account',
+              _currentIndex,
+              _onNavTap,
+              scheme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onNavTap(int index) {
+    HapticFeedback.lightImpact();
+    setState(() => _currentIndex = index);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _NavItem extends StatelessWidget {
+  const _NavItem(
+    this.index,
+    this.icon,
+    this.label,
+    this.currentIndex,
+    this.onTap,
+    this.scheme,
+  );
+
+  final int index;
+  final IconData icon;
+  final String label;
+  final int currentIndex;
+  final void Function(int) onTap;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = currentIndex == index;
+    final active = scheme.primary;
+    final inactive = scheme.onSurface.withValues(alpha: 0.4);
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: selected ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              child: Icon(icon, color: selected ? active : inactive, size: 22),
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                color: selected ? active : inactive,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                fontSize: 10,
+              ),
+              child: Text(label),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BookingTopBar extends StatelessWidget {
+  const BookingTopBar({super.key, required this.scheme, required this.onBack});
+
+  final ColorScheme scheme;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: selected
-            ? scheme.primaryContainer.withValues(alpha: 0.3)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        border: Border.all(
-          color: selected ? scheme.primary : scheme.outlineVariant,
+        color: scheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.3),
+          ),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 32,
-            color: selected ? scheme.primary : scheme.onSurfaceVariant,
+          IconButton(
+            key: const Key('booking_back_button'),
+            onPressed: onBack,
+            icon: Icon(Icons.arrow_back, color: scheme.onSurface),
+            tooltip: 'Back',
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 4),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: scheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'S',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'SakAI',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            key: const Key('booking_help_button'),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showHelpDialog(context);
+            },
+            icon: Icon(Icons.help_outline, color: scheme.onSurfaceVariant),
+            tooltip: 'Help',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const Key('booking_help_dialog'),
+        title: Row(
+          children: [
+            Icon(Icons.help_outline, color: scheme.primary),
+            const SizedBox(width: 8),
+            const Text('Booking Help'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'How to book a ride:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('1. Set your pickup and destination locations.'),
+            Text('2. Select your ride type: Tricycle, Motorcycle, or Car.'),
+            Text('3. Review the estimated fare and click "Confirm Booking".'),
+            SizedBox(height: 12),
+            Text(
+              'SakAI offers reliable transportation powered by dynamic routing.',
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('booking_help_dialog_close'),
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Got it',
+              style: TextStyle(
+                color: scheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressField extends StatelessWidget {
+  const _AddressField({
+    required this.label,
+    required this.text,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final String text;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                color: active ? scheme.onSurface : scheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransitCard extends StatelessWidget {
+  const _TransitCard({
+    required this.option,
+    required this.selected,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  final RideTypeOption option;
+  final bool selected;
+  final ColorScheme scheme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, desc, iconData) = switch (option.type) {
+      VehicleType.tricycle => (
+        'Tricycle',
+        'Budget • 3 wheels',
+        Icons.electric_rickshaw,
+      ),
+      VehicleType.motorcycle => (
+        'Motorcycle',
+        'Fast • 2 wheels',
+        Icons.two_wheeler,
+      ),
+      VehicleType.car => ('Car', 'Comfort • 4 wheels', Icons.directions_car),
+    };
+
+    final available = option.isAvailable;
+    final count = option.availableDrivers;
+
+    // Border: green when selected, amber when unavailable (still visible), default otherwise
+    final borderColor = selected
+        ? scheme.primary
+        : !available
+        ? scheme.error.withValues(alpha: 0.4)
+        : scheme.outlineVariant.withValues(alpha: 0.6);
+
+    final bgColor = selected
+        ? scheme.primary.withValues(alpha: 0.08)
+        : !available
+        ? scheme.errorContainer.withValues(alpha: 0.08)
+        : scheme.surface;
+
+    // Driver count badge
+    final badgeColor = available ? scheme.primary : scheme.error;
+    final badgeBg = available
+        ? scheme.primary.withValues(alpha: 0.15)
+        : scheme.errorContainer.withValues(alpha: 0.6);
+    final badgeText = available ? '$count active' : 'No drivers';
+
+    // Bottom-right label
+    final driverLabel = available
+        ? '$count driver${count == 1 ? '' : 's'}'
+        : 'Unavailable';
+
+    return GestureDetector(
+      onTap: available ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: 140,
+        margin: const EdgeInsets.only(right: 12, bottom: 4, top: 4),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor, width: selected ? 2.0 : 1.0),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon + availability badge row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  type,
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 12,
+                Icon(
+                  iconData,
+                  color: selected
+                      ? scheme.primary
+                      : available
+                      ? scheme.onSurfaceVariant
+                      : scheme.error.withValues(alpha: 0.6),
+                  size: 28,
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                color: selected
+                    ? scheme.primary
+                    : available
+                    ? scheme.onSurface
+                    : scheme.onSurface.withValues(alpha: 0.45),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              desc,
+              style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  available
+                      ? SakaiCurrency.format(option.estimatedFare)
+                      : '—',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: selected
+                        ? scheme.primary
+                        : available
+                        ? scheme.onSurface
+                        : scheme.onSurface.withValues(alpha: 0.35),
+                  ),
+                ),
+                Text(
+                  driverLabel,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: available ? scheme.onSurfaceVariant : scheme.error,
+                    fontWeight: available ? FontWeight.normal : FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider({required this.scheme});
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 8,
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Painters
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DottedLinePainter extends CustomPainter {
+  const _DottedLinePainter({this.color = Colors.grey});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    const dashH = 4.0;
+    const dashGap = 4.0;
+    double y = 0;
+    while (y < size.height) {
+      canvas.drawLine(
+        Offset(size.width / 2, y),
+        Offset(size.width / 2, y + dashH),
+        paint,
+      );
+      y += dashH + dashGap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fixed bottom booking panel — no dragging needed
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BottomBookingPanel extends StatelessWidget {
+  const _BottomBookingPanel({
+    required this.scheme,
+    required this.tokens,
+    required this.timelineCard,
+    required this.rideTypeCards,
+    required this.confirmButton,
+  });
+
+  final ColorScheme scheme;
+  final SakaiDesignTokens tokens;
+  final Widget timelineCard;
+  final Widget rideTypeCards;
+  final Widget confirmButton;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 24,
+            spreadRadius: 2,
+            offset: const Offset(0, -4),
           ),
-          Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Drag handle (visual only — panel is fixed)
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // ── Scrollable content area (timeline + ride type cards)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                timelineCard,
+                SizedBox(height: tokens.spaceMd),
+                rideTypeCards,
+                SizedBox(height: tokens.spaceSm),
+              ],
+            ),
+          ),
+
+          // ── Sticky divider
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+
+          // ── Sticky confirm button — always visible, never scrolled away
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spaceLg,
+                tokens.spaceMd,
+                tokens.spaceLg,
+                tokens.spaceMd,
+              ),
+              child: confirmButton,
+            ),
+          ),
         ],
       ),
     );

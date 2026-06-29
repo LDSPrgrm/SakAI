@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { Settings2, Zap, Calculator, CheckCircle } from 'lucide-react';
+import { Zap, Calculator, CheckCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
   useFareConfigs, useSurgeConfig,
@@ -14,13 +14,13 @@ import type { FareConfig, SurgeConfig } from '@/types/super-admin';
 import { DEFAULT_FARE_BY_VEHICLE, type VehicleType } from '@/constants/fareDefaults';
 type NumericFareField = Exclude<keyof FareConfig, 'vehicle_type'>;
 
-const FARE_FIELDS: { key: NumericFareField; label: string }[] = [
-  { key: 'base_fare', label: 'Base Fare (PHP)' },
-  { key: 'minimum_fare', label: 'Minimum Fare (PHP)' },
-  { key: 'per_km_rate', label: 'Per Kilometer Rate (PHP)' },
-  { key: 'per_min_rate', label: 'Per Minute Rate (PHP)' },
-  { key: 'booking_fee', label: 'Booking Fee (PHP)' },
-  { key: 'cancellation_fee', label: 'Cancellation Fee (PHP)' },
+const FARE_FIELDS: { key: NumericFareField; label: string; unit: string }[] = [
+  { key: 'base_fare', label: 'Base Fare', unit: 'PHP' },
+  { key: 'minimum_fare', label: 'Minimum Fare', unit: 'PHP' },
+  { key: 'per_km_rate', label: 'Per-KM Rate', unit: 'PHP/km' },
+  { key: 'per_min_rate', label: 'Per-Min Rate', unit: 'PHP/min' },
+  { key: 'booking_fee', label: 'Booking Fee', unit: 'PHP' },
+  { key: 'cancellation_fee', label: 'Cancellation Fee', unit: 'PHP' },
 ];
 
 interface FareFormProps {
@@ -32,10 +32,13 @@ interface FareFormProps {
 
 function FareForm({ vehicle, config, onChange, errors }: FareFormProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {FARE_FIELDS.map(({ key, label }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {FARE_FIELDS.map(({ key, label, unit }) => (
         <div key={key}>
-          <label className="block text-sm font-medium text-text-muted mb-1">{label}</label>
+          <label className="block text-sm font-medium text-text-muted mb-1">
+            {label}{' '}
+            <span className="text-xs text-text-muted/60">({unit})</span>
+          </label>
           <Input
             type="number"
             min={0}
@@ -154,20 +157,17 @@ export function FareSurge() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings2 className="w-5 h-5 text-primary" />
-              Base Fare Configuration
-            </CardTitle>
+            <CardTitle>Base Fare Configuration</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-sm text-text-muted py-6 text-center">Loading fare configs...</p>
             ) : (
               <Tabs defaultValue="motorcycle" className="w-full">
-                <TabsList className="mb-4">
+                <TabsList className="mb-6">
                   <TabsTrigger value="motorcycle">Motorcycle</TabsTrigger>
                   <TabsTrigger value="tricycle">Tricycle</TabsTrigger>
                   <TabsTrigger value="car">Car (4-seater)</TabsTrigger>

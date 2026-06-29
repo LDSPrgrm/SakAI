@@ -36,6 +36,7 @@ class ActiveRideState {
     this.driverLocation,
     this.isLoading = false,
     this.errorMessage,
+    this.sos = SosUiState.idle,
   });
 
   /// The underlying ride response.
@@ -59,6 +60,9 @@ class ActiveRideState {
   /// Error message if loading failed.
   final String? errorMessage;
 
+  /// SOS lifecycle state — drives the emergency banner. See [SosUiState].
+  final SosUiState sos;
+
   ActiveRideState copyWith({
     RideResponse? ride,
     String? driverName,
@@ -67,6 +71,7 @@ class ActiveRideState {
     gmaps.LatLng? driverLocation,
     bool? isLoading,
     String? errorMessage,
+    SosUiState? sos,
   }) {
     return ActiveRideState(
       ride: ride ?? this.ride,
@@ -76,6 +81,7 @@ class ActiveRideState {
       driverLocation: driverLocation ?? this.driverLocation,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
+      sos: sos ?? this.sos,
     );
   }
 

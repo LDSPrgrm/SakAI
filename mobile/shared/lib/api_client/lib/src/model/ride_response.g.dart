@@ -37,6 +37,10 @@ const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_cash =
     const RideResponsePaymentMethodEnum._('cash');
 const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_card =
     const RideResponsePaymentMethodEnum._('card');
+const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_gcash =
+    const RideResponsePaymentMethodEnum._('gcash');
+const RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnum_paymaya =
+    const RideResponsePaymentMethodEnum._('paymaya');
 
 RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnumValueOf(
   String name,
@@ -46,6 +50,10 @@ RideResponsePaymentMethodEnum _$rideResponsePaymentMethodEnumValueOf(
       return _$rideResponsePaymentMethodEnum_cash;
     case 'card':
       return _$rideResponsePaymentMethodEnum_card;
+    case 'gcash':
+      return _$rideResponsePaymentMethodEnum_gcash;
+    case 'paymaya':
+      return _$rideResponsePaymentMethodEnum_paymaya;
     default:
       throw ArgumentError(name);
   }
@@ -56,6 +64,8 @@ _$rideResponsePaymentMethodEnumValues = BuiltSet<RideResponsePaymentMethodEnum>(
   const <RideResponsePaymentMethodEnum>[
     _$rideResponsePaymentMethodEnum_cash,
     _$rideResponsePaymentMethodEnum_card,
+    _$rideResponsePaymentMethodEnum_gcash,
+    _$rideResponsePaymentMethodEnum_paymaya,
   ],
 );
 
@@ -132,10 +142,14 @@ class _$RideResponsePaymentMethodEnumSerializer
   static const Map<String, Object> _toWire = const <String, Object>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
 
   @override
@@ -199,6 +213,12 @@ abstract mixin class RideResponseBuilder {
   String? get id;
   set id(String? id);
 
+  int? get seq;
+  set seq(int? seq);
+
+  String? get displayId;
+  set displayId(String? displayId);
+
   RideStatus? get status;
   set status(RideStatus? status);
 
@@ -250,6 +270,9 @@ abstract mixin class RideResponseBuilder {
   String? get cancellationReasonText;
   set cancellationReasonText(String? cancellationReasonText);
 
+  int? get declineCount;
+  set declineCount(int? declineCount);
+
   DateTime? get createdAt;
   set createdAt(DateTime? createdAt);
 
@@ -260,6 +283,10 @@ abstract mixin class RideResponseBuilder {
 class _$$RideResponse extends $RideResponse {
   @override
   final String id;
+  @override
+  final int? seq;
+  @override
+  final String? displayId;
   @override
   final RideStatus status;
   @override
@@ -295,6 +322,8 @@ class _$$RideResponse extends $RideResponse {
   @override
   final String? cancellationReasonText;
   @override
+  final int? declineCount;
+  @override
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
@@ -304,6 +333,8 @@ class _$$RideResponse extends $RideResponse {
 
   _$$RideResponse._({
     required this.id,
+    this.seq,
+    this.displayId,
     required this.status,
     required this.passenger,
     this.driver,
@@ -321,6 +352,7 @@ class _$$RideResponse extends $RideResponse {
     this.cancelledBy,
     this.cancellationReason,
     this.cancellationReasonText,
+    this.declineCount,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -336,6 +368,8 @@ class _$$RideResponse extends $RideResponse {
     if (identical(other, this)) return true;
     return other is $RideResponse &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         status == other.status &&
         passenger == other.passenger &&
         driver == other.driver &&
@@ -353,6 +387,7 @@ class _$$RideResponse extends $RideResponse {
         cancelledBy == other.cancelledBy &&
         cancellationReason == other.cancellationReason &&
         cancellationReasonText == other.cancellationReasonText &&
+        declineCount == other.declineCount &&
         createdAt == other.createdAt &&
         updatedAt == other.updatedAt;
   }
@@ -361,6 +396,8 @@ class _$$RideResponse extends $RideResponse {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, passenger.hashCode);
     _$hash = $jc(_$hash, driver.hashCode);
@@ -378,6 +415,7 @@ class _$$RideResponse extends $RideResponse {
     _$hash = $jc(_$hash, cancelledBy.hashCode);
     _$hash = $jc(_$hash, cancellationReason.hashCode);
     _$hash = $jc(_$hash, cancellationReasonText.hashCode);
+    _$hash = $jc(_$hash, declineCount.hashCode);
     _$hash = $jc(_$hash, createdAt.hashCode);
     _$hash = $jc(_$hash, updatedAt.hashCode);
     _$hash = $jf(_$hash);
@@ -388,6 +426,8 @@ class _$$RideResponse extends $RideResponse {
   String toString() {
     return (newBuiltValueToStringHelper(r'$RideResponse')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('status', status)
           ..add('passenger', passenger)
           ..add('driver', driver)
@@ -405,6 +445,7 @@ class _$$RideResponse extends $RideResponse {
           ..add('cancelledBy', cancelledBy)
           ..add('cancellationReason', cancellationReason)
           ..add('cancellationReasonText', cancellationReasonText)
+          ..add('declineCount', declineCount)
           ..add('createdAt', createdAt)
           ..add('updatedAt', updatedAt))
         .toString();
@@ -420,6 +461,14 @@ class $RideResponseBuilder
   String? _id;
   String? get id => _$this._id;
   set id(covariant String? id) => _$this._id = id;
+
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(covariant int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(covariant String? displayId) => _$this._displayId = displayId;
 
   RideStatus? _status;
   RideStatus? get status => _$this._status;
@@ -502,6 +551,11 @@ class $RideResponseBuilder
   set cancellationReasonText(covariant String? cancellationReasonText) =>
       _$this._cancellationReasonText = cancellationReasonText;
 
+  int? _declineCount;
+  int? get declineCount => _$this._declineCount;
+  set declineCount(covariant int? declineCount) =>
+      _$this._declineCount = declineCount;
+
   DateTime? _createdAt;
   DateTime? get createdAt => _$this._createdAt;
   set createdAt(covariant DateTime? createdAt) => _$this._createdAt = createdAt;
@@ -518,6 +572,8 @@ class $RideResponseBuilder
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _status = $v.status;
       _passenger = $v.passenger;
       _driver = $v.driver?.toBuilder();
@@ -535,6 +591,7 @@ class $RideResponseBuilder
       _cancelledBy = $v.cancelledBy;
       _cancellationReason = $v.cancellationReason;
       _cancellationReasonText = $v.cancellationReasonText;
+      _declineCount = $v.declineCount;
       _createdAt = $v.createdAt;
       _updatedAt = $v.updatedAt;
       _$v = null;
@@ -566,6 +623,8 @@ class $RideResponseBuilder
               r'$RideResponse',
               'id',
             ),
+            seq: seq,
+            displayId: displayId,
             status: BuiltValueNullFieldError.checkNotNull(
               status,
               r'$RideResponse',
@@ -591,6 +650,7 @@ class $RideResponseBuilder
             cancelledBy: cancelledBy,
             cancellationReason: cancellationReason,
             cancellationReasonText: cancellationReasonText,
+            declineCount: declineCount,
             createdAt: BuiltValueNullFieldError.checkNotNull(
               createdAt,
               r'$RideResponse',

@@ -40,6 +40,7 @@ class RideHistoryListState {
     String? activeFilter,
     bool clearError = false,
     bool clearItems = false,
+    bool clearFilter = false,
   }) {
     return RideHistoryListState(
       status: status ?? this.status,
@@ -49,7 +50,7 @@ class RideHistoryListState {
       hasMore: hasMore ?? this.hasMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      activeFilter: activeFilter ?? this.activeFilter,
+      activeFilter: clearFilter ? null : (activeFilter ?? this.activeFilter),
     );
   }
 }
@@ -159,7 +160,14 @@ class RideHistoryListNotifier extends Notifier<RideHistoryListState> {
 
   /// Apply a status filter (e.g. 'completed', 'cancelled') or null for all.
   Future<void> setFilter(String? status) async {
-    state = state.copyWith(activeFilter: status);
+    state = state.copyWith(activeFilter: status, clearFilter: status == null);
     await loadHistory();
+  }
+
+  /// Remove a specific history item from the state.
+  void removeRecentItem(String id) {
+    state = state.copyWith(
+      items: state.items.where((item) => item.id != id).toList(),
+    );
   }
 }

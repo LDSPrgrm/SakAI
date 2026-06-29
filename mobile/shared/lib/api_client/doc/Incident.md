@@ -9,7 +9,10 @@ import 'package:sakai_api_client/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | [optional] 
+**seq** | **int** | Postgres-assigned monotonic counter; the source for display_id. | [optional] 
+**displayId** | **String** | Human-readable reference (e.g. INC-0042) derived from seq. | [optional] 
 **rideId** | **String** |  | [optional] 
+**rideDisplayId** | **String** | Human-readable reference for the linked ride (e.g. RIDE-000123). | [optional] 
 **type** | **String** |  | [optional] 
 **severity** | **String** | Operator-assigned urgency level | [optional] 
 **status** | **String** |  | [optional] 
@@ -19,6 +22,7 @@ Name | Type | Description | Notes
 **driverId** | **String** |  | [optional] 
 **driverName** | **String** |  | [optional] 
 **assignedTo** | **String** |  | [optional] 
+**assignedToName** | **String** | Display name of the assignee user, resolved via JOIN. Empty when unassigned. | [optional] 
 **createdAt** | [**DateTime**](DateTime.md) |  | [optional] 
 **resolvedAt** | [**DateTime**](DateTime.md) |  | [optional] 
 **resolutionNotes** | **String** |  | [optional] 

@@ -9,13 +9,17 @@ import (
 // Incident represents a safety or compliance trigger (SOS, report).
 type Incident struct {
 	ID              uuid.UUID  `json:"id"`
+	Seq             int64      `json:"seq"`
+	DisplayID       string     `json:"display_id"`
 	RideID          uuid.UUID  `json:"ride_id"`
+	RideDisplayID   string     `json:"ride_display_id,omitempty"`
 	TriggeredBy     string     `json:"triggered_by"` // 'rider', 'driver'
 	RiderID         uuid.UUID  `json:"rider_id"`
 	DriverID        uuid.UUID  `json:"driver_id"`
 	Type            string     `json:"type"`   // 'sos_triggered', 'reported_incident', etc.
 	Status          string     `json:"status"` // 'open', 'investigating', 'resolved', 'escalated'
 	AssignedTo      *uuid.UUID `json:"assigned_to,omitempty"`
+	AssignedToName  string     `json:"assigned_to_name,omitempty"`
 	ResolutionNotes string     `json:"resolution_notes,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
@@ -37,8 +41,17 @@ type IncidentStatusEvent struct {
 	OccurredAt   time.Time  `json:"occurred_at"`
 }
 
+// IncidentLocationPoint is one GPS ping captured during an active incident.
+// Rows only exist for drivers with an unresolved incident at ping time.
+type IncidentLocationPoint struct {
+	Lat        float64   `json:"lat"`
+	Lng        float64   `json:"lng"`
+	RecordedAt time.Time `json:"recorded_at"`
+}
+
 // IncidentDetail is the aggregate returned by GET /admin/incidents/{id}.
 type IncidentDetail struct {
-	Incident      *Incident             `json:"incident"`
-	StatusHistory []*IncidentStatusEvent `json:"status_history"`
+	Incident      *Incident               `json:"incident"`
+	StatusHistory []*IncidentStatusEvent  `json:"status_history"`
+	LocationTrail []*IncidentLocationPoint `json:"location_trail"`
 }

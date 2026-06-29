@@ -12,11 +12,16 @@ export function useReportList() {
   });
 }
 
-export function useReportChart(type: string, range?: ReportRange) {
+export function useReportChart(
+  type: string,
+  range?: ReportRange,
+  options?: { refetchInterval?: number },
+) {
   return useQuery({
     queryKey: [...REPORTS_KEY, 'chart', type, range?.from ?? null, range?.to ?? null] as const,
     queryFn: () => reportsApi.getChartData(type, range),
     enabled: !!type,
+    refetchInterval: options?.refetchInterval,
   });
 }
 

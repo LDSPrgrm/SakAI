@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,7 @@ type PaymentProcessingUsecase struct {
 	rideRepo     domain.RideRepository
 	userRepo     domain.UserRepository
 	earningsRepo domain.EarningsRepository
+	txManager    domain.TransactionManager
 }
 
 // NewPaymentProcessingUsecase creates a new payment processing usecase.
@@ -25,6 +27,7 @@ func NewPaymentProcessingUsecase(
 	rideRepo domain.RideRepository,
 	userRepo domain.UserRepository,
 	earningsRepo domain.EarningsRepository,
+	txManager domain.TransactionManager,
 ) *PaymentProcessingUsecase {
 	return &PaymentProcessingUsecase{
 		paymentRepo:  paymentRepo,
@@ -32,6 +35,7 @@ func NewPaymentProcessingUsecase(
 		rideRepo:     rideRepo,
 		userRepo:     userRepo,
 		earningsRepo: earningsRepo,
+		txManager:    txManager,
 	}
 }
 
@@ -54,6 +58,21 @@ func (uc *PaymentProcessingUsecase) ChargeRide(ctx context.Context, passengerID 
 	ride, err := uc.rideRepo.GetByID(ctx, rideID)
 	if err != nil {
 		return err
+	}
+
+	// Ownership: only the ride's passenger may pay for it (M2).
+	if ride.PassengerID != passengerID {
+		return domain.ErrForbidden
+	}
+	// Idempotency (M2): if a payment already exists, do not charge again.
+	// Fail closed — an unexpected lookup error must NOT fall through to a
+	// second charge (double-charge risk on crash-recovery).
+	existing, err := uc.paymentRepo.GetByRideID(ctx, rideID)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return fmt.Errorf("checking existing payment: %w", err)
+	}
+	if existing != nil {
+		return nil
 	}
 
 	// Determine charge amount.
@@ -94,28 +113,35 @@ func (uc *PaymentProcessingUsecase) ChargeRide(ctx context.Context, passengerID 
 		payment.FailureReason = &result.FailureReason
 	}
 
-	// Persist payment record.
-	if err := uc.paymentRepo.Create(ctx, payment); err != nil {
-		return fmt.Errorf("failed to create payment record: %w", err)
-	}
+	// Wrap in transaction for atomicity.
+	err = uc.txManager.WithTransaction(ctx, func(ctx context.Context) error {
+		// Persist payment record.
+		if err := uc.paymentRepo.Create(ctx, payment); err != nil {
+			return fmt.Errorf("failed to create payment record: %w", err)
+		}
 
-	// If charge succeeded, create driver earnings record.
-	if result.Success && ride.DriverID != nil {
-		driverID := *ride.DriverID
-		earnings := &domain.DriverEarnings{
-			ID:          uuid.New(),
-			DriverID:    driverID,
-			RideID:      rideID,
-			FareAmount:  *amount, // Full fare (before commission — commission handled in payout layer)
-			TipAmount:   0,       // Tip added separately via TipUsecase
-			TotalAmount: *amount,
-			Currency:    "USD",
-			CompletedAt: now,
+		// If charge succeeded, create driver earnings record.
+		if result.Success && ride.DriverID != nil {
+			driverID := *ride.DriverID
+			earnings := &domain.DriverEarnings{
+				ID:          uuid.New(),
+				DriverID:    driverID,
+				RideID:      rideID,
+				FareAmount:  *amount,
+				TipAmount:   0,
+				TotalAmount: *amount,
+				Currency:    "USD",
+				CompletedAt: now,
+			}
+			if err := uc.earningsRepo.Create(ctx, earnings); err != nil {
+				return fmt.Errorf("failed to create earnings record: %w", err)
+			}
 		}
-		if err := uc.earningsRepo.Create(ctx, earnings); err != nil {
-			// Non-fatal: driver can still be paid later; log and continue.
-			fmt.Printf("warn: could not create earnings record for ride %s: %v\n", rideID, err)
-		}
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
 
 	if !result.Success {

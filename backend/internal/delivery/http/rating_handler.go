@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"bytes"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +24,13 @@ func NewRatingHandler(ratingUC domain.RatingUseCase) *RatingHandler {
 
 // SubmitRating handles POST /rides/{rideId}/rating.
 func (h *RatingHandler) SubmitRating(c *gin.Context) {
+	// Read and log the raw body first for debugging
+	bodyBytes, _ := io.ReadAll(c.Request.Body)
+	log.Printf("[DEBUG-V3] SubmitRating RAW BODY: %s", string(bodyBytes))
+	
+	// Restore body for binding
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	raterID := c.MustGet("userID").(uuid.UUID)
 
 	rideID, err := uuid.Parse(c.Param("rideId"))
@@ -31,12 +41,23 @@ func (h *RatingHandler) SubmitRating(c *gin.Context) {
 
 	var req dto.SubmitRatingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[DEBUG-V3] SubmitRating BindJSON error for ride %s: %v", rideID, err)
 		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": err.Error()})
 		return
 	}
 
-	rating, err := h.ratingUC.SubmitRating(c.Request.Context(), raterID, rideID, req.Stars, req.Feedback)
+	stars := req.GetStars()
+	if stars < 1 || stars > 5 {
+		log.Printf("[DEBUG-V3] SubmitRating invalid stars: %d", stars)
+		c.JSON(http.StatusBadRequest, gin.H{"code": "VALIDATION_ERROR", "message": "stars must be between 1 and 5"})
+		return
+	}
+
+	log.Printf("[DEBUG-V3] SubmitRating rater=%s ride=%s stars=%d feedback=%v", raterID, rideID, stars, req.Feedback)
+
+	rating, err := h.ratingUC.SubmitRating(c.Request.Context(), raterID, rideID, stars, req.Feedback)
 	if err != nil {
+		log.Printf("[DEBUG-V3] SubmitRating UseCase error: %v", err)
 		respondError(c, err)
 		return
 	}

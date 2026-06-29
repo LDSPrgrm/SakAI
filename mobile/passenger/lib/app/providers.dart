@@ -3,6 +3,10 @@ import 'package:sakai_shared/sakai_shared.dart';
 
 import '../features/auth/repositories/auth_repository.dart';
 import '../features/auth/repositories/auth_repository_impl.dart';
+import '../features/wallet/repositories/wallet_repository.dart';
+import '../features/wallet/repositories/wallet_repository_impl.dart';
+import '../features/notifications/repositories/notifications_repository.dart';
+import '../features/notifications/repositories/notifications_repository_impl.dart';
 import '../features/ride/repositories/ride_repository.dart';
 import '../features/ride/repositories/ride_repository_impl.dart';
 import '../features/ride_complete/repositories/ride_complete_repository.dart';
@@ -13,9 +17,11 @@ import '../features/cancelled_ride/repositories/cancelled_ride_repository.dart';
 import '../features/cancelled_ride/repositories/cancelled_ride_repository_impl.dart';
 import '../features/receipt/repositories/receipt_repository.dart';
 import '../features/receipt/repositories/receipt_repository_impl.dart';
-import '../features/active_ride/models/active_ride_state.dart';
-import '../features/active_ride/view_models/active_ride_notifier.dart';
-export '../features/active_ride/view_models/active_ride_notifier.dart'
+import '../features/support/repositories/sos_repository_impl.dart';
+import 'package:passenger/features/active_ride/models/active_ride_state.dart';
+import 'package:passenger/features/active_ride/view_models/active_ride_notifier.dart';
+import '../features/home/repositories/geocoding_service.dart';
+export 'package:passenger/features/active_ride/view_models/active_ride_notifier.dart'
     show ActiveRideController;
 
 /// Shared HTTP client - single instance per app lifetime.
@@ -43,6 +49,18 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(ref.watch(apiClientProvider));
 });
 
+/// Wallet repository — backend endpoints pending; throws BackendUnavailableException.
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  return WalletRepositoryImpl(ref.watch(apiClientProvider));
+});
+
+/// Notifications repository — backend endpoints pending; throws BackendUnavailableException.
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((
+  ref,
+) {
+  return NotificationsRepositoryImpl(ref.watch(apiClientProvider));
+});
+
 /// Ride repository - domain boundary over the generated API client.
 final rideRepositoryProvider = Provider<RideRepository>((ref) {
   return RideRepositoryImpl(ref.watch(apiClientProvider));
@@ -63,18 +81,18 @@ final wsConnectionProvider = Provider<WsConnectionManager>((ref) {
 /// Manages WebSocket connection lifecycle based on auth state.
 class WsConnectionManager {
   final Ref _ref;
-  bool _isConnected = false;
 
   WsConnectionManager(this._ref);
 
   /// Connect WebSocket when authenticated.
   Future<void> connectIfAuthenticated() async {
     final client = _ref.read(wsClientProvider);
+    if (client.isConnected) return;
+
     final tokenStorage = _ref.read(tokenStorageProvider);
     final accessToken = await tokenStorage.getAccessToken();
 
-    if (accessToken != null && accessToken.isNotEmpty && !_isConnected) {
-      _isConnected = true;
+    if (accessToken != null && accessToken.isNotEmpty) {
       await client.connect(
         baseUrl: SakaiApiEndpoints.defaultRestBaseUrl,
         accessToken: accessToken,
@@ -84,15 +102,12 @@ class WsConnectionManager {
 
   /// Disconnect WebSocket on logout.
   Future<void> disconnect() async {
-    if (_isConnected) {
-      final client = _ref.read(wsClientProvider);
-      await client.disconnect();
-      _isConnected = false;
-    }
+    final client = _ref.read(wsClientProvider);
+    await client.disconnect();
   }
 
   /// Check if currently connected.
-  bool get isConnected => _isConnected;
+  bool get isConnected => _ref.read(wsClientProvider).isConnected;
 }
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
@@ -151,6 +166,11 @@ final rideHistoryRepositoryProvider = Provider<RideHistoryRepository>((ref) {
   return RideHistoryRepositoryImpl(ref.watch(apiClientProvider));
 });
 
+/// Geocoding service provider.
+final geocodingServiceProvider = Provider<GeocodingService>((ref) {
+  return GeocodingService();
+});
+
 /// Cancelled ride repository - domain boundary over the generated API client.
 final cancelledRideRepositoryProvider = Provider<CancelledRideRepository>((
   ref,
@@ -163,6 +183,11 @@ final receiptRepositoryProvider = Provider<ReceiptRepository>((ref) {
   return ReceiptRepositoryImpl(ref.watch(apiClientProvider));
 });
 
+/// SOS repository - domain boundary over the generated API client.
+final sosRepositoryProvider = Provider<SOSRepository>((ref) {
+  return SOSRepositoryImpl(ref.watch(apiClientProvider).getRidesApi());
+});
+
 /// Active ride controller provider — keyed by ride ID.
 ///
 /// Usage: `ref.watch(activeRideProvider(rideId))` returns an
@@ -173,10 +198,12 @@ final activeRideProvider = Provider.family<ActiveRideController, String>((
 ) {
   final client = ref.watch(apiClientProvider);
   final wsClient = ref.watch(wsClientProvider);
+  final sosRepository = ref.watch(sosRepositoryProvider);
   final controller = ActiveRideController(
     rideId: rideId,
     client: client,
     wsClient: wsClient,
+    sosRepository: sosRepository,
   );
   ref.onDispose(() => controller.dispose());
   return controller;
@@ -188,3 +215,33 @@ final activeRideStateProvider =
       final controller = ref.watch(activeRideProvider(rideId));
       return controller.state;
     });
+
+/// Streams the controller's state so widgets/providers can rebuild on
+/// every WS-driven transition. Use this when synchronous `.state` reads
+/// would miss SOS/incident lifecycle updates that arrive after mount.
+final activeRideStateStreamProvider =
+    StreamProvider.family<ActiveRideState, String>((ref, rideId) {
+      final controller = ref.watch(activeRideProvider(rideId));
+      return controller.stateStream
+          .where((async) => async.value != null)
+          .map((async) => async.value!);
+    });
+
+/// Surfaces just the SosUiState for a ride. Wraps the stream provider so
+/// callers don't have to extract `.sos` themselves. Returns
+/// [SosUiState.idle] until the first state frame arrives.
+///
+/// Replaces the stubbed `SOSRepository.getActiveIncident` for in-app
+/// consumers — that REST contract still exists but always returns null
+/// (no backend endpoint). Anything that needs to know whether an
+/// incident is open for the active ride should watch this.
+final passengerSosStateProvider = Provider.family<SosUiState, String>((
+  ref,
+  rideId,
+) {
+  final async = ref.watch(activeRideStateStreamProvider(rideId));
+  return async.maybeWhen(
+    data: (state) => state.sos,
+    orElse: () => SosUiState.idle,
+  );
+});

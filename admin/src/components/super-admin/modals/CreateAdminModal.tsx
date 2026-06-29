@@ -35,7 +35,7 @@ export function CreateAdminModal({ open, roles, loading, onSubmit, onCancel }: C
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={handleClose} />
       <div className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md p-6">
-        <button onClick={handleClose} className="absolute top-4 right-4 text-text-muted hover:text-text-main">
+        <button type="button" onClick={handleClose} className="absolute top-4 right-4 text-text-muted hover:text-text-main">
           <X className="w-5 h-5" />
         </button>
         <h3 className="text-base font-semibold text-text-main mb-5">Create Admin</h3>

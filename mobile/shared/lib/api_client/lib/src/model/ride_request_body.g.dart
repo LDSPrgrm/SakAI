@@ -38,6 +38,12 @@ const RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnum_cash =
     const RideRequestBodyPaymentMethodEnum._('cash');
 const RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnum_card =
     const RideRequestBodyPaymentMethodEnum._('card');
+const RideRequestBodyPaymentMethodEnum
+_$rideRequestBodyPaymentMethodEnum_gcash =
+    const RideRequestBodyPaymentMethodEnum._('gcash');
+const RideRequestBodyPaymentMethodEnum
+_$rideRequestBodyPaymentMethodEnum_paymaya =
+    const RideRequestBodyPaymentMethodEnum._('paymaya');
 
 RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnumValueOf(
   String name,
@@ -47,6 +53,10 @@ RideRequestBodyPaymentMethodEnum _$rideRequestBodyPaymentMethodEnumValueOf(
       return _$rideRequestBodyPaymentMethodEnum_cash;
     case 'card':
       return _$rideRequestBodyPaymentMethodEnum_card;
+    case 'gcash':
+      return _$rideRequestBodyPaymentMethodEnum_gcash;
+    case 'paymaya':
+      return _$rideRequestBodyPaymentMethodEnum_paymaya;
     default:
       throw ArgumentError(name);
   }
@@ -58,6 +68,8 @@ _$rideRequestBodyPaymentMethodEnumValues =
       const <RideRequestBodyPaymentMethodEnum>[
         _$rideRequestBodyPaymentMethodEnum_cash,
         _$rideRequestBodyPaymentMethodEnum_card,
+        _$rideRequestBodyPaymentMethodEnum_gcash,
+        _$rideRequestBodyPaymentMethodEnum_paymaya,
       ],
     );
 
@@ -108,10 +120,14 @@ class _$RideRequestBodyPaymentMethodEnumSerializer
   static const Map<String, Object> _toWire = const <String, Object>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'cash': 'cash',
     'card': 'card',
+    'gcash': 'gcash',
+    'paymaya': 'paymaya',
   };
 
   @override
