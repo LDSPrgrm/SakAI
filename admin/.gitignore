@@ -18,3 +18,4 @@ CLAUDE.md
 rd-report.json
 react-doctor-report.txt
 !.react-doctor/*.md
+.vercel

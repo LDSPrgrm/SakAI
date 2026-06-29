@@ -1,0 +1,104 @@
+name: Release - Mobile
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Build release APKs (passenger + driver) ───────────────────────────────
+  # Produces unsigned/debug-signed release APKs for internal testing/sideloading.
+  # Not yet suitable for Play Store submission — see commented signing block below.
+  release:
+    name: Build release APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        app: [passenger, driver]
+    defaults:
+      run:
+        working-directory: mobile/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: subosito/flutter-action@main
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Generate code for api_client
+        run: |
+          cd ../shared/lib/api_client
+          find . -name "*.g.dart" -delete
+          flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
+
+      # build.gradle.kts reads MAPS_API_KEY from this .env (two levels up)
+      # and injects it as a manifest placeholder, so this file must exist
+      # before the Gradle/Android build step runs.
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          API_URL=${{ secrets.API_URL }}
+          MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
+          EOF
+
+      # ── Release signing (NOT yet wired up — testing only for now) ────────
+      # Uncomment when a release keystore exists for this app, and add the
+      # matching signingConfigs block to android/app/build.gradle.kts.
+      # Required secrets: ANDROID_KEYSTORE_BASE64, KEYSTORE_STORE_PASSWORD,
+      # KEYSTORE_KEY_ALIAS, KEYSTORE_KEY_PASSWORD.
+      #
+      # - name: Decode keystore
+      #   run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-keystore.jks
+      # - name: Write key.properties
+      #   run: |
+      #     cat > android/key.properties <<EOF
+      #     storeFile=release-keystore.jks
+      #     storePassword=${{ secrets.KEYSTORE_STORE_PASSWORD }}
+      #     keyAlias=${{ secrets.KEYSTORE_KEY_ALIAS }}
+      #     keyPassword=${{ secrets.KEYSTORE_KEY_PASSWORD }}
+      #     EOF
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Rename APK with app name + tag
+        run: |
+          mkdir -p ../../release-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             ../../release-artifacts/${{ matrix.app }}-${{ github.ref_name }}.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-apk
+          path: release-artifacts/${{ matrix.app }}-${{ github.ref_name }}.apk
+
+  # ── Publish all APKs to the repo's Release section ────────────────────────
+  publish-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Creates (or updates) the GitHub Release tied to the pushed tag and
+      # attaches both APKs as downloadable assets under the repo's
+      # "Releases" section.
+      - name: Create release with APKs
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.apk
+          generate_release_notes: true
