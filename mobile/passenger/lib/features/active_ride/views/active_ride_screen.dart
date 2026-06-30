@@ -1,11 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:sakai_shared/sakai_shared.dart';
 
+import '../../../app/e2e_mode_stub.dart'
+    if (dart.library.js_interop) '../../../app/e2e_mode_web.dart';
 import '../../../app/providers.dart';
 import '../../../app/routes.dart';
-import '../models/active_ride_state.dart';
+import 'package:passenger/features/active_ride/models/active_ride_state.dart';
 
 /// Active ride screen showing real-time driver tracking.
 ///
@@ -36,9 +40,7 @@ class ActiveRideScreen extends ConsumerWidget {
             currentStep == ActiveRideStep.arrived) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Your driver has arrived!')),
-              );
+              SakaiSnackBar.success(context, 'Your driver has arrived!');
             }
           });
         }
@@ -48,20 +50,9 @@ class ActiveRideScreen extends ConsumerWidget {
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (error, stackTrace) => Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(error.toString()),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(activeRideProvider(rideId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            body: SakaiErrorState(
+              message: error.toString(),
+              onRetry: () => ref.invalidate(activeRideProvider(rideId)),
             ),
           ),
           data: (rideState) =>
@@ -196,10 +187,14 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
       initialTarget = gmaps.LatLng(ride.origin.lat, ride.origin.lng);
     }
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          gmaps.GoogleMap(
+    final mapWidget = (kIsWeb && isE2EMode())
+        ? Container(
+            key: const ValueKey('e2e-map-placeholder'),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            alignment: Alignment.center,
+            child: const Text('Map (E2E placeholder)'),
+          )
+        : gmaps.GoogleMap(
             initialCameraPosition: gmaps.CameraPosition(
               target: initialTarget,
               zoom: 14,
@@ -208,6 +203,20 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
             onMapCreated: (controller) => _mapController = controller,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
+          );
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          mapWidget,
+
+          // P6 SOS banner — anchored at the top so it sits above the
+          // driver card. Renders an empty SizedBox when sos.active==false.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SosBanner(state: rideState.sos),
           ),
 
           if (rideState.driverName != null)
@@ -266,6 +275,17 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
             ),
 
           Positioned(
+            right: 16,
+            bottom: 220, // Sit above the bottom card
+            child: FloatingActionButton(
+              heroTag: 'sos_button',
+              onPressed: () => _showSOSConfirmation(context),
+              backgroundColor: SakaiSemanticColors.of(context).danger,
+              child: const Icon(Icons.sos, color: Colors.white, size: 32),
+            ),
+          ),
+
+          Positioned(
             bottom: 0,
             left: 0,
             right: 0,
@@ -314,21 +334,58 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
     );
   }
 
+  Future<void> _showSOSConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Emergency SOS'),
+        content: const Text(
+          'This will alert our emergency team and local authorities. '
+          'Are you sure you want to trigger an SOS?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: SakaiSemanticColors.of(context).danger,
+            ),
+            child: const Text(
+              'TRIGGER SOS',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await widget.controller.triggerSOS(reason: 'User triggered SOS from app');
+      if (context.mounted) {
+        SakaiSnackBar.error(context, 'SOS Alert Sent! Help is on the way.');
+      }
+    }
+  }
+
   Widget _buildStatusIndicator(ActiveRideStep step) {
+    final semantic = SakaiSemanticColors.of(context);
     Color color;
     String text;
 
     switch (step) {
       case ActiveRideStep.enRoute:
-        color = Colors.blue;
+        color = semantic.accentBlue;
         text = 'En Route';
         break;
       case ActiveRideStep.arrived:
-        color = Colors.green;
+        color = semantic.success;
         text = 'Arrived';
         break;
       case ActiveRideStep.inProgress:
-        color = Colors.orange;
+        color = semantic.warning;
         text = 'In Progress';
         break;
     }

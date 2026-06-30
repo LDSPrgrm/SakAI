@@ -16,4 +16,7 @@ abstract class AuthRepository {
 
   /// Best-effort server-side token invalidation for explicit logout.
   Future<void> logout({required String refreshToken});
+
+  /// Deletes the user account permanently.
+  Future<void> deleteAccount();
 }

@@ -1,30 +1,42 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
-import 'package:sakai_api_client/src/model/lat_lng.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
 part 'payment_gateway_config.g.dart';
 
-/// PaymentGatewayConfig
+/// Persisted credentials and toggle state for one payment gateway provider (gcash, paymaya, card, cash). config_fields is a string-keyed map; secret values are masked to \"****\" + last4 on read responses, so the UI must treat fields starting with \"****\" as unchanged when re-saving. 
 ///
 /// Properties:
-/// * [name] 
-/// * [center] 
-/// * [radius] - Service radius in meters
+/// * [id] 
+/// * [provider] 
+/// * [configFields] 
+/// * [isActive] 
+/// * [updatedAt] 
+/// * [updatedBy] 
 @BuiltValue()
 abstract class PaymentGatewayConfig implements Built<PaymentGatewayConfig, PaymentGatewayConfigBuilder> {
-  @BuiltValueField(wireName: r'name')
-  String? get name;
+  @BuiltValueField(wireName: r'id')
+  String? get id;
 
-  @BuiltValueField(wireName: r'center')
-  LatLng? get center;
+  @BuiltValueField(wireName: r'provider')
+  PaymentGatewayConfigProviderEnum? get provider;
+  // enum providerEnum {  gcash,  paymaya,  card,  cash,  };
 
-  /// Service radius in meters
-  @BuiltValueField(wireName: r'radius')
-  double? get radius;
+  @BuiltValueField(wireName: r'config_fields')
+  BuiltMap<String, String>? get configFields;
+
+  @BuiltValueField(wireName: r'is_active')
+  bool? get isActive;
+
+  @BuiltValueField(wireName: r'updated_at')
+  DateTime? get updatedAt;
+
+  @BuiltValueField(wireName: r'updated_by')
+  String? get updatedBy;
 
   PaymentGatewayConfig._();
 
@@ -49,25 +61,46 @@ class _$PaymentGatewayConfigSerializer implements PrimitiveSerializer<PaymentGat
     PaymentGatewayConfig object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
-    if (object.name != null) {
-      yield r'name';
+    if (object.id != null) {
+      yield r'id';
       yield serializers.serialize(
-        object.name,
+        object.id,
         specifiedType: const FullType(String),
       );
     }
-    if (object.center != null) {
-      yield r'center';
+    if (object.provider != null) {
+      yield r'provider';
       yield serializers.serialize(
-        object.center,
-        specifiedType: const FullType(LatLng),
+        object.provider,
+        specifiedType: const FullType(PaymentGatewayConfigProviderEnum),
       );
     }
-    if (object.radius != null) {
-      yield r'radius';
+    if (object.configFields != null) {
+      yield r'config_fields';
       yield serializers.serialize(
-        object.radius,
-        specifiedType: const FullType(double),
+        object.configFields,
+        specifiedType: const FullType(BuiltMap, [FullType(String), FullType(String)]),
+      );
+    }
+    if (object.isActive != null) {
+      yield r'is_active';
+      yield serializers.serialize(
+        object.isActive,
+        specifiedType: const FullType(bool),
+      );
+    }
+    if (object.updatedAt != null) {
+      yield r'updated_at';
+      yield serializers.serialize(
+        object.updatedAt,
+        specifiedType: const FullType(DateTime),
+      );
+    }
+    if (object.updatedBy != null) {
+      yield r'updated_by';
+      yield serializers.serialize(
+        object.updatedBy,
+        specifiedType: const FullType.nullable(String),
       );
     }
   }
@@ -93,26 +126,48 @@ class _$PaymentGatewayConfigSerializer implements PrimitiveSerializer<PaymentGat
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
-        case r'name':
+        case r'id':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
-          result.name = valueDes;
+          result.id = valueDes;
           break;
-        case r'center':
+        case r'provider':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(LatLng),
-          ) as LatLng;
-          result.center.replace(valueDes);
+            specifiedType: const FullType(PaymentGatewayConfigProviderEnum),
+          ) as PaymentGatewayConfigProviderEnum;
+          result.provider = valueDes;
           break;
-        case r'radius':
+        case r'config_fields':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(double),
-          ) as double;
-          result.radius = valueDes;
+            specifiedType: const FullType(BuiltMap, [FullType(String), FullType(String)]),
+          ) as BuiltMap<String, String>;
+          result.configFields.replace(valueDes);
+          break;
+        case r'is_active':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.isActive = valueDes;
+          break;
+        case r'updated_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
+          break;
+        case r'updated_by':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.updatedBy = valueDes;
           break;
         default:
           unhandled.add(key);
@@ -141,5 +196,24 @@ class _$PaymentGatewayConfigSerializer implements PrimitiveSerializer<PaymentGat
     );
     return result.build();
   }
+}
+
+class PaymentGatewayConfigProviderEnum extends EnumClass {
+
+  @BuiltValueEnumConst(wireName: r'gcash')
+  static const PaymentGatewayConfigProviderEnum gcash = _$paymentGatewayConfigProviderEnum_gcash;
+  @BuiltValueEnumConst(wireName: r'paymaya')
+  static const PaymentGatewayConfigProviderEnum paymaya = _$paymentGatewayConfigProviderEnum_paymaya;
+  @BuiltValueEnumConst(wireName: r'card')
+  static const PaymentGatewayConfigProviderEnum card = _$paymentGatewayConfigProviderEnum_card;
+  @BuiltValueEnumConst(wireName: r'cash')
+  static const PaymentGatewayConfigProviderEnum cash = _$paymentGatewayConfigProviderEnum_cash;
+
+  static Serializer<PaymentGatewayConfigProviderEnum> get serializer => _$paymentGatewayConfigProviderEnumSerializer;
+
+  const PaymentGatewayConfigProviderEnum._(String name): super(name);
+
+  static BuiltSet<PaymentGatewayConfigProviderEnum> get values => _$paymentGatewayConfigProviderEnumValues;
+  static PaymentGatewayConfigProviderEnum valueOf(String name) => _$paymentGatewayConfigProviderEnumValueOf(name);
 }
 

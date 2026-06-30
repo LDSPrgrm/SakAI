@@ -174,12 +174,12 @@ class CancellationDetails {
 
   String get formattedRefund {
     if (!hasRefund) return '';
-    return '\$${netRefund.toStringAsFixed(2)}';
+    return SakaiCurrency.format(netRefund);
   }
 
   String get formattedFee {
     if (!hasFee) return '';
-    return '\$${cancellationFee!.toStringAsFixed(2)}';
+    return SakaiCurrency.format(cancellationFee!);
   }
 
   String _twoDigit(int n) => n.toString().padLeft(2, '0');

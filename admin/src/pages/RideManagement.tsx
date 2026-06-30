@@ -9,6 +9,7 @@ import { useRides } from '@/hooks/useRides';
 import type { AdminRideItem, RideStatus } from '@/types/super-admin';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { RideDetailModal } from '@/components/admin/modals/RideDetailModal';
+import { EntityId } from '@/components/ui/EntityId';
 
 const STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { label: 'All Statuses', value: '' },
@@ -140,7 +141,9 @@ export function RideManagement() {
                   className="cursor-pointer hover:bg-surface-hover/80"
                   onClick={() => setSelectedRide(ride)}
                 >
-                  <TableCell className="font-medium text-primary">{ride.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <EntityId displayId={(ride as any).display_id} uuid={ride.id} fallbackPrefix="RIDE" />
+                  </TableCell>
                   <TableCell>
                     <div className="space-y-1">
                       <p className="text-sm"><span className="text-text-muted">R:</span> {ride.passenger_name ?? ride.passenger?.name ?? '—'}</p>

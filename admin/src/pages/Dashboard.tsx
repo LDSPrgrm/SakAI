@@ -1,227 +1,360 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Users, Car, Clock, Activity } from 'lucide-react';
-import { PhpIcon } from '@/components/ui/PhpIcon';
-import { formatPHP } from '@/lib/utils';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  useDashboardMetrics, useRidesChart, useRevenueChart, useActivityFeed, useDriverHeatmap,
-} from '@/hooks/useMetrics';
+  RefreshCw, Activity, Clock, Server, PhilippinePeso,
+  ShieldAlert, ShieldCheck, Wallet, Users, Car,
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { KPICard } from '@/components/super-admin/dashboard/KPICard';
+import { ActionQueueCard } from '@/components/super-admin/dashboard/ActionQueueCard';
+import { PaymentSplitCard } from '@/components/super-admin/dashboard/PaymentSplitCard';
+import { GatewayStatusBoard } from '@/components/super-admin/dashboard/GatewayStatusBoard';
+import { ActivityFeed } from '@/components/super-admin/dashboard/ActivityFeed';
 import { DriverHeatmap } from '@/components/super-admin/dashboard/DriverHeatmap';
-import { useHealth } from '@/hooks/useSystem';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import {
-  AXIS_COLOR, GRID_COLOR, PRIMARY_LINE_COLOR, TOOLTIP_CURSOR_FILL, DARK_TOOLTIP_STYLE,
-} from '@/utils/chartColors';
+import { useDashboardMetrics, useDriverHeatmap, useActivityFeed } from '@/hooks/useMetrics';
+import { useKycQueue, useIncidents } from '@/hooks/useSafety';
+import { usePayouts, useGatewayConfigs } from '@/hooks/usePayments';
+import { useReportChart } from '@/hooks/useReports';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useRoleAccent } from '@/hooks/useRoleAccent';
+import { formatPHP, cn } from '@/lib/utils';
+import { UpdatedAgo } from '@/utils/timeAgo';
+
+const ACTION_QUEUE_REFRESH_MS = 30_000;
+const PAYMENTS_REFRESH_MS = 60_000;
+
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
 
 export function Dashboard() {
-  const healthQuery = useHealth();
+  const { can } = usePermissions();
+  const accent = useRoleAccent();
+  const canPayments = can('payments', 'read');
+  const canPayouts = can('payouts', 'read');
+  const canKyc = can('kyc_verification', 'read');
+  const canSafety = can('safety_incidents', 'read');
+
   const metricsQuery = useDashboardMetrics();
-  const ridesChartQuery = useRidesChart();
-  const revenueChartQuery = useRevenueChart();
-  const activityQuery = useActivityFeed();
   const heatmapQuery = useDriverHeatmap();
+  const activityQuery = useActivityFeed();
+  const kycQuery = useKycQueue(canKyc ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const incidentsQuery = useIncidents(canSafety ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const payoutsQuery = usePayouts(canPayouts ? { refetchInterval: ACTION_QUEUE_REFRESH_MS } : undefined);
+  const gatewaysQuery = useGatewayConfigs(canPayments ? { refetchInterval: PAYMENTS_REFRESH_MS } : undefined);
+  const paymentSplitQuery = useReportChart(
+    'payment-methods',
+    undefined,
+    canPayments ? { refetchInterval: PAYMENTS_REFRESH_MS } : undefined,
+  );
+  const now = useNow();
 
-  const health = healthQuery.isError
-    ? { status: 'down' as const }
-    : healthQuery.data;
+  const lastUpdated = Math.max(
+    metricsQuery.dataUpdatedAt ?? 0,
+    heatmapQuery.dataUpdatedAt ?? 0,
+    activityQuery.dataUpdatedAt ?? 0,
+    kycQuery.dataUpdatedAt ?? 0,
+    incidentsQuery.dataUpdatedAt ?? 0,
+    payoutsQuery.dataUpdatedAt ?? 0,
+    gatewaysQuery.dataUpdatedAt ?? 0,
+    paymentSplitQuery.dataUpdatedAt ?? 0,
+  );
+
   const metrics = metricsQuery.data;
-  const ridesChart = ridesChartQuery.data ?? [];
-  const revenueChart = revenueChartQuery.data ?? [];
-  const activity = activityQuery.data ?? [];
+  const isLoading = !metrics;
+  const isFetching = metricsQuery.isFetching;
 
-  const statusColor = health?.status === 'ok'
-    ? 'text-success'
-    : health?.status === 'degraded'
-      ? 'text-warning'
-      : 'text-danger';
+  const refetchAll = () => {
+    void metricsQuery.refetch();
+    void heatmapQuery.refetch();
+    void activityQuery.refetch();
+    if (canKyc) void kycQuery.refetch();
+    if (canSafety) void incidentsQuery.refetch();
+    if (canPayouts) void payoutsQuery.refetch();
+    if (canPayments) {
+      void gatewaysQuery.refetch();
+      void paymentSplitQuery.refetch();
+    }
+  };
+
+  const onlineDrivers = heatmapQuery.data?.positions.length ?? 0;
+
+  const pendingKyc = useMemo(
+    () => (kycQuery.data ?? []).filter((k) => k.status === 'pending').length,
+    [kycQuery.data],
+  );
+  const openIncidents = useMemo(
+    () => (incidentsQuery.data ?? []).filter((i) => i.status === 'open' || i.status === 'investigating' || i.status === 'escalated').length,
+    [incidentsQuery.data],
+  );
+  const pendingPayouts = useMemo(
+    () => (payoutsQuery.data ?? []).filter((p) => p.status === 'pending').length,
+    [payoutsQuery.data],
+  );
+
+  const activityEvents = useMemo(
+    () => (activityQuery.data ?? []).slice(0, 30),
+    [activityQuery.data],
+  );
+
+  const showActionQueue = canKyc || canSafety || canPayouts;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-text-muted text-sm">
+        Loading dashboard…
+      </div>
+    );
+  }
+
+  const timestamp = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(now);
+
+  const dateLabel = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(now);
+
+  const kpis = [
+    {
+      title: 'Revenue Today',
+      value: formatPHP(metrics.revenue_today ?? 0),
+      icon: PhilippinePeso,
+      tone: accent.kpiTone,
+      trend: metrics.revenue_trend,
+    },
+    {
+      title: 'Rides Today',
+      value: (metrics.rides_today ?? 0).toLocaleString(),
+      icon: Activity,
+      tone: accent.kpiTone,
+      trend: metrics.rides_trend,
+    },
+    {
+      title: 'Avg Wait',
+      value: `${metrics.avg_wait_minutes ?? 0}m`,
+      icon: Clock,
+      tone: 'warning' as const,
+      trend: metrics.wait_trend,
+      trendDownIsGood: true,
+    },
+    {
+      title: 'Uptime',
+      value: `${metrics.platform_uptime ?? 0}%`,
+      icon: Server,
+      tone: 'success' as const,
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Dashboard</h1>
-        {health && (
-          <div className="flex items-center gap-2 text-sm bg-surface border border-border rounded-lg px-3 py-1.5">
-            <span className={`w-2 h-2 rounded-full ${health.status === 'ok' ? 'bg-success' : health.status === 'degraded' ? 'bg-warning' : 'bg-danger'}`} />
-            <span className={`font-medium ${statusColor}`}>
-              API {health.status.toUpperCase()}
+    <div className="flex flex-col gap-5">
+      <header className="flex flex-col gap-3 pb-2 border-b border-border/60">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-text-muted tabular-nums">
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-60" />
+              <span className="relative rounded-full bg-success w-2 h-2" />
             </span>
-            {health.version && (
-              <span className="text-text-muted">v{health.version}</span>
+            <span className="hidden sm:inline">{dateLabel} · Manila</span>
+            <span className="font-mono text-text-main">{timestamp}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <UpdatedAgo timestamp={lastUpdated || undefined} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetchAll}
+              disabled={isFetching}
+              title="Refresh"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1 min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold text-text-main tracking-tight leading-none">
+            Dashboard
+          </h1>
+          <p className="text-sm text-text-muted">
+            Real-time pulse of SakAI rides, revenue, and platform activity.
+          </p>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {kpis.map((k, i) => (
+          <div key={k.title} className="kpi-rise" style={{ animationDelay: `${i * 55}ms` }}>
+            <KPICard
+              title={k.title}
+              value={k.value}
+              icon={k.icon}
+              iconTone={k.tone}
+              trend={k.trend}
+              trendDownIsGood={k.trendDownIsGood}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-primary/10 text-primary ring-1 ring-primary/20 flex-shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              Total Riders
+            </span>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+                {(metrics.total_riders ?? 0).toLocaleString()}
+              </span>
+              {metrics.riders_trend && (
+                <span className="text-xs text-success tabular-nums">
+                  {metrics.riders_trend}
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-primary/10 text-primary ring-1 ring-primary/20 flex-shrink-0">
+            <Car className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+              Total Drivers
+            </span>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+                {(metrics.total_drivers ?? 0).toLocaleString()}
+              </span>
+              {metrics.drivers_trend && (
+                <span className="text-xs text-success tabular-nums">
+                  {metrics.drivers_trend}
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4 flex items-center gap-4">
+        <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-primary/10 text-primary ring-1 ring-primary/20 flex-shrink-0">
+          <Users className="w-5 h-5" />
+        </div>
+        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+            Drivers Online
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums leading-none text-text-main">
+              {onlineDrivers.toLocaleString()}
+            </span>
+            <span className="text-xs text-text-muted">live supply</span>
+          </div>
+        </div>
+      </Card>
+
+      {showActionQueue && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+            Action Queue
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {canKyc && (
+              <ActionQueueCard
+                label="KYC Pending"
+                count={pendingKyc}
+                to="/admin/safety"
+                icon={ShieldCheck}
+                tone={accent.queueTone}
+                isLoading={kycQuery.isLoading}
+                emptyHint="Queue empty"
+              />
+            )}
+            {canSafety && (
+              <ActionQueueCard
+                label="Open Incidents"
+                count={openIncidents}
+                to="/admin/safety"
+                icon={ShieldAlert}
+                tone={openIncidents > 0 ? 'danger' : 'success'}
+                isLoading={incidentsQuery.isLoading}
+                emptyHint="None open"
+              />
+            )}
+            {canPayouts && (
+              <ActionQueueCard
+                label="Payouts Pending"
+                count={pendingPayouts}
+                to="/admin/payments"
+                icon={Wallet}
+                tone={accent.queueTone}
+                isLoading={payoutsQuery.isLoading}
+                emptyHint="All paid out"
+              />
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <MetricCard
-          title="Active Riders"
-          value={metrics ? (metrics.total_riders ?? 0).toLocaleString() : '—'}
-          icon={<Users className="w-5 h-5 text-primary" />}
-          trend={metrics?.riders_trend ?? ''}
-        />
-        <MetricCard
-          title="Active Drivers"
-          value={metrics ? (metrics.total_drivers ?? 0).toLocaleString() : '—'}
-          icon={<Car className="w-5 h-5 text-primary" />}
-          trend={metrics?.drivers_trend ?? ''}
-        />
-        <MetricCard
-          title="Rides Today"
-          value={metrics ? (metrics.rides_today ?? 0).toLocaleString() : '—'}
-          icon={<Activity className="w-5 h-5 text-primary" />}
-          trend={metrics?.rides_trend ?? ''}
-        />
-        <MetricCard
-          title="Revenue Today"
-          value={metrics ? formatPHP(metrics.revenue_today ?? 0) : '—'}
-          icon={<PhpIcon className="w-5 h-5 text-success" />}
-          trend={metrics?.revenue_trend ?? ''}
-          valueClassName="text-xl xl:text-2xl tracking-tight"
-        />
-        <MetricCard
-          title="Avg Wait Time"
-          value={metrics ? `${metrics.avg_wait_minutes ?? 0} mins` : '—'}
-          icon={<Clock className="w-5 h-5 text-warning" />}
-          trend={metrics?.wait_trend ?? ''}
-          trendDownIsGood
-        />
-        <MetricCard
-          title="Platform Uptime"
-          value={metrics ? `${metrics.platform_uptime ?? 0}%` : '—'}
-          icon={<Activity className="w-5 h-5 text-success" />}
-          trend=""
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Rides (Past 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ridesChart} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-                  <XAxis dataKey="name" stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    {...DARK_TOOLTIP_STYLE}
-                    itemStyle={{ color: PRIMARY_LINE_COLOR }}
-                  />
-                  <Line type="monotone" dataKey="rides" stroke={PRIMARY_LINE_COLOR} strokeWidth={3} dot={{ r: 4, fill: PRIMARY_LINE_COLOR }} activeDot={{ r: 6 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {activity.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-4">No recent activity.</p>
-            ) : (
-              <div className="space-y-4">
-                {activity.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3">
-                    <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${item.isAlert ? 'bg-danger' : 'bg-primary'}`} />
-                    <div>
-                      <p className={`text-sm font-medium ${item.isAlert ? 'text-danger' : 'text-text-main'}`}>
-                        {item.message}
-                      </p>
-                      <p className="text-xs text-text-muted mt-1">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Revenue by Week</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueChart} margin={{ top: 5, right: 20, bottom: 5, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-                  <XAxis dataKey="name" stroke={AXIS_COLOR} fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis
-                    stroke={AXIS_COLOR}
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `₱${value / 1000}k`}
-                  />
-                  <Tooltip
-                    {...DARK_TOOLTIP_STYLE}
-                    cursor={{ fill: TOOLTIP_CURSOR_FILL }}
-                    formatter={(value: number) => [formatPHP(value), 'Revenue']}
-                  />
-                  <Bar dataKey="revenue" fill={PRIMARY_LINE_COLOR} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Live Hotspots</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DriverHeatmap
-              positions={heatmapQuery.data?.positions}
-              bounds={heatmapQuery.data?.bounds}
-              loading={heatmapQuery.isPending}
-              className="h-[250px]"
+      {canPayments && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+            Payments
+          </span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <PaymentSplitCard
+              className="lg:col-span-1"
+              query={paymentSplitQuery}
             />
-          </CardContent>
+            <GatewayStatusBoard
+              className="lg:col-span-2"
+              configs={gatewaysQuery.data ?? []}
+              isLoading={gatewaysQuery.isLoading}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Recent Activity
+        </span>
+        <ActivityFeed events={activityEvents} initialVisible={6} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+          Live Hotspots
+        </span>
+        <Card className="p-3">
+          <DriverHeatmap
+            positions={heatmapQuery.data?.positions}
+            bounds={heatmapQuery.data?.bounds}
+            loading={heatmapQuery.isPending}
+            className="h-[280px]"
+          />
         </Card>
       </div>
     </div>
-  );
-}
-
-function MetricCard({ title, value, icon, trend, trendDownIsGood = false, valueClassName = "" }: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  trend: string;
-  trendDownIsGood?: boolean;
-  valueClassName?: string;
-}) {
-  const isPositive = trend.startsWith('+');
-  const isGood = trendDownIsGood ? !isPositive : isPositive;
-
-  return (
-    <Card>
-      <CardContent className="p-5 flex flex-col justify-between h-full">
-        <div className="flex justify-between items-start mb-4">
-          <p className="text-sm font-medium text-text-muted">{title}</p>
-          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center flex-shrink-0">
-            {icon}
-          </div>
-        </div>
-        <div>
-          <h4 className={`text-2xl sm:text-3xl font-bold text-text-main tracking-tight leading-none break-words ${valueClassName}`}>
-            {value}
-          </h4>
-          {trend && (
-            <div className="mt-4 flex items-center text-sm">
-              <span className={`font-medium ${isGood ? 'text-success' : 'text-danger'}`}>
-                {trend}
-              </span>
-              <span className="text-text-muted ml-2">vs last period</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

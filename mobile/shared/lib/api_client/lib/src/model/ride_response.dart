@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -17,6 +17,8 @@ part 'ride_response.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. RIDE-000123).
 /// * [status] 
 /// * [passenger] 
 /// * [driver] - Null until a driver is matched and accepts.
@@ -34,6 +36,7 @@ part 'ride_response.g.dart';
 /// * [cancelledBy] - Set only when status is `cancelled`
 /// * [cancellationReason] - Predefined cancellation reason code
 /// * [cancellationReasonText] - Free-text cancellation reason
+/// * [declineCount] - Number of times this ride was declined by drivers
 /// * [createdAt] 
 /// * [updatedAt] 
 @BuiltValue(instantiable: false)
@@ -41,9 +44,16 @@ abstract class RideResponse  {
   @BuiltValueField(wireName: r'id')
   String get id;
 
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. RIDE-000123).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
+
   @BuiltValueField(wireName: r'status')
   RideStatus get status;
-  // enum statusEnum {  requested,  accepted,  arrived,  in_progress,  completed,  cancelled,  };
+  // enum statusEnum {  created,  requested,  accepted,  arrived,  in_progress,  payment_pending,  completed,  cancelled,  };
 
   @BuiltValueField(wireName: r'passenger')
   UserProfile get passenger;
@@ -91,7 +101,7 @@ abstract class RideResponse  {
   /// Payment method used for ride
   @BuiltValueField(wireName: r'payment_method')
   RideResponsePaymentMethodEnum? get paymentMethod;
-  // enum paymentMethodEnum {  cash,  card,  };
+  // enum paymentMethodEnum {  cash,  card,  gcash,  paymaya,  };
 
   /// Set only when status is `cancelled`
   @BuiltValueField(wireName: r'cancelled_by')
@@ -105,6 +115,10 @@ abstract class RideResponse  {
   /// Free-text cancellation reason
   @BuiltValueField(wireName: r'cancellation_reason_text')
   String? get cancellationReasonText;
+
+  /// Number of times this ride was declined by drivers
+  @BuiltValueField(wireName: r'decline_count')
+  int? get declineCount;
 
   @BuiltValueField(wireName: r'created_at')
   DateTime get createdAt;
@@ -133,6 +147,20 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
       object.id,
       specifiedType: const FullType(String),
     );
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'status';
     yield serializers.serialize(
       object.status,
@@ -244,6 +272,13 @@ class _$RideResponseSerializer implements PrimitiveSerializer<RideResponse> {
         specifiedType: const FullType.nullable(String),
       );
     }
+    if (object.declineCount != null) {
+      yield r'decline_count';
+      yield serializers.serialize(
+        object.declineCount,
+        specifiedType: const FullType(int),
+      );
+    }
     yield r'created_at';
     yield serializers.serialize(
       object.createdAt,
@@ -323,6 +358,20 @@ class _$$RideResponseSerializer implements PrimitiveSerializer<$RideResponse> {
             specifiedType: const FullType(String),
           ) as String;
           result.id = valueDes;
+          break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
           break;
         case r'status':
           final valueDes = serializers.deserialize(
@@ -453,6 +502,13 @@ class _$$RideResponseSerializer implements PrimitiveSerializer<$RideResponse> {
           if (valueDes == null) continue;
           result.cancellationReasonText = valueDes;
           break;
+        case r'decline_count':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.declineCount = valueDes;
+          break;
         case r'created_at':
           final valueDes = serializers.deserialize(
             value,
@@ -524,6 +580,12 @@ class RideResponsePaymentMethodEnum extends EnumClass {
   /// Payment method used for ride
   @BuiltValueEnumConst(wireName: r'card')
   static const RideResponsePaymentMethodEnum card = _$rideResponsePaymentMethodEnum_card;
+  /// Payment method used for ride
+  @BuiltValueEnumConst(wireName: r'gcash')
+  static const RideResponsePaymentMethodEnum gcash = _$rideResponsePaymentMethodEnum_gcash;
+  /// Payment method used for ride
+  @BuiltValueEnumConst(wireName: r'paymaya')
+  static const RideResponsePaymentMethodEnum paymaya = _$rideResponsePaymentMethodEnum_paymaya;
 
   static Serializer<RideResponsePaymentMethodEnum> get serializer => _$rideResponsePaymentMethodEnumSerializer;
 

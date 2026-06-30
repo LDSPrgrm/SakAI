@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 	"github.com/sakai/backend/internal/infrastructure/database"
 )
 
@@ -120,6 +121,33 @@ func (r *userRepo) CreateWithTokens(
 	})
 }
 
+func (r *userRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	return database.Transact(ctx, r.db, func(tx pgx.Tx) error {
+		// Delete refresh tokens first
+		const delTokens = `DELETE FROM refresh_tokens WHERE user_id = $1`
+		if _, err := tx.Exec(ctx, delTokens, id); err != nil {
+			return err
+		}
+
+		// Delete vehicle if it exists
+		const delVehicle = `DELETE FROM vehicles WHERE user_id = $1`
+		if _, err := tx.Exec(ctx, delVehicle, id); err != nil {
+			return err
+		}
+
+		// Finally delete the user
+		const delUser = `DELETE FROM users WHERE id = $1`
+		res, err := tx.Exec(ctx, delUser, id)
+		if err != nil {
+			return err
+		}
+		if res.RowsAffected() == 0 {
+			return domain.ErrNotFound
+		}
+		return nil
+	})
+}
+
 // ListByRole returns a paginated list of users filtered by role and an
 // optional case-insensitive substring search against name or email.
 func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*domain.User, int, error) {
@@ -164,7 +192,7 @@ func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*
 	args = append(args, f.Limit, offset)
 
 	dataQ := fmt.Sprintf(
-		"SELECT id, name, email, password_hash, role, created_at "+
+		"SELECT id, seq, name, email, password_hash, role, created_at "+
 			"FROM users %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
 		where, limitIdx, offsetIdx,
 	)
@@ -178,9 +206,10 @@ func (r *userRepo) ListByRole(ctx context.Context, f domain.UserListFilter) ([]*
 	var users []*domain.User
 	for rows.Next() {
 		u := &domain.User{}
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Seq, &u.Name, &u.Email, &u.Password, &u.Role, &u.CreatedAt); err != nil {
 			return nil, 0, err
 		}
+		u.DisplayID = displayid.User(u.Seq)
 		users = append(users, u)
 	}
 	return users, total, rows.Err()

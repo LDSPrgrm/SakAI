@@ -170,6 +170,101 @@ class GeocodingService {
     }
   }
 
+  /// Converts [lat], [lng] coordinates to a [RideLocation].
+  ///
+  /// Resolution chain: Google Maps → Nominatim → Device.
+  Future<RideLocation> reverseGeocode(double lat, double lng) async {
+    // 1. Try Google Maps
+    if (apiKey.isNotEmpty) {
+      try {
+        return await _reverseWithGoogle(lat, lng);
+      } catch (e) {
+        debugPrint('[GEOCODE] Google Reverse failed: $e, trying Nominatim');
+      }
+    }
+
+    // 2. Try Nominatim
+    try {
+      return await _reverseWithNominatim(lat, lng);
+    } catch (e) {
+      debugPrint('[GEOCODE] Nominatim Reverse failed: $e, trying device');
+    }
+
+    // 3. Fallback
+    return _reverseWithDevice(lat, lng);
+  }
+
+  Future<RideLocation> _reverseWithGoogle(double lat, double lng) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        _baseUrl,
+        queryParameters: {'latlng': '$lat,$lng', 'key': apiKey},
+      );
+
+      final data = response.data;
+      final status = data?['status'] as String?;
+
+      if (status != 'OK' || (data?['results'] as List?)?.isEmpty != false) {
+        throw const GeocodingException('Location not recognized.');
+      }
+
+      final results = data!['results'] as List;
+      final first = results.first as Map<String, dynamic>;
+      final formattedAddress =
+          first['formatted_address'] as String? ?? 'Unknown Location';
+
+      return RideLocation(lat: lat, lng: lng, address: formattedAddress);
+    } on DioException catch (e) {
+      throw GeocodingException(_fromDio(e));
+    }
+  }
+
+  Future<RideLocation> _reverseWithNominatim(double lat, double lng) async {
+    final response = await _nominatimDio.get<Map<String, dynamic>>(
+      '/reverse',
+      queryParameters: {
+        'lat': lat,
+        'lon': lng,
+        'format': 'json',
+        'addressdetails': 1,
+      },
+    );
+
+    final data = response.data;
+    if (data == null || data['display_name'] == null) {
+      throw const GeocodingException('Location not recognized.');
+    }
+
+    return RideLocation(
+      lat: lat,
+      lng: lng,
+      address: data['display_name'] as String,
+    );
+  }
+
+  Future<RideLocation> _reverseWithDevice(double lat, double lng) async {
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(lat, lng);
+      if (placemarks.isEmpty) {
+        throw const GeocodingException('Location not recognized.');
+      }
+      final p = placemarks.first;
+      final address = [
+        p.street,
+        p.subLocality,
+        p.locality,
+      ].where((s) => s != null && s.isNotEmpty).join(', ');
+
+      return RideLocation(
+        lat: lat,
+        lng: lng,
+        address: address.isEmpty ? '($lat, $lng)' : address,
+      );
+    } catch (e) {
+      throw GeocodingException('Could not look up that location: $e');
+    }
+  }
+
   /// Fetches place suggestions from Google Places Autocomplete API.
   /// Falls back to Nominatim search when no API key is configured,
   /// so users still get real autocomplete results worldwide.

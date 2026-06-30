@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, ImageOff } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { KycDocument } from '@/types/super-admin';
 
 type DocInput = KycDocument | string;
@@ -18,15 +19,28 @@ function normalizeDoc(input: DocInput): KycDocument {
 export function KycDocPreview({ docs }: KycDocPreviewProps) {
   const normalized = docs.map(normalizeDoc);
   const [active, setActive] = useState<KycDocument | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isOpen = active !== null;
 
   useEffect(() => {
-    if (!active) return;
+    if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setActive(null);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [active]);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) panelRef.current?.focus();
+  }, [isOpen]);
+
+  useFocusTrap(panelRef, isOpen);
 
   if (!normalized.length) {
     return <p className="text-xs text-text-muted">No documents submitted.</p>;
@@ -49,7 +63,9 @@ export function KycDocPreview({ docs }: KycDocPreviewProps) {
           onClick={() => setActive(null)}
         >
           <div
-            className="relative max-h-[90vh] max-w-[90vw] bg-surface border border-border rounded-xl overflow-hidden flex flex-col"
+            ref={panelRef}
+            tabIndex={-1}
+            className="relative max-h-[90vh] max-w-[90vw] bg-surface border border-border rounded-xl overflow-hidden flex flex-col focus:outline-none"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border">
@@ -57,6 +73,7 @@ export function KycDocPreview({ docs }: KycDocPreviewProps) {
                 {active.label ?? active.type ?? 'Document'}
               </p>
               <button
+                type="button"
                 onClick={() => setActive(null)}
                 className="text-text-muted hover:text-text-main transition-colors"
                 aria-label="Close preview"

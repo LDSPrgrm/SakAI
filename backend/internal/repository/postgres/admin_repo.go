@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakai/backend/internal/domain"
+	"github.com/sakai/backend/internal/domain/displayid"
 )
 
 // adminRepo handles admin user management and system settings.
@@ -21,7 +22,7 @@ func NewAdminRepo(db *pgxpool.Pool) domain.AdminRepository {
 
 func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	const q = `
-		SELECT id, name, email, role, role_id, created_at
+		SELECT id, seq, name, email, role, role_id, created_at
 		FROM users
 		WHERE role IN ('admin', 'superadmin', 'operations', 'finance', 'support')
 		ORDER BY created_at DESC`
@@ -35,9 +36,10 @@ func (r *adminRepo) GetAdmins(ctx context.Context) ([]*domain.User, error) {
 	var admins []*domain.User
 	for rows.Next() {
 		u := &domain.User{}
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.RoleID, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Seq, &u.Name, &u.Email, &u.Role, &u.RoleID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
+		u.DisplayID = displayid.User(u.Seq)
 		admins = append(admins, u)
 	}
 	return admins, nil
@@ -169,9 +171,14 @@ func (r *fareRepo) UpdateFareConfig(ctx context.Context, c *domain.FareConfig) e
 }
 
 func (r *fareRepo) GetSurgeConfig(ctx context.Context) (*domain.SurgeConfig, error) {
-	const q = `SELECT id, enabled, max_multiplier, trigger_ratio, zones, blackout_hours, updated_at, updated_by FROM surge_configs LIMIT 1`
+	const q = `
+		SELECT s.id, s.enabled, s.max_multiplier, s.trigger_ratio, s.zones, s.blackout_hours,
+		       s.updated_at, s.updated_by, COALESCE(u.name, '')
+		FROM surge_configs s
+		LEFT JOIN users u ON u.id = s.updated_by
+		LIMIT 1`
 	c := &domain.SurgeConfig{}
-	err := r.db.QueryRow(ctx, q).Scan(&c.ID, &c.Enabled, &c.MaxMultiplier, &c.TriggerRatio, &c.Zones, &c.BlackoutHours, &c.UpdatedAt, &c.UpdatedBy)
+	err := r.db.QueryRow(ctx, q).Scan(&c.ID, &c.Enabled, &c.MaxMultiplier, &c.TriggerRatio, &c.Zones, &c.BlackoutHours, &c.UpdatedAt, &c.UpdatedBy, &c.UpdatedByName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &domain.SurgeConfig{Enabled: false, MaxMultiplier: 1.0, TriggerRatio: 1.5}, nil
 	}
@@ -259,11 +266,16 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 	offset := q.Page * limit
 
 	selectQ := fmt.Sprintf(`
-		SELECT id, timestamp, actor_id, ip_address, action, resource_type, resource_id, before_state, after_state, reason
-		FROM audit_log_entries %s
-		ORDER BY timestamp DESC
+		SELECT a.id, a.seq, a.timestamp, a.actor_id, COALESCE(u.seq, 0) AS actor_seq,
+		       COALESCE(u.name, '') AS actor_name,
+		       a.ip_address, a.action, a.resource_type, a.resource_id,
+		       a.before_state, a.after_state, a.reason
+		FROM audit_log_entries a
+		LEFT JOIN users u ON u.id = a.actor_id
+		%s
+		ORDER BY a.timestamp DESC
 		LIMIT $%d OFFSET $%d`, whereSQL, argID, argID+1)
-	
+
 	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx, selectQ, args...)
 	if err != nil {
@@ -274,9 +286,12 @@ func (r *auditRepo) List(ctx context.Context, q domain.AuditQuery) ([]*domain.Au
 	var logs []*domain.AuditLogEntry
 	for rows.Next() {
 		e := &domain.AuditLogEntry{}
-		if err := rows.Scan(&e.ID, &e.Timestamp, &e.ActorID, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
+		var actorSeq int64
+		if err := rows.Scan(&e.ID, &e.Seq, &e.Timestamp, &e.ActorID, &actorSeq, &e.ActorName, &e.IPAddress, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Reason); err != nil {
 			return nil, 0, err
 		}
+		e.DisplayID = displayid.AuditLog(e.Seq)
+		e.ActorDisplayID = displayid.User(actorSeq)
 		logs = append(logs, e)
 	}
 	return logs, total, nil
@@ -291,13 +306,13 @@ func NewIncidentRepo(db *pgxpool.Pool) domain.IncidentRepository {
 }
 
 func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*domain.Incident, error) {
-	q := `SELECT id, ride_id, triggered_by, rider_id, driver_id, type, status, assigned_to, resolution_notes, created_at, resolved_at FROM incidents`
+	q := `SELECT i.id, i.seq, i.ride_id, COALESCE(rd.seq, 0) AS ride_seq, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to LEFT JOIN rides rd ON rd.id = i.ride_id`
 	var args []any
 	if status != nil {
-		q += " WHERE status = $1"
+		q += " WHERE i.status = $1"
 		args = append(args, *status)
 	}
-	q += " ORDER BY created_at DESC"
+	q += " ORDER BY i.created_at DESC"
 
 	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
@@ -308,21 +323,27 @@ func (r *incidentRepo) ListIncidents(ctx context.Context, status *string) ([]*do
 	var incidents []*domain.Incident
 	for rows.Next() {
 		i := &domain.Incident{}
-		if err := rows.Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
+		var rideSeq int64
+		if err := rows.Scan(&i.ID, &i.Seq, &i.RideID, &rideSeq, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt); err != nil {
 			return nil, err
 		}
+		i.DisplayID = displayid.Incident(i.Seq)
+		i.RideDisplayID = displayid.Ride(rideSeq)
 		incidents = append(incidents, i)
 	}
 	return incidents, nil
 }
 
 func (r *incidentRepo) GetIncidentByID(ctx context.Context, id uuid.UUID) (*domain.Incident, error) {
-	const q = `SELECT id, ride_id, triggered_by, rider_id, driver_id, type, status, assigned_to, resolution_notes, created_at, resolved_at FROM incidents WHERE id = $1`
+	const q = `SELECT i.id, i.seq, i.ride_id, COALESCE(rd.seq, 0) AS ride_seq, i.triggered_by, i.rider_id, i.driver_id, i.type, i.status, i.assigned_to, COALESCE(u.name, ''), COALESCE(i.resolution_notes, ''), i.created_at, i.resolved_at FROM incidents i LEFT JOIN users u ON u.id = i.assigned_to LEFT JOIN rides rd ON rd.id = i.ride_id WHERE i.id = $1`
 	i := &domain.Incident{}
-	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.RideID, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
+	var rideSeq int64
+	err := r.db.QueryRow(ctx, q, id).Scan(&i.ID, &i.Seq, &i.RideID, &rideSeq, &i.TriggeredBy, &i.RiderID, &i.DriverID, &i.Type, &i.Status, &i.AssignedTo, &i.AssignedToName, &i.ResolutionNotes, &i.CreatedAt, &i.ResolvedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
+	i.DisplayID = displayid.Incident(i.Seq)
+	i.RideDisplayID = displayid.Ride(rideSeq)
 	return i, err
 }
 
@@ -382,6 +403,89 @@ func (r *incidentRepo) AssignIncident(ctx context.Context, id uuid.UUID, assigne
 	return nil
 }
 
+// ListLocationTrail returns incident-scoped GPS pings oldest-first.
+func (r *incidentRepo) ListLocationTrail(ctx context.Context, id uuid.UUID) ([]*domain.IncidentLocationPoint, error) {
+	const q = `
+		SELECT lat, lng, recorded_at
+		FROM driver_location_history
+		WHERE incident_id = $1
+		ORDER BY recorded_at ASC`
+	rows, err := r.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	trail := make([]*domain.IncidentLocationPoint, 0)
+	for rows.Next() {
+		p := &domain.IncidentLocationPoint{}
+		if err := rows.Scan(&p.Lat, &p.Lng, &p.RecordedAt); err != nil {
+			return nil, err
+		}
+		trail = append(trail, p)
+	}
+	return trail, rows.Err()
+}
+
+// FindActiveByDriver hits the partial index idx_incidents_active_driver so the
+// empty case (driver has no open incident) reads a single index tuple. Callers
+// on the driver location hot path depend on this staying cheap.
+func (r *incidentRepo) FindActiveByDriver(ctx context.Context, driverID uuid.UUID) ([]uuid.UUID, error) {
+	const q = `
+		SELECT id FROM incidents
+		WHERE driver_id = $1 AND resolved_at IS NULL`
+	rows, err := r.db.Query(ctx, q, driverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func (r *incidentRepo) RecordLocationPing(ctx context.Context, incidentID, driverID uuid.UUID, lat, lng float64) error {
+	const q = `
+		INSERT INTO driver_location_history (incident_id, driver_id, lat, lng)
+		VALUES ($1, $2, $3, $4)`
+	_, err := r.db.Exec(ctx, q, incidentID, driverID, lat, lng)
+	return err
+}
+
+// RecordIncidentLocation reuses the driver_location_history table (the
+// canonical incident GPS trail) but accepts any participant as the actor.
+// The `driver_id` column historically stored the driver but the FK is now
+// loose — the table simply records "who pinged" for forensic replay.
+// Returns the inserted ping with its server-assigned recorded_at so the
+// caller can publish a `sos.location_stream` event with a stable timestamp.
+func (r *incidentRepo) RecordIncidentLocation(ctx context.Context, incidentID, actorID uuid.UUID, lat, lng float64) (*domain.IncidentLocationPoint, error) {
+	const q = `
+		INSERT INTO driver_location_history (incident_id, driver_id, lat, lng)
+		VALUES ($1, $2, $3, $4)
+		RETURNING lat, lng, recorded_at`
+	row := r.db.QueryRow(ctx, q, incidentID, actorID, lat, lng)
+	p := &domain.IncidentLocationPoint{}
+	if err := row.Scan(&p.Lat, &p.Lng, &p.RecordedAt); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *incidentRepo) Create(ctx context.Context, i *domain.Incident) error {
+	const q = `
+		INSERT INTO incidents (id, ride_id, triggered_by, rider_id, driver_id, type, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	_, err := r.db.Exec(ctx, q, i.ID, i.RideID, i.TriggeredBy, i.RiderID, i.DriverID, i.Type, i.Status, i.CreatedAt)
+	return err
+}
+
 // --- System Metrics Repository ---
 
 type systemMetricsRepo struct{ db *pgxpool.Pool }
@@ -392,6 +496,16 @@ func NewSystemMetricsRepo(db *pgxpool.Pool) domain.SystemMetricsRepository {
 
 func (r *systemMetricsRepo) GetDashboardMetrics(ctx context.Context) (*domain.DashboardMetrics, error) {
 	m := &domain.DashboardMetrics{}
+
+	const qTotalRiders = `SELECT COUNT(*) FROM users WHERE role = 'passenger'`
+	if err := r.db.QueryRow(ctx, qTotalRiders).Scan(&m.TotalRiders); err != nil {
+		return nil, err
+	}
+
+	const qTotalDrivers = `SELECT COUNT(*) FROM users WHERE role = 'driver'`
+	if err := r.db.QueryRow(ctx, qTotalDrivers).Scan(&m.TotalDrivers); err != nil {
+		return nil, err
+	}
 
 	const qRiders = `SELECT COUNT(DISTINCT passenger_id) FROM rides WHERE created_at > NOW() - INTERVAL '30 days'`
 	if err := r.db.QueryRow(ctx, qRiders).Scan(&m.ActiveRiders); err != nil {

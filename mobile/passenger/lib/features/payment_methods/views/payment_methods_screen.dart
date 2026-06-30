@@ -33,7 +33,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SakaiAppBar(
         title: const Text('Payment Methods'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -86,7 +86,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       // PERFORMANCE: ListView.builder ensures only visible payment method tiles
       // are built, keeping render cost O(1) regardless of total method count.
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(SakaiDesignTokens.of(context).spaceMd),
         itemCount: state.sortedMethods.length,
         itemBuilder: (context, index) {
           final method = state.sortedMethods[index];

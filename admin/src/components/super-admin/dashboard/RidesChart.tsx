@@ -1,78 +1,140 @@
-// Rides over time — line chart with 7d/30d/90d toggle and optional previous period overlay.
-// Spec: superadmin.md §4.1 Charts
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList,
 } from 'recharts';
-import { cn } from '@/lib/utils';
-
-type Period = '7d' | '30d' | '90d';
+import { BarChart2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { EmptyState } from './EmptyState';
+import { DARK_TOOLTIP_STYLE } from '@/utils/chartColors';
 
 interface DataPoint {
   name: string;
-  rides: number;
-  prev?: number;
+  rides?: number;
 }
+
+type Accent = 'primary' | 'sa';
+type Period = '24h' | '7d' | '30d';
 
 interface RidesChartProps {
   data: DataPoint[];
   className?: string;
+  height?: number;
+  accent?: Accent;
+  period?: Period;
 }
 
-const PERIODS: Period[] = ['7d', '30d', '90d'];
+const AXIS_TICK = { fill: 'var(--color-text-muted)', fontSize: 11, fontFeatureSettings: '"tnum"' } as const;
 
-export function RidesChart({ data, className }: RidesChartProps) {
-  const [period, setPeriod] = useState<Period>('30d');
-  const [showPrev, setShowPrev] = useState(false);
+const PERIOD_LABEL: Record<Period, string> = {
+  '24h': 'Last 24 hours',
+  '7d':  'Last 7 days',
+  '30d': 'Last 30 days',
+};
 
-  const sliced = period === '7d' ? data.slice(-7) : period === '90d' ? data : data.slice(-30);
+const ACCENT_STROKE: Record<Accent, string> = {
+  primary: 'var(--color-primary)',
+  sa:      'var(--color-sa-accent)',
+};
+
+export function RidesChart({
+  data,
+  className,
+  height = 240,
+  accent = 'primary',
+  period = '30d',
+}: RidesChartProps) {
+  const hasData = !!data && data.length > 0 && data.some((p) => (p.rides ?? 0) > 0);
+  const stroke = ACCENT_STROKE[accent];
+  const gradientId = `ridesFill-${accent}`;
+  const total = hasData ? data.reduce((s, p) => s + (p.rides ?? 0), 0) : 0;
 
   return (
-    <div className={cn('bg-surface border border-border rounded-xl p-5', className)}>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-semibold text-text-main">Rides Over Time</p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowPrev((p) => !p)}
-            className={cn(
-              'text-xs px-2 py-1 rounded border transition-colors',
-              showPrev ? 'border-primary text-primary' : 'border-border text-text-muted hover:border-primary/50',
-            )}
-          >
-            Compare
-          </button>
-          <div className="flex rounded-lg overflow-hidden border border-border">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={cn(
-                  'px-3 py-1 text-xs transition-colors',
-                  period === p ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main',
-                )}
-              >
-                {p}
-              </button>
-            ))}
+    <Card className={className}>
+      <CardHeader className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-sa-accent)]" aria-hidden />
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider">Rides Over Time</CardTitle>
           </div>
+          <span className="overline">{PERIOD_LABEL[period]}</span>
         </div>
-      </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={sliced}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} />
-          <YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} />
-          <Tooltip
-            contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8 }}
-            labelStyle={{ color: 'var(--color-text-main)' }}
+        {hasData && (
+          <p className="text-xs text-text-muted tabular-nums">
+            <span className="text-text-main font-semibold">{total.toLocaleString()}</span> rides logged
+          </p>
+        )}
+      </CardHeader>
+      <CardContent className="p-5 pt-4">
+        {!hasData ? (
+          <EmptyState
+            icon={BarChart2}
+            title="Awaiting first trip"
+            description="Ride volume will stream in as drivers accept requests."
+            hint={PERIOD_LABEL[period]}
           />
-          {showPrev && <Legend />}
-          <Line type="monotone" dataKey="rides" stroke="var(--color-primary)" strokeWidth={2} dot={false} name="Rides" />
-          {showPrev && (
-            <Line type="monotone" dataKey="prev" stroke="var(--color-text-muted)" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="Prev period" />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={height}>
+            <AreaChart data={data} margin={{ top: 14, right: 8, left: 0, bottom: 8 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={stroke} stopOpacity={0.45} />
+                  <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="var(--color-border)" strokeDasharray="2 4" vertical={false} opacity={0.4} />
+              <XAxis
+                dataKey="name"
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={32}
+                label={{
+                  value: 'Date',
+                  position: 'insideBottom',
+                  offset: -2,
+                  fill: 'var(--color-text-muted)',
+                  fontSize: 11,
+                }}
+                height={36}
+              />
+              <YAxis
+                tick={AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
+                width={52}
+                allowDecimals={false}
+                label={{
+                  value: 'Rides',
+                  angle: -90,
+                  position: 'insideLeft',
+                  fill: 'var(--color-text-muted)',
+                  fontSize: 11,
+                  style: { textAnchor: 'middle' },
+                }}
+              />
+              <Tooltip {...DARK_TOOLTIP_STYLE} cursor={{ stroke: stroke, strokeOpacity: 0.3, strokeWidth: 1 }} />
+              <Area
+                type="monotone"
+                dataKey="rides"
+                stroke={stroke}
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                isAnimationActive
+                animationDuration={900}
+              >
+                <LabelList
+                  dataKey="rides"
+                  position="top"
+                  fill="var(--color-text-main)"
+                  fontSize={10}
+                  formatter={(v: number) => (v > 0 ? v : '')}
+                />
+              </Area>
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
   );
 }

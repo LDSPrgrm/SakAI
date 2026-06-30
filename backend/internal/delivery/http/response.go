@@ -23,9 +23,12 @@ var errorCodeMap = []struct {
 	{domain.ErrPassengerHasActiveRide, http.StatusConflict, "PASSENGER_HAS_ACTIVE_RIDE"},
 	{domain.ErrDriverHasActiveRide, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
 	{domain.ErrInvalidStateTransition, http.StatusConflict, "RIDE_INVALID_STATE_TRANSITION"},
+	{domain.ErrCancelRaceLost, http.StatusConflict, "CANCEL_RACE_LOST"},
 	{domain.ErrNoDriversAvailable, http.StatusServiceUnavailable, "NO_DRIVERS_AVAILABLE"},
 	{domain.ErrForbidden, http.StatusForbidden, "FORBIDDEN"},
 	{domain.ErrCannotGoOffline, http.StatusConflict, "DRIVER_HAS_ACTIVE_RIDE"},
+	{domain.ErrUnpaidRideBlocked, http.StatusForbidden, "UNPAID_RIDE_BLOCKED"},
+	{domain.ErrInvalidRideType, http.StatusBadRequest, "INVALID_RIDE_TYPE"},
 	// Document errors
 	{domain.ErrInvalidDocumentType, http.StatusBadRequest, "INVALID_DOCUMENT_TYPE"},
 	{domain.ErrFileTooLarge, http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE"},
@@ -43,6 +46,7 @@ var errorCodeMap = []struct {
 	// Tip errors
 	{domain.ErrInvalidTipAmount, http.StatusBadRequest, "INVALID_TIP_AMOUNT"},
 	{domain.ErrTipAlreadyAdded, http.StatusConflict, "TIP_ALREADY_ADDED"},
+	{domain.ErrTipExceedsLimit, http.StatusBadRequest, "TIP_EXCEEDS_LIMIT"},
 	// Payment method errors
 	{domain.ErrPaymentMethodUnsupported, http.StatusBadRequest, "PAYMENT_METHOD_UNSUPPORTED"},
 	{domain.ErrPaymentMethodDuplicate, http.StatusConflict, "PAYMENT_METHOD_DUPLICATE"},
@@ -52,6 +56,10 @@ var errorCodeMap = []struct {
 	// Proximity validation errors
 	{domain.ErrDriverTooFarFromPickup, http.StatusConflict, "DRIVER_TOO_FAR"},
 	{domain.ErrDriverTooFarFromDestination, http.StatusConflict, "DRIVER_TOO_FAR_FROM_DESTINATION"},
+	{domain.ErrPromotionExpired, http.StatusUnprocessableEntity, "PROMO_EXPIRED"},
+	{domain.ErrPromotionInvalid, http.StatusBadRequest, "PROMO_INVALID"},
+	{domain.ErrPromotionNotFound, http.StatusNotFound, "PROMO_NOT_FOUND"},
+	{domain.ErrPromotionMinAmountNotMet, http.StatusBadRequest, "PROMO_MIN_AMOUNT_NOT_MET"},
 }
 
 // respondError writes a structured error response mapped from the domain error.

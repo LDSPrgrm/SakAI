@@ -4,17 +4,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search } from 'lucide-react';
+import { Download, Wallet, ArrowUpRight, ArrowDownRight, CheckCircle, Search, Lock } from 'lucide-react';
 import { formatPHP } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
   usePaymentSummary, useTransactions, usePayouts, useApprovePayout,
 } from '@/hooks/usePayments';
 import { useExportReport } from '@/hooks/useReports';
+import { useIsCashlessEnabled } from '@/hooks/useSystem';
+
+const CASHLESS_METHODS = new Set(['gcash', 'paymaya', 'card']);
 import type { Transaction, DriverPayout } from '@/types/super-admin';
 import { DateRangePicker, getDefaultRange, type DateRange } from '@/components/shared/DateRangePicker';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { EntityId } from '@/components/ui/EntityId';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { SummaryCard } from '@/components/shared/SummaryCard';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -70,6 +76,7 @@ export function Payments() {
   const payouts = (payoutsQuery.data ?? []) as DriverPayout[];
   const summary = summaryQuery.data;
   const loading = summaryQuery.isPending || transactionsQuery.isPending || payoutsQuery.isPending;
+  const cashlessEnabled = useIsCashlessEnabled();
 
   const openPayoutConfirm = (payout: DriverPayout) => {
     setPayoutConfirm({ open: true, payout });
@@ -99,6 +106,7 @@ export function Payments() {
 
   const filtered = useMemo(() => {
     return transactions.filter(txn => {
+      if (!cashlessEnabled && CASHLESS_METHODS.has(txn.payment_method)) return false;
       if (q) {
         const matchesSearch =
           txn.id.toLowerCase().includes(q) ||
@@ -113,7 +121,7 @@ export function Payments() {
       const ts = new Date(txn.created_at).getTime();
       return ts >= fromMs && ts <= toMs;
     });
-  }, [transactions, q, fromMs, toMs]);
+  }, [transactions, q, fromMs, toMs, cashlessEnabled]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / TRANSACTIONS_PER_PAGE));
   const clampedPage = Math.min(page, pageCount);
@@ -124,41 +132,57 @@ export function Payments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-text-main">Payments & Earnings</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker value={range} onChange={(r) => { setRange(r); setPage(1); }} />
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={handleExport}
-            disabled={!canExportReports}
-            title={exportDisabledTitle}
-          >
-            <Download className="w-4 h-4" /> Export Weekly Report
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Payments & Earnings"
+        actions={
+          <>
+            <DateRangePicker value={range} onChange={(r) => { setRange(r); setPage(1); }} />
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleExport}
+              disabled={!canExportReports}
+              title={exportDisabledTitle}
+            >
+              <Download className="w-4 h-4" /> Export Weekly Report
+            </Button>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+      {!cashlessEnabled && (
+        <div
+          role="status"
+          className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-lg"
+        >
+          <Lock className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-danger">
+            Cashless payments are disabled. Showing cash transactions only. Toggle the
+            <strong> cashless_payments </strong>
+            flag in System Config &rarr; Feature Flags to re-enable.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           title="Total Revenue (30d)"
-          amount={summary ? formatPHP(summary.total_revenue ?? 0) : '—'}
+          value={summary ? formatPHP(summary.total_revenue ?? 0) : '—'}
           icon={<Wallet className="w-5 h-5 text-primary" />}
         />
         <SummaryCard
           title="Driver Payouts (30d)"
-          amount={summary ? formatPHP(summary.payouts ?? 0) : '—'}
+          value={summary ? formatPHP(summary.payouts ?? 0) : '—'}
           icon={<ArrowUpRight className="w-5 h-5 text-danger" />}
         />
         <SummaryCard
           title="Platform Commission"
-          amount={summary ? formatPHP(summary.commission ?? 0) : '—'}
+          value={summary ? formatPHP(summary.commission ?? 0) : '—'}
           icon={<ArrowDownRight className="w-5 h-5 text-success" />}
         />
         <SummaryCard
           title="Pending Settlements"
-          amount={summary ? formatPHP(summary.pending_settlements ?? 0) : '—'}
+          value={summary ? formatPHP(summary.pending_settlements ?? 0) : '—'}
           icon={<CheckCircle className="w-5 h-5 text-warning" />}
         />
       </div>
@@ -202,8 +226,10 @@ export function Payments() {
                 ) : paginated.map((txn) => (
                   <TableRow key={txn.id}>
                     <TableCell>
-                      <p className="font-medium text-text-main">{txn.id}</p>
-                      {txn.ride_id && <p className="text-xs text-text-muted">Ride: {txn.ride_id}</p>}
+                      <div className="flex flex-col items-start gap-1">
+                        <EntityId displayId={(txn as any).display_id} uuid={txn.id} fallbackPrefix="TXN" />
+                        {txn.ride_id && <EntityId displayId={(txn as any).ride_display_id} uuid={txn.ride_id} fallbackPrefix="RIDE" />}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-0.5">
@@ -277,39 +303,23 @@ export function Payments() {
         </Card>
       </div>
 
-      <ConfirmModal
+      <ConfirmationModal
         open={payoutConfirm.open}
         title="Approve payout?"
-        message={
+        description={
           payoutConfirm.payout
             ? `Approve batch ${payoutConfirm.payout.batch} — ${payoutConfirm.payout.driver_count} drivers · ${formatPHP(payoutConfirm.payout.total_amount ?? 0)}?`
             : ''
         }
         confirmLabel="Approve"
         variant="success"
-        onConfirm={confirmApprovePayout}
-        onClose={() => setPayoutConfirm({ open: false, payout: null })}
+        onConfirm={() => {
+          confirmApprovePayout();
+          setPayoutConfirm({ open: false, payout: null });
+        }}
+        onCancel={() => setPayoutConfirm({ open: false, payout: null })}
       />
     </div>
   );
 }
 
-function SummaryCard({ title, amount, icon }: { title: string; amount: string; icon: React.ReactNode }) {
-  return (
-    <Card>
-      <CardContent className="p-5 flex flex-col justify-between h-full">
-        <div className="flex justify-between items-start mb-4">
-          <p className="text-sm font-medium text-text-muted">{title}</p>
-          <div className="p-2 bg-surface-hover rounded-lg flex items-center justify-center flex-shrink-0">
-            {icon}
-          </div>
-        </div>
-        <div>
-          <h4 className="text-2xl sm:text-3xl font-bold text-text-main tracking-tight leading-none break-words">
-            {amount}
-          </h4>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

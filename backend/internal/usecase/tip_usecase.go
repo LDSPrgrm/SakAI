@@ -12,6 +12,7 @@ type tipUseCase struct {
 	tipRepo  domain.TipRepository
 	rideRepo domain.RideRepository
 	stripe   domain.StripeClient
+	currency string
 }
 
 // NewTipUseCase creates a new domain.TipUseCase.
@@ -19,11 +20,13 @@ func NewTipUseCase(
 	tipRepo domain.TipRepository,
 	rideRepo domain.RideRepository,
 	stripe domain.StripeClient,
+	currency string,
 ) domain.TipUseCase {
 	return &tipUseCase{
 		tipRepo:  tipRepo,
 		rideRepo: rideRepo,
 		stripe:   stripe,
+		currency: currency,
 	}
 }
 
@@ -63,12 +66,11 @@ func (uc *tipUseCase) AddTip(ctx context.Context, passengerID uuid.UUID, rideID 
 	}
 
 	// Process the tip via Stripe.
-	currency := "USD" // TODO: make configurable per region.
 	idempotencyKey := fmt.Sprintf("tip_%s_%s", rideID.String(), uuid.New().String()[:8])
 
 	// Note: Tips are charged to the passenger's saved payment method on file.
 	// For now, we use a placeholder — in production, look up the passenger's default payment method.
-	result, err := uc.stripe.ChargePaymentMethod(ctx, "", tipAmount, currency, idempotencyKey)
+	result, err := uc.stripe.ChargePaymentMethod(ctx, "", tipAmount, uc.currency, idempotencyKey)
 	if err != nil {
 		return nil, fmt.Errorf("stripe charge failed: %w", err)
 	}

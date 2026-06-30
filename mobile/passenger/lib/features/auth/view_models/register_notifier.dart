@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
@@ -44,8 +45,10 @@ class RegisterNotifier extends Notifier<RegisterState> {
     required String email,
     required String password,
   }) async {
+    debugPrint('[P-Auth] register: name=$name, email=$email');
     final errors = _validate(name.trim(), email.trim(), password);
     if (errors.isNotEmpty) {
+      debugPrint('[P-Auth] register validation errors: $errors');
       state = RegisterState(fieldErrors: errors);
       return;
     }
@@ -53,11 +56,13 @@ class RegisterNotifier extends Notifier<RegisterState> {
     state = const RegisterState(busy: true);
 
     try {
+      debugPrint('[P-Auth] calling authRepo.register...');
       final session = await _authRepo.register(
         name: name.trim(),
         email: email.trim(),
         password: password,
       );
+      debugPrint('[P-Auth] register succeeded, saving tokens...');
       await ref
           .read(tokenStorageProvider)
           .save(
@@ -65,10 +70,16 @@ class RegisterNotifier extends Notifier<RegisterState> {
             refreshToken: session.refreshToken,
             expiresAt: session.accessTokenExpiresAt,
           );
+      debugPrint('[P-Auth] tokens saved, marking authenticated');
       ref.read(authStateProvider.notifier).markAuthenticated();
+      debugPrint('[P-Auth] register flow complete');
       state = const RegisterState(succeeded: true);
     } on AuthException catch (e) {
+      debugPrint('[P-Auth] register AuthException: ${e.userMessage}');
       state = RegisterState(errorMessage: e.userMessage);
+    } catch (e, st) {
+      debugPrint('[P-Auth] register unexpected error: $e\n$st');
+      state = RegisterState(errorMessage: 'An unexpected error occurred.');
     }
   }
 

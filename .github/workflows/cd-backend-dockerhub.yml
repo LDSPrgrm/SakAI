@@ -32,7 +32,9 @@ jobs:
   build-push:
     name: Build & Push to Docker Hub
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
 
     steps:
       # 1a. Checkout full history so git describe works if you use it in ldflags
@@ -41,22 +43,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 1b. QEMU lets us cross-build arm64 images on x86 runners (optional but cheap)
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      # NOTE: QEMU is no longer needed. The Dockerfile's builder stage is
+      # pinned to --platform=$BUILDPLATFORM (always native) and Go cross-
+      # compiles for each target via GOOS/GOARCH, and the runtime stage is
+      # `FROM scratch` with only COPY instructions — nothing in this build
+      # ever needs to *execute* target-arch code, so there's nothing for
+      # QEMU to emulate. If a future Dockerfile change adds a RUN step
+      # that must execute as the target arch, re-add docker/setup-qemu-action.
 
-      # 1c. BuildKit multi-platform builder
+      # 1b. BuildKit multi-platform builder
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1d. Authenticate to Docker Hub using secrets stored in the repo
+      # 1c. Authenticate to Docker Hub using secrets stored in the repo
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 1d-ii. Verify the resolved image name — mismatch between
+      # 1c-ii. Verify the resolved image name — mismatch between
       #         DOCKERHUB_USERNAME and DOCKERHUB_NAMESPACE is the most common
       #         cause of "push access denied" errors.
       - name: "❶ Verify image name (debug)"
@@ -70,7 +76,7 @@ jobs:
             echo "::warning::Namespace '$NAMESPACE' does not match DOCKERHUB_USERNAME '${{ secrets.DOCKERHUB_USERNAME }}'. Push will fail unless this is a shared org."
           fi
 
-      # 1e. Compute image tags & OCI labels automatically from Git metadata
+      # 1d. Compute image tags & OCI labels automatically from Git metadata
       #     Examples of tags produced:
       #       push to main     → latest, main-<sha>
       #       push v1.2.3 tag  → 1.2.3, 1.2, 1, latest
@@ -91,8 +97,9 @@ jobs:
             org.opencontainers.image.description=Go API server for SakAI
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
-      # 1f. Build the image and push it (layer cache stored in GitHub Actions cache)
+      # 1e. Build the image and push it (layer cache stored in GitHub Actions cache)
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: . # repo root — gives access to backend/ AND migrations/
@@ -105,9 +112,9 @@ jobs:
           # scope isolates the cache key so it does not collide with other images
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
 
-      # 1g. Print image digest so it can be referenced in downstream deploy jobs
+      # 1f. Print image digest so it can be referenced in downstream deploy jobs
       - name: Image digest
-        run: echo "Image digest → ${{ steps.build-push.outputs.digest }}"
+        run: echo "Image digest → ${{ steps.build.outputs.digest }}"
 
   # ── 2. (Optional) Update Docker Hub description from README ──────────────────
   update-description:

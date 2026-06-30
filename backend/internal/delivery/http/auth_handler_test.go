@@ -185,6 +185,35 @@ func TestAuthHandler_GetMe_Success(t *testing.T) {
 	assert.Equal(t, "Alice", resp.Name)
 }
 
+func TestAuthHandler_GetMe_Driver_Success(t *testing.T) {
+	r, mockUC := setupAuthTest(t)
+
+	mockUC.EXPECT().
+		GetUserByID(gomock.Any(), gomock.Any()).
+		Return(&domain.User{
+			Name: "Bob",
+			Role: domain.RoleDriver,
+			Vehicle: &domain.Vehicle{
+				Make:  "Toyota",
+				Model: "Corolla",
+				Color: "Blue",
+				Plate: "ABC-123",
+			},
+		}, nil)
+
+	w := httptest.NewRecorder()
+	reqHTTP, _ := http.NewRequest("GET", "/users/me", nil)
+	r.ServeHTTP(w, reqHTTP)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var resp dto.UserResponse
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.Equal(t, "Bob", resp.Name)
+	assert.NotNil(t, resp.Vehicle)
+	assert.Equal(t, "Toyota", resp.Vehicle.Make)
+	assert.Equal(t, "ABC-123", resp.Vehicle.Plate)
+}
+
 func TestAuthHandler_ChangePassword_Success(t *testing.T) {
 	r, mockUC := setupAuthTest(t)
 

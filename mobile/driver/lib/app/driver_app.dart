@@ -16,7 +16,7 @@ class DriverApp extends ConsumerWidget {
       title: 'SakAI Driver',
       theme: SakaiTheme.light(_config),
       darkTheme: SakaiTheme.dark(_config),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
     );

@@ -1,0 +1,1 @@
+enum LocationSearchMode { pickup, destination }

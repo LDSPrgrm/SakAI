@@ -1,9 +1,8 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
-import 'package:sakai_api_client/src/model/role_permission.dart';
-import 'package:built_collection/built_collection.dart';
+import 'package:sakai_api_client/src/model/surge_zone.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,11 +13,9 @@ part 'service_area.g.dart';
 /// Properties:
 /// * [id] 
 /// * [name] 
-/// * [description] 
-/// * [isSystem] - True for built-in roles that cannot be deleted
-/// * [permissions] 
-/// * [adminCount] - Number of active admins with this role
-/// * [createdBy] 
+/// * [lguCode] 
+/// * [boundary] 
+/// * [active] 
 /// * [createdAt] 
 /// * [updatedAt] 
 @BuiltValue()
@@ -29,22 +26,14 @@ abstract class ServiceArea implements Built<ServiceArea, ServiceAreaBuilder> {
   @BuiltValueField(wireName: r'name')
   String get name;
 
-  @BuiltValueField(wireName: r'description')
-  String? get description;
+  @BuiltValueField(wireName: r'lgu_code')
+  String? get lguCode;
 
-  /// True for built-in roles that cannot be deleted
-  @BuiltValueField(wireName: r'is_system')
-  bool? get isSystem;
+  @BuiltValueField(wireName: r'boundary')
+  SurgeZone get boundary;
 
-  @BuiltValueField(wireName: r'permissions')
-  BuiltList<RolePermission>? get permissions;
-
-  /// Number of active admins with this role
-  @BuiltValueField(wireName: r'admin_count')
-  int? get adminCount;
-
-  @BuiltValueField(wireName: r'created_by')
-  String? get createdBy;
+  @BuiltValueField(wireName: r'active')
+  bool get active;
 
   @BuiltValueField(wireName: r'created_at')
   DateTime? get createdAt;
@@ -85,41 +74,23 @@ class _$ServiceAreaSerializer implements PrimitiveSerializer<ServiceArea> {
       object.name,
       specifiedType: const FullType(String),
     );
-    if (object.description != null) {
-      yield r'description';
+    if (object.lguCode != null) {
+      yield r'lgu_code';
       yield serializers.serialize(
-        object.description,
+        object.lguCode,
         specifiedType: const FullType(String),
       );
     }
-    if (object.isSystem != null) {
-      yield r'is_system';
-      yield serializers.serialize(
-        object.isSystem,
-        specifiedType: const FullType(bool),
-      );
-    }
-    if (object.permissions != null) {
-      yield r'permissions';
-      yield serializers.serialize(
-        object.permissions,
-        specifiedType: const FullType(BuiltList, [FullType(RolePermission)]),
-      );
-    }
-    if (object.adminCount != null) {
-      yield r'admin_count';
-      yield serializers.serialize(
-        object.adminCount,
-        specifiedType: const FullType(int),
-      );
-    }
-    if (object.createdBy != null) {
-      yield r'created_by';
-      yield serializers.serialize(
-        object.createdBy,
-        specifiedType: const FullType(String),
-      );
-    }
+    yield r'boundary';
+    yield serializers.serialize(
+      object.boundary,
+      specifiedType: const FullType(SurgeZone),
+    );
+    yield r'active';
+    yield serializers.serialize(
+      object.active,
+      specifiedType: const FullType(bool),
+    );
     if (object.createdAt != null) {
       yield r'created_at';
       yield serializers.serialize(
@@ -171,40 +142,26 @@ class _$ServiceAreaSerializer implements PrimitiveSerializer<ServiceArea> {
           ) as String;
           result.name = valueDes;
           break;
-        case r'description':
+        case r'lgu_code':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
-          result.description = valueDes;
+          result.lguCode = valueDes;
           break;
-        case r'is_system':
+        case r'boundary':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(SurgeZone),
+          ) as SurgeZone;
+          result.boundary.replace(valueDes);
+          break;
+        case r'active':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(bool),
           ) as bool;
-          result.isSystem = valueDes;
-          break;
-        case r'permissions':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(BuiltList, [FullType(RolePermission)]),
-          ) as BuiltList<RolePermission>;
-          result.permissions.replace(valueDes);
-          break;
-        case r'admin_count':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(int),
-          ) as int;
-          result.adminCount = valueDes;
-          break;
-        case r'created_by':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String;
-          result.createdBy = valueDes;
+          result.active = valueDes;
           break;
         case r'created_at':
           final valueDes = serializers.deserialize(

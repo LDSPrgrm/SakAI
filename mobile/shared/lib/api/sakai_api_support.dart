@@ -46,7 +46,13 @@ abstract final class SakaiApiSupport {
     final effectiveBaseUrl = baseUrl ?? SakaiApiEndpoints.defaultRestBaseUrl;
     final client = SakaiApiClient(
       basePathOverride: effectiveBaseUrl.isNotEmpty ? effectiveBaseUrl : null,
+      serializers: standardSerializers,
     );
+
+    // Set default timeouts for resilience.
+    client.dio.options.connectTimeout = const Duration(seconds: 5);
+    client.dio.options.receiveTimeout = const Duration(seconds: 15);
+
     if (authInterceptor != null) {
       client.dio.interceptors.add(authInterceptor);
     }

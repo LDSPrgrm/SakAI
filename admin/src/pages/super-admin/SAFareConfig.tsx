@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { Switch } from '@/components/ui/Switch';
 import { SaveBanner } from '@/components/shared/SaveBanner';
+import { FareChangePreview } from '@/components/super-admin/modals/FareChangePreview';
+import { UpdatedByFooter } from '@/components/super-admin/shared/UpdatedByFooter';
 import {
   useFareConfigs, useSurgeConfig,
   useUpdateFareConfig, useUpdateSurgeConfig, useSimulateFare,
@@ -40,6 +42,18 @@ const VEHICLE_TABS: { value: VehicleTab; label: string }[] = [
   { value: 'tricycle', label: 'Tricycle' },
   { value: 'car', label: 'Car (4-seater)' },
 ];
+
+// Metro Manila city centroids — origin presets for the Fare Simulator. Picked
+// from each LGU's commercial core so simulated rides cross representative road
+// networks. Destination is offset from origin by the user-entered distance/time.
+const CITY_PRESETS = [
+  { key: 'manila',  label: 'Manila (City Hall)',     lat: 14.5995, lng: 120.9842 },
+  { key: 'makati',  label: 'Makati (Ayala)',         lat: 14.5547, lng: 121.0244 },
+  { key: 'bgc',     label: 'BGC (Bonifacio High St)', lat: 14.5520, lng: 121.0507 },
+  { key: 'qc',      label: 'Quezon City (Cubao)',    lat: 14.6206, lng: 121.0530 },
+  { key: 'pasig',   label: 'Pasig (Ortigas CBD)',    lat: 14.5859, lng: 121.0617 },
+] as const;
+type CityPreset = typeof CITY_PRESETS[number]['key'];
 
 const FARE_FIELDS: { key: keyof FareFormValues; label: string; unit: string }[] = [
   { key: 'base_fare', label: 'Base Fare', unit: 'PHP' },
@@ -94,12 +108,10 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
     onBannerShow();
   }
 
-  const vehicleLabel = VEHICLE_TABS.find((v) => v.value === config.vehicle_type)?.label ?? config.vehicle_type;
-
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FARE_FIELDS.map(({ key, label, unit }) => (
             <div key={key}>
               <label className="block text-sm font-medium text-text-muted mb-1">
@@ -120,25 +132,23 @@ function FareTabForm({ config, onSaved, onBannerShow }: FareTabFormProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <p className="text-xs text-text-muted">
-            Last updated by{' '}
-            <span className="text-text-main">{config.updated_by_name || config.updated_by || '—'}</span>
-          </p>
-          <Button type="submit" size="sm" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving…' : 'Save Changes'}
-          </Button>
-        </div>
+        <UpdatedByFooter
+          name={config.updated_by_name || config.updated_by}
+          actions={
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving…' : 'Save Changes'}
+            </Button>
+          }
+        />
       </form>
 
-      <ConfirmModal
+      <FareChangePreview
         open={confirmOpen}
-        title="Confirm Fare Update"
-        message={`This will affect all new bookings for ${vehicleLabel}. Continue?`}
-        variant="danger"
-        confirmLabel="Yes, Save"
+        before={config}
+        after={pendingValues ? { ...pendingValues, vehicle_type: config.vehicle_type } : null}
+        loading={updateFares.isPending}
         onConfirm={handleConfirm}
-        onClose={() => { setConfirmOpen(false); setPendingValues(null); }}
+        onCancel={() => { setConfirmOpen(false); setPendingValues(null); }}
       />
     </>
   );
@@ -183,6 +193,7 @@ export function SAFareConfig() {
   const [simDistance, setSimDistance] = useState('');
   const [simTime, setSimTime] = useState('');
   const [simVehicle, setSimVehicle] = useState<VehicleTab>('motorcycle');
+  const [simOrigin, setSimOrigin] = useState<CityPreset>('manila');
   const [simResult, setSimResult] = useState<number | null>(null);
   const [simError, setSimError] = useState('');
 
@@ -220,10 +231,11 @@ export function SAFareConfig() {
       setSimError('Enter a valid time (minutes).');
       return;
     }
+    const preset = CITY_PRESETS.find((c) => c.key === simOrigin) ?? CITY_PRESETS[0];
     const result = await simulateFare.mutateAsync({
       vehicle: simVehicle,
-      origin: { lat: 14.5995, lng: 120.9842 },
-      destination: { lat: 14.5995 + dist * 0.01, lng: 120.9842 + time * 0.001 },
+      origin: { lat: preset.lat, lng: preset.lng },
+      destination: { lat: preset.lat + dist * 0.01, lng: preset.lng + time * 0.001 },
     });
     setSimResult(result);
   }
@@ -244,7 +256,7 @@ export function SAFareConfig() {
         <SaveBanner visible={bannerVisible} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* ── Left: Base Fare Config ─────────────────────────────────────── */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -301,19 +313,11 @@ export function SAFareConfig() {
                   <p className="font-medium text-text-main">Enable Auto-Surge</p>
                   <p className="text-xs text-text-muted">Based on demand/supply ratio</p>
                 </div>
-                <button
+                <Switch
+                  checked={surgeEnabled}
+                  onCheckedChange={setSurgeEnabled}
                   aria-label={surgeEnabled ? 'Disable auto-surge' : 'Enable auto-surge'}
-                  aria-checked={surgeEnabled}
-                  role="switch"
-                  onClick={() => setSurgeEnabled((v) => !v)}
-                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${surgeEnabled ? 'bg-primary' : 'bg-border'
-                    }`}
-                >
-                  <div
-                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${surgeEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                  />
-                </button>
+                />
               </div>
 
               {/* Max Multiplier */}
@@ -361,6 +365,10 @@ export function SAFareConfig() {
               >
                 {surgeSaving ? 'Saving…' : 'Save Surge Settings'}
               </Button>
+
+              {surgeConfig && (
+                <UpdatedByFooter name={surgeConfig.updated_by_name} />
+              )}
             </CardContent>
           </Card>
 
@@ -373,6 +381,25 @@ export function SAFareConfig() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-1">
+                  Origin
+                </label>
+                <select
+                  value={simOrigin}
+                  onChange={(e) => {
+                    setSimOrigin(e.target.value as CityPreset);
+                    setSimResult(null);
+                  }}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Simulator origin"
+                >
+                  {CITY_PRESETS.map((c) => (
+                    <option key={c.key} value={c.key}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1">
                   Distance (km)

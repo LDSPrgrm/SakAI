@@ -11,14 +11,15 @@ import (
 )
 
 type rideUseCase struct {
-	rideRepo      domain.RideRepository
-	driverRepo    domain.DriverRepository
+	rideRepo       domain.RideRepository
+	driverRepo     domain.DriverRepository
+	incidentRepo   domain.IncidentRepository
 	fareCalculator *FareCalculator
 }
 
 // NewRideUseCase creates a new domain.RideUseCase.
-func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository, fareCalculator *FareCalculator) domain.RideUseCase {
-	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo, fareCalculator: fareCalculator}
+func NewRideUseCase(rideRepo domain.RideRepository, driverRepo domain.DriverRepository, incidentRepo domain.IncidentRepository, fareCalculator *FareCalculator) domain.RideUseCase {
+	return &rideUseCase{rideRepo: rideRepo, driverRepo: driverRepo, incidentRepo: incidentRepo, fareCalculator: fareCalculator}
 }
 
 func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, origin, destination domain.LatLng, originAddr, destAddr, notes, idempotencyKey string, rideType domain.RideType, paymentMethod domain.PaymentMethod) (*domain.Ride, error) {
@@ -44,7 +45,6 @@ func (uc *rideUseCase) RequestRide(ctx context.Context, passengerID uuid.UUID, o
 		log.Printf("[RIDE] Error finding drivers: %v", err)
 		return nil, err
 	}
-	log.Printf("[RIDE] Found %d drivers near (%.5f, %.5f) within 5000m for ride_type=%s", len(drivers), origin.Lat, origin.Lng, rideType)
 	if len(drivers) == 0 {
 		return nil, domain.ErrNoDriversAvailable
 	}
@@ -126,11 +126,11 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 	}
 	// Clear the driver assignment in the DB first so the partial unique index
 	// on driver_id is freed and the ride can be matched to another driver.
-	if err := uc.rideRepo.ClearDriver(ctx, rideID); err != nil {
+	if err := uc.rideRepo.ClearDriver(ctx, rideID, domain.RideStatusRequested); err != nil {
 		return nil, err
 	}
 	// Reset status to requested and increment decline count.
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusRequested); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusRequested, domain.RideStatusRequested); err != nil {
 		return nil, err
 	}
 	if err := uc.rideRepo.IncrementDeclineCount(ctx, rideID); err != nil {
@@ -155,7 +155,7 @@ func (uc *rideUseCase) Decline(ctx context.Context, driverID, rideID uuid.UUID) 
 		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
 		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
 	}
-	if err := uc.rideRepo.AssignDriver(ctx, rideID, newDriverID); err != nil {
+	if err := uc.rideRepo.AssignDriver(ctx, rideID, newDriverID, domain.RideStatusRequested); err != nil {
 		log.Printf("[RIDE] Error assigning re-match driver for ride %s: %v", rideID, err)
 		ride, _ = uc.rideRepo.GetByID(ctx, rideID)
 		return &domain.DeclineResult{Ride: ride, NewDriverFound: false}, nil
@@ -184,7 +184,7 @@ func (uc *rideUseCase) Arrive(ctx context.Context, driverID, rideID uuid.UUID, d
 		return nil, domain.ErrDriverTooFarFromPickup
 	}
 
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusArrived, domain.RideStatusAccepted); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
@@ -241,7 +241,7 @@ func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID,
 	}
 
 	// Transition to completed status.
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusCompleted); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, domain.RideStatusCompleted, domain.RideStatusInProgress); err != nil {
 		return nil, err
 	}
 
@@ -252,7 +252,7 @@ func (uc *rideUseCase) Complete(ctx context.Context, driverID, rideID uuid.UUID,
 
 	// Return driver to online pool automatically on completion.
 	// Non-fatal: if this fails the driver can manually set their status.
-	if err := uc.driverRepo.UpdateStatus(ctx, driverID, domain.DriverStatusOnline); err != nil {
+	if _, err := uc.driverRepo.UpdateStatus(ctx, driverID, domain.DriverStatusOnline); err != nil {
 		log.Printf("warn: could not reset driver %s to online after ride completion: %v", driverID, err)
 	}
 	return ride, nil
@@ -280,26 +280,36 @@ func (uc *rideUseCase) Cancel(ctx context.Context, userID uuid.UUID, role domain
 		by = domain.CancelledByDriver
 	}
 
-	// Validate reason code if provided.
-	if reasonCode != nil && !domain.IsValidCancellationReason(*reasonCode) {
+	// Validate reason code against the actor's taxonomy. RFC v2 §8:
+	// passenger codes from drivers (and vice versa) are silently dropped
+	// — the cancel still proceeds, but the audit log won't record a
+	// cross-actor reason that would skew analytics.
+	if reasonCode != nil && !domain.IsValidCancellationReasonFor(by, *reasonCode) {
 		reasonCode = nil
 	}
 
-	// Determine cancellation fee from fare configs.
-	// Use default rates — in production these come from fare_configs table.
+	// Penalty schedule is owned by product/ops — see CalculatePenalty for the
+	// current placeholder. Threaded through a struct so call sites stay stable
+	// when the real schedule (per-actor, elapsed-time tiers) lands.
+	penalty := CalculatePenalty(CancellationPenaltyInput{Ride: ride, Actor: by})
 	var cancellationFee *float64
-	if ride.RideType != "" {
-		// Default cancellation fee: 10% of estimated fare, minimum 20.0
-		if ride.EstimatedFare != nil && *ride.EstimatedFare > 0 {
-			fee := (*ride.EstimatedFare) * 0.10
-			if fee < 20.0 {
-				fee = 20.0
-			}
-			cancellationFee = &fee
-		}
+	if penalty.Fee > 0 {
+		fee := penalty.Fee
+		cancellationFee = &fee
 	}
 
-	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee); err != nil {
+	// SetCancelled is atomic optimistic-lock: UPDATE ... WHERE id=$ AND status=$expected.
+	// That single statement IS the cancellation transaction — no explicit BEGIN/COMMIT
+	// needed (RFC v2 §8 C9). If two actors race a cancel, only the first UPDATE matches;
+	// the loser sees RowsAffected=0 → ErrInvalidStateTransition. We refetch to
+	// distinguish the race ("ride was just cancelled") from generic bad transitions
+	// ("ride is completed/in_progress and cannot be cancelled by you now").
+	if err := uc.rideRepo.SetCancelled(ctx, rideID, by, reasonCode, reasonText, cancellationFee, ride.Status); err != nil {
+		if errors.Is(err, domain.ErrInvalidStateTransition) {
+			if current, getErr := uc.rideRepo.GetByID(ctx, rideID); getErr == nil && current.Status == domain.RideStatusCancelled {
+				return current, domain.ErrCancelRaceLost
+			}
+		}
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
@@ -318,8 +328,47 @@ func (uc *rideUseCase) transition(ctx context.Context, callerID, rideID uuid.UUI
 	if !ride.Status.CanTransitionTo(next) {
 		return nil, domain.ErrInvalidStateTransition
 	}
-	if err := uc.rideRepo.UpdateStatus(ctx, rideID, next); err != nil {
+	if err := uc.rideRepo.UpdateStatus(ctx, rideID, next, ride.Status); err != nil {
 		return nil, err
 	}
 	return uc.rideRepo.GetByID(ctx, rideID)
 }
+
+func (uc *rideUseCase) TriggerSOS(ctx context.Context, userID uuid.UUID, role domain.UserRole, rideID uuid.UUID, reason string) (*domain.Incident, error) {
+	ride, err := uc.rideRepo.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify participant
+	if ride.PassengerID != userID && (ride.DriverID == nil || *ride.DriverID != userID) {
+		return nil, domain.ErrForbidden
+	}
+
+	triggeredBy := "rider"
+	if role == domain.RoleDriver {
+		triggeredBy = "driver"
+	}
+
+	if ride.DriverID == nil {
+		return nil, errors.New("no driver assigned to this ride")
+	}
+
+	incident := &domain.Incident{
+		ID:          uuid.New(),
+		RideID:      rideID,
+		TriggeredBy: triggeredBy,
+		RiderID:     ride.PassengerID,
+		DriverID:    *ride.DriverID,
+		Type:        "sos_triggered",
+		Status:      "open",
+		CreatedAt:   time.Now(),
+	}
+
+	if err := uc.incidentRepo.Create(ctx, incident); err != nil {
+		return nil, err
+	}
+
+	return incident, nil
+}
+

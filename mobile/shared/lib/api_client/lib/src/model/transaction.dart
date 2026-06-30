@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -12,7 +12,10 @@ part 'transaction.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] 
+/// * [displayId] - Human-readable reference (e.g. TXN-000042).
 /// * [rideId] 
+/// * [rideDisplayId] - Human-readable reference for the linked ride (e.g. RIDE-000123).
 /// * [riderName] 
 /// * [driverName] 
 /// * [amount] 
@@ -25,8 +28,19 @@ abstract class Transaction implements Built<Transaction, TransactionBuilder> {
   @BuiltValueField(wireName: r'id')
   String? get id;
 
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. TXN-000042).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
+
   @BuiltValueField(wireName: r'ride_id')
   String? get rideId;
+
+  /// Human-readable reference for the linked ride (e.g. RIDE-000123).
+  @BuiltValueField(wireName: r'ride_display_id')
+  String? get rideDisplayId;
 
   @BuiltValueField(wireName: r'rider_name')
   String? get riderName;
@@ -81,10 +95,31 @@ class _$TransactionSerializer implements PrimitiveSerializer<Transaction> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.rideId != null) {
       yield r'ride_id';
       yield serializers.serialize(
         object.rideId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.rideDisplayId != null) {
+      yield r'ride_display_id';
+      yield serializers.serialize(
+        object.rideDisplayId,
         specifiedType: const FullType(String),
       );
     }
@@ -167,12 +202,33 @@ class _$TransactionSerializer implements PrimitiveSerializer<Transaction> {
           ) as String;
           result.id = valueDes;
           break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
+          break;
         case r'ride_id':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
           result.rideId = valueDes;
+          break;
+        case r'ride_display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.rideDisplayId = valueDes;
           break;
         case r'rider_name':
           final valueDes = serializers.deserialize(

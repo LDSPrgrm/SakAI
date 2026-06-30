@@ -157,7 +157,13 @@ class _$Transaction extends Transaction {
   @override
   final String? id;
   @override
+  final int? seq;
+  @override
+  final String? displayId;
+  @override
   final String? rideId;
+  @override
+  final String? rideDisplayId;
   @override
   final String? riderName;
   @override
@@ -178,7 +184,10 @@ class _$Transaction extends Transaction {
 
   _$Transaction._({
     this.id,
+    this.seq,
+    this.displayId,
     this.rideId,
+    this.rideDisplayId,
     this.riderName,
     this.driverName,
     this.amount,
@@ -199,7 +208,10 @@ class _$Transaction extends Transaction {
     if (identical(other, this)) return true;
     return other is Transaction &&
         id == other.id &&
+        seq == other.seq &&
+        displayId == other.displayId &&
         rideId == other.rideId &&
+        rideDisplayId == other.rideDisplayId &&
         riderName == other.riderName &&
         driverName == other.driverName &&
         amount == other.amount &&
@@ -213,7 +225,10 @@ class _$Transaction extends Transaction {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, seq.hashCode);
+    _$hash = $jc(_$hash, displayId.hashCode);
     _$hash = $jc(_$hash, rideId.hashCode);
+    _$hash = $jc(_$hash, rideDisplayId.hashCode);
     _$hash = $jc(_$hash, riderName.hashCode);
     _$hash = $jc(_$hash, driverName.hashCode);
     _$hash = $jc(_$hash, amount.hashCode);
@@ -229,7 +244,10 @@ class _$Transaction extends Transaction {
   String toString() {
     return (newBuiltValueToStringHelper(r'Transaction')
           ..add('id', id)
+          ..add('seq', seq)
+          ..add('displayId', displayId)
           ..add('rideId', rideId)
+          ..add('rideDisplayId', rideDisplayId)
           ..add('riderName', riderName)
           ..add('driverName', driverName)
           ..add('amount', amount)
@@ -248,9 +266,22 @@ class TransactionBuilder implements Builder<Transaction, TransactionBuilder> {
   String? get id => _$this._id;
   set id(String? id) => _$this._id = id;
 
+  int? _seq;
+  int? get seq => _$this._seq;
+  set seq(int? seq) => _$this._seq = seq;
+
+  String? _displayId;
+  String? get displayId => _$this._displayId;
+  set displayId(String? displayId) => _$this._displayId = displayId;
+
   String? _rideId;
   String? get rideId => _$this._rideId;
   set rideId(String? rideId) => _$this._rideId = rideId;
+
+  String? _rideDisplayId;
+  String? get rideDisplayId => _$this._rideDisplayId;
+  set rideDisplayId(String? rideDisplayId) =>
+      _$this._rideDisplayId = rideDisplayId;
 
   String? _riderName;
   String? get riderName => _$this._riderName;
@@ -289,7 +320,10 @@ class TransactionBuilder implements Builder<Transaction, TransactionBuilder> {
     final $v = _$v;
     if ($v != null) {
       _id = $v.id;
+      _seq = $v.seq;
+      _displayId = $v.displayId;
       _rideId = $v.rideId;
+      _rideDisplayId = $v.rideDisplayId;
       _riderName = $v.riderName;
       _driverName = $v.driverName;
       _amount = $v.amount;
@@ -320,7 +354,10 @@ class TransactionBuilder implements Builder<Transaction, TransactionBuilder> {
         _$v ??
         _$Transaction._(
           id: id,
+          seq: seq,
+          displayId: displayId,
           rideId: rideId,
+          rideDisplayId: rideDisplayId,
           riderName: riderName,
           driverName: driverName,
           amount: amount,

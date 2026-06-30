@@ -16,22 +16,22 @@ class DriverRepositoryImpl implements DriverRepository {
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.online,
       );
-      await _apiClient.getDriverApi().driverSetStatus(
+      debugPrint('[DRIVER_REPO] Request: $request');
+      final response = await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
-      debugPrint('[DRIVER_REPO] goOnline success');
+      debugPrint('[DRIVER_REPO] goOnline success: ${response.data}');
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails.
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        debugPrint('[DRIVER_REPO] goOnline success (2xx, body parse issue)');
-        return;
-      }
-      debugPrint(
-        '[DRIVER_REPO] goOnline failed: ${e.response?.statusCode} ${e.message}',
-      );
+      debugPrint('[DRIVER_REPO] goOnline DioException: ${e.response?.statusCode}');
+      debugPrint('[DRIVER_REPO] Message: ${e.message}');
+      debugPrint('[DRIVER_REPO] Error type: ${e.type}');
+      debugPrint('[DRIVER_REPO] Error details: ${e.error}');
+      debugPrint('[DRIVER_REPO] Response data: ${e.response?.data}');
       throw _fromDio(e);
+    } catch (e, stack) {
+      debugPrint('[DRIVER_REPO] goOnline unexpected error: $e');
+      debugPrint('[DRIVER_REPO] Stacktrace: $stack');
+      rethrow;
     }
   }
 
@@ -42,22 +42,21 @@ class DriverRepositoryImpl implements DriverRepository {
       final request = DriverStatusRequest(
         (b) => b..status = DriverStatusRequestStatusEnum.offline,
       );
-      await _apiClient.getDriverApi().driverSetStatus(
+      debugPrint('[DRIVER_REPO] Request: $request');
+      final response = await _apiClient.getDriverApi().driverSetStatus(
         driverStatusRequest: request,
       );
-      debugPrint('[DRIVER_REPO] goOffline success');
+      debugPrint('[DRIVER_REPO] goOffline success: ${response.data}');
     } on DioException catch (e) {
-      // 2xx = success even if body parsing fails.
-      if (e.response?.statusCode != null &&
-          e.response!.statusCode! >= 200 &&
-          e.response!.statusCode! < 300) {
-        debugPrint('[DRIVER_REPO] goOffline success (2xx, body parse issue)');
-        return;
-      }
-      debugPrint(
-        '[DRIVER_REPO] goOffline failed: ${e.response?.statusCode} ${e.message}',
-      );
+      debugPrint('[DRIVER_REPO] goOffline DioException: ${e.response?.statusCode}');
+      debugPrint('[DRIVER_REPO] Message: ${e.message}');
+      debugPrint('[DRIVER_REPO] Error details: ${e.error}');
+      debugPrint('[DRIVER_REPO] Response data: ${e.response?.data}');
       throw _fromDio(e);
+    } catch (e, stack) {
+      debugPrint('[DRIVER_REPO] goOffline unexpected error: $e');
+      debugPrint('[DRIVER_REPO] Stacktrace: $stack');
+      rethrow;
     }
   }
 
@@ -94,11 +93,6 @@ class DriverRepositoryImpl implements DriverRepository {
       return response.data;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      // 2xx = success even if body parsing fails.
-      final statusCode = e.response?.statusCode;
-      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
-        return null; // WS will deliver the offer.
-      }
       throw _fromDio(e);
     } catch (_) {
       return null;
@@ -123,6 +117,6 @@ class DriverRepositoryImpl implements DriverRepository {
         e.type == DioExceptionType.connectionTimeout) {
       return Exception('No connection. Check network or server URL.');
     }
-    return Exception(e.message ?? 'Something went wrong. Try again.');
+    return Exception(e.message ?? 'Could not reach the server. Try again.');
   }
 }

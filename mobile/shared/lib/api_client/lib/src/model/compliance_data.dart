@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -8,18 +8,21 @@ import 'package:built_value/serializer.dart';
 
 part 'compliance_data.g.dart';
 
-/// ComplianceData
+/// LTFRB regulatory compliance singleton, backed by the regulatory_compliance table.
 ///
 /// Properties:
 /// * [accreditationStatus] 
 /// * [accreditationExpiry] 
 /// * [driverComplianceRate] - Percentage of drivers with valid documents (0–100)
-/// * [violationCount] - LTFRB-reportable violations in current period
+/// * [violationCount] - LTFRB-reportable violations in current period (alias of violations_open)
+/// * [violationsOpen] - Count of open regulatory violations
+/// * [violationsResolved] - Count of resolved regulatory violations in current period
+/// * [lastAuditAt] - Timestamp of the last LTFRB audit, null if never audited
 @BuiltValue()
 abstract class ComplianceData implements Built<ComplianceData, ComplianceDataBuilder> {
   @BuiltValueField(wireName: r'accreditation_status')
   ComplianceDataAccreditationStatusEnum? get accreditationStatus;
-  // enum accreditationStatusEnum {  active,  expiring,  expired,  };
+  // enum accreditationStatusEnum {  active,  expiring,  expired,  pending,  };
 
   @BuiltValueField(wireName: r'accreditation_expiry')
   DateTime? get accreditationExpiry;
@@ -28,9 +31,21 @@ abstract class ComplianceData implements Built<ComplianceData, ComplianceDataBui
   @BuiltValueField(wireName: r'driver_compliance_rate')
   num? get driverComplianceRate;
 
-  /// LTFRB-reportable violations in current period
+  /// LTFRB-reportable violations in current period (alias of violations_open)
   @BuiltValueField(wireName: r'violation_count')
   int? get violationCount;
+
+  /// Count of open regulatory violations
+  @BuiltValueField(wireName: r'violations_open')
+  int? get violationsOpen;
+
+  /// Count of resolved regulatory violations in current period
+  @BuiltValueField(wireName: r'violations_resolved')
+  int? get violationsResolved;
+
+  /// Timestamp of the last LTFRB audit, null if never audited
+  @BuiltValueField(wireName: r'last_audit_at')
+  DateTime? get lastAuditAt;
 
   ComplianceData._();
 
@@ -81,6 +96,27 @@ class _$ComplianceDataSerializer implements PrimitiveSerializer<ComplianceData> 
       yield serializers.serialize(
         object.violationCount,
         specifiedType: const FullType(int),
+      );
+    }
+    if (object.violationsOpen != null) {
+      yield r'violations_open';
+      yield serializers.serialize(
+        object.violationsOpen,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.violationsResolved != null) {
+      yield r'violations_resolved';
+      yield serializers.serialize(
+        object.violationsResolved,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.lastAuditAt != null) {
+      yield r'last_audit_at';
+      yield serializers.serialize(
+        object.lastAuditAt,
+        specifiedType: const FullType.nullable(DateTime),
       );
     }
   }
@@ -134,6 +170,28 @@ class _$ComplianceDataSerializer implements PrimitiveSerializer<ComplianceData> 
           ) as int;
           result.violationCount = valueDes;
           break;
+        case r'violations_open':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.violationsOpen = valueDes;
+          break;
+        case r'violations_resolved':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.violationsResolved = valueDes;
+          break;
+        case r'last_audit_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(DateTime),
+          ) as DateTime?;
+          if (valueDes == null) continue;
+          result.lastAuditAt = valueDes;
+          break;
         default:
           unhandled.add(key);
           unhandled.add(value);
@@ -171,6 +229,8 @@ class ComplianceDataAccreditationStatusEnum extends EnumClass {
   static const ComplianceDataAccreditationStatusEnum expiring = _$complianceDataAccreditationStatusEnum_expiring;
   @BuiltValueEnumConst(wireName: r'expired')
   static const ComplianceDataAccreditationStatusEnum expired = _$complianceDataAccreditationStatusEnum_expired;
+  @BuiltValueEnumConst(wireName: r'pending')
+  static const ComplianceDataAccreditationStatusEnum pending = _$complianceDataAccreditationStatusEnum_pending;
 
   static Serializer<ComplianceDataAccreditationStatusEnum> get serializer => _$complianceDataAccreditationStatusEnumSerializer;
 

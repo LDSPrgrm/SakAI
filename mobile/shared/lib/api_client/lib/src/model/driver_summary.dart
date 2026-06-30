@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -13,6 +13,7 @@ part 'driver_summary.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [displayId] - Human-readable reference for the driver's user record (e.g. USR-0042).
 /// * [name] 
 /// * [vehicle] - Null if driver has no vehicle record yet.
 /// * [currentLocation] 
@@ -20,6 +21,10 @@ part 'driver_summary.g.dart';
 abstract class DriverSummary implements Built<DriverSummary, DriverSummaryBuilder> {
   @BuiltValueField(wireName: r'id')
   String get id;
+
+  /// Human-readable reference for the driver's user record (e.g. USR-0042).
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
 
   @BuiltValueField(wireName: r'name')
   String get name;
@@ -59,6 +64,13 @@ class _$DriverSummarySerializer implements PrimitiveSerializer<DriverSummary> {
       object.id,
       specifiedType: const FullType(String),
     );
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'name';
     yield serializers.serialize(
       object.name,
@@ -107,6 +119,13 @@ class _$DriverSummarySerializer implements PrimitiveSerializer<DriverSummary> {
             specifiedType: const FullType(String),
           ) as String;
           result.id = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
           break;
         case r'name':
           final valueDes = serializers.deserialize(

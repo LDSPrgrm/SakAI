@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -12,7 +12,10 @@ part 'incident.g.dart';
 ///
 /// Properties:
 /// * [id] 
+/// * [seq] - Postgres-assigned monotonic counter; the source for display_id.
+/// * [displayId] - Human-readable reference (e.g. INC-0042) derived from seq.
 /// * [rideId] 
+/// * [rideDisplayId] - Human-readable reference for the linked ride (e.g. RIDE-000123).
 /// * [type] 
 /// * [severity] - Operator-assigned urgency level
 /// * [status] 
@@ -22,6 +25,7 @@ part 'incident.g.dart';
 /// * [driverId] 
 /// * [driverName] 
 /// * [assignedTo] 
+/// * [assignedToName] - Display name of the assignee user, resolved via JOIN. Empty when unassigned.
 /// * [createdAt] 
 /// * [resolvedAt] 
 /// * [resolutionNotes] 
@@ -30,8 +34,20 @@ abstract class Incident implements Built<Incident, IncidentBuilder> {
   @BuiltValueField(wireName: r'id')
   String? get id;
 
+  /// Postgres-assigned monotonic counter; the source for display_id.
+  @BuiltValueField(wireName: r'seq')
+  int? get seq;
+
+  /// Human-readable reference (e.g. INC-0042) derived from seq.
+  @BuiltValueField(wireName: r'display_id')
+  String? get displayId;
+
   @BuiltValueField(wireName: r'ride_id')
   String? get rideId;
+
+  /// Human-readable reference for the linked ride (e.g. RIDE-000123).
+  @BuiltValueField(wireName: r'ride_display_id')
+  String? get rideDisplayId;
 
   @BuiltValueField(wireName: r'type')
   IncidentTypeEnum? get type;
@@ -64,6 +80,10 @@ abstract class Incident implements Built<Incident, IncidentBuilder> {
 
   @BuiltValueField(wireName: r'assigned_to')
   String? get assignedTo;
+
+  /// Display name of the assignee user, resolved via JOIN. Empty when unassigned.
+  @BuiltValueField(wireName: r'assigned_to_name')
+  String? get assignedToName;
 
   @BuiltValueField(wireName: r'created_at')
   DateTime? get createdAt;
@@ -104,10 +124,31 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
         specifiedType: const FullType(String),
       );
     }
+    if (object.seq != null) {
+      yield r'seq';
+      yield serializers.serialize(
+        object.seq,
+        specifiedType: const FullType(int),
+      );
+    }
+    if (object.displayId != null) {
+      yield r'display_id';
+      yield serializers.serialize(
+        object.displayId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.rideId != null) {
       yield r'ride_id';
       yield serializers.serialize(
         object.rideId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.rideDisplayId != null) {
+      yield r'ride_display_id';
+      yield serializers.serialize(
+        object.rideDisplayId,
         specifiedType: const FullType(String),
       );
     }
@@ -174,6 +215,13 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
         specifiedType: const FullType.nullable(String),
       );
     }
+    if (object.assignedToName != null) {
+      yield r'assigned_to_name';
+      yield serializers.serialize(
+        object.assignedToName,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.createdAt != null) {
       yield r'created_at';
       yield serializers.serialize(
@@ -225,12 +273,33 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
           ) as String;
           result.id = valueDes;
           break;
+        case r'seq':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.seq = valueDes;
+          break;
+        case r'display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.displayId = valueDes;
+          break;
         case r'ride_id':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType(String),
           ) as String;
           result.rideId = valueDes;
+          break;
+        case r'ride_display_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.rideDisplayId = valueDes;
           break;
         case r'type':
           final valueDes = serializers.deserialize(
@@ -295,6 +364,13 @@ class _$IncidentSerializer implements PrimitiveSerializer<Incident> {
           ) as String?;
           if (valueDes == null) continue;
           result.assignedTo = valueDes;
+          break;
+        case r'assigned_to_name':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.assignedToName = valueDes;
           break;
         case r'created_at':
           final valueDes = serializers.deserialize(

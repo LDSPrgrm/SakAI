@@ -5,6 +5,8 @@ import 'package:sakai_shared/sakai_shared.dart';
 
 import 'package:driver/features/active_ride/views/active_ride_screen.dart';
 import 'package:driver/features/active_ride/repositories/active_ride_repository.dart';
+import 'package:driver/features/active_ride/services/location_stream_service.dart';
+import 'package:driver/features/home/repositories/driver_repository.dart';
 import 'package:driver/app/providers.dart';
 
 class _MockActiveRideRepository implements ActiveRideRepository {
@@ -18,13 +20,29 @@ class _MockActiveRideRepository implements ActiveRideRepository {
   Future<void> completeRide(String rideId, LatLng driverLocation) async {}
 
   @override
-  Future<void> cancelRide(String rideId) async {}
+  Future<void> cancelRide(String rideId, {String? reasonText}) async {}
 
   @override
   Future<RideResponse?> getActiveRide() async {
     return null;
   }
 }
+
+class _NoopDriverRepo implements DriverRepository {
+  @override
+  Future<void> goOnline() async {}
+  @override
+  Future<void> goOffline() async {}
+  @override
+  Future<void> updateLocation(double lat, double lng, {double? heading}) async {}
+  @override
+  Future<RideResponse?> getIncomingRide() async => null;
+}
+
+LocationStreamService _fakeLocationStream() => LocationStreamService(
+      driverRepo: _NoopDriverRepo(),
+      positionStreamFactory: (_) => const Stream.empty(),
+    );
 
 void main() {
   final mockRepo = _MockActiveRideRepository();
@@ -65,7 +83,10 @@ void main() {
       final ride = createMockRide(RideStatus.accepted);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
+          overrides: [
+            activeRideRepositoryProvider.overrideWithValue(mockRepo),
+            locationStreamServiceProvider.overrideWithValue(_fakeLocationStream()),
+          ],
           child: MaterialApp(
             theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),
@@ -86,7 +107,10 @@ void main() {
       final ride = createMockRide(RideStatus.arrived);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
+          overrides: [
+            activeRideRepositoryProvider.overrideWithValue(mockRepo),
+            locationStreamServiceProvider.overrideWithValue(_fakeLocationStream()),
+          ],
           child: MaterialApp(
             theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),
@@ -107,7 +131,10 @@ void main() {
       final ride = createMockRide(RideStatus.inProgress);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [activeRideRepositoryProvider.overrideWithValue(mockRepo)],
+          overrides: [
+            activeRideRepositoryProvider.overrideWithValue(mockRepo),
+            locationStreamServiceProvider.overrideWithValue(_fakeLocationStream()),
+          ],
           child: MaterialApp(
             theme: SakaiTheme.light(themeConfig),
             home: ActiveRideScreen(initialRide: ride),

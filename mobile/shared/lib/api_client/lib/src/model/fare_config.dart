@@ -1,4 +1,4 @@
-﻿// AUTO-GENERATED FILE, DO NOT MODIFY!
+// AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
 // ignore_for_file: unused_element
@@ -10,6 +10,7 @@ part 'fare_config.g.dart';
 /// FareConfig
 ///
 /// Properties:
+/// * [id] 
 /// * [vehicleType] 
 /// * [baseFare] 
 /// * [perKmRate] 
@@ -17,8 +18,14 @@ part 'fare_config.g.dart';
 /// * [minimumFare] 
 /// * [bookingFee] 
 /// * [cancellationFee] 
+/// * [updatedAt] 
+/// * [updatedBy] 
+/// * [updatedByName] - Display name of the admin who last updated this row (joined from users.name).
 @BuiltValue()
 abstract class FareConfig implements Built<FareConfig, FareConfigBuilder> {
+  @BuiltValueField(wireName: r'id')
+  String? get id;
+
   @BuiltValueField(wireName: r'vehicle_type')
   String? get vehicleType;
 
@@ -39,6 +46,16 @@ abstract class FareConfig implements Built<FareConfig, FareConfigBuilder> {
 
   @BuiltValueField(wireName: r'cancellation_fee')
   num? get cancellationFee;
+
+  @BuiltValueField(wireName: r'updated_at')
+  DateTime? get updatedAt;
+
+  @BuiltValueField(wireName: r'updated_by')
+  String? get updatedBy;
+
+  /// Display name of the admin who last updated this row (joined from users.name).
+  @BuiltValueField(wireName: r'updated_by_name')
+  String? get updatedByName;
 
   FareConfig._();
 
@@ -63,6 +80,13 @@ class _$FareConfigSerializer implements PrimitiveSerializer<FareConfig> {
     FareConfig object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.id != null) {
+      yield r'id';
+      yield serializers.serialize(
+        object.id,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.vehicleType != null) {
       yield r'vehicle_type';
       yield serializers.serialize(
@@ -112,6 +136,27 @@ class _$FareConfigSerializer implements PrimitiveSerializer<FareConfig> {
         specifiedType: const FullType(num),
       );
     }
+    if (object.updatedAt != null) {
+      yield r'updated_at';
+      yield serializers.serialize(
+        object.updatedAt,
+        specifiedType: const FullType(DateTime),
+      );
+    }
+    if (object.updatedBy != null) {
+      yield r'updated_by';
+      yield serializers.serialize(
+        object.updatedBy,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.updatedByName != null) {
+      yield r'updated_by_name';
+      yield serializers.serialize(
+        object.updatedByName,
+        specifiedType: const FullType(String),
+      );
+    }
   }
 
   @override
@@ -135,6 +180,13 @@ class _$FareConfigSerializer implements PrimitiveSerializer<FareConfig> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.id = valueDes;
+          break;
         case r'vehicle_type':
           final valueDes = serializers.deserialize(
             value,
@@ -183,6 +235,28 @@ class _$FareConfigSerializer implements PrimitiveSerializer<FareConfig> {
             specifiedType: const FullType(num),
           ) as num;
           result.cancellationFee = valueDes;
+          break;
+        case r'updated_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime;
+          result.updatedAt = valueDes;
+          break;
+        case r'updated_by':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.updatedBy = valueDes;
+          break;
+        case r'updated_by_name':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.updatedByName = valueDes;
           break;
         default:
           unhandled.add(key);

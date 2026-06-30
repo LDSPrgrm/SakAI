@@ -34,6 +34,7 @@ type SurgeConfig struct {
 	BlackoutHours json.RawMessage `json:"blackout_hours"`
 	UpdatedAt     time.Time       `json:"updated_at"`
 	UpdatedBy     uuid.UUID       `json:"updated_by"`
+	UpdatedByName string          `json:"updated_by_name,omitempty"`
 }
 
 // PaymentGatewayConfig carries settings for external payment providers.
@@ -81,7 +82,10 @@ type RolePermission struct {
 // Transaction represents a payment record for a completed ride.
 type Transaction struct {
 	ID            uuid.UUID `json:"id"`
+	Seq           int64     `json:"seq"`
+	DisplayID     string    `json:"display_id"`
 	RideID        uuid.UUID `json:"ride_id"`
+	RideDisplayID string    `json:"ride_display_id,omitempty"`
 	RiderName     string    `json:"rider_name"`
 	DriverName    string    `json:"driver_name"`
 	Amount        float64   `json:"amount"`
@@ -139,12 +143,13 @@ type DriverHeatmap struct {
 
 // KycEntry represents a driver KYC submission in the review queue.
 type KycEntry struct {
-	ID          uuid.UUID `json:"id"`
-	DriverID    uuid.UUID `json:"driver_id"`
-	DriverName  string    `json:"driver_name"`
-	SubmittedAt time.Time `json:"submitted_at"`
-	Docs        []string  `json:"docs"`
-	Status      string    `json:"status"`
+	ID              uuid.UUID `json:"id"`
+	DriverID        uuid.UUID `json:"driver_id"`
+	DriverDisplayID string    `json:"driver_display_id"`
+	DriverName      string    `json:"driver_name"`
+	SubmittedAt     time.Time `json:"submitted_at"`
+	Docs            []string  `json:"docs"`
+	Status          string    `json:"status"`
 }
 
 // FeatureFlag is a system-level toggle.

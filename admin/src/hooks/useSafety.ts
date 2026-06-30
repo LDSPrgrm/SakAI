@@ -8,17 +8,19 @@ const INCIDENTS_KEY = [...SAFETY_KEY, 'incidents'] as const;
 const KYC_KEY = [...SAFETY_KEY, 'kyc'] as const;
 const LTFRB_KEY = [...SAFETY_KEY, 'ltfrb'] as const;
 
-export function useIncidents() {
+export function useIncidents(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: INCIDENTS_KEY,
     queryFn: () => safetyApi.getIncidents(),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
-export function useKycQueue() {
+export function useKycQueue(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: KYC_KEY,
     queryFn: () => safetyApi.getKycQueue(),
+    refetchInterval: options?.refetchInterval,
   });
 }
 

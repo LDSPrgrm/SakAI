@@ -45,25 +45,33 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
   @override
   Widget build(BuildContext context) {
     final vm = ref.watch(_cancelledRideViewModelProvider(widget.rideId));
-    return _buildContent(context, vm.state);
+    return ListenableBuilder(
+      listenable: vm,
+      builder: (context, _) => _buildContent(context, vm.state),
+    );
   }
 
   Widget _buildContent(BuildContext context, CancelledRideState state) {
     final tokens = SakaiDesignTokens.of(context);
     final theme = Theme.of(context);
 
-    if (state.status == CancelledRideStatus.loading) {
+    if (state.status == CancelledRideStatus.initial ||
+        state.status == CancelledRideStatus.loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (state.status == CancelledRideStatus.error) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Error')),
+        appBar: SakaiAppBar(title: const Text('Error')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: SakaiSemanticColors.of(context).danger,
+              ),
               SizedBox(height: tokens.spaceMd),
               Text(
                 state.error ?? 'Something went wrong',
@@ -89,7 +97,7 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
     final details = state.details!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ride Cancelled')),
+      appBar: SakaiAppBar(title: const Text('Ride Cancelled')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(tokens.spaceLg),
         child: Column(
@@ -349,14 +357,11 @@ class _CancelledRideScreenState extends ConsumerState<CancelledRideScreen> {
                     }),
                     if (selectedReason == CancellationReason.other) ...[
                       SizedBox(height: tokens.spaceSm),
-                      TextField(
+                      SakaiTextField(
                         controller: reasonTextController,
-                        decoration: const InputDecoration(
-                          labelText: 'Please specify',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLength: 500,
+                        label: 'Please specify',
                         maxLines: 2,
+                        maxLength: 500,
                       ),
                     ],
                   ],

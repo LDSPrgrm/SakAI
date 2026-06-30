@@ -137,6 +137,10 @@ func (uc *authUseCase) ChangePassword(ctx context.Context, userID uuid.UUID, old
 	return uc.userRepo.UpdatePassword(ctx, userID, string(hash))
 }
 
+func (uc *authUseCase) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
+	return uc.userRepo.Delete(ctx, userID)
+}
+
 // issueTokens generates a new access + refresh token pair and persists the refresh token.
 func (uc *authUseCase) issueTokens(ctx context.Context, user *domain.User, oldRefreshToken string) (*domain.AuthOutput, error) {
 	accessToken, expiresAt, err := jwt.GenerateAccessToken(user.ID, user.Role, uc.jwtSecret, uc.accessExpiry)

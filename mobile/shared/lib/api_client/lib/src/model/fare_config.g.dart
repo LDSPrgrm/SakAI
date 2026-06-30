@@ -8,6 +8,8 @@ part of 'fare_config.dart';
 
 class _$FareConfig extends FareConfig {
   @override
+  final String? id;
+  @override
   final String? vehicleType;
   @override
   final num? baseFare;
@@ -21,11 +23,18 @@ class _$FareConfig extends FareConfig {
   final num? bookingFee;
   @override
   final num? cancellationFee;
+  @override
+  final DateTime? updatedAt;
+  @override
+  final String? updatedBy;
+  @override
+  final String? updatedByName;
 
   factory _$FareConfig([void Function(FareConfigBuilder)? updates]) =>
       (FareConfigBuilder()..update(updates))._build();
 
   _$FareConfig._({
+    this.id,
     this.vehicleType,
     this.baseFare,
     this.perKmRate,
@@ -33,6 +42,9 @@ class _$FareConfig extends FareConfig {
     this.minimumFare,
     this.bookingFee,
     this.cancellationFee,
+    this.updatedAt,
+    this.updatedBy,
+    this.updatedByName,
   }) : super._();
   @override
   FareConfig rebuild(void Function(FareConfigBuilder) updates) =>
@@ -45,18 +57,23 @@ class _$FareConfig extends FareConfig {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is FareConfig &&
+        id == other.id &&
         vehicleType == other.vehicleType &&
         baseFare == other.baseFare &&
         perKmRate == other.perKmRate &&
         perMinRate == other.perMinRate &&
         minimumFare == other.minimumFare &&
         bookingFee == other.bookingFee &&
-        cancellationFee == other.cancellationFee;
+        cancellationFee == other.cancellationFee &&
+        updatedAt == other.updatedAt &&
+        updatedBy == other.updatedBy &&
+        updatedByName == other.updatedByName;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, vehicleType.hashCode);
     _$hash = $jc(_$hash, baseFare.hashCode);
     _$hash = $jc(_$hash, perKmRate.hashCode);
@@ -64,6 +81,9 @@ class _$FareConfig extends FareConfig {
     _$hash = $jc(_$hash, minimumFare.hashCode);
     _$hash = $jc(_$hash, bookingFee.hashCode);
     _$hash = $jc(_$hash, cancellationFee.hashCode);
+    _$hash = $jc(_$hash, updatedAt.hashCode);
+    _$hash = $jc(_$hash, updatedBy.hashCode);
+    _$hash = $jc(_$hash, updatedByName.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -71,19 +91,27 @@ class _$FareConfig extends FareConfig {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'FareConfig')
+          ..add('id', id)
           ..add('vehicleType', vehicleType)
           ..add('baseFare', baseFare)
           ..add('perKmRate', perKmRate)
           ..add('perMinRate', perMinRate)
           ..add('minimumFare', minimumFare)
           ..add('bookingFee', bookingFee)
-          ..add('cancellationFee', cancellationFee))
+          ..add('cancellationFee', cancellationFee)
+          ..add('updatedAt', updatedAt)
+          ..add('updatedBy', updatedBy)
+          ..add('updatedByName', updatedByName))
         .toString();
   }
 }
 
 class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
   _$FareConfig? _$v;
+
+  String? _id;
+  String? get id => _$this._id;
+  set id(String? id) => _$this._id = id;
 
   String? _vehicleType;
   String? get vehicleType => _$this._vehicleType;
@@ -114,6 +142,19 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
   set cancellationFee(num? cancellationFee) =>
       _$this._cancellationFee = cancellationFee;
 
+  DateTime? _updatedAt;
+  DateTime? get updatedAt => _$this._updatedAt;
+  set updatedAt(DateTime? updatedAt) => _$this._updatedAt = updatedAt;
+
+  String? _updatedBy;
+  String? get updatedBy => _$this._updatedBy;
+  set updatedBy(String? updatedBy) => _$this._updatedBy = updatedBy;
+
+  String? _updatedByName;
+  String? get updatedByName => _$this._updatedByName;
+  set updatedByName(String? updatedByName) =>
+      _$this._updatedByName = updatedByName;
+
   FareConfigBuilder() {
     FareConfig._defaults(this);
   }
@@ -121,6 +162,7 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
   FareConfigBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _id = $v.id;
       _vehicleType = $v.vehicleType;
       _baseFare = $v.baseFare;
       _perKmRate = $v.perKmRate;
@@ -128,6 +170,9 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
       _minimumFare = $v.minimumFare;
       _bookingFee = $v.bookingFee;
       _cancellationFee = $v.cancellationFee;
+      _updatedAt = $v.updatedAt;
+      _updatedBy = $v.updatedBy;
+      _updatedByName = $v.updatedByName;
       _$v = null;
     }
     return this;
@@ -150,6 +195,7 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
     final _$result =
         _$v ??
         _$FareConfig._(
+          id: id,
           vehicleType: vehicleType,
           baseFare: baseFare,
           perKmRate: perKmRate,
@@ -157,6 +203,9 @@ class FareConfigBuilder implements Builder<FareConfig, FareConfigBuilder> {
           minimumFare: minimumFare,
           bookingFee: bookingFee,
           cancellationFee: cancellationFee,
+          updatedAt: updatedAt,
+          updatedBy: updatedBy,
+          updatedByName: updatedByName,
         );
     replace(_$result);
     return _$result;

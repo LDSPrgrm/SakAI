@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,34 +8,82 @@ import '../../../app/router.dart';
 import '../view_models/splash_notifier.dart';
 
 /// Entry point screen — invisible to user. Resolves session and routes accordingly.
-class SplashScreen extends ConsumerWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final splashAsync = ref.watch(splashProvider);
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
 
-    // React to state changes and route once resolved.
-    ref.listen<AsyncValue<SplashState>>(splashProvider, (_, next) {
-      next.whenData((state) {
-        switch (state) {
-          case SplashState.welcome:
-            context.go(Routes.welcome);
-          case SplashState.unauthenticated:
-            context.go(Routes.login);
-          case SplashState.home:
-            context.go(Routes.home);
-          case SplashState.activeRide:
-            // Navigate to active ride loader which will fetch the ride
-            context.go(Routes.rideActive);
-          case SplashState.transientError:
-            break;
-          case SplashState.loading:
-            break;
-        }
-      });
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _navigated = false;
+  Timer? _failsafeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = ref.read(splashProvider);
+      state.whenOrNull(
+        data: (result) => _handleNavigation(result),
+        error: (err, stack) => _handleNavigation(SplashState.transientError),
+      );
+    });
+    // Fail-safe: 8s stall → drop to login with snackbar.
+    _failsafeTimer = Timer(const Duration(seconds: 8), () {
+      if (!mounted || _navigated) return;
+      _navigated = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Taking longer than expected. Please sign in again.')),
+      );
+      context.go(Routes.login);
+    });
+  }
+
+  @override
+  void dispose() {
+    _failsafeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleNavigation(SplashState state) {
+    if (_navigated || !mounted) return;
+
+    switch (state) {
+      case SplashState.home:
+        _navigated = true;
+        context.go(Routes.home);
+        break;
+      case SplashState.activeRide:
+        _navigated = true;
+        context.go(Routes.rideActive);
+        break;
+      case SplashState.welcome:
+        _navigated = true;
+        context.go(Routes.welcome);
+        break;
+      case SplashState.unauthenticated:
+        _navigated = true;
+        context.go(Routes.login);
+        break;
+      case SplashState.transientError:
+        // Stay here and show error body
+        break;
+      case SplashState.loading:
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<SplashState>>(splashProvider, (previous, next) {
+      if (next is AsyncData<SplashState>) {
+        _handleNavigation(next.value);
+      }
     });
 
+    final splashAsync = ref.watch(splashProvider);
     final scheme = Theme.of(context).colorScheme;
 
     return splashAsync.when(
