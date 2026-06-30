@@ -36,7 +36,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ matrix.app }}-${{ hashFiles('mobile/${{ matrix.app }}/android/gradle/wrapper/gradle-wrapper.properties', 'mobile/${{ matrix.app }}/android/**/*.gradle.kts') }}
+          key: gradle-${{ matrix.app }}-${{ hashFiles(format('mobile/{0}/android/gradle/wrapper/gradle-wrapper.properties', matrix.app), format('mobile/{0}/android/**/*.gradle.kts', matrix.app)) }}
           restore-keys: |
             gradle-${{ matrix.app }}-
 
