@@ -99,6 +99,9 @@ func (uc *authUseCase) Login(ctx context.Context, email, password string) (*doma
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, domain.ErrInvalidCredentials
 	}
+	if user.Role == domain.UserRoleDeactivated {
+		return nil, domain.ErrInvalidCredentials
+	}
 	return uc.issueTokens(ctx, user, "")
 }
 
@@ -110,6 +113,9 @@ func (uc *authUseCase) Refresh(ctx context.Context, refreshToken string) (*domai
 	user, err := uc.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+	if user.Role == domain.UserRoleDeactivated {
+		return nil, domain.ErrRefreshTokenInvalid
 	}
 	return uc.issueTokens(ctx, user, refreshToken)
 }

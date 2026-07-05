@@ -92,6 +92,23 @@ func TestAuthUseCase_Login_WrongPassword(t *testing.T) {
 	}
 }
 
+func TestAuthUseCase_Login_Deactivated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, _ := newAuthUC(ctrl)
+	user := testutil.NewTestUser()
+	user.Role = domain.UserRoleDeactivated
+
+	userRepo.EXPECT().GetByEmail(gomock.Any(), user.Email).Return(user, nil)
+
+	// user fixture has bcrypt of "password" as the hash
+	_, err := uc.Login(context.Background(), user.Email, "password")
+	if err != domain.ErrInvalidCredentials {
+		t.Errorf("expected ErrInvalidCredentials, got %v", err)
+	}
+}
+
 func TestAuthUseCase_Login_UserNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -124,6 +141,24 @@ func TestAuthUseCase_Refresh_Success(t *testing.T) {
 	}
 	if out.RefreshToken == token {
 		t.Error("expected a new refresh token to be issued after rotation")
+	}
+}
+
+func TestAuthUseCase_Refresh_Deactivated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, userRepo, tokenRepo := newAuthUC(ctrl)
+	user := testutil.NewTestUser()
+	user.Role = domain.UserRoleDeactivated
+	token := "old-refresh-token"
+
+	tokenRepo.EXPECT().GetUserID(gomock.Any(), token).Return(user.ID, nil)
+	userRepo.EXPECT().GetByID(gomock.Any(), user.ID).Return(user, nil)
+
+	_, err := uc.Refresh(context.Background(), token)
+	if err != domain.ErrRefreshTokenInvalid {
+		t.Errorf("expected ErrRefreshTokenInvalid, got %v", err)
 	}
 }
 
