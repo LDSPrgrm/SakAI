@@ -77,3 +77,29 @@ committed to `.env` as compromised and rotate it.
 - **KYC file reads:** admin-tier reads of `/files/*` now require the `kyc_verification:read`
   permission (M1); drivers remain limited to their own document prefix. The same ~30s cache lag
   applies to a freshly revoked `kyc_verification` grant.
+
+## 10. 2026-07-05 scaling & security follow-up (branch `fix/backend-scaling-security`, PR #73)
+
+Deploy-time requirements introduced by the July 2026 audit remediation
+(plan: `docs/superpowers/plans/2026-07-05-backend-scaling-security-fixes.md`):
+
+- **`METRICS_TOKEN` (fail-closed):** `/metrics` is no longer public. Unset ⇒ the endpoint is
+  **not mounted** (scrapers get 404, not 401). Set a strong token via the secret manager
+  **before** pointing Prometheus at the service, and configure the scrape job with
+  `Authorization: Bearer <token>`.
+- **DB pool sizing:** `DB_MAX_CONNS` (default 20) / `DB_MIN_CONNS` (default 2) are now
+  env-tunable. Size `DB_MAX_CONNS` against Postgres `max_connections` ÷ instance count.
+- **Migration 032** runs embedded at startup: swaps the drivers spatial index to a functional
+  `(location::geography)` GiST index (non-`CONCURRENTLY` — acceptable at current table size;
+  revisit if the drivers table grows past ~100k rows before this deploys).
+- **Deactivated accounts:** login/refresh now reject `role='deactivated'`. Existing **access**
+  tokens still work until expiry (60 min default) — the accepted revocation window. For
+  instant revocation a `jti` denylist is a deferred follow-up.
+- **Log hygiene:** access logs redact `token=` query values (WS upgrade JWTs). Keep any log
+  aggregation retention/scrubbing policies in place for logs captured **before** this deploy —
+  they contain valid-at-the-time tokens.
+- **Version disclosure:** `/api/health` no longer returns `version`. Update any monitoring
+  that parsed it (scrape an internal/authenticated source instead).
+- **Deferred (tracked in the plan doc):** Redis-backed rate limiter + per-account lockout,
+  GPS location writes to Redis GEO (phase 2), driver-rating denormalization, WS event-channel
+  sharding, replay stream-ID cursor, upload magic-byte sniffing.
