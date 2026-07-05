@@ -83,7 +83,7 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 		panic(err)
 	}
 	r.Use(gin.Recovery())
-	r.Use(gin.Logger())
+	r.Use(middleware.AccessLogger())
 
 	// Apply Global Security Middlewares
 	r.Use(middleware.CORS(d.AllowedOrigins))
