@@ -106,6 +106,10 @@ func (uc *driverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, lng 
 	}
 	for _, d := range all {
 		rt := domain.RideType(d.VehicleType)
+		if _, ok := result[rt]; !ok {
+			// Unknown/unrecognized vehicle_type must not add a new JSON key.
+			continue
+		}
 		result[rt] = append(result[rt], d)
 	}
 	return result, nil

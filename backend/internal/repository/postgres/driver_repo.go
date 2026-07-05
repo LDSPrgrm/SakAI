@@ -79,6 +79,7 @@ func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status 
 func (r *driverRepo) UpdateLocation(ctx context.Context, userID uuid.UUID, loc domain.DriverLocation) error {
 	const q = `
 		UPDATE drivers
+		-- $2 = lng, $3 = lat (ST_MakePoint takes lng first)
 		SET location  = ST_SetSRID(ST_MakePoint($2, $3), 4326),
 		    updated_at = NOW()
 		WHERE user_id = $1

@@ -18,11 +18,11 @@ func panics(secret, appEnv string) (panicked bool) {
 
 func TestLoad_DBPoolSizing(t *testing.T) {
 	cases := []struct {
-		name          string
-		maxConnsEnv   string
-		minConnsEnv   string
-		wantMaxConns  int
-		wantMinConns  int
+		name         string
+		maxConnsEnv  string
+		minConnsEnv  string
+		wantMaxConns int
+		wantMinConns int
 	}{
 		{"defaults when unset", "", "", 20, 2},
 		{"reads DB_MAX_CONNS", "50", "", 50, 2},
@@ -34,12 +34,11 @@ func TestLoad_DBPoolSizing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set development mode to avoid JWT_SECRET validation panic
 			t.Setenv("APP_ENV", "development")
-			if tc.maxConnsEnv != "" {
-				t.Setenv("DB_MAX_CONNS", tc.maxConnsEnv)
-			}
-			if tc.minConnsEnv != "" {
-				t.Setenv("DB_MIN_CONNS", tc.minConnsEnv)
-			}
+			// Always set (even to "") so ambient env vars from the runner's
+			// shell (e.g. a locally exported DB_MAX_CONNS) can't leak in and
+			// break cases that expect the fallback default.
+			t.Setenv("DB_MAX_CONNS", tc.maxConnsEnv)
+			t.Setenv("DB_MIN_CONNS", tc.minConnsEnv)
 			cfg := Load()
 			if cfg.DBMaxConns != tc.wantMaxConns {
 				t.Errorf("DBMaxConns: got %d, want %d", cfg.DBMaxConns, tc.wantMaxConns)

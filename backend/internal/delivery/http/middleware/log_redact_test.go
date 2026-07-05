@@ -53,3 +53,35 @@ func TestAccessLoggerWithErrorMessage(t *testing.T) {
 		t.Errorf("AccessLogger did not include error message in log output.\nGot: %q", logOutput)
 	}
 }
+
+func TestAccessLoggerRedactsTokenInErrorMessage(t *testing.T) {
+	// Swap DefaultWriter to capture log output.
+	oldWriter := gin.DefaultWriter
+	logBuffer := bytes.NewBuffer(nil)
+	gin.DefaultWriter = logBuffer
+	defer func() { gin.DefaultWriter = oldWriter }()
+
+	// Create a test engine with AccessLogger middleware.
+	engine := gin.New()
+	engine.Use(AccessLogger())
+
+	// Add a route handler that embeds a token-shaped value in c.Error.
+	engine.GET("/api/test", func(c *gin.Context) {
+		c.Error(errors.New("auth failed for token=eyJhbGciOi.abc.def"))
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	// Make a request through the middleware.
+	req := httptest.NewRequest("GET", "/api/test", nil)
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, req)
+
+	// Verify the token value is redacted and the raw token never appears.
+	logOutput := logBuffer.String()
+	if strings.Contains(logOutput, "eyJhbGciOi.abc.def") {
+		t.Errorf("AccessLogger leaked raw token from error message.\nGot: %q", logOutput)
+	}
+	if !strings.Contains(logOutput, "token=%5BREDACTED%5D") {
+		t.Errorf("AccessLogger did not redact token in error message.\nGot: %q", logOutput)
+	}
+}

@@ -111,6 +111,7 @@ func TestDriverUseCase_GetNearbyDriversAllTypes_GroupsByVehicleType(t *testing.T
 		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeCar)},
 		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeMotorcycle)},
 		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeTricycle)},
+		{ID: uuid.New().String(), VehicleType: "unknown_vehicle"},
 	}
 
 	driverRepo.EXPECT().FindNearbyOnlineAllTypes(gomock.Any(), 14.5, 120.9, 5000.0).Return(all, nil)
@@ -128,6 +129,13 @@ func TestDriverUseCase_GetNearbyDriversAllTypes_GroupsByVehicleType(t *testing.T
 		if len(drivers) != 1 {
 			t.Errorf("expected exactly 1 driver for %q, got %d", rt, len(drivers))
 		}
+	}
+
+	if _, ok := result[domain.RideType("unknown_vehicle")]; ok {
+		t.Errorf("expected unknown vehicle_type to not add a new key to result, got keys: %v", result)
+	}
+	if len(result) != 3 {
+		t.Errorf("expected exactly 3 keys in result (no unknown-type key added), got %d: %v", len(result), result)
 	}
 }
 

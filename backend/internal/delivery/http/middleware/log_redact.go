@@ -27,7 +27,7 @@ func AccessLogger() gin.HandlerFunc {
 			return fmt.Sprintf("[GIN] %s | %3d | %13v | %15s | %-7s %s%s\n",
 				p.TimeStamp.Format("2006/01/02 - 15:04:05"),
 				p.StatusCode, p.Latency, p.ClientIP, p.Method,
-				RedactQueryToken(p.Path), p.ErrorMessage)
+				RedactQueryToken(p.Path), RedactQueryToken(p.ErrorMessage))
 		},
 	})
 }
