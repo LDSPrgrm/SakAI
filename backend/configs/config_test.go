@@ -16,6 +16,41 @@ func panics(secret, appEnv string) (panicked bool) {
 	return false
 }
 
+func TestLoad_DBPoolSizing(t *testing.T) {
+	cases := []struct {
+		name          string
+		maxConnsEnv   string
+		minConnsEnv   string
+		wantMaxConns  int
+		wantMinConns  int
+	}{
+		{"defaults when unset", "", "", 20, 2},
+		{"reads DB_MAX_CONNS", "50", "", 50, 2},
+		{"reads DB_MIN_CONNS", "", "5", 20, 5},
+		{"reads both", "100", "10", 100, 10},
+		{"defaults on invalid", "invalid", "bad", 20, 2},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set development mode to avoid JWT_SECRET validation panic
+			t.Setenv("APP_ENV", "development")
+			if tc.maxConnsEnv != "" {
+				t.Setenv("DB_MAX_CONNS", tc.maxConnsEnv)
+			}
+			if tc.minConnsEnv != "" {
+				t.Setenv("DB_MIN_CONNS", tc.minConnsEnv)
+			}
+			cfg := Load()
+			if cfg.DBMaxConns != tc.wantMaxConns {
+				t.Errorf("DBMaxConns: got %d, want %d", cfg.DBMaxConns, tc.wantMaxConns)
+			}
+			if cfg.DBMinConns != tc.wantMinConns {
+				t.Errorf("DBMinConns: got %d, want %d", cfg.DBMinConns, tc.wantMinConns)
+			}
+		})
+	}
+}
+
 func TestValidateJWTSecret(t *testing.T) {
 	strong := strings.Repeat("a", 40) // 40 chars, not denylisted
 

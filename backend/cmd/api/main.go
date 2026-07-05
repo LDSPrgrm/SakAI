@@ -54,8 +54,8 @@ func main() {
 
 	pool, err := database.Connect(ctx, database.Config{
 		DSN:             cfg.DatabaseURL,
-		MaxConns:        20,
-		MinConns:        2,
+		MaxConns:        int32(cfg.DBMaxConns),
+		MinConns:        int32(cfg.DBMinConns),
 		MaxConnLifetime: 30 * time.Minute,
 		MaxConnIdleTime: 5 * time.Minute,
 	})

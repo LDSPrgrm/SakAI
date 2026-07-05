@@ -17,6 +17,8 @@ type Config struct {
 	// Database
 	DatabaseURL   string
 	MigrationsDir string
+	DBMaxConns    int
+	DBMinConns    int
 
 	// Redis
 	RedisURL string
@@ -86,6 +88,8 @@ func Load() *Config {
 		AppVersion:              getEnv("APP_VERSION", "1.0.0"),
 		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=require"),
 		MigrationsDir:           getEnv("MIGRATIONS_DIR", "../migrations"),
+		DBMaxConns:              getInt("DB_MAX_CONNS", 20),
+		DBMinConns:              getInt("DB_MIN_CONNS", 2),
 		RedisURL:                getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		JWTSecret:               getEnv("JWT_SECRET", "change-me-in-production"),
 		AccessTokenExpiry:       getDuration("ACCESS_TOKEN_EXPIRY", 60*time.Minute),
