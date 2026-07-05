@@ -203,3 +203,79 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 	}
 	return results, rows.Err()
 }
+
+// FindNearbyOnlineAllTypes returns online drivers of all vehicle types within
+// radiusM of origin in a single query, ranked and capped per vehicle type via
+// a window function — replacing N sequential FindNearbyOnlineByType calls.
+func (r *driverRepo) FindNearbyOnlineAllTypes(ctx context.Context, lat, lng float64, radiusM float64) ([]domain.NearbyDriver, error) {
+	if radiusM <= 0 {
+		radiusM = defaultSearchRadiusMeters
+	}
+	const q = `
+		SELECT * FROM (
+		    SELECT d.user_id, d.status,
+		           ST_Y(d.location) AS lat,
+		           ST_X(d.location) AS lng,
+		           v.make, v.model, v.plate, v.vehicle_type,
+		           COALESCE(AVG(rt.stars), 0) AS rating,
+		           ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) AS distance_m,
+		           ROW_NUMBER() OVER (
+		               PARTITION BY v.vehicle_type
+		               ORDER BY ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
+		           ) AS rn
+		    FROM drivers d
+		    INNER JOIN vehicles v ON v.user_id = d.user_id
+		    LEFT JOIN ratings rt ON rt.ratee_id = d.user_id
+		    WHERE d.status = 'online'
+		      AND NOT EXISTS (
+		            SELECT 1 FROM rides
+		            WHERE driver_id = d.user_id
+		              AND status NOT IN ('completed', 'cancelled')
+		          )
+		      AND ST_DWithin(
+		            d.location::geography,
+		            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+		            $3
+		          )
+		    GROUP BY d.user_id, d.status, d.location, v.make, v.model, v.plate, v.vehicle_type
+		) ranked
+		WHERE rn <= 20
+		ORDER BY vehicle_type, distance_m`
+
+	rows, err := r.db.Query(ctx, q, lat, lng, radiusM)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.NearbyDriver
+	for rows.Next() {
+		var nd domain.NearbyDriver
+		var userID uuid.UUID
+		var status string
+		var make, model, plate, vehicleType *string
+		var rating *float64
+		var rn int
+		if err := rows.Scan(&userID, &status, &nd.Lat, &nd.Lng, &make, &model, &plate, &vehicleType, &rating, &nd.DistanceM, &rn); err != nil {
+			return nil, err
+		}
+		nd.ID = userID.String()
+		if make != nil {
+			nd.VehicleMake = *make
+		}
+		if model != nil {
+			nd.VehicleModel = *model
+		}
+		if plate != nil {
+			nd.VehiclePlate = *plate
+		}
+		if vehicleType != nil {
+			nd.VehicleType = *vehicleType
+		}
+		if rating != nil && *rating > 0 {
+			nd.Rating = rating
+		}
+		results = append(results, nd)
+	}
+	return results, rows.Err()
+}

@@ -101,6 +101,36 @@ func TestDriverUseCase_UpdateLocation_OfflineDriver(t *testing.T) {
 	}
 }
 
+func TestDriverUseCase_GetNearbyDriversAllTypes_GroupsByVehicleType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	uc, driverRepo, _, _ := newDriverUC(ctrl)
+
+	all := []domain.NearbyDriver{
+		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeCar)},
+		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeMotorcycle)},
+		{ID: uuid.New().String(), VehicleType: string(domain.RideTypeTricycle)},
+	}
+
+	driverRepo.EXPECT().FindNearbyOnlineAllTypes(gomock.Any(), 14.5, 120.9, 5000.0).Return(all, nil)
+
+	result, err := uc.GetNearbyDriversAllTypes(context.Background(), 14.5, 120.9, 5000.0)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	for _, rt := range []domain.RideType{domain.RideTypeCar, domain.RideTypeMotorcycle, domain.RideTypeTricycle} {
+		drivers, ok := result[rt]
+		if !ok {
+			t.Fatalf("expected key %q present in result", rt)
+		}
+		if len(drivers) != 1 {
+			t.Errorf("expected exactly 1 driver for %q, got %d", rt, len(drivers))
+		}
+	}
+}
+
 func TestDriverUseCase_GetIncomingRide_RequestedOnly(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

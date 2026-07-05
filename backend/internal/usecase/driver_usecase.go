@@ -92,15 +92,21 @@ func (uc *driverUseCase) GetEarnings(ctx context.Context, driverID uuid.UUID, fr
 	return uc.earningsRepo.ListByDriverID(ctx, driverID, from, to, page, limit)
 }
 
-// GetNearbyDriversAllTypes returns online drivers grouped by vehicle type.
+// GetNearbyDriversAllTypes returns online drivers grouped by vehicle type,
+// fetched via a single partitioned spatial query instead of one query per type.
 func (uc *driverUseCase) GetNearbyDriversAllTypes(ctx context.Context, lat, lng float64, radiusM float64) (map[domain.RideType][]domain.NearbyDriver, error) {
-	result := make(map[domain.RideType][]domain.NearbyDriver)
-	for _, rt := range []domain.RideType{domain.RideTypeCar, domain.RideTypeMotorcycle, domain.RideTypeTricycle} {
-		drivers, err := uc.driverRepo.FindNearbyOnlineByType(ctx, lat, lng, radiusM, rt)
-		if err != nil {
-			return nil, err
-		}
-		result[rt] = drivers
+	all, err := uc.driverRepo.FindNearbyOnlineAllTypes(ctx, lat, lng, radiusM)
+	if err != nil {
+		return nil, err
+	}
+	result := map[domain.RideType][]domain.NearbyDriver{
+		domain.RideTypeCar:        {},
+		domain.RideTypeMotorcycle: {},
+		domain.RideTypeTricycle:   {},
+	}
+	for _, d := range all {
+		rt := domain.RideType(d.VehicleType)
+		result[rt] = append(result[rt], d)
 	}
 	return result, nil
 }
