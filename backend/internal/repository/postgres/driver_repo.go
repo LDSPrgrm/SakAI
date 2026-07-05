@@ -73,15 +73,24 @@ func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status 
 	return d, nil
 }
 
+// UpdateLocation writes the driver's position only while they are online —
+// the status predicate replaces a separate SELECT on the GPS hot path.
+// Zero rows affected means offline (or no driver row): ErrForbidden.
 func (r *driverRepo) UpdateLocation(ctx context.Context, userID uuid.UUID, loc domain.DriverLocation) error {
-	// ST_SetSRID(ST_MakePoint(lng, lat), 4326) stores as PostGIS geometry point.
 	const q = `
 		UPDATE drivers
 		SET location  = ST_SetSRID(ST_MakePoint($2, $3), 4326),
 		    updated_at = NOW()
-		WHERE user_id = $1`
-	_, err := r.db.Exec(ctx, q, userID, loc.Lng, loc.Lat)
-	return err
+		WHERE user_id = $1
+		  AND status  = 'online'`
+	tag, err := r.db.Exec(ctx, q, userID, loc.Lng, loc.Lat)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrForbidden
+	}
+	return nil
 }
 
 func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng, radiusMeters float64) ([]*domain.Driver, error) {

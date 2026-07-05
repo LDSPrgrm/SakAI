@@ -75,11 +75,9 @@ func TestDriverUseCase_UpdateLocation_OnlineDriver(t *testing.T) {
 
 	uc, driverRepo, _, incidentRepo := newDriverUC(ctrl)
 	driverID := uuid.New()
-	driver := testutil.NewTestDriverRecord(driverID)
 
 	loc := domain.DriverLocation{LatLng: domain.LatLng{Lat: 14.5, Lng: 120.9}}
 
-	driverRepo.EXPECT().GetByUserID(gomock.Any(), driverID).Return(driver, nil)
 	driverRepo.EXPECT().UpdateLocation(gomock.Any(), driverID, loc).Return(nil)
 	incidentRepo.EXPECT().FindActiveByDriver(gomock.Any(), driverID).Return(nil, nil)
 
@@ -94,11 +92,8 @@ func TestDriverUseCase_UpdateLocation_OfflineDriver(t *testing.T) {
 
 	uc, driverRepo, _, _ := newDriverUC(ctrl)
 	driverID := uuid.New()
-	driver := testutil.NewTestDriverRecord(driverID, func(d *domain.Driver) {
-		d.Status = domain.DriverStatusOffline
-	})
 
-	driverRepo.EXPECT().GetByUserID(gomock.Any(), driverID).Return(driver, nil)
+	driverRepo.EXPECT().UpdateLocation(gomock.Any(), driverID, domain.DriverLocation{}).Return(domain.ErrForbidden)
 
 	err := uc.UpdateLocation(context.Background(), driverID, domain.DriverLocation{})
 	if err != domain.ErrForbidden {

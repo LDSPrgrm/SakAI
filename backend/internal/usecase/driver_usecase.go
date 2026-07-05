@@ -38,16 +38,8 @@ func (uc *driverUseCase) SetStatus(ctx context.Context, driverID uuid.UUID, stat
 }
 
 func (uc *driverUseCase) UpdateLocation(ctx context.Context, driverID uuid.UUID, loc domain.DriverLocation) error {
-	// Location updates are accepted only when driver is online.
-	driver, err := uc.driverRepo.GetByUserID(ctx, driverID)
-	if err != nil {
-		log.Printf("[DRIVER_UC] GetByUserID error: %v", err)
-		return err
-	}
-	log.Printf("[DRIVER_UC] Driver status: %s", driver.Status)
-	if driver.Status != domain.DriverStatusOnline {
-		return domain.ErrForbidden
-	}
+	// Repo enforces the online-only rule in the UPDATE's WHERE clause so the
+	// hot path costs one round-trip instead of SELECT+UPDATE.
 	if err := uc.driverRepo.UpdateLocation(ctx, driverID, loc); err != nil {
 		return err
 	}
