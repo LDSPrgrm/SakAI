@@ -101,11 +101,11 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		          AND status NOT IN ('completed', 'cancelled')
 		      )
 		  AND ST_DWithin(
-		        location,
-		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
+		        location::geography,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
 		        $3
 		      )
-		ORDER BY ST_Distance(location, ST_SetSRID(ST_MakePoint($2, $1), 4326))
+		ORDER BY ST_Distance(location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
 		LIMIT 1`
 
 	rows, err := r.db.Query(ctx, q, origin.Lat, origin.Lng, radiusMeters)
@@ -138,7 +138,7 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		       ST_X(d.location) AS lng,
 		       v.make, v.model, v.plate, v.vehicle_type,
 		       COALESCE(AVG(rt.stars), 0) AS rating,
-		       ST_Distance(d.location, ST_SetSRID(ST_MakePoint($2, $1), 4326)) AS distance_m
+		       ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) AS distance_m
 		FROM drivers d
 		INNER JOIN vehicles v ON v.user_id = d.user_id
 		LEFT JOIN ratings rt ON rt.ratee_id = d.user_id
@@ -150,8 +150,8 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		      )
 		  AND v.vehicle_type = $4
 		  AND ST_DWithin(
-		        d.location,
-		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
+		        d.location::geography,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
 		        $3
 		      )
 		GROUP BY d.user_id, d.status, d.location, v.make, v.model, v.plate, v.vehicle_type
