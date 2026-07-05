@@ -21,6 +21,7 @@ import (
 const (
 	SubprotocolV1 = "sakai-ws-v1"
 	SubprotocolV2 = "sakai-ws-v2"
+	writeWait     = 10 * time.Second
 )
 
 // Dispatcher is the interface for isolating HTTP handlers from the concrete
@@ -86,6 +87,7 @@ func (cl *Client) writePump(pingInterval time.Duration) {
 		select {
 		case msg, ok := <-cl.send:
 			if !ok {
+				cl.conn.SetWriteDeadline(time.Now().Add(writeWait)) //nolint:errcheck
 				cl.conn.WriteMessage(websocket.CloseMessage, nil) //nolint:errcheck
 				return
 			}
@@ -98,10 +100,12 @@ func (cl *Client) writePump(pingInterval time.Duration) {
 				msg.CorrID = ""
 				msg.AckRequired = nil
 			}
+			cl.conn.SetWriteDeadline(time.Now().Add(writeWait)) //nolint:errcheck
 			if err := cl.conn.WriteJSON(msg); err != nil {
 				return
 			}
 		case <-ticker.C:
+			cl.conn.SetWriteDeadline(time.Now().Add(writeWait)) //nolint:errcheck
 			if err := cl.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
