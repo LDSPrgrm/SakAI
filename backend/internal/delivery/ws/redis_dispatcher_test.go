@@ -52,6 +52,40 @@ func TestGlobalEvent_PreservesEnvelopeAcrossBus(t *testing.T) {
 	}
 }
 
+// TestRedisDispatcher_RunExitsWhenSubscriptionCloses guards against the nil
+// pointer panic seen in CI: when the Redis client closes (test cleanup, pod
+// shutdown, connection loss) the subscription channel closes and `<-ch`
+// yields a nil *redis.Message. Run must return, not dereference it.
+func TestRedisDispatcher_RunExitsWhenSubscriptionCloses(t *testing.T) {
+	_, rdb := newMiniRedis(t)
+	hub := NewHub(30 * time.Second)
+	d := NewRedisDispatcher(rdb, hub)
+
+	// ctx stays live for the whole test: Run's only exit path here is the
+	// closed subscription channel, not ctx.Done().
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		d.Run(ctx)
+	}()
+
+	// Give the subscription time to establish, then close the client out
+	// from under the running loop — exactly what t.Cleanup does to the
+	// chaos-test pods.
+	time.Sleep(100 * time.Millisecond)
+	_ = rdb.Close()
+
+	select {
+	case <-done:
+		// Run returned cleanly.
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run did not return after subscription channel closed")
+	}
+}
+
 // TestMergePayloadFields_TypedStruct guards against the regression where
 // typed payloads (e.g. RideCompletedPayload, RideSOSPayload) failed a naive
 // `payload.(map[string]any)` assertion in PublishToRide and were silently
