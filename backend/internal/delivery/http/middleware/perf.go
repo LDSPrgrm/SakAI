@@ -36,8 +36,10 @@ const perfDBSampleEvery = 100
 // requests when sampler is non-nil, also writes to the http_request_timings
 // table via sampler so the admin dashboard keeps a bounded-volume sample.
 // Samples the matched route template (e.g. "/api/rides/:rideId") rather than
-// the raw URL so cardinality stays bounded. DB writes happen asynchronously
-// with a short timeout so the request hot path is never blocked on the DB.
+// the raw URL so cardinality stays bounded. The histogram is recorded
+// synchronously in-request on every call; DB writes are async (goroutine)
+// and sampled (1-in-perfDBSampleEvery) with a short timeout so the request
+// hot path is never blocked on the DB.
 func Perf(sampler PerfSampler) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -56,6 +58,8 @@ func Perf(sampler PerfSampler) gin.HandlerFunc {
 
 		httpDuration.WithLabelValues(method, path, strconv.Itoa(status)).Observe(elapsed / 1000)
 
+		// Counter pre-increments before the modulo check, so the first eligible
+		// request is #100, not #1.
 		if sampler != nil && perfSampleCounter.Add(1)%perfDBSampleEvery == 0 {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
