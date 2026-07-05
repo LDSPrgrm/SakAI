@@ -192,6 +192,7 @@ func main() {
 		AuthUC:         authUC,
 		RoleUC:         roleUC,
 		AppVersion:     cfg.AppVersion,
+		MetricsToken:   cfg.MetricsToken,
 	}
 
 	// Wire WebSocket metrics into Prometheus's default registry. Safe to call

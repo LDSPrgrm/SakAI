@@ -77,6 +77,11 @@ type Config struct {
 	//      remain blank to avoid surprise.
 	E2EEnabled  bool
 	E2ESeedToken string
+
+	// MetricsToken gates GET /metrics with a Bearer token. Empty disables
+	// the endpoint entirely (fail closed) — set it to enable Prometheus
+	// scraping.
+	MetricsToken string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -110,6 +115,7 @@ func Load() *Config {
 		AllowedOrigins:          splitAndTrim(getEnv("ALLOWED_ORIGINS", "")),
 		E2EEnabled:              getEnv("E2E_ENABLED", "false") == "true",
 		E2ESeedToken:            getEnv("E2E_SEED_TOKEN", ""),
+		MetricsToken:            getEnv("METRICS_TOKEN", ""),
 	}
 
 	// Security: fail closed on weak/default JWT secrets outside local dev.

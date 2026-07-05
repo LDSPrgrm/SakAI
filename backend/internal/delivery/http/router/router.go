@@ -12,6 +12,7 @@
 package router
 
 import (
+	"crypto/subtle"
 	"log"
 	"net/http"
 	"time"
@@ -67,6 +68,11 @@ type Deps struct {
 	AuthUC domain.AuthUseCase
 	RoleUC domain.RoleUseCase
 	AppVersion string
+	// MetricsToken gates GET /metrics with a Bearer token compared in
+	// constant time. Empty means /metrics is not mounted at all — scrapers
+	// must be configured explicitly (fail closed). Sourced from
+	// METRICS_TOKEN env.
+	MetricsToken string
 }
 
 // configureTrustedProxies disables X-Forwarded-For trust so ClientIP() resolves
@@ -102,14 +108,29 @@ func New(jwtSecret string, d Deps) *gin.Engine {
 	// Prometheus scrape endpoint — exposes Sakai WS counters + the default
 	// process/go collectors. Outside /api on purpose so scrapers don't need
 	// the API prefix in their target config.
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	//
+	// Gated by MetricsToken: empty means the endpoint is not mounted at all
+	// (scrapers must be configured explicitly — fail closed). Set means a
+	// matching `Authorization: Bearer <token>` is required, compared in
+	// constant time to avoid timing side-channels.
+	if d.MetricsToken != "" {
+		promH := gin.WrapH(promhttp.Handler())
+		r.GET("/metrics", func(c *gin.Context) {
+			if subtle.ConstantTimeCompare(
+				[]byte(c.GetHeader("Authorization")),
+				[]byte("Bearer "+d.MetricsToken)) != 1 {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			promH(c)
+		})
+	}
 
 	// ── Health check ──────────────────────────────────────────────────────────
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "ok",
 			"timestamp": time.Now().Format(time.RFC3339),
-			"version":   d.AppVersion,
 		})
 	})
 
