@@ -73,15 +73,25 @@ func (r *driverRepo) UpdateStatus(ctx context.Context, userID uuid.UUID, status 
 	return d, nil
 }
 
+// UpdateLocation writes the driver's position only while they are online —
+// the status predicate replaces a separate SELECT on the GPS hot path.
+// Zero rows affected means offline (or no driver row): ErrForbidden.
 func (r *driverRepo) UpdateLocation(ctx context.Context, userID uuid.UUID, loc domain.DriverLocation) error {
-	// ST_SetSRID(ST_MakePoint(lng, lat), 4326) stores as PostGIS geometry point.
 	const q = `
 		UPDATE drivers
+		-- $2 = lng, $3 = lat (ST_MakePoint takes lng first)
 		SET location  = ST_SetSRID(ST_MakePoint($2, $3), 4326),
 		    updated_at = NOW()
-		WHERE user_id = $1`
-	_, err := r.db.Exec(ctx, q, userID, loc.Lng, loc.Lat)
-	return err
+		WHERE user_id = $1
+		  AND status  = 'online'`
+	tag, err := r.db.Exec(ctx, q, userID, loc.Lng, loc.Lat)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrForbidden
+	}
+	return nil
 }
 
 func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng, radiusMeters float64) ([]*domain.Driver, error) {
@@ -101,11 +111,11 @@ func (r *driverRepo) FindNearbyOnline(ctx context.Context, origin domain.LatLng,
 		          AND status NOT IN ('completed', 'cancelled')
 		      )
 		  AND ST_DWithin(
-		        location,
-		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
+		        location::geography,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
 		        $3
 		      )
-		ORDER BY ST_Distance(location, ST_SetSRID(ST_MakePoint($2, $1), 4326))
+		ORDER BY ST_Distance(location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
 		LIMIT 1`
 
 	rows, err := r.db.Query(ctx, q, origin.Lat, origin.Lng, radiusMeters)
@@ -138,7 +148,7 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		       ST_X(d.location) AS lng,
 		       v.make, v.model, v.plate, v.vehicle_type,
 		       COALESCE(AVG(rt.stars), 0) AS rating,
-		       ST_Distance(d.location, ST_SetSRID(ST_MakePoint($2, $1), 4326)) AS distance_m
+		       ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) AS distance_m
 		FROM drivers d
 		INNER JOIN vehicles v ON v.user_id = d.user_id
 		LEFT JOIN ratings rt ON rt.ratee_id = d.user_id
@@ -150,8 +160,8 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		      )
 		  AND v.vehicle_type = $4
 		  AND ST_DWithin(
-		        d.location,
-		        ST_SetSRID(ST_MakePoint($2, $1), 4326),
+		        d.location::geography,
+		        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
 		        $3
 		      )
 		GROUP BY d.user_id, d.status, d.location, v.make, v.model, v.plate, v.vehicle_type
@@ -172,6 +182,82 @@ func (r *driverRepo) FindNearbyOnlineByType(ctx context.Context, lat, lng float6
 		var make, model, plate, vehicleType *string
 		var rating *float64
 		if err := rows.Scan(&userID, &status, &nd.Lat, &nd.Lng, &make, &model, &plate, &vehicleType, &rating, &nd.DistanceM); err != nil {
+			return nil, err
+		}
+		nd.ID = userID.String()
+		if make != nil {
+			nd.VehicleMake = *make
+		}
+		if model != nil {
+			nd.VehicleModel = *model
+		}
+		if plate != nil {
+			nd.VehiclePlate = *plate
+		}
+		if vehicleType != nil {
+			nd.VehicleType = *vehicleType
+		}
+		if rating != nil && *rating > 0 {
+			nd.Rating = rating
+		}
+		results = append(results, nd)
+	}
+	return results, rows.Err()
+}
+
+// FindNearbyOnlineAllTypes returns online drivers of all vehicle types within
+// radiusM of origin in a single query, ranked and capped per vehicle type via
+// a window function — replacing N sequential FindNearbyOnlineByType calls.
+func (r *driverRepo) FindNearbyOnlineAllTypes(ctx context.Context, lat, lng float64, radiusM float64) ([]domain.NearbyDriver, error) {
+	if radiusM <= 0 {
+		radiusM = defaultSearchRadiusMeters
+	}
+	const q = `
+		SELECT * FROM (
+		    SELECT d.user_id, d.status,
+		           ST_Y(d.location) AS lat,
+		           ST_X(d.location) AS lng,
+		           v.make, v.model, v.plate, v.vehicle_type,
+		           COALESCE(AVG(rt.stars), 0) AS rating,
+		           ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) AS distance_m,
+		           ROW_NUMBER() OVER (
+		               PARTITION BY v.vehicle_type
+		               ORDER BY ST_Distance(d.location::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
+		           ) AS rn
+		    FROM drivers d
+		    INNER JOIN vehicles v ON v.user_id = d.user_id
+		    LEFT JOIN ratings rt ON rt.ratee_id = d.user_id
+		    WHERE d.status = 'online'
+		      AND NOT EXISTS (
+		            SELECT 1 FROM rides
+		            WHERE driver_id = d.user_id
+		              AND status NOT IN ('completed', 'cancelled')
+		          )
+		      AND ST_DWithin(
+		            d.location::geography,
+		            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+		            $3
+		          )
+		    GROUP BY d.user_id, d.status, d.location, v.make, v.model, v.plate, v.vehicle_type
+		) ranked
+		WHERE rn <= 20
+		ORDER BY vehicle_type, distance_m`
+
+	rows, err := r.db.Query(ctx, q, lat, lng, radiusM)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.NearbyDriver
+	for rows.Next() {
+		var nd domain.NearbyDriver
+		var userID uuid.UUID
+		var status string
+		var make, model, plate, vehicleType *string
+		var rating *float64
+		var rn int
+		if err := rows.Scan(&userID, &status, &nd.Lat, &nd.Lng, &make, &model, &plate, &vehicleType, &rating, &nd.DistanceM, &rn); err != nil {
 			return nil, err
 		}
 		nd.ID = userID.String()

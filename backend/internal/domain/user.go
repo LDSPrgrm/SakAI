@@ -17,6 +17,11 @@ const (
 	RoleOperations UserRole = "operations"
 	RoleFinance    UserRole = "finance"
 	RoleSupport    UserRole = "support"
+
+	// UserRoleDeactivated marks a disabled account (set by DeactivateAdmin).
+	// Login and Refresh must reject it — deactivation would otherwise leave a
+	// working refresh token for its full 30-day window.
+	UserRoleDeactivated UserRole = "deactivated"
 )
 
 // User is the core identity entity for both passengers and drivers.

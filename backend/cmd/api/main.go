@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -54,8 +55,8 @@ func main() {
 
 	pool, err := database.Connect(ctx, database.Config{
 		DSN:             cfg.DatabaseURL,
-		MaxConns:        20,
-		MinConns:        2,
+		MaxConns:        int32(cfg.DBMaxConns),
+		MinConns:        int32(cfg.DBMinConns),
 		MaxConnLifetime: 30 * time.Minute,
 		MaxConnIdleTime: 5 * time.Minute,
 	})
@@ -157,8 +158,18 @@ func main() {
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
 
+	var workers sync.WaitGroup
+	runWorker := func(name string, run func(context.Context)) {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			run(workerCtx)
+		}()
+		_ = name // reserved for a shutdown log if needed
+	}
+
 	dispatcher := ws.NewRedisDispatcher(rdb, hub)
-	go dispatcher.Run(workerCtx)
+	runWorker("ws-dispatcher", dispatcher.Run)
 
 	// ── HTTP handlers ─────────────────────────────────────────────────────────
 	deps := router.Deps{
@@ -192,6 +203,7 @@ func main() {
 		AuthUC:         authUC,
 		RoleUC:         roleUC,
 		AppVersion:     cfg.AppVersion,
+		MetricsToken:   cfg.MetricsToken,
 	}
 
 	// Wire WebSocket metrics into Prometheus's default registry. Safe to call
@@ -203,11 +215,11 @@ func main() {
 	// ── Background workers ───────────────────────────────────────────────────
 	// workerCtx is cancelled when the process receives SIGINT/SIGTERM. Workers
 	// must honour this context and exit cleanly within the shutdown window.
-	go expiry.New(rideRepo, dispatcher).Run(workerCtx)
-	go health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run(workerCtx)
+	runWorker("ride-expiry", expiry.New(rideRepo, dispatcher).Run)
+	runWorker("health", health.New(systemRepo, pool, rdb, hub, 30*time.Second).Run)
 	notifier := notifications.NewNotifier(pool)
-	go alerting.New(alertRepo, pool, 5*time.Minute).WithNotifier(notifier).Run(workerCtx)
-	go notifications.NewDispatcher(pool, 30*time.Second, 20).Run(workerCtx)
+	runWorker("alerting", alerting.New(alertRepo, pool, 5*time.Minute).WithNotifier(notifier).Run)
+	runWorker("notifications", notifications.NewDispatcher(pool, 30*time.Second, 20).Run)
 
 	// ── HTTP server with graceful shutdown ────────────────────────────────────
 	srv := &http.Server{
@@ -238,6 +250,17 @@ func main() {
 		log.Printf("graceful shutdown error: %v", err)
 	}
 	log.Println("server stopped")
+
+	// HTTP is drained; now stop workers and wait for them within the same window.
+	workerCancel()
+	done := make(chan struct{})
+	go func() { workers.Wait(); close(done) }()
+	select {
+	case <-done:
+		log.Println("workers stopped")
+	case <-shutCtx.Done():
+		log.Println("workers did not stop within shutdown window")
+	}
 }
 
 // e2eHandlerIfEnabled returns an E2EHandler when both E2E_ENABLED and a

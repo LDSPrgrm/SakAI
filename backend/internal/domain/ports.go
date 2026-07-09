@@ -186,6 +186,10 @@ type DriverRepository interface {
 	// FindNearbyOnlineByType returns online drivers of a specific vehicle type
 	// within radiusMeters of origin, ordered by distance ascending.
 	FindNearbyOnlineByType(ctx context.Context, lat, lng float64, radiusM float64, rideType RideType) ([]NearbyDriver, error)
+
+	// FindNearbyOnlineAllTypes returns online drivers of all vehicle types
+	// within radiusMeters of origin in a single query, capped per vehicle type.
+	FindNearbyOnlineAllTypes(ctx context.Context, lat, lng float64, radiusM float64) ([]NearbyDriver, error)
 }
 
 // AdminRepository defines management of admin accounts and system settings.

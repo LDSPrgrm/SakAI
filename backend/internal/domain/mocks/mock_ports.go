@@ -524,6 +524,21 @@ func (mr *MockDriverRepositoryMockRecorder) FindNearbyOnline(ctx, origin, radius
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindNearbyOnline", reflect.TypeOf((*MockDriverRepository)(nil).FindNearbyOnline), ctx, origin, radiusMeters)
 }
 
+// FindNearbyOnlineAllTypes mocks base method.
+func (m *MockDriverRepository) FindNearbyOnlineAllTypes(ctx context.Context, lat, lng, radiusM float64) ([]domain.NearbyDriver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindNearbyOnlineAllTypes", ctx, lat, lng, radiusM)
+	ret0, _ := ret[0].([]domain.NearbyDriver)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindNearbyOnlineAllTypes indicates an expected call of FindNearbyOnlineAllTypes.
+func (mr *MockDriverRepositoryMockRecorder) FindNearbyOnlineAllTypes(ctx, lat, lng, radiusM any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindNearbyOnlineAllTypes", reflect.TypeOf((*MockDriverRepository)(nil).FindNearbyOnlineAllTypes), ctx, lat, lng, radiusM)
+}
+
 // FindNearbyOnlineByType mocks base method.
 func (m *MockDriverRepository) FindNearbyOnlineByType(ctx context.Context, lat, lng, radiusM float64, rideType domain.RideType) ([]domain.NearbyDriver, error) {
 	m.ctrl.T.Helper()

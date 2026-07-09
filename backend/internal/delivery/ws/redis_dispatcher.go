@@ -156,7 +156,13 @@ func (d *RedisDispatcher) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case msg := <-ch:
+		case msg, ok := <-ch:
+			if !ok {
+				// Subscription channel closes when the Redis client shuts
+				// down (connection loss, graceful shutdown). Receiving from
+				// the closed channel yields nil messages forever — exit.
+				return
+			}
 			var ge globalEvent
 			if err := json.Unmarshal([]byte(msg.Payload), &ge); err != nil {
 				log.Printf("ws.RedisDispatcher: bad payload: %v", err)

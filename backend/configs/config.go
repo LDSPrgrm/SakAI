@@ -17,6 +17,8 @@ type Config struct {
 	// Database
 	DatabaseURL   string
 	MigrationsDir string
+	DBMaxConns    int
+	DBMinConns    int
 
 	// Redis
 	RedisURL string
@@ -75,6 +77,11 @@ type Config struct {
 	//      remain blank to avoid surprise.
 	E2EEnabled  bool
 	E2ESeedToken string
+
+	// MetricsToken gates GET /metrics with a Bearer token. Empty disables
+	// the endpoint entirely (fail closed) — set it to enable Prometheus
+	// scraping.
+	MetricsToken string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -86,6 +93,8 @@ func Load() *Config {
 		AppVersion:              getEnv("APP_VERSION", "1.0.0"),
 		DatabaseURL:             getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/sakai?sslmode=require"),
 		MigrationsDir:           getEnv("MIGRATIONS_DIR", "../migrations"),
+		DBMaxConns:              getInt("DB_MAX_CONNS", 20),
+		DBMinConns:              getInt("DB_MIN_CONNS", 2),
 		RedisURL:                getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		JWTSecret:               getEnv("JWT_SECRET", "change-me-in-production"),
 		AccessTokenExpiry:       getDuration("ACCESS_TOKEN_EXPIRY", 60*time.Minute),
@@ -106,6 +115,7 @@ func Load() *Config {
 		AllowedOrigins:          splitAndTrim(getEnv("ALLOWED_ORIGINS", "")),
 		E2EEnabled:              getEnv("E2E_ENABLED", "false") == "true",
 		E2ESeedToken:            getEnv("E2E_SEED_TOKEN", ""),
+		MetricsToken:            getEnv("METRICS_TOKEN", ""),
 	}
 
 	// Security: fail closed on weak/default JWT secrets outside local dev.
