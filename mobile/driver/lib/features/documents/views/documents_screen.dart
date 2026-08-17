@@ -88,7 +88,10 @@ class _DocumentCard extends StatelessWidget {
         leading: Icon(statusIcon, color: _statusColor(badgeStatus, context)),
         title: Text(
           _formatDocType(document.documentType),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         subtitle: Padding(
           padding: EdgeInsets.only(top: tokens.spaceXs),
@@ -137,10 +140,10 @@ class _DocumentCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
                       'Rejection Reason: ${document.rejectionReason}',
-                      style: TextStyle(
-                        color: SakaiSemanticColors.of(context).danger,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: SakaiSemanticColors.of(context).danger,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
               ],
@@ -205,11 +208,17 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

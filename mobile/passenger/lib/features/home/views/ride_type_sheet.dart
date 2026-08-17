@@ -73,7 +73,7 @@ class _RideTypeSheetState extends State<RideTypeSheet> {
                       subtitle: Text('${option.availableDrivers} nearby'),
                       trailing: Text(
                         '\u20B1${option.estimatedFare.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isSelected ? theme.primaryColor : null,
                         ),

@@ -159,7 +159,12 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
                             children: [
                               Icon(Icons.add_a_photo_outlined, size: 48, color: theme.colorScheme.onSurfaceVariant),
                               const SizedBox(height: 8),
-                              Text('Tap to select or take a photo', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                              Text(
+                                'Tap to select or take a photo',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                             ],
                           )
                         : ClipRRect(
@@ -175,7 +180,7 @@ class _UploadDocumentViewState extends ConsumerState<UploadDocumentView> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     state.errorMessage!,
-                    style: TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: SakaiSemanticColors.of(context).danger,
                     ),
                     textAlign: TextAlign.center,

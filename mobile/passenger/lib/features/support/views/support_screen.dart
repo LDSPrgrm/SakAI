@@ -111,7 +111,7 @@ class SupportScreen extends ConsumerWidget {
                 },
                 child: Text(
                   'Change opt-ins',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     decoration: TextDecoration.underline,
                   ),
