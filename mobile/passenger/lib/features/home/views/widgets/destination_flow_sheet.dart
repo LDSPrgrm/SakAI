@@ -125,7 +125,12 @@ class _DestinationFlowSheetState extends ConsumerState<DestinationFlowSheet> {
     ColorScheme scheme,
   ) => ListTile(
     leading: Icon(icon, color: scheme.primary),
-    title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+    title: Text(
+      label,
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+    ),
     onTap: () => SakaiSnackBar.info(context, 'Selected $label'),
   );
 }

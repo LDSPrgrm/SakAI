@@ -131,12 +131,14 @@ void main() {
   });
 
   // Task 15 — structural smoke coverage for the driver Console (home) under
-  // ThemeMode.dark, the app's forced theme (Task 3). Pixel goldens are not
-  // used: see mobile/shared's 8 pre-existing environment-only golden
-  // failures (Task 3 stash A/B). This asserts the screen pumps without
-  // throwing under dark and that the console's custom header (not a bare
-  // default-themed AppBar — the screen has no Scaffold.appBar at all) shows
-  // its key content.
+  // dark. The driver app's theme mode is user-selectable and provider-driven
+  // (defaults to ThemeMode.system), so dark is one of two supported
+  // brightnesses, not a forced theme; the light path is covered by the two
+  // tests above. Each test passes MaterialApp.theme explicitly, so none of
+  // them depend on the app-level theme-mode provider. Pixel goldens are not
+  // used here — this asserts the screen pumps without throwing under dark and
+  // that the console's custom header (not a bare default-themed AppBar — the
+  // screen has no Scaffold.appBar at all) shows its key content.
   testWidgets('DriverHomeScreen pumps under dark theme (Console)', (
     tester,
   ) async {

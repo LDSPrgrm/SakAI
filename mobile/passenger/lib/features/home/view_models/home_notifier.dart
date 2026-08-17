@@ -405,11 +405,9 @@ class HomeNotifier extends Notifier<HomeState> {
       );
     } else {
       state = state.copyWith(
+        status: HomeStatus.idle,
         clearDestination: true,
         clearSelectedRideType: true,
-        status: state.pickup != null
-            ? HomeStatus.destinationSet
-            : HomeStatus.idle,
         rideTypeOptions: [],
       );
     }

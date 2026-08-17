@@ -128,7 +128,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
+                                    color: scheme.shadow.withValues(
+                                      alpha: 0.05,
+                                    ),
                                     blurRadius: 20,
                                     offset: const Offset(0, -5),
                                   ),

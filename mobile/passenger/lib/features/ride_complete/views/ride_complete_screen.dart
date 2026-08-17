@@ -499,7 +499,7 @@ class _TipSelectorSection extends StatelessWidget {
                   label: Text(
                     '${preset.label}\n${SakaiCurrency.format(preset.amount)}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 13),
+                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
                   ),
                   selected: selectedTip?.percentage == preset.percentage,
                   selectedColor: theme.colorScheme.primaryContainer,
@@ -630,7 +630,9 @@ class _RatingSelectorSection extends StatelessWidget {
               padding: EdgeInsets.only(top: tokens.spaceSm),
               child: Text(
                 state.error!,
-                style: TextStyle(color: theme.colorScheme.error),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
               ),
             ),
         ],

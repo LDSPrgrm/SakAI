@@ -9,6 +9,7 @@ import 'package:passenger/features/auth/models/session_check_result.dart';
 import 'package:passenger/features/auth/repositories/auth_repository.dart';
 import 'package:passenger/features/ride/repositories/ride_repository.dart';
 import 'package:sakai_shared/sakai_shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -95,7 +96,13 @@ class _FakeOnboardingService implements OnboardingService {
 // ---------------------------------------------------------------------------
 
 void main() {
-  setUp(() {
+  late SharedPreferences prefs;
+
+  setUp(() async {
+    // PassengerApp reads themeModeControllerProvider, which synchronously
+    // reads sharedPreferencesProvider; it must be overridden at the root.
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
     // Prevent the infinite repeat() loop from blocking pumpAndSettle.
     SakaiAnimatedBackdrop.debugDisableAnimations = true;
   });
@@ -110,6 +117,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
           authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
           rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),
           onboardingServiceProvider.overrideWithValue(_FakeOnboardingService()),

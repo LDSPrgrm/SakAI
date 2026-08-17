@@ -174,8 +174,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: tokens.iconMd,
+                      height: tokens.iconMd,
                       child: Checkbox(
                         value: _rememberMe,
                         onChanged: (val) {
@@ -190,7 +190,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: tokens.spaceSm),
                     Text(
                       'Remember me',
                       style: textTheme.bodyMedium?.copyWith(
@@ -260,7 +260,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                     ),
                     label: Text(
                       'Google',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: loginState.busy
                         ? null
@@ -284,7 +286,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                     ),
                     label: Text(
                       'Apple',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: loginState.busy ? null : () {},
                     style: OutlinedButton.styleFrom(
@@ -311,7 +315,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             TextButton(
               onPressed: loginState.busy ? null : widget.onRegisterTap,
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('Create account'),
             ),

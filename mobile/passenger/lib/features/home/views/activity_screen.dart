@@ -213,7 +213,7 @@ class _SegmentedFilterControl extends StatelessWidget implements PreferredSizeWi
                     child: Center(
                       child: AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
-                        style: TextStyle(
+                        style: theme.textTheme.bodyMedium!.copyWith(
                           color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                           fontSize: 13,
@@ -315,7 +315,7 @@ class _DateLabel extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: t.spaceMd),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(t.radiusFull),
@@ -333,7 +333,7 @@ class _DateLabel extends StatelessWidget {
           ),
           child: Text(
             label.toUpperCase(),
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
@@ -472,7 +472,7 @@ class _RideCard extends StatelessWidget {
                     children: [
                       Text(
                         isOngoing ? 'EST. FARE' : 'FINAL FARE',
-                        style: TextStyle(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
                           color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
@@ -644,7 +644,7 @@ class _AddressRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 9,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.0,
@@ -702,7 +702,7 @@ class _Chip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: scheme.onSurfaceVariant,

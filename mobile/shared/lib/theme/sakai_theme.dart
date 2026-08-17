@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'sakai_design_tokens.dart';
 import 'sakai_semantic_colors.dart';
 import 'sakai_theme_config.dart';
 
@@ -17,14 +18,12 @@ abstract final class SakaiTheme {
       seedColor: config.primarySeed,
       brightness: brightness,
     );
-    // Tone down the primary brand color slightly (22% in light, 28% in dark) to prevent neon harshness,
-    // keeping the exact red brand hue but making it more premium and comfortable to the eyes.
-    final tonedPrimary = brightness == Brightness.dark
-        ? Color.lerp(config.primarySeed, Colors.black, 0.28) ?? config.primarySeed
-        : Color.lerp(config.primarySeed, Colors.black, 0.22) ?? config.primarySeed;
-
+    // The brand green renders exactly as specified in both brightnesses — no
+    // black toning. `#00B14F` on the shared dark surfaces measures 5.16:1
+    // (#1E293B) and 6.29:1 (#0F172A), both above WCAG AA 4.5:1, so dark mode
+    // needs no lightened variant.
     final scheme = base.copyWith(
-      primary: tonedPrimary,
+      primary: config.primarySeed,
       onPrimary: Colors.white,
       secondary: config.secondarySeed ?? base.secondary,
     );
@@ -42,11 +41,13 @@ abstract final class SakaiTheme {
         .toColor();
     final accentBlue = config.secondarySeed ?? scheme.secondary;
 
-    // Only apply these overrides for the dark variant; for light we keep the
-    // Material algorithmic surfaces generated from the seed.
-    final darkBackground = config.darkBackgroundColor ?? scheme.surface;
-    final darkSurface = config.darkSurfaceColor ?? scheme.surface;
-    final darkBorder = config.darkBorderColor ?? scheme.outlineVariant;
+    // Shared neutral-slate dark palette, applied to *both* apps. The config
+    // fields stay as per-app escape hatches, but neither preset sets them —
+    // so there is no algorithmic green-tinted dark path any more.
+    final darkBackground =
+        config.darkBackgroundColor ?? SakaiDesignTokens.darkBackground;
+    final darkSurface = config.darkSurfaceColor ?? SakaiDesignTokens.darkSurface;
+    final darkBorder = config.darkBorderColor ?? SakaiDesignTokens.darkBorder;
 
     final schemeWithOverrides = brightness == Brightness.dark
         ? scheme.copyWith(
@@ -75,18 +76,35 @@ abstract final class SakaiTheme {
         ? const Color(0xFF6B7280)
         : const Color(0xFF9CA3AF);
 
-    Color tint(Color base) => brightness == Brightness.dark
-        ? Color.alphaBlend(base.withValues(alpha: 0.24), darkSurface)
-        : Color.alphaBlend(base.withValues(alpha: 0.12), Colors.white);
+    // Brightness-correct app surfaces: light mode gets the Material
+    // algorithmic light surfaces, dark mode the shared slate palette.
+    final appBackground = brightness == Brightness.dark
+        ? darkBackground
+        : schemeWithOverrides.surface;
+    final appSurface = brightness == Brightness.dark
+        ? darkSurface
+        : schemeWithOverrides.surfaceContainerLow;
+    final appBorder = brightness == Brightness.dark
+        ? darkBorder
+        : schemeWithOverrides.outlineVariant;
+
+    // Blend the subtle tints onto the real surface for this brightness (the
+    // light branch used to hardcode `Colors.white`).
+    Color tint(Color color) => Color.alphaBlend(
+          color.withValues(
+            alpha: brightness == Brightness.dark ? 0.24 : 0.12,
+          ),
+          appSurface,
+        );
 
     final semantic = SakaiSemanticColors(
       success: success,
       danger: danger,
       accentBlue: accentBlue,
       warning: warning,
-      darkBackground: darkBackground,
-      darkSurface: darkSurface,
-      darkBorder: darkBorder,
+      appBackground: appBackground,
+      appSurface: appSurface,
+      appBorder: appBorder,
       neutral: neutral,
       neutralVariant: neutralVariant,
       disabledSurface: disabledSurface,
@@ -94,17 +112,21 @@ abstract final class SakaiTheme {
       dangerSubtle: tint(danger),
       warningSubtle: tint(warning),
       successSubtle: tint(success),
+      primarySubtle: tint(schemeWithOverrides.primary),
       warningDark: brightness == Brightness.dark ? warningDark : null,
     );
 
-    final scaffoldBackgroundColor = brightness == Brightness.dark
-        ? darkBackground
-        : schemeWithOverrides.surface;
+    final scaffoldBackgroundColor = appBackground;
 
     return ThemeData(
       useMaterial3: config.useMaterial3,
       colorScheme: schemeWithOverrides,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(),
+      // Base the font on the brightness-correct default text theme — the
+      // zero-arg form defaults to ThemeData.light().textTheme, which bakes
+      // near-black text colors into every role in dark mode.
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        ThemeData(brightness: brightness).textTheme,
+      ),
       brightness: brightness,
       extensions: <ThemeExtension<dynamic>>[tokens, semantic],
       scaffoldBackgroundColor: scaffoldBackgroundColor,
@@ -114,8 +136,8 @@ abstract final class SakaiTheme {
         scrolledUnderElevation: 1,
         backgroundColor: schemeWithOverrides.surface,
         foregroundColor: schemeWithOverrides.onSurface,
-        // Suppress M3 scroll-under purple shift on the red seed by tinting
-        // with the actual surface colour (light + dark).
+        // Suppress the M3 scroll-under tint shift by tinting with the actual
+        // surface colour (light + dark).
         surfaceTintColor: schemeWithOverrides.surface,
       ),
       cardTheme: CardThemeData(

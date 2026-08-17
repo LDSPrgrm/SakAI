@@ -31,9 +31,11 @@ ThemeData _testSakaiTheme(SakaiThemeConfig config, Brightness brightness) {
     seedColor: config.primarySeed,
     brightness: brightness,
   );
-  final scheme = config.secondarySeed != null
-      ? base.copyWith(secondary: config.secondarySeed)
-      : base;
+  final scheme = base.copyWith(
+    primary: config.primarySeed,
+    onPrimary: Colors.white,
+    secondary: config.secondarySeed ?? base.secondary,
+  );
 
   final tokens = config.tokens;
   final radii = BorderRadius.circular(tokens.radiusMd);
@@ -47,9 +49,10 @@ ThemeData _testSakaiTheme(SakaiThemeConfig config, Brightness brightness) {
       .toColor();
   final accentBlue = config.secondarySeed ?? scheme.secondary;
 
-  final darkBackground = config.darkBackgroundColor ?? scheme.surface;
-  final darkSurface = config.darkSurfaceColor ?? scheme.surface;
-  final darkBorder = config.darkBorderColor ?? scheme.outlineVariant;
+  final darkBackground =
+      config.darkBackgroundColor ?? SakaiDesignTokens.darkBackground;
+  final darkSurface = config.darkSurfaceColor ?? SakaiDesignTokens.darkSurface;
+  final darkBorder = config.darkBorderColor ?? SakaiDesignTokens.darkBorder;
 
   final schemeWithOverrides = brightness == Brightness.dark
       ? scheme.copyWith(
@@ -74,18 +77,31 @@ ThemeData _testSakaiTheme(SakaiThemeConfig config, Brightness brightness) {
       ? const Color(0xFF6B7280)
       : const Color(0xFF9CA3AF);
 
-  Color tint(Color baseColor) => brightness == Brightness.dark
-      ? Color.alphaBlend(baseColor.withValues(alpha: 0.24), darkSurface)
-      : Color.alphaBlend(baseColor.withValues(alpha: 0.12), Colors.white);
+  final appBackground = brightness == Brightness.dark
+      ? darkBackground
+      : schemeWithOverrides.surface;
+  final appSurface = brightness == Brightness.dark
+      ? darkSurface
+      : schemeWithOverrides.surfaceContainerLow;
+  final appBorder = brightness == Brightness.dark
+      ? darkBorder
+      : schemeWithOverrides.outlineVariant;
+
+  Color tint(Color baseColor) => Color.alphaBlend(
+        baseColor.withValues(
+          alpha: brightness == Brightness.dark ? 0.24 : 0.12,
+        ),
+        appSurface,
+      );
 
   final semantic = SakaiSemanticColors(
     success: success,
     danger: danger,
     accentBlue: accentBlue,
     warning: warning,
-    darkBackground: darkBackground,
-    darkSurface: darkSurface,
-    darkBorder: darkBorder,
+    appBackground: appBackground,
+    appSurface: appSurface,
+    appBorder: appBorder,
     neutral: neutral,
     neutralVariant: neutralVariant,
     disabledSurface: disabledSurface,
@@ -93,12 +109,11 @@ ThemeData _testSakaiTheme(SakaiThemeConfig config, Brightness brightness) {
     dangerSubtle: tint(danger),
     warningSubtle: tint(warning),
     successSubtle: tint(success),
+    primarySubtle: tint(schemeWithOverrides.primary),
     warningDark: brightness == Brightness.dark ? warningDark : null,
   );
 
-  final scaffoldBackgroundColor = brightness == Brightness.dark
-      ? darkBackground
-      : schemeWithOverrides.surface;
+  final scaffoldBackgroundColor = appBackground;
 
   // Roboto text theme — production uses GoogleFonts.plusJakartaSansTextTheme.
   final typography = Typography.material2021(

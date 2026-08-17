@@ -127,7 +127,7 @@ class _BrandPainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     final outlinePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

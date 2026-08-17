@@ -52,8 +52,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     }
 
     String? termsError;
-    if (!_agreeToTerms)
+    if (!_agreeToTerms) {
       termsError = 'You must agree to the Terms & Privacy Policy';
+    }
 
     setState(() {
       _errors = errors;
@@ -143,8 +144,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.person_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('name'))
+                if (_errors.containsKey('name')) {
                   setState(() => _errors = Map.from(_errors)..remove('name'));
+                }
               },
             ),
             SakaiTextField(
@@ -158,8 +160,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.mail_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('email'))
+                if (_errors.containsKey('email')) {
                   setState(() => _errors = Map.from(_errors)..remove('email'));
+                }
               },
             ),
             SakaiTextField(
@@ -173,10 +176,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('password'))
+                if (_errors.containsKey('password')) {
                   setState(
                     () => _errors = Map.from(_errors)..remove('password'),
                   );
+                }
               },
               suffixIcon: IconButton(
                 tooltip: _obscurePassword ? 'Show password' : 'Hide password',
@@ -192,8 +196,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             Row(
               children: [
                 SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: tokens.iconMd,
+                  height: tokens.iconMd,
                   child: Checkbox(
                     key: const Key('register_terms'),
                     value: _agreeToTerms,
@@ -211,7 +215,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: tokens.spaceSm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +287,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                     label: Text(
                       'Google',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: registerState.busy
                         ? null
@@ -312,7 +318,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                     label: Text(
                       'Apple',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: registerState.busy
                         ? null
@@ -348,7 +356,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             TextButton(
               onPressed: registerState.busy ? null : widget.onLoginTap,
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('Sign in'),
             ),

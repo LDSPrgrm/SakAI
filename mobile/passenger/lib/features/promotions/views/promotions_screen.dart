@@ -42,19 +42,25 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
         .validatePromo(code);
     if (success && mounted) {
       _promoCodeController.clear();
+      final semanticColors = SakaiSemanticColors.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 10),
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 10),
               Text(
                 'Promo code applied!',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: semanticColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -84,7 +90,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                 pinned: true,
                 backgroundColor: scheme.primary,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: scheme.onPrimary),
                   onPressed: () {
                     if (context.canPop()) context.pop();
                   },
@@ -113,7 +119,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                             height: 160,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.07),
+                              color: scheme.onPrimary.withValues(alpha: 0.07),
                             ),
                           ),
                         ),
@@ -125,7 +131,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                             height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: scheme.onPrimary.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -140,34 +146,37 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
+                                      color: scheme.onPrimary.withValues(
                                         alpha: 0.15,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.local_offer_rounded,
-                                      color: Colors.white,
+                                      color: scheme.onPrimary,
                                       size: 22,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  const Text(
+                                  Text(
                                     'Promotions',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(
+                                          color: scheme.onPrimary,
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.5,
+                                        ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Exclusive deals and discounts just for you',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.8),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onPrimary.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -385,10 +394,10 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
 
           // Loading overlay
           if (state.isLoading)
-            const Positioned.fill(
+            Positioned.fill(
               child: ColoredBox(
-                color: Colors.black12,
-                child: Center(child: CircularProgressIndicator()),
+                color: scheme.scrim.withValues(alpha: 0.12),
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
         ],
@@ -473,9 +482,9 @@ class _EmptyPromotionsState extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.local_offer_rounded,
-                        color: Colors.white,
+                        color: scheme.onPrimary,
                         size: 26,
                       ),
                     ),
@@ -612,7 +621,7 @@ class _PromoCard extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: scheme.shadow.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -641,12 +650,12 @@ class _PromoCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: scheme.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.local_offer_rounded,
-                        color: Colors.white,
+                        color: scheme.onPrimary,
                         size: 18,
                       ),
                     ),
@@ -659,8 +668,8 @@ class _PromoCard extends StatelessWidget {
                             promo.title?.isNotEmpty == true
                                 ? promo.title!
                                 : promo.code,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: scheme.onPrimary,
                               fontWeight: FontWeight.w800,
                               fontSize: 15,
                             ),
@@ -668,8 +677,8 @@ class _PromoCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             _discountLabel(),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: scheme.onPrimary.withValues(alpha: 0.85),
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
                             ),
@@ -683,13 +692,13 @@ class _PromoCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: scheme.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         promo.code,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onPrimary,
                           fontWeight: FontWeight.w900,
                           fontSize: 11,
                           letterSpacing: 0.8,

@@ -67,6 +67,9 @@ class _WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
+    final textTheme = Theme.of(context).textTheme;
+
     return GestureDetector(
       onTap: () => HapticFeedback.lightImpact(),
       child: Container(
@@ -82,9 +85,14 @@ class _WalletCard extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.spaceMd,
+          vertical: tokens.spacing12,
+        ),
         child: Row(
           children: [
+            // Fixed brand-gradient card: white is the fixed contrast color,
+            // not a themed surface color.
             Icon(icon, color: Colors.white, size: 30),
             const SizedBox(width: 12),
             Expanded(
@@ -97,10 +105,9 @@ class _WalletCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 13,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -108,9 +115,8 @@ class _WalletCard extends StatelessWidget {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: textTheme.labelMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -125,9 +131,8 @@ class _WalletCard extends StatelessWidget {
               ),
               child: Text(
                 badgeLabel,
-                style: const TextStyle(
+                style: textTheme.labelSmall?.copyWith(
                   color: Colors.white,
-                  fontSize: 9,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.5,
                 ),

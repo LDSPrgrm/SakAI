@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 import '../../../../app/routes.dart';
 import '../../../notifications/view_models/notifications_notifier.dart';
 import '../../../profile/view_models/profile_view_model.dart';
@@ -36,11 +37,17 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
     final profile = state.profile;
     final unread = ref.watch(notificationsNotifierProvider).unreadCount;
     final firstName = profile?.name.split(' ').first;
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = SakaiSemanticColors.of(context);
+    final tokens = SakaiDesignTokens.of(context);
 
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF00C472), Color(0xFF00A85A)],
+          colors: [
+            SakaiDesignTokens.primaryBright,
+            SakaiDesignTokens.primaryDeep,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -48,7 +55,12 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: EdgeInsets.fromLTRB(
+            tokens.spaceLg,
+            tokens.spacing12,
+            tokens.spaceLg,
+            tokens.spaceLg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -60,11 +72,13 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      // Gradient-header exception: white overlay on the
+                      // fixed brand gradient, not a themed surface color.
                       color: Colors.white.withValues(alpha: 0.25),
-                      border: Border.all(color: Colors.amber, width: 2),
+                      border: Border.all(color: semantic.warning, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.amber.withValues(alpha: 0.4),
+                          color: semantic.warning.withValues(alpha: 0.4),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -73,10 +87,9 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
                     alignment: Alignment.center,
                     child: Text(
                       (profile?.initials ?? 'U').toUpperCase(),
-                      style: const TextStyle(
+                      style: textTheme.bodyMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
-                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -87,18 +100,16 @@ class _HomeDashboardHeaderState extends ConsumerState<HomeDashboardHeader> {
                       children: [
                         Text(
                           _greeting(),
-                          style: const TextStyle(
+                          style: textTheme.labelMedium?.copyWith(
                             color: Colors.white70,
-                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         if (firstName != null)
                           Text(
                             firstName,
-                            style: const TextStyle(
+                            style: textTheme.titleMedium?.copyWith(
                               color: Colors.white,
-                              fontSize: 16,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
                             ),
@@ -218,8 +229,7 @@ class _SearchBar extends StatelessWidget {
                 dest?.address ?? 'Where to? e.g. Starbucks',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 15,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: dest != null ? FontWeight.w600 : FontWeight.w500,
                   color: dest != null
                       ? scheme.onSurface

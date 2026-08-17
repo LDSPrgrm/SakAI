@@ -1,20 +1,107 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/router.dart';
 
-class DriverSettingsScreen extends StatelessWidget {
+class DriverSettingsScreen extends ConsumerWidget {
   const DriverSettingsScreen({super.key});
 
+  static String _themeModeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.system:
+        return 'System';
+    }
+  }
+
+  static void _showThemePicker(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode current,
+  ) {
+    SakaiModalSheet.show<void>(
+      context,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SakaiListTile(
+            leading: const Icon(Icons.smartphone_outlined),
+            title: const Text('System'),
+            selected: current == ThemeMode.system,
+            trailing:
+                current == ThemeMode.system ? const Icon(Icons.check) : null,
+            onTap: () {
+              ref
+                  .read(themeModeControllerProvider.notifier)
+                  .setThemeMode(ThemeMode.system);
+              Navigator.pop(sheetCtx);
+            },
+          ),
+          SakaiListTile(
+            leading: const Icon(Icons.light_mode_outlined),
+            title: const Text('Light'),
+            selected: current == ThemeMode.light,
+            trailing:
+                current == ThemeMode.light ? const Icon(Icons.check) : null,
+            onTap: () {
+              ref
+                  .read(themeModeControllerProvider.notifier)
+                  .setThemeMode(ThemeMode.light);
+              Navigator.pop(sheetCtx);
+            },
+          ),
+          SakaiListTile(
+            leading: const Icon(Icons.dark_mode_outlined),
+            title: const Text('Dark'),
+            selected: current == ThemeMode.dark,
+            trailing:
+                current == ThemeMode.dark ? const Icon(Icons.check) : null,
+            onTap: () {
+              ref
+                  .read(themeModeControllerProvider.notifier)
+                  .setThemeMode(ThemeMode.dark);
+              Navigator.pop(sheetCtx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = SakaiDesignTokens.of(context);
+    final themeMode = ref.watch(themeModeControllerProvider);
     return Scaffold(
       appBar: const SakaiAppBar(title: Text('Settings')),
       body: ListView(
         padding: EdgeInsets.all(t.spaceMd),
         children: [
+          Padding(
+            padding: EdgeInsets.only(left: t.spaceSm, bottom: t.spaceXs),
+            child: Text(
+              'Appearance',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          SakaiSurfaceCard(
+            padding: EdgeInsets.zero,
+            child: SakaiListTile(
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: const Text('Theme'),
+              subtitle: Text(_themeModeLabel(themeMode)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showThemePicker(context, ref, themeMode),
+            ),
+          ),
+          SizedBox(height: t.spaceMd),
           _Section(
             title: 'Driver',
             tiles: [

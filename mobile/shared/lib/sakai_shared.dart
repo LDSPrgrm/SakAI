@@ -11,6 +11,7 @@ export 'api/sakai_api_support.dart';
 export 'features/otp/otp_enabled.dart';
 export 'features/otp/otp_notifier.dart';
 export 'features/otp/otp_repository.dart';
+export 'features/support/sakai_support_screen.dart';
 
 // Domain models (new — stable wrappers around generated types)
 export 'models/backend_unavailable_exception.dart';
@@ -40,6 +41,7 @@ export 'theme/sakai_design_tokens.dart';
 export 'theme/sakai_theme.dart';
 export 'theme/sakai_semantic_colors.dart';
 export 'theme/sakai_theme_config.dart';
+export 'theme/theme_mode_controller.dart';
 
 // Validators
 export 'validators/sakai_validators.dart';

@@ -186,7 +186,7 @@ class _ProfileContent extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: scheme.shadow.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -241,7 +241,7 @@ class _ProfileContent extends StatelessWidget {
                 Text(
                   profile.name,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     color: scheme.onSurface,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
@@ -254,7 +254,7 @@ class _ProfileContent extends StatelessWidget {
                 Text(
                   profile.email,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -266,7 +266,7 @@ class _ProfileContent extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     profile.phone!,
-                    style: TextStyle(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant.withValues(alpha: 0.65),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -295,7 +295,7 @@ class _ProfileContent extends StatelessWidget {
                       children: [
                         Text(
                           profile.rating!.toStringAsFixed(1),
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             color: sem.warning,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
@@ -310,7 +310,7 @@ class _ProfileContent extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           'Rider Rating',
-                          style: TextStyle(
+                          style: theme.textTheme.labelSmall?.copyWith(
                             color: scheme.onSurfaceVariant.withValues(
                               alpha: 0.8,
                             ),
@@ -416,9 +416,9 @@ class _ProfileContent extends StatelessWidget {
               ),
             ),
             icon: Icon(Icons.logout_rounded, color: scheme.error),
-            label: const Text(
+            label: Text(
               'Log Out',
-              style: TextStyle(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 fontSize: 16,
                 letterSpacing: 0.5,
@@ -430,7 +430,7 @@ class _ProfileContent extends StatelessWidget {
         Center(
           child: Text(
             'Version 2.4.0 (Build 192)',
-            style: TextStyle(
+            style: theme.textTheme.labelSmall?.copyWith(
               color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -443,14 +443,13 @@ class _ProfileContent extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          color: Theme.of(
-            context,
-          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           fontSize: 11,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.2,
@@ -497,7 +496,8 @@ class _ProfileContent extends StatelessWidget {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -518,7 +518,7 @@ class _ProfileContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,

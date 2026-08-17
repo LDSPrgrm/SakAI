@@ -11,9 +11,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     required this.success,
     required this.danger,
     required this.accentBlue,
-    required this.darkBackground,
-    required this.darkSurface,
-    required this.darkBorder,
+    required this.appBackground,
+    required this.appSurface,
+    required this.appBorder,
     required this.warning,
     required this.neutral,
     required this.neutralVariant,
@@ -22,6 +22,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     required this.dangerSubtle,
     required this.warningSubtle,
     required this.successSubtle,
+    required this.primarySubtle,
     this.warningDark,
     this.glassTintLight = const Color(0x0A000000),
     this.glassTintDark = const Color(0x0FFFFFFF),
@@ -39,9 +40,16 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
   final Color success;
   final Color danger;
   final Color accentBlue;
-  final Color darkBackground;
-  final Color darkSurface;
-  final Color darkBorder;
+  /// Page background for the current brightness (the light surface in light
+  /// mode, `SakaiDesignTokens.darkBackground` in dark mode). Formerly named
+  /// `darkBackground`, which held light values in light mode.
+  final Color appBackground;
+
+  /// Card/sheet surface for the current brightness. Formerly `darkSurface`.
+  final Color appSurface;
+
+  /// Outline/divider color for the current brightness. Formerly `darkBorder`.
+  final Color appBorder;
   final Color warning;
   final Color neutral;
   final Color neutralVariant;
@@ -50,6 +58,10 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
   final Color dangerSubtle;
   final Color warningSubtle;
   final Color successSubtle;
+
+  /// Low-emphasis brand-green wash (primary blended onto the current surface),
+  /// for selected chips/rows and badge backgrounds.
+  final Color primarySubtle;
 
   /// Brighter dark-mode warning (~+8% lightness vs [warning]) so amber holds
   /// contrast on dark surfaces. Null in light mode — fall back to [warning].
@@ -65,9 +77,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     Color? success,
     Color? danger,
     Color? accentBlue,
-    Color? darkBackground,
-    Color? darkSurface,
-    Color? darkBorder,
+    Color? appBackground,
+    Color? appSurface,
+    Color? appBorder,
     Color? warning,
     Color? neutral,
     Color? neutralVariant,
@@ -76,6 +88,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
     Color? dangerSubtle,
     Color? warningSubtle,
     Color? successSubtle,
+    Color? primarySubtle,
     Color? warningDark,
     Color? glassTintLight,
     Color? glassTintDark,
@@ -84,9 +97,9 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       success: success ?? this.success,
       danger: danger ?? this.danger,
       accentBlue: accentBlue ?? this.accentBlue,
-      darkBackground: darkBackground ?? this.darkBackground,
-      darkSurface: darkSurface ?? this.darkSurface,
-      darkBorder: darkBorder ?? this.darkBorder,
+      appBackground: appBackground ?? this.appBackground,
+      appSurface: appSurface ?? this.appSurface,
+      appBorder: appBorder ?? this.appBorder,
       warning: warning ?? this.warning,
       neutral: neutral ?? this.neutral,
       neutralVariant: neutralVariant ?? this.neutralVariant,
@@ -95,6 +108,7 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       warningSubtle: warningSubtle ?? this.warningSubtle,
       successSubtle: successSubtle ?? this.successSubtle,
+      primarySubtle: primarySubtle ?? this.primarySubtle,
       warningDark: warningDark ?? this.warningDark,
       glassTintLight: glassTintLight ?? this.glassTintLight,
       glassTintDark: glassTintDark ?? this.glassTintDark,
@@ -111,10 +125,10 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
       success: Color.lerp(success, other.success, t) ?? success,
       danger: Color.lerp(danger, other.danger, t) ?? danger,
       accentBlue: Color.lerp(accentBlue, other.accentBlue, t) ?? accentBlue,
-      darkBackground:
-          Color.lerp(darkBackground, other.darkBackground, t) ?? darkBackground,
-      darkSurface: Color.lerp(darkSurface, other.darkSurface, t) ?? darkSurface,
-      darkBorder: Color.lerp(darkBorder, other.darkBorder, t) ?? darkBorder,
+      appBackground:
+          Color.lerp(appBackground, other.appBackground, t) ?? appBackground,
+      appSurface: Color.lerp(appSurface, other.appSurface, t) ?? appSurface,
+      appBorder: Color.lerp(appBorder, other.appBorder, t) ?? appBorder,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       neutral: Color.lerp(neutral, other.neutral, t) ?? neutral,
       neutralVariant:
@@ -130,6 +144,8 @@ class SakaiSemanticColors extends ThemeExtension<SakaiSemanticColors> {
           Color.lerp(warningSubtle, other.warningSubtle, t) ?? warningSubtle,
       successSubtle:
           Color.lerp(successSubtle, other.successSubtle, t) ?? successSubtle,
+      primarySubtle:
+          Color.lerp(primarySubtle, other.primarySubtle, t) ?? primarySubtle,
       warningDark: Color.lerp(warningDark, other.warningDark, t),
       glassTintLight:
           Color.lerp(glassTintLight, other.glassTintLight, t) ?? glassTintLight,

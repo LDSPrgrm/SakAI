@@ -204,7 +204,7 @@ class _LanguageTile extends StatelessWidget {
               children: [
                 Text(
                   option.nativeName,
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 14,
                   ),

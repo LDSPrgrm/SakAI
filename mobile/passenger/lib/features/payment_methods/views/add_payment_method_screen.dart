@@ -427,7 +427,7 @@ class _EWalletForm extends StatelessWidget {
               selected: isSelected,
               onSelected: (_) => onProviderSelected(provider),
               selectedColor: theme.colorScheme.primaryContainer,
-              labelStyle: TextStyle(
+              labelStyle: theme.textTheme.labelLarge?.copyWith(
                 color: isSelected
                     ? theme.colorScheme.onPrimaryContainer
                     : theme.colorScheme.onSurface,

@@ -21,23 +21,28 @@ class SakaiThemeConfig {
     this.darkBorderColor,
   });
 
-  /// Passenger app default: bold, energetic GoRide Green palette.
-  factory SakaiThemeConfig.passenger() => SakaiThemeConfig(
-    primarySeed: const Color(0xFF00DC82),
-    secondarySeed: const Color(0xFF00B86C),
+  /// Passenger app default: Grab-style palette — one brand green
+  /// ([SakaiDesignTokens.primary] `#00B14F`) on neutral-slate dark surfaces
+  /// and neutral light surfaces.
+  factory SakaiThemeConfig.passenger() => const SakaiThemeConfig(
+    primarySeed: SakaiDesignTokens.primary,
+    secondarySeed: SakaiDesignTokens.primaryDeep,
+    successColor: SakaiDesignTokens.primary,
+    dangerColor: SakaiDesignTokens.errorRed,
+    warningColor: Color(0xFFFBBC04),
     tokens: SakaiDesignTokens.defaults,
   );
 
-  /// Driver app default: same GoRide Green brand identity, with deep slate/charcoal dark theme.
-  factory SakaiThemeConfig.driver() => SakaiThemeConfig(
-    primarySeed: const Color(0xFF00DC82),
-    secondarySeed: const Color(0xFF00B86C),
-    successColor: const Color(0xFF00DC82),
-    dangerColor: const Color(0xFFEA4335),
-    warningColor: const Color(0xFFFBBC04),
-    darkBackgroundColor: const Color(0xFF0F172A),
-    darkSurfaceColor: const Color(0xFF1E293B),
-    darkBorderColor: const Color(0xFF334155),
+  /// Driver app default: identical Grab-style palette to
+  /// [SakaiThemeConfig.passenger] — the slate dark surfaces that used to be
+  /// pinned here now live in the shared build path
+  /// ([SakaiDesignTokens.darkBackground] and friends) and apply to both apps.
+  factory SakaiThemeConfig.driver() => const SakaiThemeConfig(
+    primarySeed: SakaiDesignTokens.primary,
+    secondarySeed: SakaiDesignTokens.primaryDeep,
+    successColor: SakaiDesignTokens.primary,
+    dangerColor: SakaiDesignTokens.errorRed,
+    warningColor: Color(0xFFFBBC04),
     tokens: SakaiDesignTokens.defaults,
   );
 
@@ -48,6 +53,10 @@ class SakaiThemeConfig {
   final Color? successColor;
   final Color? dangerColor;
   final Color? warningColor;
+  /// Optional per-app overrides of the shared dark palette. Left null by both
+  /// presets so light and dark surfaces stay identical across the two apps;
+  /// defaults come from [SakaiDesignTokens.darkBackground] /
+  /// [SakaiDesignTokens.darkSurface] / [SakaiDesignTokens.darkBorder].
   final Color? darkBackgroundColor;
   final Color? darkSurfaceColor;
   final Color? darkBorderColor;

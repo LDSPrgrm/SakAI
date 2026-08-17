@@ -253,9 +253,8 @@ class _RecentTripCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 5),
                             child: Text(
                               '·',
-                              style: TextStyle(
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 color: scheme.outlineVariant,
-                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -344,6 +343,7 @@ class _SmallPulseDotState extends State<_SmallPulseDot>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (_, _) => Container(
@@ -352,7 +352,9 @@ class _SmallPulseDotState extends State<_SmallPulseDot>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color,
-          border: Border.all(color: Colors.white, width: 1.5),
+          // Ring matches the card surface so the dot reads as a cutout,
+          // correct in both light and dark surfaces.
+          border: Border.all(color: scheme.surface, width: 1.5),
           boxShadow: [
             BoxShadow(
               color: widget.color.withValues(alpha: 0.5 * _ctrl.value),

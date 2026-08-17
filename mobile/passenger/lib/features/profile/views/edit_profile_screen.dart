@@ -157,7 +157,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Loading overlay while saving
             if (state.isSaving)
               Container(
-                color: Colors.black26,
+                color: theme.colorScheme.scrim.withValues(alpha: 0.26),
                 child: const Center(child: CircularProgressIndicator()),
               ),
           ],

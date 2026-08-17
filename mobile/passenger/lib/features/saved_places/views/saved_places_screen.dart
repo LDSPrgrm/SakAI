@@ -65,7 +65,7 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
             ),
             if (state.status == SavedPlacesStatus.loading)
               Container(
-                color: Colors.black26,
+                color: theme.colorScheme.scrim.withValues(alpha: 0.26),
                 child: const Center(child: CircularProgressIndicator()),
               ),
             if (state.errorMessage != null)
@@ -106,7 +106,9 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
         color: theme.colorScheme.errorContainer,
         child: Text(
           message,
-          style: TextStyle(color: theme.colorScheme.onErrorContainer),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onErrorContainer,
+          ),
         ),
       ),
     );
@@ -183,7 +185,9 @@ class _SavedPlacesScreenState extends ConsumerState<SavedPlacesScreen> {
                     onPressed: () => Navigator.of(context).pop(true),
                     child: Text(
                       'Delete',
-                      style: TextStyle(color: theme.colorScheme.error),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
                     ),
                   ),
                 ],

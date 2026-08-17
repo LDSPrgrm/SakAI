@@ -14,6 +14,7 @@ class SosSafetySettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final t = SakaiDesignTokens.of(context);
     final prefs = ref.watch(sosSafetyPrefsProvider);
     final notifier = ref.read(sosSafetyPrefsProvider.notifier);
 
@@ -28,10 +29,10 @@ class SosSafetySettingsScreen extends ConsumerWidget {
       body: prefs.isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(t.spaceMd),
               children: [
                 SakaiSurfaceCard(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(t.spaceMd),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -39,7 +40,7 @@ class SosSafetySettingsScreen extends ConsumerWidget {
                         Icons.shield_outlined,
                         color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: t.spacing12),
                       Expanded(
                         child: Text(
                           'Sakai never records or shares your location, audio, '
@@ -54,7 +55,7 @@ class SosSafetySettingsScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: t.spaceMd),
                 _SwitchTile(
                   icon: Icons.mic_outlined,
                   title: 'Ambient audio during SOS',
@@ -83,14 +84,14 @@ class SosSafetySettingsScreen extends ConsumerWidget {
                   value: prefs.photoOptIn,
                   onChanged: notifier.setPhoto,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: t.spaceLg),
                 Text(
                   'Consent & Data Use',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: t.spaceSm),
                 Text(
                   'Recordings, location pings, and photos collected during a '
                   'safety incident are retained for 90 days and used solely '
@@ -125,10 +126,14 @@ class _SwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = SakaiDesignTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: t.spaceXs),
       child: SakaiSurfaceCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: t.spaceMd,
+          vertical: t.spaceSm,
+        ),
         child: SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: value,
@@ -136,12 +141,15 @@ class _SwitchTile extends StatelessWidget {
           title: Row(
             children: [
               Icon(icon, color: theme.colorScheme.onSurface),
-              const SizedBox(width: 12),
+              SizedBox(width: t.spacing12),
               Expanded(child: Text(title)),
             ],
           ),
           subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4, left: 36),
+            padding: EdgeInsets.only(
+              top: t.spaceXs,
+              left: t.iconMd + t.spacing12,
+            ),
             child: Text(
               subtitle,
               style: theme.textTheme.bodySmall?.copyWith(

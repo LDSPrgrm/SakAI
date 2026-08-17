@@ -167,7 +167,7 @@ class _ServiceTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               item.label,
-              style: TextStyle(
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: scheme.onSurface.withValues(alpha: 0.85),

@@ -1,7 +1,12 @@
 library;
 
-/// Task 15 — structural smoke coverage for the driver "My Documents" screen
-/// under `ThemeMode.dark` (driver app is forced dark — see Task 3/4).
+/// Task 15 — structural smoke coverage for the driver "My Documents" screen.
+///
+/// The driver app's theme mode is user-selectable and provider-driven
+/// (defaults to `ThemeMode.system`), so this suite pumps the screen under
+/// both `SakaiTheme.dark` and `SakaiTheme.light` rather than assuming a
+/// single forced brightness. Each test supplies `MaterialApp.theme`
+/// explicitly, so neither depends on the app-level theme-mode provider.
 ///
 /// Pixel goldens are not used here: `mobile/shared`'s golden suite has 8
 /// pre-existing environment-only failures (GoogleFonts/rendering in this
@@ -43,32 +48,40 @@ class _FakeDriverDocumentRepository extends DriverDocumentRepository {
 }
 
 void main() {
-  testWidgets(
-    'DocumentsScreen pumps under dark theme with the themed SakaiAppBar, '
-    'not a bare AppBar',
-    (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            driverDocumentRepositoryProvider.overrideWithValue(
-              _FakeDriverDocumentRepository(),
+  // `theme` is a factory, not a value: SakaiTheme.* reaches through
+  // google_fonts into the asset bundle, so it must be built inside the test
+  // body (after the binding is initialized), never eagerly in `main()`.
+  for (final variant in <({String label, ThemeData Function() theme})>[
+    (label: 'dark', theme: () => SakaiTheme.dark(_themeConfig)),
+    (label: 'light', theme: () => SakaiTheme.light(_themeConfig)),
+  ]) {
+    testWidgets(
+      'DocumentsScreen pumps under ${variant.label} theme with the themed '
+      'SakaiAppBar, not a bare AppBar',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              driverDocumentRepositoryProvider.overrideWithValue(
+                _FakeDriverDocumentRepository(),
+              ),
+            ],
+            child: MaterialApp(
+              theme: variant.theme(),
+              home: const DocumentsScreen(),
             ),
-          ],
-          child: MaterialApp(
-            theme: SakaiTheme.dark(_themeConfig),
-            home: const DocumentsScreen(),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      // Real themed app bar, never the bare default-themed AppBar.
-      expect(find.byType(SakaiAppBar), findsOneWidget);
+        // Real themed app bar, never the bare default-themed AppBar.
+        expect(find.byType(SakaiAppBar), findsOneWidget);
 
-      // Empty-state copy renders once the fake repository resolves with no
-      // documents — proves the screen pumps end-to-end without throwing.
-      await tester.pump();
-      expect(find.text('No documents uploaded yet'), findsOneWidget);
-    },
-  );
+        // Empty-state copy renders once the fake repository resolves with no
+        // documents — proves the screen pumps end-to-end without throwing.
+        await tester.pump();
+        expect(find.text('No documents uploaded yet'), findsOneWidget);
+      },
+    );
+  }
 }

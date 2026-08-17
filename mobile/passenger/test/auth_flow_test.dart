@@ -16,6 +16,7 @@ import 'package:passenger/features/profile/view_models/profile_view_model.dart';
 import 'package:passenger/features/promotions/view_models/promotions_view_model.dart';
 import 'package:passenger/features/notifications/view_models/notifications_notifier.dart';
 import 'package:sakai_shared/sakai_shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeTokenStorage extends TokenStorage {
   final Map<String, String> _data = {};
@@ -218,12 +219,17 @@ void main() {
   late _FakeAuthRepository authRepo;
   late FakeTokenStorage tokenStorage;
   late _FakeOnboardingService onboardingService;
+  late SharedPreferences prefs;
 
   setUpAll(() async {
     await dotenv.load(fileName: '.env');
   });
 
-  setUp(() {
+  setUp(() async {
+    // PassengerApp reads themeModeControllerProvider, which synchronously
+    // reads sharedPreferencesProvider; it must be overridden at the root.
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
     tokenStorage = FakeTokenStorage();
     authRepo = _FakeAuthRepository(tokenStorage);
     onboardingService = _FakeOnboardingService();
@@ -246,6 +252,7 @@ void main() {
     );
     return ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
         tokenStorageProvider.overrideWithValue(tokenStorage),
         authRepositoryProvider.overrideWithValue(authRepo),
         rideRepositoryProvider.overrideWithValue(_FakeRideRepository()),

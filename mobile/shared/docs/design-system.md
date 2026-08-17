@@ -96,23 +96,24 @@ Access via `SakaiSemanticColors.of(context)`. Colors are tone-aware and adapt to
 | `neutralVariant` | Disabled labels, tertiary text |
 | `disabledSurface` | Background for disabled inputs / buttons |
 | `disabledOnSurface` | Foreground (text/icon) on disabled surfaces |
-| `darkBackground` | Explicit dark-mode page background (overrides M3 surface) |
-| `darkSurface` | Explicit dark-mode card/sheet surface |
-| `darkBorder` | Explicit dark-mode outline (overrides `outlineVariant`) |
+| `appBackground` | Page background for the current brightness (light surface in light mode, slate `0xFF0F172A` in dark) |
+| `appSurface` | Card/sheet surface for the current brightness (slate `0xFF1E293B` in dark) |
+| `appBorder` | Outline/divider for the current brightness (slate `0xFF334155` in dark) |
+| `primarySubtle` | Low-emphasis brand-green wash for selected chips/rows and badges |
 | `glassTintLight` / `glassTintDark` | Used by `SakaiGlassCard` only |
 
 **Never use** `Colors.red/blue/green/orange/amber/grey/yellow/purple` directly. Pick from `SakaiSemanticColors` or `Theme.of(context).colorScheme`.
 
 ## 3. Brand seed
 
-Both apps use the same red brand seed `0xFFff4b4b` so users recognize SakAI across passenger and driver experiences:
+Both apps use the same Grab-style brand green `SakaiDesignTokens.primary` (`0xFF00B14F`) so users recognize SakAI across passenger and driver experiences. It renders as `colorScheme.primary` exactly, in both brightnesses (no toning). `primaryBright` (`0xFF00DF63`) and `primaryDeep` (`0xFF008D3F`) exist only for brand gradients.
 
 | App | `primarySeed` | `secondarySeed` |
 |---|---|---|
-| Passenger (`SakaiThemeConfig.passenger()`) | `0xFFff4b4b` | `0xFFe04343` |
-| Driver (`SakaiThemeConfig.driver()`) | `0xFFff4b4b` | `0xFFff4b4b` |
+| Passenger (`SakaiThemeConfig.passenger()`) | `SakaiDesignTokens.primary` | `SakaiDesignTokens.primaryDeep` |
+| Driver (`SakaiThemeConfig.driver()`) | `SakaiDesignTokens.primary` | `SakaiDesignTokens.primaryDeep` |
 
-Role is signaled by app icon + copy, not by accent color. Drivers see the same brand — confidence + cross-app recognition wins over role-by-color. The driver config additionally pins explicit dark-mode background (`0xFF0D1117`), surface (`0xFF161B22`), and border (`0xFF30363D`) colors plus literal success/danger/warning values (`0xFF34A853`, `0xFFEA4335`, `0xFFFBBC04`) for a consistent dispatch-grade dark experience.
+Role is signaled by app icon + copy, not by accent color. Drivers see the same brand — confidence + cross-app recognition wins over role-by-color. The shared build path applies the slate dark palette (`darkBackground 0xFF0F172A`, `darkSurface 0xFF1E293B`, `darkBorder 0xFF334155`) plus one error red (`0xFFEA4335`) to both apps; success is the brand green.
 
 Typography for both apps is **Plus Jakarta Sans** via `google_fonts.plusJakartaSansTextTheme()`.
 
@@ -248,13 +249,13 @@ When you find a duplicated pattern across passenger + driver, extract it to `sak
 
 ## 8. Themes + dark mode
 
-Both apps consume `SakaiTheme.light(config)` and `SakaiTheme.dark(config)` via `MaterialApp.themeMode: ThemeMode.system`. Verify any new screen in BOTH modes — Material 3's algorithmic surface tints don't always carry semantic intent across modes.
+Both apps consume `SakaiTheme.light(config)` and `SakaiTheme.dark(config)`; `MaterialApp.themeMode` comes from `themeModeControllerProvider` (user-selectable System/Light/Dark, persisted via `shared_preferences` key `theme_mode`, default System). Verify any new screen in BOTH modes — Material 3's algorithmic surface tints don't always carry semantic intent across modes.
 
 Specific dark-mode tweaks already applied in `SakaiTheme._build`:
-- `AppBarTheme.surfaceTintColor = colorScheme.surface` in both modes to suppress the M3 scroll-under purple shift on the red seed.
+- `AppBarTheme.surfaceTintColor = colorScheme.surface` in both modes to suppress the M3 scroll-under tint shift.
 - `AppBarTheme.scrolledUnderElevation = 1` so scrolled content visually lifts the bar.
 - `SakaiSemanticColors.warningDark` raised +8% lightness in dark mode (amber retains contrast on dark surfaces).
-- Driver config pins explicit `darkBackground` (`0xFF0D1117`), `darkSurface` (`0xFF161B22`), and `darkBorder` (`0xFF30363D`) to give the driver app a dispatch-grade dark identity.
+- The shared build path applies the slate dark palette to both apps: `darkBackground 0xFF0F172A`, `darkSurface 0xFF1E293B`, `darkBorder 0xFF334155` (per-app config overrides exist but are unset).
 - `InputDecorationTheme.fillColor` uses `surfaceContainerHighest` at `alpha: 0.2` (dark) / `0.4` (light) for tone-aware fields.
 
 ## 9. Where this lives
