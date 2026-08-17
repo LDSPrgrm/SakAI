@@ -48,7 +48,34 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     this.iconLg = 32,
     // Accessibility — minimum touch target.
     this.touchTargetMin = 48,
+    // Compact spacing step between [spaceSm] (8) and [spaceMd] (16).
+    this.spacing12 = 12,
   });
+
+  /// Grab-style brand green ramp. Every green in the design system derives
+  /// from [primary]; there are no independent green literals.
+  ///
+  /// * [primary] `#00B14F` is the literal rendered `colorScheme.primary` in
+  ///   both brightnesses. WCAG contrast against the shared dark surfaces is
+  ///   5.16:1 on [darkSurface] (`#1E293B`) and 6.29:1 on [darkBackground]
+  ///   (`#0F172A`) — both clear AA (4.5:1) for normal text, so no lightened
+  ///   dark-mode variant is needed.
+  /// * [primaryBright] / [primaryDeep] are +9% / -7% HSL lightness stops off
+  ///   [primary] (same hue 146.8deg, same saturation). They exist only for
+  ///   brand gradients.
+  static const Color primary = Color(0xFF00B14F);
+  static const Color primaryBright = Color(0xFF00DF63);
+  static const Color primaryDeep = Color(0xFF008D3F);
+
+  /// Shared neutral-slate dark palette applied to *both* apps (previously a
+  /// driver-only override, with passenger falling back to algorithmic
+  /// green-tinted M3 surfaces).
+  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF1E293B);
+  static const Color darkBorder = Color(0xFF334155);
+
+  /// Single error red for both apps, surfaced as `colorScheme.error`.
+  static const Color errorRed = Color(0xFFEA4335);
 
   /// Fixed categorical accent palette for service/category tiles (e.g. the
   /// passenger home services grid). These are brand-level category accents,
@@ -64,16 +91,17 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
 
   /// Wallet/loyalty card gradient accents (home dashboard "My Wallet"
   /// section). Brand-level card identities, not theme roles — held fixed
-  /// across brightness like [serviceFood] etc.
-  static const Color walletPayGradientStart = Color(0xFF00C472);
-  static const Color walletPayGradientEnd = Color(0xFF009958);
+  /// across brightness like [serviceFood] etc. The pay-card gradient is the
+  /// brand ramp; the points card keeps its own violet identity.
+  static const Color walletPayGradientStart = primaryBright;
+  static const Color walletPayGradientEnd = primaryDeep;
   static const Color walletPointsGradientStart = Color(0xFF7C3AED);
   static const Color walletPointsGradientEnd = Color(0xFF5B21B6);
 
   /// Booking "Confirm" CTA gradient — brand accent, held fixed across
   /// brightness like the other gradient tokens above.
-  static const Color confirmCtaGradientStart = Color(0xFF00DC82);
-  static const Color confirmCtaGradientEnd = Color(0xFF00B066);
+  static const Color confirmCtaGradientStart = primaryBright;
+  static const Color confirmCtaGradientEnd = primaryDeep;
 
   static const SakaiDesignTokens defaults = SakaiDesignTokens(
     spaceXs: 4,
@@ -136,6 +164,11 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
   // Accessibility floor
   final double touchTargetMin;
 
+  /// Compact spacing step (12dp) between [spaceSm] and [spaceMd]. Named after
+  /// its value rather than the `space*` t-shirt scale because the screen sweep
+  /// greps for it by number.
+  final double spacing12;
+
   static SakaiDesignTokens of(BuildContext context) {
     final ext = Theme.of(context).extension<SakaiDesignTokens>();
     assert(
@@ -181,6 +214,7 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
     double? iconMd,
     double? iconLg,
     double? touchTargetMin,
+    double? spacing12,
   }) {
     return SakaiDesignTokens(
       spaceXs: spaceXs ?? this.spaceXs,
@@ -217,6 +251,7 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
       iconMd: iconMd ?? this.iconMd,
       iconLg: iconLg ?? this.iconLg,
       touchTargetMin: touchTargetMin ?? this.touchTargetMin,
+      spacing12: spacing12 ?? this.spacing12,
     );
   }
 
@@ -265,6 +300,7 @@ class SakaiDesignTokens extends ThemeExtension<SakaiDesignTokens> {
       iconMd: lerpDouble(iconMd, other.iconMd, t)!,
       iconLg: lerpDouble(iconLg, other.iconLg, t)!,
       touchTargetMin: lerpDouble(touchTargetMin, other.touchTargetMin, t)!,
+      spacing12: lerpDouble(spacing12, other.spacing12, t)!,
     );
   }
 }
