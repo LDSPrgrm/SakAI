@@ -410,8 +410,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             Row(
               children: [
                 SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: tokens.iconMd,
+                  height: tokens.iconMd,
                   child: Checkbox(
                     value: _agreeToTerms,
                     onChanged: (val) {
@@ -423,7 +423,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: tokens.spaceSm),
                 Expanded(
                   child: Text(
                     'I agree to the Terms & Privacy Policy',
@@ -436,13 +436,13 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             ),
             if (_termsError != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8, left: 32),
+                padding: EdgeInsets.only(
+                  top: tokens.spaceSm,
+                  left: tokens.iconMd + tokens.spaceSm,
+                ),
                 child: Text(
                   _termsError!,
-                  style: TextStyle(
-                    color: scheme.error,
-                    fontSize: 12,
-                  ),
+                  style: textTheme.bodySmall?.copyWith(color: scheme.error),
                 ),
               ),
             SizedBox(height: tokens.spaceLg),
@@ -459,7 +459,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       foregroundColor: scheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: tokens.spaceSm),
                   Expanded(
                     child: SakaiPrimaryButton(
                       key: const Key('register_submit'),
@@ -488,7 +488,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             TextButton(
               onPressed: registerState.busy ? null : widget.onLoginTap,
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('Sign in'),
             ),

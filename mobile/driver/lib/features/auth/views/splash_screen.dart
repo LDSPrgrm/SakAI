@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/router.dart';
 import '../view_models/splash_notifier.dart';
@@ -103,6 +104,7 @@ class _SplashBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = SakaiDesignTokens.of(context);
     return Scaffold(
       backgroundColor: scheme.surface,
       body: Center(
@@ -116,7 +118,7 @@ class _SplashBody extends StatelessWidget {
                 height: 72,
                 decoration: BoxDecoration(
                   color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(t.radiusLg),
                 ),
                 child: Icon(
                   Icons.drive_eta_rounded,
@@ -125,7 +127,7 @@ class _SplashBody extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: t.spaceLg),
             Hero(
               tag: 'app_name',
               child: Material(
@@ -139,10 +141,10 @@ class _SplashBody extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: t.spaceXl),
             SizedBox(
-              width: 24,
-              height: 24,
+              width: t.iconMd,
+              height: t.iconMd,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
                 color: scheme.primary,
@@ -161,16 +163,29 @@ class _ErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = SakaiDesignTokens.of(context);
+    final theme = Theme.of(context);
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 48),
-            const SizedBox(height: 16),
-            const Text('Could not connect to server.'),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            SizedBox(height: t.spaceMd),
+            Text(
+              'Could not connect to server.',
+              style: theme.textTheme.bodyLarge,
+            ),
+            SizedBox(height: t.spaceMd),
+            SakaiPrimaryButton(
+              label: 'Retry',
+              onPressed: onRetry,
+              expand: false,
+            ),
           ],
         ),
       ),

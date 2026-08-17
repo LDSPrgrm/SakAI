@@ -169,8 +169,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: tokens.iconMd,
+                      height: tokens.iconMd,
                       child: Checkbox(
                         value: _rememberMe,
                         onChanged: (val) {
@@ -185,7 +185,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: tokens.spaceSm),
                     Text(
                       'Remember me',
                       style: textTheme.bodyMedium?.copyWith(
@@ -241,7 +241,12 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: Icon(Icons.g_mobiledata_rounded, size: 28, color: scheme.onSurface),
-                    label: Text('Google', style: TextStyle(color: scheme.onSurface)),
+                    label: Text(
+                      'Google',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
+                    ),
                     onPressed: loginState.busy
                         ? null
                         : () => ref
@@ -258,7 +263,12 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: Icon(Icons.apple_rounded, size: 22, color: scheme.onSurface),
-                    label: Text('Apple', style: TextStyle(color: scheme.onSurface)),
+                    label: Text(
+                      'Apple',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
+                    ),
                     onPressed: loginState.busy ? null : () {},
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),
@@ -284,7 +294,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             TextButton(
               onPressed: loginState.busy ? null : widget.onRegisterTap,
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('Create account'),
             ),

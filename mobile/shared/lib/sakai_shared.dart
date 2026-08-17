@@ -11,6 +11,7 @@ export 'api/sakai_api_support.dart';
 export 'features/otp/otp_enabled.dart';
 export 'features/otp/otp_notifier.dart';
 export 'features/otp/otp_repository.dart';
+export 'features/support/sakai_support_screen.dart';
 
 // Domain models (new — stable wrappers around generated types)
 export 'models/backend_unavailable_exception.dart';

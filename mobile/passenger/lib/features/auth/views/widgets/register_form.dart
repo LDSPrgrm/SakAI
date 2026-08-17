@@ -192,8 +192,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             Row(
               children: [
                 SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: tokens.iconMd,
+                  height: tokens.iconMd,
                   child: Checkbox(
                     key: const Key('register_terms'),
                     value: _agreeToTerms,
@@ -211,7 +211,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: tokens.spaceSm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +283,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                     label: Text(
                       'Google',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: registerState.busy
                         ? null
@@ -312,7 +314,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     ),
                     label: Text(
                       'Apple',
-                      style: TextStyle(color: scheme.onSurface),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                      ),
                     ),
                     onPressed: registerState.busy
                         ? null
@@ -348,7 +352,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             TextButton(
               onPressed: registerState.busy ? null : widget.onLoginTap,
               style: TextButton.styleFrom(
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('Sign in'),
             ),
