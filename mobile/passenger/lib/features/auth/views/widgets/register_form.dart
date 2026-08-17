@@ -52,8 +52,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     }
 
     String? termsError;
-    if (!_agreeToTerms)
+    if (!_agreeToTerms) {
       termsError = 'You must agree to the Terms & Privacy Policy';
+    }
 
     setState(() {
       _errors = errors;
@@ -143,8 +144,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.person_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('name'))
+                if (_errors.containsKey('name')) {
                   setState(() => _errors = Map.from(_errors)..remove('name'));
+                }
               },
             ),
             SakaiTextField(
@@ -158,8 +160,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.mail_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('email'))
+                if (_errors.containsKey('email')) {
                   setState(() => _errors = Map.from(_errors)..remove('email'));
+                }
               },
             ),
             SakaiTextField(
@@ -173,10 +176,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               onChanged: (_) {
                 ref.read(registerNotifierProvider.notifier).clearError();
-                if (_errors.containsKey('password'))
+                if (_errors.containsKey('password')) {
                   setState(
                     () => _errors = Map.from(_errors)..remove('password'),
                   );
+                }
               },
               suffixIcon: IconButton(
                 tooltip: _obscurePassword ? 'Show password' : 'Hide password',

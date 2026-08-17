@@ -471,6 +471,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   Future<void> _initiateTransportFlow() async {
     final notifier = ref.read(homeNotifierProvider.notifier);
     await notifier.initLocation();
+    if (!mounted) return;
 
     // 1. Pickup
     final pickup = await showLocationPicker(context, mode: LocationSearchMode.pickup);
@@ -488,6 +489,7 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   Future<void> _openLocationSearch({bool isPickup = false}) async {
     final notifier = ref.read(homeNotifierProvider.notifier);
     await notifier.initLocation();
+    if (!mounted) return;
 
     final mode = isPickup
         ? LocationSearchMode.pickup

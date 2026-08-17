@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,7 +7,6 @@ import 'package:passenger/app/providers.dart';
 import 'package:passenger/features/home/repositories/geocoding_service.dart';
 import 'package:passenger/features/home/models/location_search_mode.dart';
 import 'package:passenger/features/home/views/location_picker_screen.dart';
-import 'package:passenger/features/ride_history/models/ride_history_item.dart';
 import 'package:passenger/features/ride_history/view_models/ride_history_list_view_model.dart';
 import 'package:sakai_shared/sakai_shared.dart'
     hide LatLng, NearbyDriver, ServiceArea;
@@ -45,18 +46,14 @@ class _FakeGeocodingService extends GeocodingService {
   }
 }
 
-RideHistoryItem _item(int i, {String? origin, String? destination}) =>
-    RideHistoryItem(
-      id: 'r$i',
-      status: RideStatus.completed,
-      originAddress: origin ?? 'Origin $i, Area $i',
-      destinationAddress: destination ?? 'Destination $i, Area $i',
-      fare: 150 + i.toDouble(),
-      estimatedFare: 150 + i.toDouble(),
-      paymentMethod: 'cash',
-      createdAt: DateTime.now().subtract(Duration(days: i)),
-      updatedAt: DateTime.now().subtract(Duration(days: i)),
-    );
+/// Builds the JSON-encoded string list persisted by
+/// [RecentLocationsNotifier] under `recent_pickup_locations` /
+/// `recent_destination_locations`.
+List<String> _storedRecents(List<RideLocation> locations) => locations
+    .map(
+      (loc) => jsonEncode({'lat': loc.lat, 'lng': loc.lng, 'address': loc.address}),
+    )
+    .toList();
 
 void main() {
   late SharedPreferences prefs;
@@ -99,7 +96,7 @@ void main() {
   );
 
   testWidgets(
-    'Falls back to suggested transit points when history status is success but items are empty',
+    'Hides the recents section when no recent locations are stored in SharedPreferences',
     (WidgetTester tester) async {
       final fakeHistory = _FakeRideHistoryNotifier(
         const RideHistoryListState(
@@ -125,64 +122,40 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('SUGGESTED TRANSIT POINTS'), findsOneWidget);
-      expect(find.text('Central Business District Office'), findsOneWidget);
-      expect(find.text('Metro Residences Sector 4'), findsOneWidget);
+      expect(find.text('RECENT PICKUPS'), findsNothing);
     },
   );
 
   testWidgets(
-    'Falls back to suggested transit points when history status is success but items have only empty addresses',
+    'Displays RECENT PICKUPS with formatted items from SharedPreferences capped at 6 for LocationSearchMode.pickup',
     (WidgetTester tester) async {
+      // Use a tall viewport so all 6 recent tiles lay out without scrolling.
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final fakeHistory = _FakeRideHistoryNotifier(
-        RideHistoryListState(
+        const RideHistoryListState(
           status: RideHistoryStatus.success,
-          items: [_item(1, origin: '   ', destination: '')],
+          items: [],
         ),
       );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
-            geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: const LocationPickerScreen(mode: LocationSearchMode.pickup),
-            ),
-          ),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      expect(find.text('SUGGESTED TRANSIT POINTS'), findsOneWidget);
-      expect(find.text('Central Business District Office'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'Displays RECENT PICKUPS with formatted and duplicate-filtered unique items capped at 6 for LocationSearchMode.pickup',
-    (WidgetTester tester) async {
-      final fakeHistory = _FakeRideHistoryNotifier(
-        RideHistoryListState(
-          status: RideHistoryStatus.success,
-          items: [
-            _item(1, origin: 'Mall of Asia, Pasay'),
-            _item(2, origin: 'Mall of Asia, Pasay'), // Duplicate
-            _item(3, origin: 'Ayala Malls, Makati'),
-            _item(4, origin: 'Ortigas Center, Pasig'),
-            _item(5, origin: 'Greenhills, San Juan'),
-            _item(6, origin: 'Cubao, Quezon City'),
-            _item(7, origin: 'BGC, Taguig'),
-            _item(
-              8,
-              origin: 'Manila Bay, Manila',
-            ), // 7th unique item, should be capped out
-          ],
-        ),
+      await prefs.setStringList(
+        'recent_pickup_locations',
+        _storedRecents([
+          const RideLocation(lat: 1, lng: 1, address: 'Mall of Asia, Pasay'),
+          const RideLocation(lat: 2, lng: 2, address: 'Ayala Malls, Makati'),
+          const RideLocation(lat: 3, lng: 3, address: 'Ortigas Center, Pasig'),
+          const RideLocation(lat: 4, lng: 4, address: 'Greenhills, San Juan'),
+          const RideLocation(lat: 5, lng: 5, address: 'Cubao, Quezon City'),
+          const RideLocation(lat: 6, lng: 6, address: 'BGC, Taguig'),
+          const RideLocation(
+            lat: 7,
+            lng: 7,
+            address: 'Manila Bay, Manila',
+          ), // 7th item, should be capped out
+        ]),
       );
 
       await tester.pumpWidget(
@@ -220,25 +193,51 @@ void main() {
   );
 
   testWidgets(
-    'Displays RECENT DESTINATIONS with formatted and duplicate-filtered unique items capped at 6 for LocationSearchMode.destination',
+    'Displays RECENT DESTINATIONS with formatted items from SharedPreferences capped at 6 for LocationSearchMode.destination',
     (WidgetTester tester) async {
+      // Use a tall viewport so all 6 recent tiles lay out without scrolling.
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final fakeHistory = _FakeRideHistoryNotifier(
-        RideHistoryListState(
+        const RideHistoryListState(
           status: RideHistoryStatus.success,
-          items: [
-            _item(1, destination: 'NAIA Terminal 3, Pasay'),
-            _item(2, destination: 'NAIA Terminal 3, Pasay'), // Duplicate
-            _item(3, destination: 'Alabang Town Center, Muntinlupa'),
-            _item(4, destination: 'UP Town Center, Quezon City'),
-            _item(5, destination: 'Eastwood City, Libis'),
-            _item(6, destination: 'Robinsons Galleria, Ortigas'),
-            _item(7, destination: 'SM North Edsa, Quezon City'),
-            _item(
-              8,
-              destination: 'Intramuros, Manila',
-            ), // 7th unique item, should be capped out
-          ],
+          items: [],
         ),
+      );
+
+      await prefs.setStringList(
+        'recent_destination_locations',
+        _storedRecents([
+          const RideLocation(lat: 1, lng: 1, address: 'NAIA Terminal 3, Pasay'),
+          const RideLocation(
+            lat: 2,
+            lng: 2,
+            address: 'Alabang Town Center, Muntinlupa',
+          ),
+          const RideLocation(
+            lat: 3,
+            lng: 3,
+            address: 'UP Town Center, Quezon City',
+          ),
+          const RideLocation(lat: 4, lng: 4, address: 'Eastwood City, Libis'),
+          const RideLocation(
+            lat: 5,
+            lng: 5,
+            address: 'Robinsons Galleria, Ortigas',
+          ),
+          const RideLocation(
+            lat: 6,
+            lng: 6,
+            address: 'SM North Edsa, Quezon City',
+          ),
+          const RideLocation(
+            lat: 7,
+            lng: 7,
+            address: 'Intramuros, Manila',
+          ), // 7th item, should be capped out
+        ]),
       );
 
       await tester.pumpWidget(
@@ -278,7 +277,7 @@ void main() {
   );
 
   testWidgets(
-    'Tapping fallback suggested item immediately pops resolved RideLocation',
+    'Tapping a stored recent location immediately pops it without re-geocoding',
     (WidgetTester tester) async {
       final fakeHistory = _FakeRideHistoryNotifier(
         const RideHistoryListState(
@@ -287,67 +286,15 @@ void main() {
         ),
       );
 
-      RideLocation? poppedLocation;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            sharedPreferencesProvider.overrideWithValue(prefs),
-            rideHistoryListNotifierProvider.overrideWith(() => fakeHistory),
-            geocodingServiceProvider.overrideWithValue(_FakeGeocodingService()),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  return ElevatedButton(
-                    onPressed: () async {
-                      poppedLocation = await Navigator.of(context)
-                          .push<RideLocation>(
-                            MaterialPageRoute(
-                              builder: (_) => const LocationPickerScreen(
-                                mode: LocationSearchMode.pickup,
-                              ),
-                            ),
-                          );
-                    },
-                    child: const Text('Open'),
-                  );
-                },
-              ),
-            ),
+      await prefs.setStringList(
+        'recent_pickup_locations',
+        _storedRecents([
+          const RideLocation(
+            lat: 14.5378,
+            lng: 120.9822,
+            address: 'Mall of Asia, Pasay',
           ),
-        ),
-      );
-
-      // Open LocationPickerScreen
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-
-      // Tap first suggested transit point which does not have lat/lng coordinates defined in static fallback
-      // Wait, static fallback suggests:
-      // name: 'Central Business District Office', address: '120 Pine St', lat/lng is null.
-      // So it will trigger geocode.
-      await tester.tap(find.text('Central Business District Office'));
-      await tester.pumpAndSettle();
-
-      // Verify it popped successfully
-      expect(poppedLocation, isNotNull);
-      expect(
-        poppedLocation!.address,
-        equals('Central Business District Office, 120 Pine St'),
-      );
-    },
-  );
-
-  testWidgets(
-    'Tapping a recent address suggestions geocodes and pops resolved RideLocation',
-    (WidgetTester tester) async {
-      final fakeHistory = _FakeRideHistoryNotifier(
-        RideHistoryListState(
-          status: RideHistoryStatus.success,
-          items: [_item(1, origin: 'Mall of Asia, Pasay')],
-        ),
+        ]),
       );
 
       RideLocation? poppedLocation;
@@ -387,25 +334,26 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Tap recent pickup suggestion
+      // Tap the stored recent pickup tile.
       await tester.tap(find.text('Mall of Asia'));
       await tester.pumpAndSettle();
 
-      // Verify it popped successfully with the resolved mock location
+      // Verify it popped immediately with the stored coordinates (no
+      // geocoding call needed for a recent tap).
       expect(poppedLocation, isNotNull);
       expect(poppedLocation!.address, equals('Mall of Asia, Pasay'));
-      expect(poppedLocation!.lat, equals(1.23));
-      expect(poppedLocation!.lng, equals(4.56));
+      expect(poppedLocation!.lat, equals(14.5378));
+      expect(poppedLocation!.lng, equals(120.9822));
     },
   );
 
   testWidgets(
-    'Displays error snackbar if geocoding fails on tapping suggestion',
+    'Displays error snackbar if geocoding fails on confirming a search suggestion',
     (WidgetTester tester) async {
       final fakeHistory = _FakeRideHistoryNotifier(
-        RideHistoryListState(
+        const RideHistoryListState(
           status: RideHistoryStatus.success,
-          items: [_item(1, origin: 'Fail Location, Area')],
+          items: [],
         ),
       );
 
@@ -427,8 +375,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap suggestion to trigger geocode
-      await tester.tap(find.text('Fail Location'));
+      // Type a query that yields autocomplete suggestions containing
+      // 'Fail', which the fake geocoding service rejects on confirm.
+      await tester.enterText(find.byType(TextField), 'Fail');
+      await tester.pump(const Duration(milliseconds: 400)); // debounce
+      await tester.pumpAndSettle();
+
+      // Tap suggestion to trigger geocode.
+      await tester.tap(find.text('Suggestion 1 for Fail'));
       await tester.pump(); // Start execution
 
       // Pump and wait for snackbar

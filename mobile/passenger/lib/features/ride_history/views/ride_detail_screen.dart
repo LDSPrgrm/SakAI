@@ -128,13 +128,13 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   borderRadius: BorderRadius.circular(tokens.radiusLg),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                   border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
                     width: 1,
                   ),
                 ),
@@ -166,11 +166,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface.withOpacity(0.85),
+                        color: theme.colorScheme.surface.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(tokens.radiusFull),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withOpacity(
-                            0.3,
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
                           ),
                         ),
                       ),
@@ -208,11 +208,11 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(tokens.radiusLg),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -242,7 +242,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                         Container(
                           width: 1.5,
                           height: 52,
-                          color: theme.dividerColor.withOpacity(0.3),
+                          color: theme.dividerColor.withValues(alpha: 0.3),
                         ),
                         Icon(
                           Icons.location_on,
@@ -303,10 +303,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 child: Container(
                   padding: EdgeInsets.all(tokens.spaceMd),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withOpacity(0.08),
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(tokens.radiusLg),
                     border: Border.all(
-                      color: theme.colorScheme.primary.withOpacity(0.15),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Column(
@@ -336,10 +336,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                   padding: EdgeInsets.all(tokens.spaceMd),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest
-                        .withOpacity(0.2),
+                        .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(tokens.radiusLg),
                     border: Border.all(
-                      color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -383,12 +383,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             Container(
               padding: EdgeInsets.all(tokens.spaceMd),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(
-                  0.1,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(tokens.radiusMd),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -423,7 +423,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(tokens.radiusLg),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
               ),
               child: Column(
@@ -443,8 +443,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     children: [
                       CircleAvatar(
                         radius: 26,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(
-                          0.12,
+                        backgroundColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.12,
                         ),
                         child: Icon(
                           Icons.person,
@@ -490,7 +490,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(tokens.radiusLg),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
               ),
             ),
             child: Column(
@@ -533,7 +533,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                                   boxShadow: [
                                     BoxShadow(
                                       color: theme.colorScheme.primary
-                                          .withOpacity(0.4),
+                                          .withValues(alpha: 0.4),
                                       blurRadius: 4,
                                       spreadRadius: 1,
                                     ),
@@ -544,8 +544,8 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                                 Container(
                                   width: 2,
                                   height: 38,
-                                  color: theme.colorScheme.primary.withOpacity(
-                                    0.3,
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.3,
                                   ),
                                 ),
                             ],
@@ -586,10 +586,10 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
             Container(
               padding: EdgeInsets.all(tokens.spaceMd),
               decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer.withOpacity(0.08),
+                color: theme.colorScheme.errorContainer.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(tokens.radiusLg),
                 border: Border.all(
-                  color: theme.colorScheme.error.withOpacity(0.2),
+                  color: theme.colorScheme.error.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -654,10 +654,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
   }
 
   Color _statusColor(RideStatus status, BuildContext context) {
-    if (status == RideStatus.completed)
+    if (status == RideStatus.completed) {
       return SakaiSemanticColors.of(context).success;
-    if (status == RideStatus.cancelled)
+    }
+    if (status == RideStatus.cancelled) {
       return SakaiSemanticColors.of(context).danger;
+    }
     return SakaiSemanticColors.of(context).accentBlue;
   }
 

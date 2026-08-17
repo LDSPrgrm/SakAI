@@ -200,7 +200,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
         position: pickup,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: const InfoWindow(title: 'Pickup'),
-        zIndex: 2,
+        zIndexInt: 2,
       ),
     };
 
@@ -212,7 +212,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
           position: dest,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: const InfoWindow(title: 'Destination'),
-          zIndex: 2,
+          zIndexInt: 2,
         ),
       );
     }
@@ -225,7 +225,7 @@ class _BookingMapState extends ConsumerState<BookingMap> {
           position: driver.location,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
           anchor: const Offset(0.5, 0.5),
-          zIndex: 1,
+          zIndexInt: 1,
           flat: true,
         ),
       );

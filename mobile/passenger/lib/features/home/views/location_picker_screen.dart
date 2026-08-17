@@ -21,7 +21,7 @@ import '../view_models/recent_locations_notifier.dart';
 
 /// Full-screen location picker with:
 ///   • Live autocomplete search
-///   • Suggested transit points
+///   • Recent locations (persisted in SharedPreferences)
 ///   • "Pin on Map" option
 ///
 /// Returns a [RideLocation] via [Navigator.pop] or null on cancel.
