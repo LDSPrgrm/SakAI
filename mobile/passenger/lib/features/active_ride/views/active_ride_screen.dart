@@ -398,7 +398,10 @@ class _ActiveRideContentState extends State<_ActiveRideContent> {
       ),
       child: Text(
         text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

@@ -24,7 +24,7 @@ class SakaiLoadingOverlay {
     _entry = OverlayEntry(
       builder: (_) => Material(
         // Structural barrier color — not a brand color.
-        color: Colors.black54,
+        color: scheme.scrim.withValues(alpha: 0.54),
         child: Center(
           child: Container(
             padding: EdgeInsets.all(tokens.spaceLg),

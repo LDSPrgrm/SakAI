@@ -154,6 +154,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     final notifier = ref.read(driverHomeNotifierProvider.notifier);
     final tokens = SakaiDesignTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final semantic = SakaiSemanticColors.of(context);
+    final textTheme = Theme.of(context).textTheme;
 
     // Use currentLatLng from notifier state (single GPS source of truth)
     final currentLatLng = state.currentLatLng ?? _currentLatLng;
@@ -228,7 +230,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     ),
                     // SakAI logo pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: tokens.spaceMd,
+                        vertical: tokens.spaceSm,
+                      ),
                       decoration: BoxDecoration(
                         color: scheme.surfaceContainerHigh.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(30),
@@ -244,10 +249,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                           const SizedBox(width: 6),
                           Text(
                             'SakAI',
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: scheme.onSurface,
                               fontWeight: FontWeight.w900,
-                              fontSize: 14,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -275,23 +279,23 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                    color: semantic.dangerSubtle,
                     borderRadius: BorderRadius.circular(tokens.radiusSm),
-                    border: Border.all(color: const Color(0xFFEF4444), width: 1),
+                    border: Border.all(color: semantic.danger, width: 1),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.signal_wifi_off,
-                        color: Color(0xFFEF4444),
+                        color: semantic.danger,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Waiting for GPS signal…',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFEF4444),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: semantic.danger,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -365,7 +369,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   ),
                   // SakAI logo + Driver Console label
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: tokens.spaceMd,
+                      vertical: tokens.spaceSm,
+                    ),
                     decoration: BoxDecoration(
                       color: scheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(30),
@@ -381,20 +388,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                         const SizedBox(width: 6),
                         Text(
                           'SakAI',
-                          style: TextStyle(
+                          style: textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurface,
                             fontWeight: FontWeight.w900,
-                            fontSize: 14,
                             letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Driver',
-                          style: TextStyle(
+                          style: textTheme.labelMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
-                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -423,7 +428,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                         child: IconButton(
                           icon: Icon(
                             _isDarkMode ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                            color: _isDarkMode ? scheme.primary : Colors.amber,
+                            color: _isDarkMode ? scheme.primary : semantic.warning,
                             size: 20,
                           ),
                           onPressed: () {
@@ -434,7 +439,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                               SnackBar(
                                 content: Text(
                                   _isDarkMode ? 'Premium Dark Mode Active' : 'Light Mode Active',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onInverseSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 behavior: SnackBarBehavior.floating,
                                 duration: const Duration(seconds: 1),
@@ -468,21 +476,20 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                          color: semantic.dangerSubtle,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3), width: 1),
+                          border: Border.all(color: semantic.danger.withValues(alpha: 0.3), width: 1),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.signal_wifi_off, color: Color(0xFFEF4444), size: 18),
+                            Icon(Icons.signal_wifi_off, color: semantic.danger, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Waiting for GPS signal…',
-                                style: TextStyle(
-                                  color: const Color(0xFFEF4444),
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: semantic.danger,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
                                 ),
                               ),
                             ),
@@ -523,6 +530,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
   Widget _buildGreetingHeader(BuildContext context, bool online, ColorScheme scheme, SakaiDesignTokens tokens) {
     final profile = ref.watch(driverProfileNotifierProvider).profile;
     final driverName = profile?.name ?? 'Driver';
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
@@ -547,34 +555,32 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             ),
             child: CircleAvatar(
               radius: 22,
-              backgroundColor: scheme.outlineVariant,
+              backgroundColor: scheme.surfaceContainerHighest,
               child: Text(
                 _initialsOf(driverName),
-                style: TextStyle(
+                style: textTheme.titleMedium?.copyWith(
                   color: scheme.onSurface,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: tokens.spacing12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Welcome back,',
-                  style: TextStyle(
+                  style: textTheme.labelMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
-                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   driverName,
-                  style: TextStyle(
+                  style: textTheme.titleMedium?.copyWith(
                     color: scheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -603,15 +609,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
       height: 180,
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: scheme.outlineVariant, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
+        boxShadow: tokens.elevationMd,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(19),
@@ -671,9 +671,15 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               left: 12,
               top: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.spacing12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: scheme.scrim.withValues(alpha: 0.75),
+                  // Sits on top of the map tiles, so it needs its own opaque-ish
+                  // surface rather than `scrim` (which is black in both
+                  // brightnesses and made this dark-on-dark in dark mode).
+                  color: scheme.surface.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5), width: 1),
                 ),
@@ -683,7 +689,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     const SizedBox(width: 6),
                     Text(
                       'Interactive Map',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: scheme.onSurface,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -709,6 +715,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     final activeRide = state.activeRide;
     if (activeRide == null) return const SizedBox.shrink();
 
+    final semantic = SakaiSemanticColors.of(context);
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -721,7 +730,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(
           color: scheme.primary.withValues(alpha: 0.4),
           width: 1.5,
@@ -750,10 +759,9 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   const SizedBox(width: 8),
                   Text(
                     'ACTIVE TRIP',
-                    style: TextStyle(
+                    style: textTheme.labelMedium?.copyWith(
                       color: scheme.primary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -762,12 +770,12 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: semantic.primarySubtle,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
                 ),
                 child: Text(
                   _formatRideStatus(activeRide.status).toUpperCase(),
-                  style: TextStyle(
+                  style: textTheme.labelSmall?.copyWith(
                     color: scheme.primary,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
@@ -779,31 +787,29 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           const SizedBox(height: 12),
           Text(
             activeRide.passenger.name,
-            style: TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               color: scheme.onSurface,
-              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, color: Color(0xFFEF4444), size: 14),
+              Icon(Icons.location_on_rounded, color: semantic.danger, size: 14),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   activeRide.originAddress ?? 'Pickup address',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
-                    fontSize: 12,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: tokens.spacing12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -812,17 +818,21 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   context.go(Routes.rideActive, extra: activeRide);
                 }
               },
-              icon: const Icon(Icons.navigation_rounded, color: Colors.black, size: 18),
-              label: const Text(
+              icon: Icon(Icons.navigation_rounded, color: scheme.onPrimary, size: 18),
+              label: Text(
                 'Resume Navigation',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                style: textTheme.labelLarge?.copyWith(
+                  color: scheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 elevation: 4,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
                 ),
               ),
             ),
@@ -841,12 +851,14 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     ColorScheme scheme,
     SakaiDesignTokens tokens,
   ) {
+    final semantic = SakaiSemanticColors.of(context);
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(
           color: online
               ? scheme.primary.withValues(alpha: 0.3)
@@ -874,16 +886,19 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     _buildLivePulseDot(online, scheme),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: tokens.spacing12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: online
-                            ? scheme.primary.withValues(alpha: 0.15)
+                            ? semantic.primarySubtle
                             : scheme.onSurfaceVariant.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(tokens.radiusMd),
                       ),
                       child: Text(
                         online ? 'ACTIVE' : 'INACTIVE',
-                        style: TextStyle(
+                        style: textTheme.labelSmall?.copyWith(
                           color: online ? scheme.primary : scheme.onSurfaceVariant,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -896,20 +911,18 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                 const SizedBox(height: 8),
                 Text(
                   'Live Dispatch',
-                  style: TextStyle(
+                  style: textTheme.titleMedium?.copyWith(
                     color: scheme.onSurface,
-                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  online 
+                  online
                       ? 'Broadcasting location & matching with nearby commuters'
                       : 'Go online to receive and accept ride offers',
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
-                    fontSize: 12,
                   ),
                 ),
               ],
@@ -1009,8 +1022,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     required Color valueColor,
     required ColorScheme scheme,
   }) {
+    final tokens = SakaiDesignTokens.of(context);
+    final textTheme = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(tokens.spacing12),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
@@ -1024,7 +1039,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
@@ -1037,9 +1052,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               color: valueColor,
-              fontSize: 16,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.3,
             ),
@@ -1051,12 +1065,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
 
   // Fatigue Alert
   Widget _buildFatigueCheckCard(ColorScheme scheme, SakaiDesignTokens tokens) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(
           color: scheme.primary.withValues(alpha: 0.15),
           width: 1,
@@ -1066,7 +1081,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(tokens.spacing12),
             decoration: BoxDecoration(
               color: scheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
@@ -1077,25 +1092,23 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               size: 22,
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: tokens.spacing12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Safety Fatigue Check',
-                  style: TextStyle(
+                  style: textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurface,
-                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'To maintain safety regulations, we recommend a 15-minute break in the next 1h 45m.',
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
-                    fontSize: 12,
                     height: 1.4,
                   ),
                 ),
@@ -1111,18 +1124,15 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
   Widget _buildCustomBottomNavBar(BuildContext context, ColorScheme scheme, SakaiDesignTokens tokens) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceMd,
+        vertical: tokens.spacing12,
+      ),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: scheme.outlineVariant, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: tokens.elevationMd,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1179,7 +1189,10 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? scheme.primary.withValues(alpha: 0.15) : Colors.transparent,
+          // `Colors.transparent` is the absence of a fill, not a theme role.
+          color: isActive
+              ? SakaiSemanticColors.of(context).primarySubtle
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1194,7 +1207,7 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: scheme.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -1207,10 +1220,13 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     );
   }
 
-  // Beautiful Dark Mode Cohesive Drawer
+  // Cohesive navigation drawer (brightness-correct in both light and dark).
   Widget _buildCohesiveDrawer(BuildContext context, DriverHomeState state, ColorScheme scheme) {
     final profile = ref.watch(driverProfileNotifierProvider).profile;
     final driverName = profile?.name ?? 'Driver';
+    final tokens = SakaiDesignTokens.of(context);
+    final semantic = SakaiSemanticColors.of(context);
+    final textTheme = Theme.of(context).textTheme;
     return Drawer(
       backgroundColor: scheme.surface,
       child: Column(
@@ -1228,22 +1244,24 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF00DC82), width: 2),
+                    border: Border.all(color: scheme.primary, width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 26,
-                    backgroundColor: scheme.surface,
+                    // Was `surface` + hardcoded white text: invisible in light
+                    // mode. Both roles now track brightness together.
+                    backgroundColor: scheme.surfaceContainerHighest,
                     child: Text(
                       _initialsOf(driverName),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: scheme.onSurface,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: tokens.spacing12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1251,18 +1269,16 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                     children: [
                       Text(
                         driverName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: scheme.onSurface,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'GoRide Navigator',
-                        style: TextStyle(
-                          color: Color(0xFF00DC82),
-                          fontSize: 11,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1286,8 +1302,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                   _buildDrawerTile(
                     icon: Icons.directions_car,
                     title: 'Active Ride',
-                    textColor: const Color(0xFF00DC82),
-                    iconColor: const Color(0xFF00DC82),
+                    textColor: scheme.primary,
+                    iconColor: scheme.primary,
                     onTap: () {
                       Navigator.pop(context);
                       if (context.mounted && state.activeRide != null) {
@@ -1357,8 +1373,8 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
                 _buildDrawerTile(
                   icon: Icons.logout_rounded,
                   title: 'Log Out',
-                  iconColor: const Color(0xFFEF4444),
-                  textColor: const Color(0xFFEF4444),
+                  iconColor: semantic.danger,
+                  textColor: semantic.danger,
                   onTap: () async {
                     final tokenStorage = ref.read(tokenStorageProvider);
                     final refreshToken = await tokenStorage.getRefreshToken();
@@ -1394,28 +1410,28 @@ class _DriverHomeScreenState extends ConsumerState<DriverHomeScreen> with Widget
     Color? textColor,
     required VoidCallback onTap,
   }) {
+    // `_buildDrawerTile` takes no ColorScheme param, but it is a State method,
+    // so `this.context` is in scope — no threading through 10 call sites needed.
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return ListTile(
       leading: Icon(
         icon,
-        // _buildDrawerTile has no ColorScheme param and 10 call sites; threading
-        // `scheme` through all of them is out of scope for this fix. Left as a
-        // documented exception rather than silently untokenized.
         color: selected
-            ? const Color(0xFF00DC82)
-            : (iconColor ?? const Color(0xFF94A3B8)),
+            ? scheme.primary
+            : (iconColor ?? scheme.onSurfaceVariant),
       ),
       title: Text(
         title,
-        style: TextStyle(
-          color: selected 
-              ? const Color(0xFF00DC82) 
-              : (textColor ?? Colors.white),
+        style: textTheme.bodyMedium?.copyWith(
+          color: selected
+              ? scheme.primary
+              : (textColor ?? scheme.onSurface),
           fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-          fontSize: 14,
         ),
       ),
       selected: selected,
-      selectedTileColor: const Color(0xFF00DC82).withValues(alpha: 0.1),
+      selectedTileColor: SakaiSemanticColors.of(context).primarySubtle,
       onTap: onTap,
     );
   }

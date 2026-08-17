@@ -117,7 +117,7 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
                         ScaleTransition(
                           scale: _scaleAnimation,
                           child: Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(tokens.spaceMd),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
@@ -250,7 +250,7 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
                       ScaleTransition(
                         scale: _scaleAnimation,
                         child: Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(tokens.spaceMd),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
@@ -426,7 +426,9 @@ class _DriverRatingScreenState extends ConsumerState<DriverRatingScreen>
                             padding: EdgeInsets.only(top: tokens.spaceSm),
                             child: Text(
                               state.error!,
-                              style: TextStyle(color: theme.colorScheme.error),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
                             ),
                           ),
                       ],
@@ -452,19 +454,22 @@ class _ModernCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).colorScheme.shadow.withValues(
+                  alpha: 0.05,
+                ),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(tokens.spaceLg),
       child: child,
     );
   }

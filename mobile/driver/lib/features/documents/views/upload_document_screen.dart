@@ -94,7 +94,8 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(documentViewModelProvider);
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     // Show success/error messages from state
     ref.listen(documentViewModelProvider, (previous, next) {
@@ -119,9 +120,11 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'Document Details',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
@@ -168,9 +171,11 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Document Photo',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               GestureDetector(
@@ -189,8 +194,12 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                             Icon(Icons.add_a_photo,
                                 size: 48, color: scheme.onSurfaceVariant),
                             const SizedBox(height: 8),
-                            Text('Tap to add a photo',
-                                style: TextStyle(color: scheme.onSurfaceVariant)),
+                            Text(
+                              'Tap to add a photo',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         )
                       : Stack(
@@ -204,9 +213,12 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                               right: 8,
                               top: 8,
                               child: CircleAvatar(
-                                backgroundColor: Colors.black54,
+                                backgroundColor: scheme.inverseSurface,
                                 child: IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.white),
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: scheme.onInverseSurface,
+                                  ),
                                   onPressed: () => _showImageSourceActionSheet(),
                                 ),
                               ),
@@ -216,19 +228,9 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              ElevatedButton(
+              SakaiPrimaryButton(
                 onPressed: state.isUploading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: state.isUploading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('SUBMIT FOR REVIEW', style: TextStyle(fontSize: 16)),
+                label: state.isUploading ? 'Submitting...' : 'Submit for Review',
               ),
             ],
           ),

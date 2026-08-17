@@ -121,7 +121,12 @@ abstract final class SakaiTheme {
     return ThemeData(
       useMaterial3: config.useMaterial3,
       colorScheme: schemeWithOverrides,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(),
+      // Base the font on the brightness-correct default text theme — the
+      // zero-arg form defaults to ThemeData.light().textTheme, which bakes
+      // near-black text colors into every role in dark mode.
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        ThemeData(brightness: brightness).textTheme,
+      ),
       brightness: brightness,
       extensions: <ThemeExtension<dynamic>>[tokens, semantic],
       scaffoldBackgroundColor: scaffoldBackgroundColor,

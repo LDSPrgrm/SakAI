@@ -251,7 +251,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: scheme.onSurface,
@@ -295,14 +295,14 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
           controller: _searchController,
           focusNode: _searchFocus,
           onChanged: _onSearchChanged,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontSize: 15,
             color: scheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: 'Search address, building, station…',
-            hintStyle: TextStyle(
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontSize: 14,
               color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
@@ -362,7 +362,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
             child: Text(
               isPickup ? 'RECENT PICKUPS' : 'RECENT DESTINATIONS',
-              style: TextStyle(
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
@@ -425,7 +425,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                 children: [
                   Text(
                     name,
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: scheme.onSurface,
@@ -434,7 +434,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                   const SizedBox(height: 2),
                   Text(
                     address.isEmpty ? subtitle : '$subtitle · $address',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 12,
                       color: scheme.onSurfaceVariant,
                       overflow: TextOverflow.ellipsis,
@@ -507,7 +507,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                   children: [
                     Text(
                       'Use Current Location',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: scheme.onSurface,
@@ -518,7 +518,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                       _isLocating
                           ? 'Getting your location…'
                           : 'Set pickup to your current GPS position',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12,
                         color: scheme.onSurfaceVariant,
                       ),
@@ -576,7 +576,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                   children: [
                     Text(
                       'Pin on Map',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: scheme.onSurface,
@@ -585,7 +585,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                     const SizedBox(height: 2),
                     Text(
                       'Tap anywhere on the map to set location',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12,
                         color: scheme.onSurfaceVariant,
                       ),
@@ -621,7 +621,10 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
             const SizedBox(height: 12),
             Text(
               'No results found',
-              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 15),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontSize: 15,
+              ),
             ),
           ],
         ),
@@ -656,7 +659,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen>
                 Expanded(
                   child: Text(
                     address,
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: scheme.onSurface,
@@ -906,7 +909,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                         ),
                         child: Text(
                           'Tap on the map to pin your location',
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: scheme.onSurface,
@@ -986,7 +989,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                                     const SizedBox(width: 8),
                                     Text(
                                       'Resolving address…',
-                                      style: TextStyle(
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                         fontSize: 13,
                                         color: scheme.onSurfaceVariant,
                                       ),
@@ -996,7 +999,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                               : Text(
                                   _resolvedAddress ??
                                       'Tap on the map to drop a pin',
-                                  style: TextStyle(
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: _resolvedAddress != null
@@ -1051,7 +1054,7 @@ class _MapPinPickerScreenState extends State<_MapPinPickerScreen> {
                             const SizedBox(width: 8),
                             Text(
                               'Confirm Location',
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
                                 color: canConfirm

@@ -361,13 +361,17 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     final selectedType = ref.watch(homeNotifierProvider).selectedRideType;
     final notifier = ref.read(homeNotifierProvider.notifier);
 
+    final textTheme = Theme.of(context).textTheme;
+
     if (options.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
             'Checking nearby drivers…',
-            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+            style: textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
       );
@@ -376,9 +380,9 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Choose ride type',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -444,15 +448,16 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
           children: [
             Icon(
               Icons.bolt,
+              // Fixed brand-gradient CTA: black holds contrast on the bright
+              // green gradient better than colorScheme.onPrimary (white).
               color: canBook ? Colors.black : scheme.onSurfaceVariant,
             ),
             const SizedBox(width: 8),
             Text(
               'Confirm Booking',
-              style: TextStyle(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: canBook ? Colors.black : scheme.onSurfaceVariant,
                 fontWeight: FontWeight.w900,
-                fontSize: 16,
               ),
             ),
           ],
@@ -526,8 +531,14 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
   // ── Bottom Navigation ──────────────────────────────────────────────────────
 
   Widget _buildBottomNav(ColorScheme scheme) {
+    final tokens = SakaiDesignTokens.of(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        tokens.spaceLg,
+      ),
       color: Colors.transparent,
       child: Container(
         height: 68,
@@ -637,7 +648,7 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: TextStyle(
+              style: Theme.of(context).textTheme.labelSmall!.copyWith(
                 color: selected ? active : inactive,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 fontSize: 10,
@@ -687,20 +698,20 @@ class BookingTopBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: const Text(
+            child: Text(
               'S',
-              style: TextStyle(
+              // Brand mark on solid primary fill — white is the fixed
+              // contrast color for this chip, not a themed surface color.
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 16,
               ),
             ),
           ),
           const SizedBox(width: 8),
           Text(
             'SakAI',
-            style: TextStyle(
-              fontSize: 18,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
               color: scheme.onSurface,
               letterSpacing: -0.3,
@@ -722,6 +733,7 @@ class BookingTopBar extends StatelessWidget {
   }
 
   void _showHelpDialog(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -733,22 +745,30 @@ class BookingTopBar extends StatelessWidget {
             const Text('Booking Help'),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'How to book a ride:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            SizedBox(height: 8),
-            Text('1. Set your pickup and destination locations.'),
-            Text('2. Select your ride type: Tricycle, Motorcycle, or Car.'),
-            Text('3. Review the estimated fare and click "Confirm Booking".'),
-            SizedBox(height: 12),
+            const SizedBox(height: 8),
+            const Text('1. Set your pickup and destination locations.'),
+            const Text(
+              '2. Select your ride type: Tricycle, Motorcycle, or Car.',
+            ),
+            const Text(
+              '3. Review the estimated fare and click "Confirm Booking".',
+            ),
+            const SizedBox(height: 12),
             Text(
               'SakAI offers reliable transportation powered by dynamic routing.',
-              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+              style: textTheme.bodySmall?.copyWith(
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -758,7 +778,7 @@ class BookingTopBar extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Got it',
-              style: TextStyle(
+              style: textTheme.labelLarge?.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.bold,
               ),
@@ -785,7 +805,8 @@ class _AddressField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return GestureDetector(
       onTap: onTap,
@@ -797,8 +818,7 @@ class _AddressField extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 10,
+              style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: scheme.onSurfaceVariant,
               ),
@@ -808,8 +828,7 @@ class _AddressField extends StatelessWidget {
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                 color: active ? scheme.onSurface : scheme.primary,
               ),
@@ -836,6 +855,8 @@ class _TransitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = SakaiDesignTokens.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final (label, desc, iconData) = switch (option.type) {
       VehicleType.tricycle => (
         'Tricycle',
@@ -884,7 +905,7 @@ class _TransitCard extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         width: 140,
         margin: const EdgeInsets.only(right: 12, bottom: 4, top: 4),
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(tokens.spacing12),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(20),
@@ -926,7 +947,7 @@ class _TransitCard extends StatelessWidget {
                   ),
                   child: Text(
                     badgeText,
-                    style: TextStyle(
+                    style: textTheme.labelSmall?.copyWith(
                       color: badgeColor,
                       fontSize: 8,
                       fontWeight: FontWeight.w900,
@@ -938,9 +959,8 @@ class _TransitCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               label,
-              style: TextStyle(
+              style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 14,
                 color: selected
                     ? scheme.primary
                     : available
@@ -951,7 +971,9 @@ class _TransitCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               desc,
-              style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+              style: textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -961,9 +983,8 @@ class _TransitCard extends StatelessWidget {
                   available
                       ? SakaiCurrency.format(option.estimatedFare)
                       : '—',
-                  style: TextStyle(
+                  style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
-                    fontSize: 16,
                     color: selected
                         ? scheme.primary
                         : available
@@ -973,7 +994,7 @@ class _TransitCard extends StatelessWidget {
                 ),
                 Text(
                   driverLabel,
-                  style: TextStyle(
+                  style: textTheme.labelSmall?.copyWith(
                     fontSize: 9,
                     color: available ? scheme.onSurfaceVariant : scheme.error,
                     fontWeight: available ? FontWeight.normal : FontWeight.w700,
@@ -1077,7 +1098,7 @@ class _BottomBookingPanel extends StatelessWidget {
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 10),
+            margin: EdgeInsets.symmetric(vertical: tokens.spaceSm),
             decoration: BoxDecoration(
               color: scheme.outlineVariant,
               borderRadius: BorderRadius.circular(2),
