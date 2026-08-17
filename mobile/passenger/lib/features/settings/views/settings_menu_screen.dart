@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sakai_shared/sakai_shared.dart';
 
 import '../../../app/routes.dart';
 
 /// Settings menu screen displaying all available settings options.
-class SettingsMenuScreen extends StatelessWidget {
+class SettingsMenuScreen extends ConsumerWidget {
   const SettingsMenuScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeControllerProvider);
     return Scaffold(
       appBar: SakaiAppBar(
         title: const Text('Settings'),
@@ -39,6 +41,20 @@ class SettingsMenuScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
           _buildSectionHeader(context, 'Preferences'),
+          SakaiListTile(
+            leading: Icon(
+              Icons.brightness_6_outlined,
+              color: Theme.of(context).iconTheme.color,
+            ),
+            title: const Text('Theme'),
+            subtitle: Text(_themeModeLabel(themeMode)),
+            trailing: Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            onTap: () => _showThemePicker(context, ref, themeMode),
+          ),
           _buildTile(
             context,
             Icons.notifications_outlined,
@@ -100,6 +116,64 @@ class SettingsMenuScreen extends StatelessWidget {
             'Privacy Policy',
             'Learn how we handle your data',
             onTap: () => context.push(Routes.settingsPrivacy),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _themeModeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.system:
+        return 'System';
+    }
+  }
+
+  void _showThemePicker(BuildContext context, WidgetRef ref, ThemeMode current) {
+    SakaiModalSheet.show<void>(
+      context,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SakaiListTile(
+            leading: const Icon(Icons.smartphone_outlined),
+            title: const Text('System'),
+            selected: current == ThemeMode.system,
+            trailing: current == ThemeMode.system
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              ref.read(themeModeControllerProvider.notifier).setThemeMode(ThemeMode.system);
+              Navigator.pop(sheetCtx);
+            },
+          ),
+          SakaiListTile(
+            leading: const Icon(Icons.light_mode_outlined),
+            title: const Text('Light'),
+            selected: current == ThemeMode.light,
+            trailing: current == ThemeMode.light
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              ref.read(themeModeControllerProvider.notifier).setThemeMode(ThemeMode.light);
+              Navigator.pop(sheetCtx);
+            },
+          ),
+          SakaiListTile(
+            leading: const Icon(Icons.dark_mode_outlined),
+            title: const Text('Dark'),
+            selected: current == ThemeMode.dark,
+            trailing: current == ThemeMode.dark
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              ref.read(themeModeControllerProvider.notifier).setThemeMode(ThemeMode.dark);
+              Navigator.pop(sheetCtx);
+            },
           ),
         ],
       ),

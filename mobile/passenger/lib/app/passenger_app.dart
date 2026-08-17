@@ -12,11 +12,12 @@ class PassengerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeControllerProvider);
     return MaterialApp.router(
       title: 'SakAI Rider',
       theme: SakaiTheme.light(_config),
       darkTheme: SakaiTheme.dark(_config),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
     );

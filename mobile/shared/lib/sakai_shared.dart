@@ -40,6 +40,7 @@ export 'theme/sakai_design_tokens.dart';
 export 'theme/sakai_theme.dart';
 export 'theme/sakai_semantic_colors.dart';
 export 'theme/sakai_theme_config.dart';
+export 'theme/theme_mode_controller.dart';
 
 // Validators
 export 'validators/sakai_validators.dart';

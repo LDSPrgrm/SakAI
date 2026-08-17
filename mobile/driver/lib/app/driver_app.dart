@@ -12,11 +12,12 @@ class DriverApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeControllerProvider);
     return MaterialApp.router(
       title: 'SakAI Driver',
       theme: SakaiTheme.light(_config),
       darkTheme: SakaiTheme.dark(_config),
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
     );
